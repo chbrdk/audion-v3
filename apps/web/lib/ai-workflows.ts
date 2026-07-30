@@ -42,6 +42,7 @@ import {
 } from './fixtures/target-group-store'
 import { storeProjectDetail } from './fixtures/project-store'
 import { storeCreateResearchRun } from './fixtures/research-runs'
+import { mergeMoodboardTiles } from './moodboard-tiles'
 import { personaAvatarPath, personaVisualPath } from './paths'
 import { shouldPreferAiLive, shouldRequireAiLive } from './persona-api-proxy'
 
@@ -661,13 +662,15 @@ export function runStubGenerateMoodboard(
     { slug: 'space-studio', category: 'space', caption: 'Context space' },
   ] as const
 
-  const tiles = tileDefs.map((def, i) => ({
+  const candidates = tileDefs.map((def, i) => ({
     id: `mood-stub-${personaId}-${i + 1}`,
     imageUrl: personaVisualPath(def.slug),
     category: def.category,
     caption: `${def.caption} · ${persona.name}`,
+    locked: false as const,
   }))
 
+  const tiles = mergeMoodboardTiles(persona.visuals?.tiles ?? [], candidates)
   const visuals = { styleKeywords, tiles }
   const patched = storePatchPersona(personaId, { visuals })
   if (!patched) return { error: 'Persona not found', status: 404 }

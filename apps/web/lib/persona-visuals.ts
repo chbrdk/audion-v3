@@ -31,6 +31,7 @@ export function resolvePersonaVisuals(visuals: PersonaVisuals | null | undefined
           imageUrl: tile.imageUrl,
           category: tile.category?.trim() || 'visual',
           caption: tile.caption ?? null,
+          locked: Boolean(tile.locked),
         }))
       : [],
   }
@@ -42,6 +43,7 @@ export function blankPersonaVisualTile(): PersonaVisualTile {
     imageUrl: personaVisualPath('tone-warm'),
     category: 'visual',
     caption: 'New tile',
+    locked: false,
   }
 }
 
@@ -54,6 +56,7 @@ export function toPersonaWriteVisuals(visuals: PersonaVisuals): PersonaVisuals |
       imageUrl: tile.imageUrl.trim(),
       category: tile.category.trim() || 'visual',
       caption: tile.caption?.trim() ? tile.caption.trim() : null,
+      locked: Boolean(tile.locked),
     }))
     .filter((tile) => Boolean(tile.imageUrl))
   if (!styleKeywords.length && !tiles.length) return null

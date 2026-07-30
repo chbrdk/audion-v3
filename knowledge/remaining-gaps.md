@@ -46,7 +46,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | ~~UX Journey Agent surface~~ | **Done 2026-07-30** — Studies Start/Sync is official entry (`knowledge/ux-agent-surface.md`); Convert to journey on wave runs |
 | ~~Persona enrich + moodboard~~ | **Done 2026-07-30** — `enrichPersona` / `generateMoodboard` Wave-2 + UI (`knowledge/persona-enrich-moodboard-2026.md`) |
 | ~~Journey phase AI + validate~~ | **Done 2026-07-30** — moments generate + validate report (`knowledge/journey-phase-ai-validate-2026.md`) |
-| ~~Personas knowledge + profile_de~~ | **Done 2026-07-30** — docs/knowledge CRUD + bilingual mirror (`knowledge/tg-persona-knowledge-profile-de-2026.md`); locked-tile rebuild still open |
+| ~~Personas knowledge + profile_de~~ | **Done 2026-07-30** — docs/knowledge CRUD + bilingual mirror (`knowledge/tg-persona-knowledge-profile-de-2026.md`); ~~locked-tile rebuild~~ **Done 2026-07-30** (`knowledge/persona-locked-tiles-2026.md`) |
 | Journeys | ~~Phase AI, validation report~~ **Done**; further: chat-mode validate, report history |
 | ~~Projects research SSE~~ | **Done 2026-07-30** — status/latest/stream + poll UI (`knowledge/project-research-sse-2026.md`) |
 | ~~TGs knowledge / sources~~ | **Done 2026-07-30** — magazine knowledge + sources list (`knowledge/tg-persona-knowledge-profile-de-2026.md`); explorer still open |

@@ -47,6 +47,8 @@ export type PersonaVisualTile = {
   imageUrl: string
   category: string
   caption: string | null
+  /** When true, tile is kept on moodboard rebuild (V2 parity). */
+  locked?: boolean
 }
 
 export type PersonaVisuals = {

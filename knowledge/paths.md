@@ -102,6 +102,7 @@
 - Persona enrich + moodboard (2026 agent notes): `knowledge/persona-enrich-moodboard-2026.md`
   - Next: `paths.routes.apiAiEnrichPersona` · `apiAiGenerateMoodboard`
   - Upstream: `POST /personas/{id}/enrich` · `POST /api/persona-admin/{id}/moodboards`
+- Persona locked-tile rebuild: `knowledge/persona-locked-tiles-2026.md` · `apps/web/lib/moodboard-tiles.ts`
 - Journey phase AI + validate: `knowledge/journey-phase-ai-validate-2026.md`
   - Next: `paths.routes.apiAiGenerateJourneyPhaseMoments` · `apiAiValidateJourney`
   - Upstream: `POST /journeys/{id}/ai/generate` · `POST /journeys/{id}/validate`

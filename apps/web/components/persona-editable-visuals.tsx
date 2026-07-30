@@ -166,13 +166,15 @@ export function PersonaEditableVisuals({
       imageUrl,
       category: tileDraft.category.trim() || 'visual',
       caption: tileDraft.caption?.trim() ? tileDraft.caption.trim() : null,
+      locked: Boolean(tileDraft.locked),
     }
     const previous = local.tiles.find((t) => t.id === editingTileId)
     if (
       previous &&
       previous.imageUrl === nextTile.imageUrl &&
       previous.category === nextTile.category &&
-      previous.caption === nextTile.caption
+      previous.caption === nextTile.caption &&
+      Boolean(previous.locked) === Boolean(nextTile.locked)
     ) {
       cancelTileEdit()
       return
@@ -180,6 +182,14 @@ export function PersonaEditableVisuals({
     const nextTiles = local.tiles.map((t) => (t.id === editingTileId ? nextTile : t))
     const ok = await persist({ ...local, tiles: nextTiles })
     if (ok) cancelTileEdit()
+  }
+
+  async function toggleTileLock(tile: PersonaVisualTile) {
+    if (saving || generating || keywordMode || editingTileId) return
+    const nextTiles = local.tiles.map((t) =>
+      t.id === tile.id ? { ...t, locked: !Boolean(t.locked) } : t,
+    )
+    await persist({ ...local, tiles: nextTiles })
   }
 
   async function addTile() {
@@ -191,6 +201,12 @@ export function PersonaEditableVisuals({
 
   async function onConfirmDeleteTile() {
     if (!deleteTileId) return
+    const target = local.tiles.find((t) => t.id === deleteTileId)
+    if (target?.locked) {
+      setError('Unlock the tile before removing it')
+      setDeleteTileId(null)
+      return
+    }
     const nextTiles = local.tiles.filter((t) => t.id !== deleteTileId)
     const ok = await persist({ ...local, tiles: nextTiles })
     if (ok) {
@@ -226,6 +242,7 @@ export function PersonaEditableVisuals({
 
   const meta = local.tiles.length ? `${local.tiles.length}` : undefined
   const deleteTile = local.tiles.find((t) => t.id === deleteTileId)
+  const hasLockedTiles = local.tiles.some((t) => t.locked)
   const isEmpty = local.tiles.length === 0 && local.styleKeywords.length === 0
   const categoryOptions = (current: string) => {
     if (PERSONA_VISUAL_CATEGORIES.includes(current as (typeof PERSONA_VISUAL_CATEGORIES)[number])) {
@@ -241,13 +258,18 @@ export function PersonaEditableVisuals({
     >
       <div className="audion-editable-visuals-chrome">
         <SectionChrome quiet title="Visuals" meta={meta} metaTone="accent" as="h3" />
-        <AiActionButton
-          label="Generate moodboard"
-          targetHint={moodboardHint}
-          loading={generating}
-          disabled={saving || keywordMode != null || editingTileId != null}
-          onClick={() => void generateMoodboard()}
-        />
+        <div className="audion-editable-visuals-chrome-actions">
+          <AiActionButton
+            label="Generate moodboard"
+            targetHint={moodboardHint}
+            loading={generating}
+            disabled={saving || keywordMode != null || editingTileId != null}
+            onClick={() => void generateMoodboard()}
+          />
+          {hasLockedTiles ? (
+            <p className="audion-editable-visuals-lock-hint">Keeps locked tiles</p>
+          ) : null}
+        </div>
       </div>
 
       <div className="audion-editable-visuals-keywords" aria-label="Style keywords">
@@ -346,12 +368,25 @@ export function PersonaEditableVisuals({
         <ul className="audion-magazine-visual-grid">
           {local.tiles.map((tile) => {
             const isEditing = editingTileId === tile.id && tileDraft
+            const isLocked = Boolean(tile.locked)
             return (
-              <li key={tile.id} data-category={tile.category} className="audion-editable-visuals-tile">
+              <li
+                key={tile.id}
+                data-category={tile.category}
+                data-locked={isLocked ? 'true' : undefined}
+                className={
+                  isLocked
+                    ? 'audion-editable-visuals-tile audion-editable-visuals-tile--locked'
+                    : 'audion-editable-visuals-tile'
+                }
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={tile.imageUrl} alt={tile.caption || tile.category} />
                 {tile.caption ? (
                   <span className="audion-magazine-visual-caption">{tile.caption}</span>
+                ) : null}
+                {isLocked ? (
+                  <span className="audion-editable-visuals-tile-locked-label">Locked</span>
                 ) : null}
 
                 {isEditing ? (
@@ -407,8 +442,22 @@ export function PersonaEditableVisuals({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setDeleteTileId(tile.id)}
+                        onClick={() => setTileDraft({ ...tileDraft, locked: !Boolean(tileDraft.locked) })}
                         disabled={saving}
+                        aria-label={
+                          tileDraft.locked
+                            ? `Unlock ${tile.caption || tile.category}`
+                            : `Lock ${tile.caption || tile.category}`
+                        }
+                      >
+                        {tileDraft.locked ? 'Unlock' : 'Lock'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteTileId(tile.id)}
+                        disabled={saving || Boolean(tileDraft.locked)}
                         aria-label={`Remove ${tile.caption || tile.category}`}
                       >
                         Remove
@@ -416,13 +465,32 @@ export function PersonaEditableVisuals({
                     </div>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    className="audion-editable-visuals-tile-hit"
-                    onClick={() => beginTileEdit(tile)}
-                    disabled={saving || keywordMode != null}
-                    aria-label={`Edit ${tile.caption || tile.category} tile`}
-                  />
+                  <>
+                    <button
+                      type="button"
+                      className="audion-editable-visuals-tile-hit"
+                      onClick={() => beginTileEdit(tile)}
+                      disabled={saving || keywordMode != null}
+                      aria-label={`Edit ${tile.caption || tile.category} tile`}
+                    />
+                    <button
+                      type="button"
+                      className="audion-editable-visuals-tile-lock"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        void toggleTileLock(tile)
+                      }}
+                      disabled={saving || generating || keywordMode != null || editingTileId != null}
+                      aria-label={
+                        isLocked
+                          ? `Unlock ${tile.caption || tile.category}`
+                          : `Lock ${tile.caption || tile.category}`
+                      }
+                      aria-pressed={isLocked}
+                    >
+                      {isLocked ? 'Unlock' : 'Lock'}
+                    </button>
+                  </>
                 )}
               </li>
             )

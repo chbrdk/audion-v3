@@ -88,7 +88,7 @@ Migration maps: `persona-migration-map.md` · `target-group-migration-map.md` ·
 | Editable traits / lists / communication / channels / notes / visuals | `shipped` (fixtures PATCH) |
 | Field AI suggest | `stub` |
 | Avatar generate | `stub` |
-| Enrich-all / moodboard rebuild / translate / ensure chat prompt | `missing` |
+| Enrich-all / moodboard rebuild / translate / ensure chat prompt | Enrich + moodboard gen `shipped` (stub/native); locked-tile rebuild `shipped` (`persona-locked-tiles-2026.md`); translate / ensure chat prompt `missing` |
 | Docs / knowledge CRUD | `missing` |
 | Bilingual `profile_de` | `missing` |
 | GEO questions | `out_of_scope` (platform) |
@@ -161,7 +161,7 @@ V3 registry: `knowledge/ai-workflows.md` · `apps/web/lib/ai-workflows.ts`
 |------------|-----|--------|
 | Suggest TGs / personas, research start, generate journey | Buttons + live/`auto` proxy | `proxy` (stub fallback) |
 | Generate persona (TG), avatar, field suggest | Live/`auto` proxy | `proxy` (stub fallback) |
-| Enrich-all, moodboard rebuild, translate, ensure chat prompt | — | `missing` |
+| Enrich-all, moodboard rebuild, translate, ensure chat prompt | Enrich + moodboard + locked tiles | Enrich/moodboard/`locked` `shipped`; translate / ensure chat prompt `missing` |
 | Easy Setup bootstrap | `/setup` + native bootstrap API | `shipped` |
 | Journey phase AI, validate, UX-run convert | — | `missing` |
 | UX Journey Agent run UI | — | `missing` (Studies Start can hit API) |

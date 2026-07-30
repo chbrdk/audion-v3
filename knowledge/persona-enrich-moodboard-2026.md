@@ -68,6 +68,8 @@ Modes: same as Wave 2 (`fixtures` stub · `auto` live→stub · `api` live-only)
 
 - Full bilingual `profile_de` round-trip in magazine
 - Live tile image URLs mapped into public share CDN
-- Locked-tile rebuild semantics in magazine UI
-- Docs/knowledge CRUD for persona RAG
 - Dedicated eval harness for enrich quality
+
+### Shipped follow-up (2026-07-30)
+
+- **Locked-tile rebuild** — magazine lock/unlock + stub/native merge (`knowledge/persona-locked-tiles-2026.md`)

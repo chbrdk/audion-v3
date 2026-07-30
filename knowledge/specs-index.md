@@ -61,6 +61,7 @@ Remaining gaps / P0–P2: `knowledge/remaining-gaps.md`
 UX Journey Agent surface: `knowledge/ux-agent-surface.md`  
 AI workflows Wave 2: `knowledge/ai-workflows.md`  
 Persona enrich + moodboard (2026): `knowledge/persona-enrich-moodboard-2026.md`  
+Persona locked-tile rebuild: `knowledge/persona-locked-tiles-2026.md`  
 Journey phase AI + validate: `knowledge/journey-phase-ai-validate-2026.md`  
 Project research SSE polish: `knowledge/project-research-sse-2026.md`  
 TG + persona knowledge / profile_de: `knowledge/tg-persona-knowledge-profile-de-2026.md`  

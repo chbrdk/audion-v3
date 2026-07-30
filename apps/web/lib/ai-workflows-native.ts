@@ -54,6 +54,7 @@ import {
   storePatchTargetGroup,
   storeTargetGroupDetail,
 } from './fixtures/target-group-store'
+import { mergeMoodboardTiles } from './moodboard-tiles'
 import { personaVisualPath } from './paths'
 import { scheduleNativeResearchJob } from './ai/research-native'
 
@@ -559,11 +560,12 @@ export async function runNativeGenerateMoodboard(
     'Context space',
   ]
   const tileSlugs = ['tone-warm', 'material-soft', 'ui-calm', 'space-studio'] as const
-  const tiles = tileSlugs.map((slug, i) => ({
+  const candidates = tileSlugs.map((slug, i) => ({
     id: `mood-native-${personaId}-${i + 1}`,
     imageUrl: personaVisualPath(slug),
     category: slug.split('-')[0] ?? 'tone',
     caption: `${captions[i] ?? slug} · ${persona.name}`,
+    locked: false as const,
   }))
   // Optional: generate one hero tile via Images API when available
   try {
@@ -577,8 +579,8 @@ export async function runNativeGenerateMoodboard(
     const b64 = image.data?.[0]?.b64_json
     const url = image.data?.[0]?.url
     if (b64 || url) {
-      tiles[0] = {
-        ...tiles[0]!,
+      candidates[0] = {
+        ...candidates[0]!,
         imageUrl: b64 ? `data:image/png;base64,${b64}` : url!,
         caption: `Hero · ${persona.name}`,
       }
@@ -586,6 +588,7 @@ export async function runNativeGenerateMoodboard(
   } catch {
     /* keep fixture tile paths if image gen fails */
   }
+  const tiles = mergeMoodboardTiles(persona.visuals?.tiles ?? [], candidates)
   const visuals = { styleKeywords, tiles }
   const patched = storePatchPersona(personaId, { visuals })
   if (!patched) return { error: 'Persona not found', status: 404 }

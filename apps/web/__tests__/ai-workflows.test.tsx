@@ -14,7 +14,7 @@ import {
   runStubSuggestTargetGroups,
   runStubValidateJourney,
 } from '../lib/ai-workflows'
-import { resetPersonaStore, storePersonaDetail, storePersonaList } from '../lib/fixtures/persona-store'
+import { resetPersonaStore, storePatchPersona, storePersonaDetail, storePersonaList } from '../lib/fixtures/persona-store'
 import { resetTargetGroupStore, storeTargetGroupDetail } from '../lib/fixtures/target-group-store'
 import { resetJourneyStore, storeJourneyDetail } from '../lib/fixtures/journey-store'
 import { resetProjectStore } from '../lib/fixtures/project-store'
@@ -209,6 +209,44 @@ describe('AI workflow stubs', () => {
       error: 'Persona not found',
       status: 404,
     })
+  })
+
+  it('generateMoodboard preserves locked tiles across rebuild', () => {
+    resetPersonaStore()
+    const first = runStubGenerateMoodboard('persona-alex-morgan', {})
+    expect('error' in first).toBe(false)
+    if ('error' in first) return
+
+    const lockedTone = {
+      ...first.visuals.tiles[0]!,
+      id: 'locked-tone-keep',
+      category: 'tone',
+      imageUrl: '/fixtures/personas/visuals/locked-keep.svg',
+      caption: 'Locked atmosphere',
+      locked: true,
+    }
+    storePatchPersona('persona-alex-morgan', {
+      visuals: {
+        styleKeywords: first.visuals.styleKeywords,
+        tiles: [
+          lockedTone,
+          ...first.visuals.tiles.slice(1).map((t) => ({ ...t, locked: false })),
+        ],
+      },
+    })
+
+    const second = runStubGenerateMoodboard('persona-alex-morgan', {})
+    expect('error' in second).toBe(false)
+    if ('error' in second) return
+
+    const tone = second.visuals.tiles.find((t) => t.category.toLowerCase() === 'tone')
+    expect(tone).toMatchObject({
+      id: 'locked-tone-keep',
+      imageUrl: '/fixtures/personas/visuals/locked-keep.svg',
+      locked: true,
+    })
+    expect(second.visuals.tiles.filter((t) => t.locked)).toHaveLength(1)
+    expect(second.visuals.tiles.some((t) => t.category === 'material' && !t.locked)).toBe(true)
   })
 
   it('generateJourneyPhaseMoments merges moments into a phase', () => {
