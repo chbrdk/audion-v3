@@ -40,21 +40,18 @@ Nav: `msqdx-glass-admin-layout.tsx` — separate Profile + Settings items.
 | Display name (ECHON local or map from auth name) | Server profile email/company/avatar URL (needs auth) |
 | Theme toggle (ECHON-style) | Brand/sidebar color (v2 MUI glass) |
 | Locale toggle | Password change |
-| — | API tokens |
-| — | AI providers admin |
-| — | Prompts builder |
-| — | API docs iframe |
-| — | Projects settings redirect (use Projects workspace when built) |
-| Account band + logout (Plexon Wave 1) | Password change, API tokens, providers, prompts, API docs |
+| **Admin hub** `/settings/admin` — providers status, prompts+test, API catalog (`knowledge/settings-admin-2026.md`) | API tokens CRUD |
+| Account band + logout (Plexon Wave 1) | Full V2 PromptBuilder edit/persist |
 
-## C) audion-v3 (shipped 2026-07-30; Account Wave 1 2026-07-30)
+## C) audion-v3 (shipped 2026-07-30; Account Wave 1 2026-07-30; Admin hub 2026-07-30)
 
 - Route: `/settings` · `apps/web/app/settings/page.tsx` · `components/settings-page.tsx`
+- Admin hub: `/settings/admin*` · `knowledge/settings-admin-2026.md`
 - Prefs: `apps/web/lib/user-prefs.tsx` · keys in `paths` (`displayNameStorageKey`, `themeStorageKey`, `localeStorageKey`)
 - Account: NextAuth session → name/email from Plexon; Sign out → `/login` · see `knowledge/plexon-federation.md`
 - Shell: rail avatar enabled → `paths.routes.settings`
 - Spec: `specs/domain/settings.md`
-- Tests: `__tests__/projects-settings.test.tsx` · `app-shell.test.tsx` · `login-page.test.tsx`
+- Tests: `__tests__/projects-settings.test.tsx` · `settings-admin.test.*` · `app-shell.test.tsx` · `login-page.test.tsx`
 
 ## Recommended MVP composition
 
@@ -64,7 +61,8 @@ Single page `/settings` (ECHON chrome, not v2 card-landing):
 2. **Profile** — display name + Avatar preview (UserPrefs / localStorage; seed from session name when default).
 3. **Appearance** — ThemeToggle (`@msqdx/ui` ToggleGroup).
 4. **Language** — LocaleToggle.
-5. Enable rail avatar → `paths.routes.settings`; active when pathname starts with settings.
-6. Do not port providers/prompts/api-docs for MVP.
+5. **Admin** — link to `/settings/admin` (providers / prompts test / API docs).
+6. Enable rail avatar → `paths.routes.settings`; active when pathname starts with settings.
+7. Do not port API token CRUD yet.
 
 Clone order: see `knowledge/workspace-slice-pattern.md` (settings is prefs-only — lighter than domain slices; still add paths + specs + tests).

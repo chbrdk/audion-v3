@@ -134,6 +134,13 @@ export const paths = {
     apiChatSharePersona: (personaId: string) => `/api/share/personas/${personaId}`,
     apiChatShareMoodboard: (personaId: string) => `/api/share/personas/${personaId}/moodboard`,
     settings: '/settings',
+    settingsAdmin: '/settings/admin',
+    settingsAdminProviders: '/settings/admin/providers',
+    settingsAdminPrompts: '/settings/admin/prompts',
+    settingsAdminApiDocs: '/settings/admin/api-docs',
+    apiSettingsProviders: '/api/settings/providers',
+    apiSettingsPrompts: '/api/settings/prompts',
+    apiSettingsPromptTest: '/api/settings/prompts/test',
     apiHealth: '/api/health',
     /** Wave-1 AI stubs / Wave-2 live proxy — see knowledge/ai-workflows.md */
     apiAiGeneratePersonas: (tgId: string) =>

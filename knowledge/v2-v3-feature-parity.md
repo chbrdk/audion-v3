@@ -41,7 +41,7 @@ Env: `NEXT_PERSONA_DATA_SOURCE` (`fixtures` \| `auto` \| `api`), `NEXT_PERSONA_B
 | **Journeys** | Generate, phase/element AI, validate, UX-run→journey, tracking/insights | List/detail + phase slider + edit MVP + generate stub | Weak | `shipped` MVP · `stub` generate · `missing` validate/convert/agent |
 | **UX Studies** | API+MCP full (start/sync/evaluate/compare); **no web UI** | `/studies*` full loop + Soft-Q/Report/Compare/F-Fragen→Chat | V3 ahead (UI) | `v3_ahead` UI · `proxy` to V2 · `shipped` fixtures |
 | **Chat** | Stream, history, inspect_website, voice, Tavus, convert, share `/chat` | Editorial chat + history + study/persona prefill | Partial | `shipped` text MVP · `proxy` optional · `missing` voice/Tavus/share |
-| **Settings** | Providers, prompts+test, theme, profile, tokens, API docs | Display name / theme / locale prefs | Weak | `shipped` prefs · `missing` admin stack |
+| **Settings** | Providers, prompts+test, theme, profile, tokens, API docs | Prefs + `/settings/admin` hub | Partial | `shipped` prefs + admin hub · `missing` API tokens |
 | **Auth / Setup** | `/login`, `/register`, `/admin/setup` bootstrap | `/login` + `/setup` Easy Setup | Partial | `shipped` Easy Setup · login Wave 1 · register via Plexon |
 | **Queue / Ops** | `/admin/queue` | — | Missing | `missing` |
 | **UX Journey Agent UI** | `/admin/ux-journey-agent` | — (Studies Start/Sync can orchestrate via API) | Missing surface | `missing` UI · `proxy` via Studies |
@@ -56,7 +56,7 @@ Env: `NEXT_PERSONA_DATA_SOURCE` (`fixtures` \| `auto` \| `api`), `NEXT_PERSONA_B
 | Journeys | `/admin/journeys*` | `/journeys*` |
 | Studies | *(API only)* | `/studies*` |
 | Chat | `/admin/chat`, `/chat` | `/chat`, `/chat/history` |
-| Settings | `/admin/settings*` | `/settings` |
+| Settings | `/admin/settings*` | `/settings` · `/settings/admin*` |
 | Agent | `/admin/ux-journey-agent` | — |
 | Auth | `/login`, `/register` | `/login` · `/setup` |
 
@@ -144,8 +144,9 @@ Migration maps: `persona-migration-map.md` · `target-group-migration-map.md` ·
 | Capability | V3 status |
 |------------|-----------|
 | Display name / theme / locale | `shipped` |
-| Providers / prompts+test / tokens / API docs | `missing` |
-| Login / register / logout / password | `missing` |
+| Providers / prompts+test / API catalog | `shipped` (`/settings/admin` · `knowledge/settings-admin-2026.md`) |
+| API tokens | `missing` |
+| Login / logout (Plexon) | `shipped` Wave 1 · register via Plexon |
 | Queue dashboard | `missing` |
 
 ---
@@ -163,7 +164,7 @@ V3 registry: `knowledge/ai-workflows.md` · `apps/web/lib/ai-workflows.ts`
 | Easy Setup bootstrap | `/setup` + native bootstrap API | `shipped` |
 | Journey phase AI, validate, UX-run convert | — | `missing` |
 | UX Journey Agent run UI | — | `missing` (Studies Start can hit API) |
-| Prompt test | — | `missing` |
+| Prompt test | `/settings/admin/prompts` | `shipped` |
 | Chat stream + tools | Fixture / chat-api (`auto`/`api`) | `partial` (live stream; history fixtures) |
 
 Wave 2 goal: replace stubs with live proxy to persona-api / documented `target` paths.

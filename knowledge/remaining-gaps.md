@@ -27,6 +27,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | **TG + persona knowledge** | Magazine Accordion CRUD + sources list metadata |
 | **Chat modalities** | Share + moodboard strip + inspect HITL + convert; Voice/Tavus hooks |
 | **Easy Setup** | `/setup` magazine bootstrap — project + TG + persona (`knowledge/easy-setup-2026.md`) |
+| **Settings admin** | `/settings/admin` providers + prompts test + API catalog (`knowledge/settings-admin-2026.md`) |
 
 ## Priority backlog
 
@@ -55,7 +56,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 |------|-------|
 | ~~Auth~~ | **Done Wave 1** — `/login`, logout, Plexon session (`knowledge/plexon-federation.md`); open when unconfigured |
 | Queue | Job dashboard (V2 `/admin/queue`) |
-| Settings admin | Providers, prompts + test, API tokens, API docs |
+| ~~Settings admin~~ | **Done 2026-07-30** — hub `/settings/admin` (`knowledge/settings-admin-2026.md`); API tokens still open |
 | Chat modalities | ~~Public share, moodboard drawer, inspect/convert~~ **Done 2026-07-30** (`knowledge/chat-modalities-2026.md`); Voice/Tavus thin hooks |
 | ~~Easy Setup~~ | **Done 2026-07-30** — `/setup` + `POST /api/projects/bootstrap` (`knowledge/easy-setup-2026.md`) |
 
@@ -71,7 +72,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 ## Deferred depth (detail pointers)
 
 - Projects: federation, project prompts — `project-migration-map.md`; ~~bootstrap~~ → `easy-setup-2026.md`
-- Settings: full admin stack — `settings-migration.md`
+- Settings: full admin stack — ~~hub shipped~~ `settings-admin-2026.md`; tokens still open — `settings-migration.md`
 - Personas: see `persona-magazine.md` / `persona-migration-map.md`
 - TGs: `target-group-migration-map.md`
 - Journeys + Chat: `journeys-chat-gaps.md`

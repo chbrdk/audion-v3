@@ -151,6 +151,18 @@ export function SettingsPage() {
           }))}
         />
       </section>
+
+      <section className="audion-settings-section" data-testid="settings-admin-entry">
+        <SectionChrome quiet title="Admin" as="h2" />
+        <Text role="body" className="audion-settings-help">
+          Provider status, assist prompt test, and BFF route catalog.
+        </Text>
+        <p>
+          <Link href={paths.routes.settingsAdmin} className="audion-link">
+            Open settings admin
+          </Link>
+        </p>
+      </section>
     </div>
   )
 }
