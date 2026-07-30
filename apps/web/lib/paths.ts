@@ -32,6 +32,7 @@ export const paths = {
   journeyStorePath: 'apps/web/lib/fixtures/journey-store.ts',
   projectFixturesPath: 'apps/web/lib/fixtures/projects.ts',
   projectStorePath: 'apps/web/lib/fixtures/project-store.ts',
+  queueStorePath: 'apps/web/lib/fixtures/queue-store.ts',
   uxStudyFixturesPath: 'apps/web/lib/fixtures/ux-studies.ts',
   uxStudyStorePath: 'apps/web/lib/fixtures/ux-study-store.ts',
   /** Demo target for EBM Produktkombinationen (central key; resolve via backend/urls) */
@@ -141,6 +142,11 @@ export const paths = {
     apiSettingsProviders: '/api/settings/providers',
     apiSettingsPrompts: '/api/settings/prompts',
     apiSettingsPromptTest: '/api/settings/prompts/test',
+    queue: '/queue',
+    apiQueueStats: '/api/queue/stats',
+    apiQueueJobs: '/api/queue/jobs',
+    apiQueueJobDetail: (id: string) => `/api/queue/jobs/${id}`,
+    apiQueueJobRetry: (id: string) => `/api/queue/jobs/${id}/retry`,
     apiHealth: '/api/health',
     /** Wave-1 AI stubs / Wave-2 live proxy — see knowledge/ai-workflows.md */
     apiAiGeneratePersonas: (tgId: string) =>

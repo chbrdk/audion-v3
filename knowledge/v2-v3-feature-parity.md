@@ -43,7 +43,7 @@ Env: `NEXT_PERSONA_DATA_SOURCE` (`fixtures` \| `auto` \| `api`), `NEXT_PERSONA_B
 | **Chat** | Stream, history, inspect_website, voice, Tavus, convert, share `/chat` | Editorial chat + history + study/persona prefill | Partial | `shipped` text MVP · `proxy` optional · `missing` voice/Tavus/share |
 | **Settings** | Providers, prompts+test, theme, profile, tokens, API docs | Prefs + `/settings/admin` hub | Partial | `shipped` prefs + admin hub · `missing` API tokens |
 | **Auth / Setup** | `/login`, `/register`, `/admin/setup` bootstrap | `/login` + `/setup` Easy Setup | Partial | `shipped` Easy Setup · login Wave 1 · register via Plexon |
-| **Queue / Ops** | `/admin/queue` | — | Missing | `missing` |
+| **Queue / Ops** | `/admin/queue` | `/queue` fixtures | Partial | `shipped` fixture dashboard · no Celery/Redis |
 | **UX Journey Agent UI** | `/admin/ux-journey-agent` | — (Studies Start/Sync can orchestrate via API) | Missing surface | `missing` UI · `proxy` via Studies |
 
 ### Route map (quick)
@@ -57,6 +57,7 @@ Env: `NEXT_PERSONA_DATA_SOURCE` (`fixtures` \| `auto` \| `api`), `NEXT_PERSONA_B
 | Studies | *(API only)* | `/studies*` |
 | Chat | `/admin/chat`, `/chat` | `/chat`, `/chat/history` |
 | Settings | `/admin/settings*` | `/settings` · `/settings/admin*` |
+| Queue | `/admin/queue` | `/queue` |
 | Agent | `/admin/ux-journey-agent` | — |
 | Auth | `/login`, `/register` | `/login` · `/setup` |
 
@@ -147,7 +148,7 @@ Migration maps: `persona-migration-map.md` · `target-group-migration-map.md` ·
 | Providers / prompts+test / API catalog | `shipped` (`/settings/admin` · `knowledge/settings-admin-2026.md`) |
 | API tokens | `missing` |
 | Login / logout (Plexon) | `shipped` Wave 1 · register via Plexon |
-| Queue dashboard | `missing` |
+| Queue dashboard | `shipped` fixtures (`/queue` · `knowledge/queue-dashboard-2026.md`) |
 
 ---
 

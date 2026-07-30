@@ -5,7 +5,7 @@
 
 ## Verdict
 
-V3 is **not** feature-complete vs V2. Magazine MVP + UX Studies UI + AI Wave 2 + Plexon Auth Wave 1 are shipped; Queue/admin settings remain open. Studies UI is **ahead** of V2 (V2 is API/MCP only).
+V3 is **not** feature-complete vs V2. Magazine MVP + UX Studies UI + AI Wave 2 + Plexon Auth Wave 1 + Settings Admin hub + Queue fixtures are shipped. Studies UI is **ahead** of V2 (V2 is API/MCP only).
 
 ## Done (MVP)
 
@@ -28,6 +28,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | **Chat modalities** | Share + moodboard strip + inspect HITL + convert; Voice/Tavus hooks |
 | **Easy Setup** | `/setup` magazine bootstrap — project + TG + persona (`knowledge/easy-setup-2026.md`) |
 | **Settings admin** | `/settings/admin` providers + prompts test + API catalog (`knowledge/settings-admin-2026.md`) |
+| **Queue** | `/queue` document job fixtures (`knowledge/queue-dashboard-2026.md`) |
 
 ## Priority backlog
 
@@ -55,7 +56,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | Item | Notes |
 |------|-------|
 | ~~Auth~~ | **Done Wave 1** — `/login`, logout, Plexon session (`knowledge/plexon-federation.md`); open when unconfigured |
-| Queue | Job dashboard (V2 `/admin/queue`) |
+| ~~Queue~~ | **Done 2026-07-30** — `/queue` fixture dashboard (`knowledge/queue-dashboard-2026.md`) |
 | ~~Settings admin~~ | **Done 2026-07-30** — hub `/settings/admin` (`knowledge/settings-admin-2026.md`); API tokens still open |
 | Chat modalities | ~~Public share, moodboard drawer, inspect/convert~~ **Done 2026-07-30** (`knowledge/chat-modalities-2026.md`); Voice/Tavus thin hooks |
 | ~~Easy Setup~~ | **Done 2026-07-30** — `/setup` + `POST /api/projects/bootstrap` (`knowledge/easy-setup-2026.md`) |

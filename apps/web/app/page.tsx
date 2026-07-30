@@ -13,6 +13,9 @@ export default function HomePage() {
           <Link href={paths.routes.setup} className="audion-link">
             Easy setup
           </Link>
+          <Link href={paths.routes.queue} className="audion-link">
+            Queue
+          </Link>
           <Link href={paths.routes.personas} className="audion-link">
             Open first slice
           </Link>

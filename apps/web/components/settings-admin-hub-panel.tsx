@@ -19,6 +19,11 @@ const ADMIN_CARDS = [
     title: 'API docs',
     meta: 'Route catalog and health',
   },
+  {
+    href: paths.routes.queue,
+    title: 'Queue',
+    meta: 'Document job dashboard',
+  },
 ] as const
 
 export function SettingsAdminHubPanel() {

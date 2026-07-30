@@ -20,6 +20,13 @@ const API_CATALOG: Array<{ group: string; routes: Array<{ method: string; path: 
         { method: 'POST', path: paths.routes.apiSettingsPromptTest, note: 'Assist prompt test' },
       ],
     },
+      group: 'Queue',
+      routes: [
+        { method: 'GET', path: paths.routes.apiQueueStats, note: 'Job status counts' },
+        { method: 'GET', path: paths.routes.apiQueueJobs, note: 'Job list' },
+        { method: 'POST', path: paths.routes.apiQueueJobRetry('…'), note: 'Retry failed job' },
+      ],
+    },
     {
       group: 'Projects',
       routes: [

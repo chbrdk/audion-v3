@@ -58,6 +58,7 @@
 - Wave detail DS: `StatLede`/`StatLedeGroup`, `StatusDot`, `StatusMeterPanel` — also re-exported via `apps/web/lib/msqdx-ui.ts`
 - Settings route: `/settings` (`paths.routes.settings`)
 - Settings Admin hub: `/settings/admin*` · `paths.routes.settingsAdmin*` · `apiSettingsProviders` / `apiSettingsPrompts` / `apiSettingsPromptTest` · `knowledge/settings-admin-2026.md`
+- Queue dashboard: `/queue` · `paths.routes.queue` · `apiQueueStats` / `apiQueueJobs` / `apiQueueJobDetail` / `apiQueueJobRetry` · store `paths.queueStorePath` · `knowledge/queue-dashboard-2026.md`
 - User prefs keys: `audion.v3.displayName` · `audion.v3.theme` · `audion.v3.locale`
 - Workspace slice clone pattern: `knowledge/workspace-slice-pattern.md`
 - Chat routes: `/chat`, `/chat/history`
