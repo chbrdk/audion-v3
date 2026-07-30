@@ -45,14 +45,21 @@ describe('queue-store', () => {
     const completed = storeQueueList({ status: 'completed' }).items[0]!
     expect(storeRetryQueueJob(completed.id)).toEqual({
       error: 'Only failed jobs can be retried',
-      status: 400,
+      httpStatus: 400,
     })
   })
 
   it('returns 404 for unknown job retry', () => {
     expect(storeRetryQueueJob('missing-job')).toEqual({
       error: 'Job not found',
-      status: 404,
+      httpStatus: 404,
     })
+  })
+
+  it('queue API route modules resolve fixture store imports', async () => {
+    const stats = await import('../app/api/queue/stats/route')
+    const jobs = await import('../app/api/queue/jobs/route')
+    expect(typeof stats.GET).toBe('function')
+    expect(typeof jobs.GET).toBe('function')
   })
 })

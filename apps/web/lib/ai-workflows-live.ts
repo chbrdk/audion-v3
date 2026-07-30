@@ -38,6 +38,7 @@ import {
 } from './ai-workflows'
 import { fetchChatApi, fetchPersonaApi } from './persona-api-proxy'
 import { storeJourneyDetail, storePatchJourney } from './fixtures/journey-store'
+import { storeAppendValidationReport } from './fixtures/journey-validation-store'
 import { storePatchPersona } from './fixtures/persona-store'
 
 function liveMeta(
@@ -586,12 +587,13 @@ export async function runLiveValidateJourney(
   })
 
   const meta = liveMeta('validateJourney', { journeyId }, upstreamBody)
-  return {
+  return storeAppendValidationReport({
     ...meta,
     journeyId,
+    mode: body.mode ?? 'automated',
     overallFitScore: Number(json?.overall_fit_score ?? json?.overallFitScore ?? 0),
     validatedAt: String(json?.validated_at ?? json?.validatedAt ?? new Date().toISOString()),
     personaId: personaIds[0]!,
     phases,
-  }
+  })
 }

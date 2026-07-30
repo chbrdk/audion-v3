@@ -166,14 +166,14 @@ export function storeQueueStats(projectId?: string | null): QueueStatsResponse {
   }
 }
 
-export type QueueStoreError = { error: string; status: number }
+export type QueueStoreError = { error: string; httpStatus: number }
 
 export function storeRetryQueueJob(id: string): QueueJobDetail | QueueStoreError {
   const index = jobs.findIndex((j) => j.id === id)
-  if (index < 0) return { error: 'Job not found', status: 404 }
+  if (index < 0) return { error: 'Job not found', httpStatus: 404 }
   const current = jobs[index]!
   if (current.status !== 'failed') {
-    return { error: 'Only failed jobs can be retried', status: 400 }
+    return { error: 'Only failed jobs can be retried', httpStatus: 400 }
   }
   const next: QueueJobDetail = {
     ...current,

@@ -7,8 +7,8 @@ export async function POST(
 ) {
   const { jobId } = await context.params
   const result = storeRetryQueueJob(jobId)
-  if ('error' in result) {
-    return NextResponse.json({ error: result.error }, { status: result.status })
+  if ('httpStatus' in result) {
+    return NextResponse.json({ error: result.error }, { status: result.httpStatus })
   }
   return NextResponse.json(result)
 }
