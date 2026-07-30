@@ -36,7 +36,7 @@ import {
   buildTargetCall,
   FIELD_UPSTREAM,
   formatUpstreamPath,
-  runStubValidateJourney,
+  scoreValidateJourney,
 } from './ai-workflows'
 import { runAssist, runAssistJson } from './ai/assist'
 import {
@@ -47,6 +47,7 @@ import {
 } from './ai/client'
 import type { AssistTemplateId } from './ai/prompts/templates'
 import { storeCreateJourney, storeJourneyDetail, storePatchJourney } from './fixtures/journey-store'
+import { storeAppendValidationReport } from './fixtures/journey-validation-store'
 import { storeCreatePersona, storePatchPersona, storePersonaDetail } from './fixtures/persona-store'
 import { storeProjectDetail } from './fixtures/project-store'
 import { storeCreateResearchRun } from './fixtures/research-runs'
@@ -484,9 +485,69 @@ export async function runNativeValidateJourney(
   body: ValidateJourneyRequest,
   _authorization?: string | null,
 ): Promise<ValidateJourneyResponse | NativeError> {
-  const stub = runStubValidateJourney(journeyId, body)
-  if ('error' in stub) return stub
-  return { ...stub, stubbed: false }
+  const scored = scoreValidateJourney(journeyId, body)
+  if ('error' in scored) return scored
+
+  let phases = scored.phases
+  const chatMode = scored.mode === 'chat' || scored.mode === 'both'
+  if (chatMode) {
+    const persona = storePersonaDetail(scored.personaId)
+    const journey = storeJourneyDetail(journeyId)
+    if (persona && journey) {
+      const context = journey.phases
+        .map(
+          (p) =>
+            `- ${p.id} | ${p.name}: ${p.summary ?? ''} · moments: ${p.elements.map((e) => e.label).join('; ') || '(none)'}`,
+        )
+        .join('\n')
+      const assist = await runAssistJson<{
+        phaseQuotes?: Array<{
+          phaseId?: string
+          personaQuote?: string
+          friction?: string
+          recommendation?: string
+        }>
+      }>('journey.validate_chat', {
+        locale: 'en',
+        persona_profile: personaProfileText(persona),
+        context,
+      })
+      if (!('error' in assist) && assist.data.phaseQuotes?.length) {
+        const byId = new Map(
+          assist.data.phaseQuotes
+            .filter((q) => q.phaseId)
+            .map((q) => [q.phaseId!, q] as const),
+        )
+        phases = phases.map((phase) => {
+          const quote = byId.get(phase.phaseId)
+          if (!quote) return phase
+          const frictionPoints = [...phase.frictionPoints]
+          if (quote.personaQuote || quote.friction) {
+            frictionPoints.unshift({
+              description: quote.friction || `Persona chat reaction to ${phase.phaseName}`,
+              severity: phase.status === 'critical' ? 'high' : 'medium',
+              personaQuote: quote.personaQuote ?? null,
+            })
+          }
+          const recommendations = quote.recommendation
+            ? [quote.recommendation, ...phase.recommendations]
+            : phase.recommendations
+          return { ...phase, frictionPoints, recommendations }
+        })
+      }
+    }
+  }
+
+  const meta = nativeMeta('validateJourney', { journeyId }, scored.upstreamBody)
+  return storeAppendValidationReport({
+    ...meta,
+    journeyId: scored.journeyId,
+    mode: scored.mode,
+    overallFitScore: scored.overallFitScore,
+    validatedAt: new Date().toISOString(),
+    personaId: scored.personaId,
+    phases,
+  })
 }
 
 export async function runNativeGeneratePersonaAvatar(

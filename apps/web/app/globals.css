@@ -3876,6 +3876,14 @@ main { min-height: 100vh; }
   font-size: 0.85rem;
 }
 
+.audion-journey-validation-quote {
+  margin: 0.35rem 0 0;
+  padding-left: 0.65rem;
+  border-left: 2px solid color-mix(in srgb, var(--ink) 25%, transparent);
+  font-style: italic;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
 .audion-phase-moments-field {
   display: grid;
   gap: var(--space-2, 0.5rem);

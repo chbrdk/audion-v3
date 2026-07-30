@@ -182,6 +182,10 @@ export const paths = {
     apiAiGenerateJourneyPhaseMoments: (journeyId: string) =>
       `/api/ai/journeys/${journeyId}/phase/generate`,
     apiAiValidateJourney: (journeyId: string) => `/api/ai/journeys/${journeyId}/validate`,
+    apiAiJourneyValidationReports: (journeyId: string) =>
+      `/api/ai/journeys/${journeyId}/validation-reports`,
+    apiAiJourneyValidationReport: (journeyId: string, reportId: string) =>
+      `/api/ai/journeys/${journeyId}/validation-reports/${reportId}`,
     apiAiOptions: '/api/ai/options',
   },
   envPersonaDataSource: 'NEXT_PERSONA_DATA_SOURCE',

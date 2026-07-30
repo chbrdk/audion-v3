@@ -108,8 +108,8 @@ Migration maps: `persona-migration-map.md` · `target-group-migration-map.md` ·
 |------------|-----------|
 | List / detail / phase slider / phase edit | `shipped` |
 | Generate journey | `stub` |
-| Phase/moments AI | `missing` |
-| Validate / validation report | `missing` |
+| Phase/moments AI | `shipped` (stub/native) |
+| Validate / validation report | `shipped` — automated + chat mode + fixture history (`journey-phase-ai-validate-2026.md`) |
 | UX-run → journey convert | `missing` |
 | Tracking / insights | `missing` |
 | Dedicated UX Journey Agent page | `missing` |
@@ -163,7 +163,7 @@ V3 registry: `knowledge/ai-workflows.md` · `apps/web/lib/ai-workflows.ts`
 | Generate persona (TG), avatar, field suggest | Live/`auto` proxy | `proxy` (stub fallback) |
 | Enrich-all, moodboard rebuild, translate, ensure chat prompt | Enrich + moodboard + locked tiles | Enrich/moodboard/`locked` `shipped`; translate / ensure chat prompt `missing` |
 | Easy Setup bootstrap | `/setup` + native bootstrap API | `shipped` |
-| Journey phase AI, validate, UX-run convert | — | `missing` |
+| Journey phase AI, validate, UX-run convert | Moments + validate (+ chat/history) | `shipped` (stub/native); UX-run convert already shipped |
 | UX Journey Agent run UI | — | `missing` (Studies Start can hit API) |
 | Prompt test | `/settings/admin/prompts` | `shipped` |
 | Chat stream + tools | Fixture / chat-api (`auto`/`api`) | `partial` (live stream; history fixtures) |

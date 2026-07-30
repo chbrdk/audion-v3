@@ -23,11 +23,18 @@
 |----------|------|----------|
 | `generateJourneyPhaseMoments` | `POST /api/ai/journeys/[id]/phase/generate` | `POST /journeys/{id}/ai/generate` (`template_id: journey.moments`) |
 | `validateJourney` | `POST /api/ai/journeys/[id]/validate` | `POST /journeys/{id}/validate` |
+| Validation report history | `GET /api/ai/journeys/[id]/validation-reports` · `…/validation-reports/[reportId]` | Fixture store (V2 GET re-scores; v3 caches) |
 
-UI: phase slide **Generate moments**; journey topbar **Validate**.
+UI: phase slide **Generate moments**; journey topbar **Validate** (mode: automated / chat / both + report history).
+
+### Chat-mode validate (2026-07-30)
+
+- Request `mode: 'chat' | 'both'` honored in stub (persona quotes) and native (`journey.validate_chat` assist)
+- Successful validates append to `lib/fixtures/journey-validation-store.ts`
+- Paths: `paths.routes.apiAiJourneyValidationReports` · `apiAiJourneyValidationReport`
 
 ## Deferred
 
-- GET `validation-report` cache / history
-- Chat-mode validation
 - Per-element kind AI (`journey.phase.create` / name)
+- Durable Postgres history (still in-memory fixtures)
+- Deep-link “Open in Chat” from quotes

@@ -234,6 +234,8 @@ export type ValidateJourneyRequest = {
   mode?: 'automated' | 'chat' | 'both'
 }
 
+export type JourneyValidationMode = NonNullable<ValidateJourneyRequest['mode']>
+
 export type JourneyFrictionPoint = {
   description: string
   severity: 'low' | 'medium' | 'high'
@@ -251,8 +253,28 @@ export type JourneyPhaseValidation = {
 
 export type ValidateJourneyResponse = AiStubMeta & {
   journeyId: string
+  reportId: string
+  mode: JourneyValidationMode
   overallFitScore: number
   validatedAt: string
   personaId: string
   phases: JourneyPhaseValidation[]
+}
+
+/** Persisted validation report (fixture history). */
+export type JourneyValidationReport = ValidateJourneyResponse
+
+export type JourneyValidationReportSummary = {
+  id: string
+  journeyId: string
+  personaId: string
+  mode: JourneyValidationMode
+  overallFitScore: number
+  validatedAt: string
+  stubbed: boolean
+}
+
+export type JourneyValidationReportList = {
+  items: JourneyValidationReportSummary[]
+  total: number
 }

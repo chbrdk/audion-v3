@@ -1,41 +1,49 @@
 # Journey API Consumption
 
-**Status:** Accepted — 2026-07-29 · Implemented fixture routes 2026-07-29  
-**Contracts:** `@audion-v3/contracts` journeys  
+**Status:** Accepted — 2026-07-29 · Fixture CRUD + AI validate/history 2026-07-30  
+**Contracts:** `@audion-v3/contracts` journeys · ai-workflows  
 **Config:** `apps/web/lib/runtime-config.ts` · `paths.ts`  
-**Legacy:** AUDION-v2 `apps/api/app/routers/journeys.py`
+**Legacy:** AUDION-v2 `apps/api/app/routers/journeys.py`  
+**Knowledge:** `knowledge/journey-phase-ai-validate-2026.md`
 
 ## Source backend
 
-AUDION v3 consumes the existing AUDION journey API and does not reimplement generation/validation services in MVP. Fixture mode uses an in-memory store + Next route handlers.
+Fixture mode uses an in-memory store + Next route handlers. Native AI (`NEXT_AI_RUNTIME`) runs validate/moments in-process; live persona-api proxy remains available for generate when configured.
 
-## Endpoints (upstream)
+## Endpoints (upstream intent)
 
-### MVP
+### Shipped (v3 BFF or upstream)
 
 - `GET /journeys?page=1&page_size=50[&project_id=…][&target_group_id=…]`
 - `GET /journeys/{journeyId}`
 - `POST /journeys` — body `JourneyWritePayload`
-- `PUT` or `PATCH /journeys/{journeyId}` — body `Partial<JourneyWritePayload>` (prefer PATCH in v3 Next proxies)
+- `PATCH /journeys/{journeyId}` — body `Partial<JourneyWritePayload>`
 - `DELETE /journeys/{journeyId}`
+- `POST /journeys/generate` · project generate journey (Wave 2 stub/native)
+- `POST /journeys/{id}/ai/generate` — phase moments (`template_id: journey.moments`)
+- `POST /journeys/{id}/validate` — body `{ persona_ids, mode?: automated|chat|both }`
+- Convert from UX run — `POST /api/journeys/from-ux-run` (fixture + live)
 
-### Deferred (wire when product slice lands)
+### Deferred
 
-- `POST /journeys/generate`
-- `POST /journeys/{id}/validate` · `GET …/validation-report`
-- Phase/element/expectation CRUD under `/journeys/{id}/phases*`
+- Phase/element/expectation CRUD under `/journeys/{id}/phases*` (v3 patches full `phases[]` on journey)
 - `GET …/measurements` · `…/insights` · `…/changes`
-- Convert from UX run (`journeys_from_ux_runs`)
+- Durable Postgres validation history (v3 caches in fixture store)
 
-## Local Next (fixture writes)
+## Local Next (fixture + AI)
 
-| Method | Path | Store |
+| Method | Path | Notes |
 |--------|------|--------|
 | `GET` | `/api/journeys` | list + filter |
-| `POST` | `/api/journeys` (`paths.routes.apiJourneys`) | `storeCreateJourney` |
-| `GET`/`PATCH`/`DELETE` | `/api/journeys/[journeyId]` | get / patch / `storeDeleteJourney` |
+| `POST` | `/api/journeys` | `storeCreateJourney` |
+| `GET`/`PATCH`/`DELETE` | `/api/journeys/[journeyId]` | get / patch / delete |
+| `POST` | `/api/ai/journeys/[journeyId]/phase/generate` | moments |
+| `POST` | `/api/ai/journeys/[journeyId]/validate` | fit report; appends history |
+| `GET` | `/api/ai/journeys/[journeyId]/validation-reports` | history list |
+| `GET` | `/api/ai/journeys/[journeyId]/validation-reports/[reportId]` | report detail |
 
-Seed: `apps/web/lib/fixtures/journeys.ts` · store: `journey-store.ts`
+Paths: `paths.routes.apiAiValidateJourney` · `apiAiJourneyValidationReports` · `apiAiJourneyValidationReport`  
+Store: `apps/web/lib/fixtures/journey-validation-store.ts`
 
 ## Runtime rules
 

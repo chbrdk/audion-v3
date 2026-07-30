@@ -35,6 +35,7 @@ import type {
   ValidateJourneyResponse,
 } from '@audion-v3/contracts'
 import { storeCreateJourney, storeJourneyDetail, storePatchJourney } from './fixtures/journey-store'
+import { storeAppendValidationReport } from './fixtures/journey-validation-store'
 import { storeCreatePersona, storePatchPersona, storePersonaDetail } from './fixtures/persona-store'
 import {
   storePatchTargetGroup,
@@ -766,10 +767,20 @@ function fitStatus(score: number): 'good' | 'warning' | 'critical' {
   return 'critical'
 }
 
-export function runStubValidateJourney(
+export function scoreValidateJourney(
   journeyId: string,
   body: ValidateJourneyRequest,
-): ValidateJourneyResponse | { error: string; status: number } {
+):
+  | {
+      journeyId: string
+      mode: NonNullable<ValidateJourneyRequest['mode']>
+      overallFitScore: number
+      validatedAt: string
+      personaId: string
+      phases: ValidateJourneyResponse['phases']
+      upstreamBody: Record<string, unknown>
+    }
+  | { error: string; status: number } {
   const journey = storeJourneyDetail(journeyId)
   if (!journey) return { error: 'Journey not found', status: 404 }
   const personaIds = body.persona_ids?.filter(Boolean) ?? []
@@ -778,14 +789,17 @@ export function runStubValidateJourney(
   const persona = storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
 
+  const mode = body.mode ?? 'automated'
+  const chatMode = mode === 'chat' || mode === 'both'
   const upstreamBody: Record<string, unknown> = {
     persona_ids: personaIds,
-    mode: body.mode ?? 'automated',
+    mode,
   }
-  const meta = stubMeta('validateJourney', { journeyId }, upstreamBody)
 
   const goalHints = persona.goals.map((g) => g.label.toLowerCase())
   const painHints = persona.frustrations.map((f) => f.label.toLowerCase())
+  const firstGoal = persona.goals[0]?.label
+  const firstPain = persona.frustrations[0]?.label
 
   const phases = journey.phases.map((phase) => {
     const density = Math.min(100, 40 + phase.elements.length * 12)
@@ -796,6 +810,7 @@ export function runStubValidateJourney(
     if (goalHit) fitScore = Math.min(100, fitScore + 12)
     if (painHit) fitScore = Math.min(100, fitScore + 8)
     if (!phase.elements.length) fitScore = Math.max(20, fitScore - 25)
+    if (chatMode && !goalHit) fitScore = Math.max(15, fitScore - 6)
     fitScore = Math.round(fitScore * 10) / 10
 
     const frictionPoints =
@@ -804,16 +819,30 @@ export function runStubValidateJourney(
             {
               description: `Phase “${phase.name}” has no moments for ${persona.name} to react to.`,
               severity: 'high' as const,
-              personaQuote: `I need concrete steps in ${phase.name}.`,
+              personaQuote: chatMode
+                ? `As ${persona.name}: “I stall in ${phase.name} — there is nothing concrete to do.”`
+                : `I need concrete steps in ${phase.name}.`,
             },
           ]
         : painHit
-          ? []
+          ? chatMode
+            ? [
+                {
+                  description: `Persona voice: ${phase.name} echoes a known frustration.`,
+                  severity: 'low' as const,
+                  personaQuote: firstPain
+                    ? `“This reminds me of ${firstPain} — good that you named it.”`
+                    : `“I feel seen in ${phase.name}.”`,
+                },
+              ]
+            : []
           : [
               {
                 description: `Little explicit connection to ${persona.name}'s known frustrations.`,
                 severity: 'medium' as const,
-                personaQuote: null,
+                personaQuote: chatMode
+                  ? `As ${persona.name}: “In ${phase.name} I still wonder how this helps with ${firstPain || 'my blockers'}.”`
+                  : null,
               },
             ]
 
@@ -821,10 +850,18 @@ export function runStubValidateJourney(
     if (!phase.elements.length) {
       recommendations.push('Generate moments for this phase before validating again.')
     } else if (!goalHit) {
-      recommendations.push(`Tie a moment to a goal of ${persona.name}.`)
+      recommendations.push(
+        chatMode && firstGoal
+          ? `Ask ${persona.name} in chat how ${phase.name} advances “${firstGoal}”.`
+          : `Tie a moment to a goal of ${persona.name}.`,
+      )
     }
     if (fitScore < 70) {
-      recommendations.push('Add a decision or handoff moment with a clear owner.')
+      recommendations.push(
+        chatMode
+          ? 'Run a short persona chat on the weakest handoff, then re-validate.'
+          : 'Add a decision or handoff moment with a clear owner.',
+      )
     }
 
     return {
@@ -843,13 +880,32 @@ export function runStubValidateJourney(
       : Math.round((phases.reduce((sum, p) => sum + p.fitScore, 0) / phases.length) * 10) / 10
 
   return {
-    ...meta,
     journeyId,
+    mode,
     overallFitScore,
     validatedAt: new Date().toISOString(),
     personaId,
     phases,
+    upstreamBody,
   }
+}
+
+export function runStubValidateJourney(
+  journeyId: string,
+  body: ValidateJourneyRequest,
+): ValidateJourneyResponse | { error: string; status: number } {
+  const scored = scoreValidateJourney(journeyId, body)
+  if ('error' in scored) return scored
+  const meta = stubMeta('validateJourney', { journeyId }, scored.upstreamBody)
+  return storeAppendValidationReport({
+    ...meta,
+    journeyId: scored.journeyId,
+    mode: scored.mode,
+    overallFitScore: scored.overallFitScore,
+    validatedAt: scored.validatedAt,
+    personaId: scored.personaId,
+    phases: scored.phases,
+  })
 }
 
 export function targetHint(workflowId: AiWorkflowId): string {

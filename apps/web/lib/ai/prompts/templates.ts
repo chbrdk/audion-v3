@@ -14,6 +14,7 @@ export type AssistTemplateId =
   | 'target_group.suggest_personas'
   | 'journey.moments'
   | 'journey.full_generation'
+  | 'journey.validate_chat'
   | 'persona.generate_batch'
   | 'persona.enrich_facets'
   | 'moodboard.style_keywords'
@@ -99,6 +100,12 @@ export const ASSIST_TEMPLATES: Record<AssistTemplateId, AssistTemplate> = {
     json: true,
     system: `You generate a customer journey with 3–5 phases. Locale: ${LOCALE}. Return JSON: {"name":"...","description":"...","phases":[{"name":"...","summary":"...","elements":[{"kind":"action|thought|feeling|pain|opportunity","label":"..."}]}]}`,
     user: `Generate a journey from:\n${CONTEXT}`,
+  },
+  'journey.validate_chat': {
+    id: 'journey.validate_chat',
+    json: true,
+    system: `You are the persona validating a journey map in chat mode. Locale: ${LOCALE}. Return JSON: {"phaseQuotes":[{"phaseId":"...","personaQuote":"...","friction":"...","recommendation":"..."}]}`,
+    user: `Persona:\n${PROFILE}\n\nJourney phases to react to:\n${CONTEXT}\n\nSpeak in first person as the persona. One entry per phaseId.`,
   },
   'persona.generate_batch': {
     id: 'persona.generate_batch',

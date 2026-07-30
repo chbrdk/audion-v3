@@ -17,12 +17,17 @@ import {
 import { resetPersonaStore, storePatchPersona, storePersonaDetail, storePersonaList } from '../lib/fixtures/persona-store'
 import { resetTargetGroupStore, storeTargetGroupDetail } from '../lib/fixtures/target-group-store'
 import { resetJourneyStore, storeJourneyDetail } from '../lib/fixtures/journey-store'
+import {
+  resetJourneyValidationStore,
+  storeListValidationReports,
+} from '../lib/fixtures/journey-validation-store'
 import { resetProjectStore } from '../lib/fixtures/project-store'
 
 afterEach(() => {
   resetPersonaStore()
   resetTargetGroupStore()
   resetJourneyStore()
+  resetJourneyValidationStore()
   resetProjectStore()
 })
 
@@ -281,13 +286,36 @@ describe('AI workflow stubs', () => {
     if ('error' in result) return
     expect(result.stubbed).toBe(true)
     expect(result.workflowId).toBe('validateJourney')
+    expect(result.mode).toBe('automated')
+    expect(result.reportId).toBeTruthy()
     expect(result.overallFitScore).toBeGreaterThan(0)
     expect(result.phases.length).toBe(4)
     expect(result.phases[0]?.status).toMatch(/good|warning|critical/)
+    expect(storeListValidationReports('journey-product-discovery').total).toBe(1)
 
     expect(runStubValidateJourney('journey-product-discovery', { persona_ids: [] })).toMatchObject({
       error: 'At least one persona_id required',
       status: 400,
     })
+  })
+
+  it('validateJourney chat mode adds persona quotes and appends history', () => {
+    const first = runStubValidateJourney('journey-product-discovery', {
+      persona_ids: ['persona-alex-morgan'],
+      mode: 'automated',
+    })
+    expect('error' in first).toBe(false)
+
+    const chat = runStubValidateJourney('journey-product-discovery', {
+      persona_ids: ['persona-alex-morgan'],
+      mode: 'chat',
+    })
+    expect('error' in chat).toBe(false)
+    if ('error' in chat) return
+    expect(chat.mode).toBe('chat')
+    expect(chat.phases.some((p) => p.frictionPoints.some((fp) => Boolean(fp.personaQuote)))).toBe(
+      true,
+    )
+    expect(storeListValidationReports('journey-product-discovery').total).toBe(2)
   })
 })

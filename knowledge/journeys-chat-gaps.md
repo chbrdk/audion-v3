@@ -26,3 +26,4 @@
 ## Shipped (2026-07-30)
 
 - Journeys: **phase moments AI** + **validate report** — `knowledge/journey-phase-ai-validate-2026.md`
+- Journeys: **chat-mode validate** + **report history** (fixture store + GET BFF) — same doc
