@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server'
 import type { SuggestPersonasRequest } from '@audion-v3/contracts'
-import { runStubSuggestPersonas, withAiLiveOrStub } from '../../../../../../lib/ai-workflows'
-import { runLiveSuggestPersonas } from '../../../../../../lib/ai-workflows-live'
+import { runStubSuggestPersonas, withAiNativeOrStub } from '../../../../../../lib/ai-workflows'
+import { runNativeSuggestPersonas } from '../../../../../../lib/ai-workflows-native'
 
 type Params = { params: Promise<{ projectId: string }> }
 
 export async function POST(request: Request, { params }: Params) {
   const { projectId } = await params
   const body = (await request.json().catch(() => ({}))) as SuggestPersonasRequest
-  const resolved = await withAiLiveOrStub(
+  const resolved = await withAiNativeOrStub(
     request,
-    (authorization) => runLiveSuggestPersonas(projectId, body, authorization),
+    (authorization) => runNativeSuggestPersonas(projectId, body, authorization),
     () => runStubSuggestPersonas(projectId, body),
   )
   if (!resolved.ok) {

@@ -1,6 +1,6 @@
 /**
- * Fixture research runs — poll spine + SSE events (2026 async job pattern).
- * Spec twin: knowledge/project-research-sse-2026.md
+ * Fixture research runs — time-based stubs + native in-process job overrides.
+ * Spec twin: knowledge/project-research-sse-2026.md · knowledge/ai-native-2026.md
  */
 
 import type {
@@ -17,6 +17,12 @@ type RunRecord = {
   seedUrl: string
   createdAt: number
   stubbed: boolean
+  /** Native job overrides time-based stub progression */
+  nativeStatus?: ResearchRunStatus
+  nativeEvents?: ResearchProgressEvent[]
+  nativeSummary?: ResearchSummarySection[] | null
+  nativeError?: string | null
+  nativeRaw?: Record<string, unknown> | null
 }
 
 const runs = new Map<string, RunRecord>()
@@ -31,15 +37,74 @@ export function storeCreateResearchRun(
   stubbed = true,
   createdAt = Date.now(),
 ): string {
-  const runId = `research-stub-${projectId}-${Date.now().toString(36)}`
+  const runId = stubbed
+    ? `research-stub-${projectId}-${Date.now().toString(36)}`
+    : `research-native-${projectId}-${Date.now().toString(36)}`
+  const baseEvent: ResearchProgressEvent = {
+    id: `${runId}-run_queued`,
+    eventType: 'run_queued',
+    message: 'Research run queued',
+    createdAt: new Date(createdAt).toISOString(),
+  }
   runs.set(runId, {
     projectId,
     runId,
     seedUrl: seedUrl || 'https://example.com',
     createdAt,
     stubbed,
+    nativeStatus: stubbed ? undefined : 'queued',
+    nativeEvents: stubbed ? undefined : [baseEvent],
+    nativeSummary: stubbed ? undefined : null,
+    nativeError: null,
+    nativeRaw: null,
   })
   return runId
+}
+
+export function storeMarkResearchRunning(runId: string): void {
+  const run = runs.get(runId)
+  if (!run || run.stubbed) return
+  run.nativeStatus = 'running'
+  storeAppendResearchEvent(runId, 'run_started', 'Worker picked up run')
+}
+
+export function storeAppendResearchEvent(
+  runId: string,
+  eventType: ResearchProgressEvent['eventType'],
+  message: string,
+  payload?: Record<string, unknown>,
+): void {
+  const run = runs.get(runId)
+  if (!run) return
+  const events = run.nativeEvents ?? []
+  events.push({
+    id: `${runId}-${eventType}-${events.length}`,
+    eventType,
+    message,
+    createdAt: new Date().toISOString(),
+    payload,
+  })
+  run.nativeEvents = events
+}
+
+export function storeCompleteResearchRun(
+  runId: string,
+  summaryEn: ResearchSummarySection[],
+  raw?: Record<string, unknown> | null,
+): void {
+  const run = runs.get(runId)
+  if (!run) return
+  run.nativeStatus = 'succeeded'
+  run.nativeSummary = summaryEn
+  run.nativeRaw = raw ?? null
+}
+
+export function storeFailResearchRun(runId: string, error: string): void {
+  const run = runs.get(runId)
+  if (!run) return
+  run.nativeStatus = 'failed'
+  run.nativeError = error
+  storeAppendResearchEvent(runId, 'run_failed', error)
 }
 
 function elapsedMs(run: RunRecord): number {
@@ -47,6 +112,7 @@ function elapsedMs(run: RunRecord): number {
 }
 
 function statusFor(run: RunRecord): ResearchRunStatus {
+  if (!run.stubbed && run.nativeStatus) return run.nativeStatus
   const t = elapsedMs(run)
   if (t < 800) return 'queued'
   if (t < 4200) return 'running'
@@ -54,6 +120,7 @@ function statusFor(run: RunRecord): ResearchRunStatus {
 }
 
 function eventsFor(run: RunRecord): ResearchProgressEvent[] {
+  if (!run.stubbed && run.nativeEvents) return run.nativeEvents
   const t = elapsedMs(run)
   const base = run.createdAt
   const mk = (
@@ -135,7 +202,7 @@ export function storeResearchStatus(
     runId,
     status: statusFor(run),
     events: eventsFor(run),
-    error: null,
+    error: run.nativeError ?? null,
   }
 }
 
@@ -146,7 +213,7 @@ export function storeResearchLatest(projectId: string): ResearchLatestResponse {
   const latest = projectRuns[0]
   if (!latest || statusFor(latest) !== 'succeeded') {
     return {
-      stubbed: true,
+      stubbed: latest?.stubbed ?? true,
       projectId,
       runId: latest?.runId ?? null,
       status: latest ? statusFor(latest) : 'missing',
@@ -154,22 +221,22 @@ export function storeResearchLatest(projectId: string): ResearchLatestResponse {
       raw: null,
     }
   }
-  const summaryEn = stubSummary(latest)
+  const summaryEn = !latest.stubbed && latest.nativeSummary ? latest.nativeSummary : stubSummary(latest)
   return {
     stubbed: latest.stubbed,
     projectId,
     runId: latest.runId,
     status: 'succeeded',
     summaryEn,
-    raw: {
-      summary_en: Object.fromEntries(
-        summaryEn.map((s) => [s.key, { claims: s.claims }]),
-      ),
-    },
+    raw:
+      latest.nativeRaw ??
+      ({
+        summary_en: Object.fromEntries(summaryEn.map((s) => [s.key, { claims: s.claims }])),
+      } as Record<string, unknown>),
   }
 }
 
-/** SSE body lines for stub stream (event: progress / done). */
+/** SSE body lines for stub/native stream (event: progress / done). */
 export function storeResearchSseChunks(
   projectId: string,
   runId: string,
@@ -184,9 +251,7 @@ export function storeResearchSseChunks(
     const idx = events.findIndex((e) => e.id === after || e.createdAt === after)
     if (idx >= 0) events = events.slice(idx + 1)
   }
-  const lines = events.map(
-    (e) => `event: progress\ndata: ${JSON.stringify(e)}\n\n`,
-  )
+  const lines = events.map((e) => `event: progress\ndata: ${JSON.stringify(e)}\n\n`)
   if (status.status === 'succeeded' || status.status === 'failed') {
     lines.push(`event: done\ndata: ${JSON.stringify({ runId, status: status.status })}\n\n`)
   }

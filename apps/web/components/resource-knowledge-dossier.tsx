@@ -21,19 +21,17 @@ function newEntryId(): string {
  */
 export function ResourceKnowledgeDossier({
   title = 'Knowledge',
-  entries,
+  entries = [],
   documents = [],
   listUrl,
-  entryUrl,
 }: {
   title?: string
-  entries: KnowledgeEntry[]
+  entries?: KnowledgeEntry[]
   documents?: DocumentSource[]
-  /** GET list · POST create */
+  /** GET list · POST create; PUT/DELETE use `${listUrl}/${entryId}` */
   listUrl: string
-  /** PUT/DELETE single entry */
-  entryUrl: (entryId: string) => string
 }) {
+  const entryUrl = (entryId: string) => `${listUrl}/${entryId}`
   const router = useRouter()
   const titleRef = useRef<HTMLInputElement>(null)
   const skipBlurSave = useRef(false)

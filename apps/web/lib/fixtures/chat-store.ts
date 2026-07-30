@@ -99,17 +99,13 @@ function fixtureReply(message: string, personaName: string | null, proposedTool:
   return `## From ${who}\n\nYou asked: *${message.trim()}*\n\nHere is a concise take grounded in the magazine brief:\n\n1. Keep decisions tied to evidence\n2. Prefer short loops over big decks\n3. Come back with one concrete next step`
 }
 
-/** Fake NDJSON stream for fixture mode. */
-export function* storeChatFakeStream(payload: ChatSendPayload): Generator<ChatStreamEvent> {
+/** Persist user turn; shared by fixture + native chat. */
+export function storeChatBeginUserTurn(
+  payload: ChatSendPayload,
+): { conversationId: string; personaName: string | null } | { error: string } {
   const message = payload.message.trim()
-  if (!message) {
-    yield { type: 'error', message: 'Message is required' }
-    return
-  }
-  if (!payload.personaId.trim()) {
-    yield { type: 'error', message: 'personaId is required' }
-    return
-  }
+  if (!message) return { error: 'Message is required' }
+  if (!payload.personaId.trim()) return { error: 'personaId is required' }
 
   let conversation = payload.conversationId
     ? conversations.find((c) => c.id === payload.conversationId)
@@ -149,13 +145,50 @@ export function* storeChatFakeStream(payload: ChatSendPayload): Generator<ChatSt
     conversations = conversations.map((c) => (c.id === conversation!.id ? conversation! : c))
   }
 
+  return { conversationId: conversation.id, personaName }
+}
+
+export function storeChatAppendAssistant(
+  conversationId: string,
+  content: string,
+): { conversationId: string; messageId: string } {
+  const conversation = conversations.find((c) => c.id === conversationId)
+  const assistantId = `m-asst-${Date.now().toString(36)}`
+  if (!conversation) {
+    return { conversationId, messageId: assistantId }
+  }
+  const assistantMsg: ChatMessage = {
+    id: assistantId,
+    role: 'assistant',
+    content,
+    createdAt: new Date().toISOString(),
+    status: 'complete',
+  }
+  const next = {
+    ...conversation,
+    messages: [...conversation.messages, assistantMsg],
+    updatedAt: assistantMsg.createdAt,
+    preview: content.slice(0, 80),
+  }
+  conversations = conversations.map((c) => (c.id === conversationId ? next : c))
+  return { conversationId, messageId: assistantId }
+}
+
+/** Fake NDJSON stream for stub AI runtime. */
+export function* storeChatFakeStream(payload: ChatSendPayload): Generator<ChatStreamEvent> {
+  const turn = storeChatBeginUserTurn(payload)
+  if ('error' in turn) {
+    yield { type: 'error', message: turn.error }
+    return
+  }
+
   const proposal = maybeProposeInspectWebsite(
-    message,
+    payload.message.trim(),
     payload.personaId,
     payload.projectId ?? null,
-    conversation.id,
+    turn.conversationId,
   )
-  const reply = fixtureReply(message, personaName, Boolean(proposal))
+  const reply = fixtureReply(payload.message.trim(), turn.personaName, Boolean(proposal))
   const chunks = reply.match(/.{1,24}/gs) || [reply]
   for (const chunk of chunks) {
     yield { type: 'delta', text: chunk }
@@ -165,21 +198,6 @@ export function* storeChatFakeStream(payload: ChatSendPayload): Generator<ChatSt
     yield proposal
   }
 
-  const assistantId = `m-asst-${Date.now().toString(36)}`
-  const assistantMsg: ChatMessage = {
-    id: assistantId,
-    role: 'assistant',
-    content: reply,
-    createdAt: new Date().toISOString(),
-    status: 'complete',
-  }
-  conversation = {
-    ...conversation,
-    messages: [...conversation.messages, assistantMsg],
-    updatedAt: assistantMsg.createdAt,
-    preview: reply.slice(0, 80),
-  }
-  conversations = conversations.map((c) => (c.id === conversation!.id ? conversation! : c))
-
-  yield { type: 'done', conversationId: conversation.id, messageId: assistantId }
+  const done = storeChatAppendAssistant(turn.conversationId, reply)
+  yield { type: 'done', conversationId: done.conversationId, messageId: done.messageId }
 }

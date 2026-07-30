@@ -145,7 +145,6 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
           entries={persona.knowledgeEntries}
           documents={persona.documents}
           listUrl={paths.routes.apiPersonaKnowledge(persona.id)}
-          entryUrl={(entryId) => paths.routes.apiPersonaKnowledgeEntry(persona.id, entryId)}
         />
 
         <PersonaEditableVisuals personaId={persona.id} visuals={persona.visuals} />

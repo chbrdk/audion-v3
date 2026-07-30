@@ -1,7 +1,7 @@
 /**
- * AI workflow registry — single source of truth for V2 target calls.
- * Wave 1 stubs fixtures; Wave 2 proxies via getPersonaBackendBase() / chat-api.
- * Spec twin: knowledge/ai-workflows.md
+ * AI workflow registry + stubs.
+ * Live path: native OpenAI (`ai-workflows-native.ts`) via withAiNativeOrStub.
+ * Spec twin: knowledge/ai-workflows.md · knowledge/ai-native-2026.md
  */
 
 import type {
@@ -856,8 +856,11 @@ export function targetHint(workflowId: AiWorkflowId): string {
 
 type AiErr = { error: string; status: number; detail?: string }
 
-/** Route helper: try live when preferred; fall back to stub unless api-only. */
-export async function withAiLiveOrStub<T extends { stubbed: boolean }>(
+/**
+ * Route helper: try native AI when preferred; fall back to stub unless native-required.
+ * `live` callback is the native runner (name kept for call-site compatibility).
+ */
+export async function withAiNativeOrStub<T extends { stubbed: boolean }>(
   request: Request,
   live: (authorization: string | null) => Promise<T | AiErr>,
   stub: () => T | { error: string; status: number },
@@ -883,3 +886,6 @@ export async function withAiLiveOrStub<T extends { stubbed: boolean }>(
   }
   return { ok: true, data: stubResult }
 }
+
+/** @deprecated Use withAiNativeOrStub */
+export const withAiLiveOrStub = withAiNativeOrStub

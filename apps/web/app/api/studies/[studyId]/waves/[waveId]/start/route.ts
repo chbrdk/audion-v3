@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { storeStartUxWave } from '../../../../../../../lib/fixtures/ux-study-store'
+import { startUxWaveNativeOrFixture } from '../../../../../../../lib/ux-studies-native'
 import {
   proxyUxStudiesRequest,
   shouldProxyUxStudiesToApi,
@@ -13,7 +13,7 @@ export async function POST(
     return proxyUxStudiesRequest(request)
   }
   const { studyId, waveId } = await context.params
-  const wave = storeStartUxWave(studyId, waveId)
+  const wave = await startUxWaveNativeOrFixture(studyId, waveId)
   if (!wave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({
     studyId,

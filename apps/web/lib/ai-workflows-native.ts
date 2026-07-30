@@ -1,0 +1,617 @@
+/**
+ * Native AI workflow runners — OpenAI in-process, fixture store writes.
+ * Spec twin: knowledge/ai-native-2026.md
+ */
+
+import type {
+  AiSuggestionItem,
+  AiTargetCall,
+  EnrichPersonaRequest,
+  EnrichPersonaResponse,
+  GenerateJourneyPhaseMomentsRequest,
+  GenerateJourneyPhaseMomentsResponse,
+  GenerateJourneyRequest,
+  GenerateJourneyResponse,
+  GenerateMoodboardRequest,
+  GenerateMoodboardResponse,
+  GeneratePersonaAvatarRequest,
+  GeneratePersonaAvatarResponse,
+  GeneratePersonasRequest,
+  GeneratePersonasResponse,
+  JourneyElementKind,
+  PersonaSuggestField,
+  ResearchStartRequest,
+  ResearchStartResponse,
+  SuggestPersonaFieldRequest,
+  SuggestPersonaFieldResponse,
+  SuggestPersonasRequest,
+  SuggestPersonasResponse,
+  SuggestTargetGroupsRequest,
+  SuggestTargetGroupsResponse,
+  ValidateJourneyRequest,
+  ValidateJourneyResponse,
+} from '@audion-v3/contracts'
+import {
+  AI_WORKFLOW_TARGETS,
+  buildTargetCall,
+  FIELD_UPSTREAM,
+  formatUpstreamPath,
+  runStubValidateJourney,
+} from './ai-workflows'
+import { runAssist, runAssistJson } from './ai/assist'
+import {
+  createOpenAiClient,
+  getAiOpenAiImageModel,
+  toAiNativeError,
+  type AiNativeError,
+} from './ai/client'
+import type { AssistTemplateId } from './ai/prompts/templates'
+import { storeCreateJourney, storeJourneyDetail, storePatchJourney } from './fixtures/journey-store'
+import { storeCreatePersona, storePatchPersona, storePersonaDetail } from './fixtures/persona-store'
+import { storeProjectDetail } from './fixtures/project-store'
+import { storeCreateResearchRun } from './fixtures/research-runs'
+import {
+  storePatchTargetGroup,
+  storeTargetGroupDetail,
+} from './fixtures/target-group-store'
+import { personaVisualPath } from './paths'
+import { scheduleNativeResearchJob } from './ai/research-native'
+
+export type NativeError = AiNativeError
+
+function nativeMeta(
+  workflowId: keyof typeof AI_WORKFLOW_TARGETS,
+  pathParams: Record<string, string>,
+  body: Record<string, unknown>,
+): { stubbed: false; workflowId: typeof workflowId; target: AiTargetCall } {
+  return {
+    stubbed: false,
+    workflowId,
+    target: buildTargetCall(workflowId, pathParams, body),
+  }
+}
+
+function personaProfileText(persona: NonNullable<ReturnType<typeof storePersonaDetail>>): string {
+  return [
+    `Name: ${persona.name}`,
+    `Role: ${persona.role}`,
+    `Archetype: ${persona.archetype ?? ''}`,
+    `Bio: ${persona.bio ?? ''}`,
+    `Interests: ${persona.interests.join(', ')}`,
+    `Values: ${persona.values.join(', ')}`,
+    `Goals: ${persona.goals.map((g) => g.label).join('; ')}`,
+    `Frustrations: ${persona.frustrations.map((f) => f.label).join('; ')}`,
+    `Traits: ${Object.keys(persona.traits).join(', ')}`,
+  ].join('\n')
+}
+
+const FIELD_TEMPLATE: Record<PersonaSuggestField, AssistTemplateId> = {
+  interests: 'persona.interests',
+  values: 'persona.values',
+  goals: 'persona.goals',
+  frustrations: 'persona.pain_points',
+  traits: 'persona.traits',
+  vocabulary: 'persona.vocabulary',
+  sentenceStructure: 'persona.sentence_structure',
+}
+
+function uniqStrings(items: string[], max: number): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of items) {
+    const s = raw.trim()
+    if (!s) continue
+    const key = s.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(s)
+    if (out.length >= max) break
+  }
+  return out
+}
+
+const KIND_CYCLE: JourneyElementKind[] = [
+  'action',
+  'thought',
+  'feeling',
+  'pain',
+  'opportunity',
+]
+
+function parseKind(raw: unknown, index: number): JourneyElementKind {
+  const s = String(raw || '').toLowerCase()
+  if (KIND_CYCLE.includes(s as JourneyElementKind)) return s as JourneyElementKind
+  return KIND_CYCLE[index % KIND_CYCLE.length]!
+}
+
+export async function runNativeSuggestPersonaField(
+  personaId: string,
+  body: SuggestPersonaFieldRequest,
+  _authorization?: string | null,
+): Promise<SuggestPersonaFieldResponse | NativeError> {
+  const persona = storePersonaDetail(personaId)
+  if (!persona) return { error: 'Persona not found', status: 404 }
+  const field = body.field
+  if (!field || !(field in FIELD_UPSTREAM)) {
+    return { error: 'Unknown suggest field', status: 400 }
+  }
+  const max = Math.min(Math.max(body.max_suggestions ?? 3, 1), 6)
+  const locale = body.output_locale ?? 'en'
+  const upstream = FIELD_UPSTREAM[field]
+  const upstreamBody: Record<string, unknown> = {
+    max_suggestions: max,
+    output_locale: locale,
+  }
+  if (upstream.templateId) {
+    upstreamBody.template_id = upstream.templateId
+    upstreamBody.persona_id = personaId
+  }
+  const target: AiTargetCall = {
+    method: 'POST',
+    path: formatUpstreamPath(upstream.path, { personaId }),
+    body: upstreamBody,
+  }
+  const assist = await runAssist(FIELD_TEMPLATE[field], {
+    locale,
+    max_items: String(max),
+    persona_profile: personaProfileText(persona),
+  })
+  if ('error' in assist) return assist
+  const suggestions: AiSuggestionItem[] = assist.suggestions.slice(0, max).map((s, i) => ({
+    ...s,
+    id: s.id || `sug-${field}-${personaId}-${i + 1}`,
+    subtitle: s.subtitle ?? persona.name,
+  }))
+  return {
+    stubbed: false,
+    workflowId: 'suggestPersonaField',
+    target,
+    field,
+    suggestions,
+  }
+}
+
+export async function runNativeEnrichPersona(
+  personaId: string,
+  body: EnrichPersonaRequest = {},
+  _authorization?: string | null,
+): Promise<EnrichPersonaResponse | NativeError> {
+  const persona = storePersonaDetail(personaId)
+  if (!persona) return { error: 'Persona not found', status: 404 }
+  const locale = body.output_locale ?? 'en'
+  const upstreamBody: Record<string, unknown> = {
+    output_locale: locale,
+    profile_overlay: body.profile_overlay ?? undefined,
+  }
+  const meta = nativeMeta('enrichPersona', { personaId }, upstreamBody)
+  const assist = await runAssistJson<{
+    interests?: string[]
+    values?: string[]
+    goals?: Array<{ label?: string } | string>
+    frustrations?: Array<{ label?: string } | string>
+    traits?: Record<string, number>
+  }>('persona.enrich_facets', {
+    locale,
+    persona_profile: personaProfileText(persona),
+  })
+  if ('error' in assist) return assist
+  const data = assist.data
+  const interests = uniqStrings(
+    [...persona.interests, ...(Array.isArray(data.interests) ? data.interests : [])],
+    8,
+  )
+  const values = uniqStrings(
+    [...persona.values, ...(Array.isArray(data.values) ? data.values : [])],
+    6,
+  )
+  const goalLabels = (data.goals ?? []).map((g) =>
+    typeof g === 'string' ? g : String(g.label || ''),
+  )
+  const goals = [
+    ...persona.goals,
+    ...goalLabels.filter(Boolean).map((label, i) => ({
+      label,
+      priority: persona.goals.length + i + 1,
+    })),
+  ].slice(0, 6)
+  const frLabels = (data.frustrations ?? []).map((f) =>
+    typeof f === 'string' ? f : String(f.label || ''),
+  )
+  const frustrations = [
+    ...persona.frustrations,
+    ...frLabels.filter(Boolean).map((label) => ({ label, evidenceCount: 1 })),
+  ].slice(0, 6)
+  const traits = { ...persona.traits, ...(data.traits ?? {}) }
+  const patched = storePatchPersona(personaId, {
+    bio: body.profile_overlay?.bio?.trim() || persona.bio,
+    age: body.profile_overlay?.age?.trim() || persona.age,
+    location: body.profile_overlay?.location?.trim() || persona.location,
+    gender: body.profile_overlay?.gender?.trim() || persona.gender,
+    interests,
+    values,
+    goals,
+    frustrations,
+    traits,
+  })
+  if (!patched) return { error: 'Persona not found', status: 404 }
+  return {
+    ...meta,
+    personaId,
+    facetsUpdated: ['interests', 'values', 'goals', 'frustrations', 'traits'],
+    interests: patched.interests,
+    values: patched.values,
+    goals: patched.goals,
+    frustrations: patched.frustrations,
+    traits: patched.traits,
+  }
+}
+
+export async function runNativeGeneratePersonas(
+  tgId: string,
+  body: GeneratePersonasRequest,
+  _authorization?: string | null,
+): Promise<GeneratePersonasResponse | NativeError> {
+  const tg = storeTargetGroupDetail(tgId)
+  if (!tg) return { error: 'Target group not found', status: 404 }
+  const count = Math.min(Math.max(body.count ?? 2, 1), 5)
+  const segment = body.segment?.trim() || tg.segment
+  const description = body.description ?? tg.description
+  const upstreamBody = {
+    segment,
+    description: description ?? undefined,
+    filter_mode: body.filter_mode ?? 'auto',
+  }
+  const meta = nativeMeta('generatePersonas', { tgId }, upstreamBody)
+  const locale = body.output_locale ?? 'en'
+  const assist = await runAssistJson<{
+    personas?: Array<{
+      name?: string
+      role?: string
+      archetype?: string
+      bio?: string
+      interests?: string[]
+    }>
+  }>('persona.generate_batch', {
+    locale,
+    max_items: String(count),
+    context: `Name: ${tg.name}\nSegment: ${segment}\nDescription: ${description ?? ''}`,
+  })
+  if ('error' in assist) return assist
+  const drafts = (assist.data.personas ?? []).slice(0, count)
+  if (!drafts.length) {
+    return { error: 'Native generate returned no personas', status: 502 }
+  }
+  const created = drafts.map((seed) =>
+    storeCreatePersona({
+      name: seed.name?.trim() || `Persona (${segment})`,
+      role: seed.role?.trim() || 'Audience member',
+      status: 'draft',
+      archetype: seed.archetype?.trim() || segment,
+      bio: seed.bio?.trim() || `Generated for ${tg.name}`,
+      projectId: tg.projectId,
+      interests: seed.interests?.length ? seed.interests : [segment],
+    }),
+  )
+  const linkedIds = [...tg.linkedPersonas.map((p) => p.id), ...created.map((p) => p.id)]
+  storePatchTargetGroup(tgId, { linkedPersonaIds: linkedIds })
+  return {
+    ...meta,
+    personas: created.map((p) => ({ id: p.id, name: p.name, role: p.role })),
+  }
+}
+
+export async function runNativeSuggestTargetGroups(
+  projectId: string,
+  body: SuggestTargetGroupsRequest,
+  _authorization?: string | null,
+): Promise<SuggestTargetGroupsResponse | NativeError> {
+  const project = storeProjectDetail(projectId)
+  if (!project) return { error: 'Project not found', status: 404 }
+  const max = Math.min(Math.max(body.max_suggestions ?? 5, 1), 8)
+  const locale = body.output_locale ?? 'en'
+  const upstreamBody = {
+    max_suggestions: max,
+    output_locale: locale,
+    bilingual: body.bilingual ?? false,
+  }
+  const meta = nativeMeta('suggestTargetGroups', { projectId }, upstreamBody)
+  const assist = await runAssist('project.suggest_target_groups', {
+    locale,
+    max_items: String(max),
+    context: `Project: ${project.name}\nDescription: ${project.description ?? ''}`,
+  })
+  if ('error' in assist) return assist
+  return { ...meta, suggestions: assist.suggestions.slice(0, max) }
+}
+
+export async function runNativeSuggestPersonas(
+  projectId: string,
+  body: SuggestPersonasRequest,
+  _authorization?: string | null,
+): Promise<SuggestPersonasResponse | NativeError> {
+  if (!storeProjectDetail(projectId)) return { error: 'Project not found', status: 404 }
+  const tgId = body.target_group_id
+  const tg = storeTargetGroupDetail(tgId)
+  if (!tg) return { error: 'Target group not found', status: 404 }
+  const max = Math.min(Math.max(body.max_suggestions ?? 5, 1), 8)
+  const locale = body.output_locale ?? 'en'
+  const upstreamBody = { max_suggestions: max, output_locale: locale }
+  const meta = nativeMeta('suggestPersonas', { tgId }, upstreamBody)
+  const assist = await runAssist('target_group.suggest_personas', {
+    locale,
+    max_items: String(max),
+    context: `TG: ${tg.name}\nSegment: ${tg.segment}\nDescription: ${tg.description ?? ''}`,
+  })
+  if ('error' in assist) return assist
+  return { ...meta, suggestions: assist.suggestions.slice(0, max) }
+}
+
+export async function runNativeGenerateJourney(
+  body: GenerateJourneyRequest,
+  fromProjectId?: string,
+  _authorization?: string | null,
+): Promise<GenerateJourneyResponse | NativeError> {
+  const projectId = fromProjectId ?? body.project_id ?? null
+  if (fromProjectId && !storeProjectDetail(fromProjectId)) {
+    return { error: 'Project not found', status: 404 }
+  }
+  const journeyType = body.journey_type?.trim() || 'customer'
+  const tgId = body.target_group_id ?? null
+  const tg = tgId ? storeTargetGroupDetail(tgId) : null
+  const workflowId = fromProjectId ? 'generateJourneyFromProject' : 'generateJourney'
+  const pathParams: Record<string, string> = fromProjectId ? { projectId: fromProjectId } : {}
+  const upstreamBody = {
+    target_group_id: tgId,
+    journey_type: journeyType,
+    organization_id: body.organization_id ?? 'org-native',
+    project_id: projectId,
+    output_locale: body.output_locale ?? 'en',
+    use_async: body.use_async ?? false,
+  }
+  const meta = nativeMeta(workflowId, pathParams, upstreamBody)
+  const locale = body.output_locale ?? 'en'
+  const assist = await runAssistJson<{
+    name?: string
+    description?: string
+    phases?: Array<{
+      name?: string
+      summary?: string
+      elements?: Array<{ kind?: string; label?: string }>
+    }>
+  }>('journey.full_generation', {
+    locale,
+    context: [
+      `Journey type: ${journeyType}`,
+      tg ? `Target group: ${tg.name} (${tg.segment})` : '',
+      projectId ? `Project id: ${projectId}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+  })
+  if ('error' in assist) return assist
+  const prefix = `ai-${Date.now().toString(36)}`
+  const phases = (assist.data.phases ?? []).slice(0, 5).map((phase, order) => ({
+    id: `${prefix}-phase-${order + 1}`,
+    name: phase.name?.trim() || `Phase ${order + 1}`,
+    order,
+    summary: phase.summary?.trim() || null,
+    elements: (phase.elements ?? []).slice(0, 6).map((el, i) => ({
+      id: `${prefix}-el-${order + 1}-${i + 1}`,
+      kind: parseKind(el.kind, i),
+      label: el.label?.trim() || `Moment ${i + 1}`,
+      order: i,
+    })),
+  }))
+  if (!phases.length) {
+    return { error: 'Native journey returned no phases', status: 502 }
+  }
+  const name =
+    assist.data.name?.trim() ||
+    (tg ? `${tg.name} journey` : `Generated ${journeyType} journey`)
+  const journey = storeCreateJourney({
+    name,
+    journeyType,
+    status: 'draft',
+    description: assist.data.description?.trim() || `Native AI journey (${journeyType})`,
+    targetGroupId: tgId,
+    projectId,
+    phases,
+  })
+  return {
+    ...meta,
+    journey: { id: journey.id, name: journey.name, phaseCount: journey.phaseCount },
+  }
+}
+
+export async function runNativeGenerateJourneyPhaseMoments(
+  journeyId: string,
+  body: GenerateJourneyPhaseMomentsRequest,
+  _authorization?: string | null,
+): Promise<GenerateJourneyPhaseMomentsResponse | NativeError> {
+  const journey = storeJourneyDetail(journeyId)
+  if (!journey) return { error: 'Journey not found', status: 404 }
+  const phase = journey.phases.find((p) => p.id === body.phase_id)
+  if (!phase) return { error: 'Phase not found', status: 404 }
+  const max = Math.min(Math.max(body.max_suggestions ?? 4, 1), 8)
+  const locale = body.output_locale ?? 'en'
+  const upstreamBody: Record<string, unknown> = {
+    template_id: 'journey.moments',
+    phase_id: body.phase_id,
+    max_suggestions: max,
+    output_locale: locale,
+    phase_context: { phase_name: phase.name, phase_summary: phase.summary },
+  }
+  const meta = nativeMeta('generateJourneyPhaseMoments', { journeyId }, upstreamBody)
+  const assist = await runAssistJson<{
+    moments?: Array<{ kind?: string; label?: string }>
+  }>('journey.moments', {
+    locale,
+    max_items: String(max),
+    context: `Phase: ${phase.name}\nSummary: ${phase.summary ?? ''}\nExisting: ${phase.elements
+      .map((e) => e.label)
+      .join('; ')}`,
+  })
+  if ('error' in assist) return assist
+  const existingLabels = new Set(phase.elements.map((el) => el.label.toLowerCase()))
+  const fresh = (assist.data.moments ?? [])
+    .filter((m) => m.label && !existingLabels.has(m.label.toLowerCase()))
+    .slice(0, max)
+  const startOrder = phase.elements.length
+  const newMoments = fresh.map((m, i) => ({
+    id: `el-ai-${Date.now().toString(36)}-${i}`,
+    kind: parseKind(m.kind, i),
+    label: m.label!.trim(),
+    order: startOrder + i,
+  }))
+  const moments = [...phase.elements, ...newMoments].map((el, order) => ({ ...el, order }))
+  const phases = journey.phases.map((p) =>
+    p.id === phase.id ? { ...p, elements: moments } : p,
+  )
+  const patched = storePatchJourney(journeyId, { phases })
+  if (!patched) return { error: 'Journey not found', status: 404 }
+  return {
+    ...meta,
+    journeyId,
+    phaseId: phase.id,
+    applied: true,
+    moments: newMoments,
+  }
+}
+
+export async function runNativeValidateJourney(
+  journeyId: string,
+  body: ValidateJourneyRequest,
+  _authorization?: string | null,
+): Promise<ValidateJourneyResponse | NativeError> {
+  const stub = runStubValidateJourney(journeyId, body)
+  if ('error' in stub) return stub
+  return { ...stub, stubbed: false }
+}
+
+export async function runNativeGeneratePersonaAvatar(
+  personaId: string,
+  body: GeneratePersonaAvatarRequest = {},
+  _authorization?: string | null,
+): Promise<GeneratePersonaAvatarResponse | NativeError> {
+  const persona = storePersonaDetail(personaId)
+  if (!persona) return { error: 'Persona not found', status: 404 }
+  const upstreamBody = { style: body.style?.trim() || undefined }
+  const meta = nativeMeta('generatePersonaAvatar', { personaId }, upstreamBody)
+  try {
+    const client = createOpenAiClient()
+    const prompt = [
+      `Professional editorial portrait of ${persona.name}, ${persona.role}.`,
+      persona.archetype ? `Archetype: ${persona.archetype}.` : '',
+      body.style?.trim() ? `Style: ${body.style.trim()}.` : 'Clean magazine lighting, neutral background.',
+      'No text overlays.',
+    ]
+      .filter(Boolean)
+      .join(' ')
+    const image = await client.images.generate({
+      model: getAiOpenAiImageModel(),
+      prompt,
+      size: '1024x1024',
+      n: 1,
+    })
+    const b64 = image.data?.[0]?.b64_json
+    const url = image.data?.[0]?.url
+    const avatarUrl = b64
+      ? `data:image/png;base64,${b64}`
+      : url || persona.avatarUrl || personaVisualPath('tone-warm')
+    const patched = storePatchPersona(personaId, { avatarUrl })
+    if (!patched) return { error: 'Persona not found', status: 404 }
+    return { ...meta, avatarUrl: patched.avatarUrl! }
+  } catch (error) {
+    return toAiNativeError(error, 'Avatar generation failed')
+  }
+}
+
+export async function runNativeGenerateMoodboard(
+  personaId: string,
+  body: GenerateMoodboardRequest = {},
+  _authorization?: string | null,
+): Promise<GenerateMoodboardResponse | NativeError> {
+  const persona = storePersonaDetail(personaId)
+  if (!persona) return { error: 'Persona not found', status: 404 }
+  const title = body.title?.trim() || `${persona.name} moodboard`
+  const meta = nativeMeta('generateMoodboard', { personaId }, { title })
+  const assist = await runAssistJson<{
+    styleKeywords?: string[]
+    tileCaptions?: string[]
+  }>('moodboard.style_keywords', {
+    locale: 'en',
+    persona_profile: personaProfileText(persona),
+    context: title,
+  })
+  if ('error' in assist) return assist
+  const styleKeywords = uniqStrings(
+    [
+      ...(assist.data.styleKeywords ?? []),
+      ...(persona.visuals?.styleKeywords ?? []),
+      ...(persona.colorPalette ?? []),
+    ],
+    8,
+  )
+  const captions = assist.data.tileCaptions ?? [
+    'Atmosphere',
+    'Texture',
+    'Interface cues',
+    'Context space',
+  ]
+  const tileSlugs = ['tone-warm', 'material-soft', 'ui-calm', 'space-studio'] as const
+  const tiles = tileSlugs.map((slug, i) => ({
+    id: `mood-native-${personaId}-${i + 1}`,
+    imageUrl: personaVisualPath(slug),
+    category: slug.split('-')[0] ?? 'tone',
+    caption: `${captions[i] ?? slug} · ${persona.name}`,
+  }))
+  // Optional: generate one hero tile via Images API when available
+  try {
+    const client = createOpenAiClient()
+    const image = await client.images.generate({
+      model: getAiOpenAiImageModel(),
+      prompt: `Abstract moodboard tile for ${persona.name}: ${styleKeywords.slice(0, 4).join(', ')}. No text.`,
+      size: '1024x1024',
+      n: 1,
+    })
+    const b64 = image.data?.[0]?.b64_json
+    const url = image.data?.[0]?.url
+    if (b64 || url) {
+      tiles[0] = {
+        ...tiles[0]!,
+        imageUrl: b64 ? `data:image/png;base64,${b64}` : url!,
+        caption: `Hero · ${persona.name}`,
+      }
+    }
+  } catch {
+    /* keep fixture tile paths if image gen fails */
+  }
+  const visuals = { styleKeywords, tiles }
+  const patched = storePatchPersona(personaId, { visuals })
+  if (!patched) return { error: 'Persona not found', status: 404 }
+  return {
+    ...meta,
+    personaId,
+    moodboardId: `moodboard-native-${personaId}-${Date.now().toString(36)}`,
+    status: 'ready',
+    visuals: patched.visuals ?? visuals,
+  }
+}
+
+export async function runNativeResearchStart(
+  projectId: string,
+  body: ResearchStartRequest,
+  _authorization?: string | null,
+): Promise<ResearchStartResponse | NativeError> {
+  if (!storeProjectDetail(projectId)) return { error: 'Project not found', status: 404 }
+  const seedUrl = String(body.seed_url ?? '').trim() || 'https://example.com'
+  const upstreamBody = {
+    seed_url: seedUrl,
+    max_pages: body.max_pages ?? 20,
+    max_depth: body.max_depth ?? 2,
+  }
+  const meta = nativeMeta('researchStart', { projectId }, upstreamBody)
+  const jobId = storeCreateResearchRun(projectId, seedUrl, false)
+  scheduleNativeResearchJob(jobId, projectId, seedUrl)
+  return { ...meta, jobId, status: 'queued' }
+}

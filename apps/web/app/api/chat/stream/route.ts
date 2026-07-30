@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { ChatSendPayload } from '@audion-v3/contracts'
 import { auth } from '../../../../auth'
-import { sseToNdjsonTransform, toUpstreamChatBody } from '../../../../lib/chat/upstream-stream'
+import { nativeChatNdjsonResponse } from '../../../../lib/chat/native-stream'
 import { storeChatFakeStream } from '../../../../lib/fixtures/chat-store'
-import { getChatApiBase } from '../../../../lib/runtime-config'
 import {
   shouldPreferChatLive,
   shouldRequireChatLive,
@@ -57,50 +56,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const base = getChatApiBase().replace(/\/$/, '')
-    const authorization = request.headers.get('authorization')
-    const headers = new Headers({
-      'Content-Type': 'application/json',
-      Accept: 'text/event-stream',
-    })
-    if (authorization) headers.set('authorization', authorization)
-
-    const upstream = await fetch(`${base}/chat/message/stream`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(toUpstreamChatBody(body)),
-      cache: 'no-store',
-    })
-
-    if (!upstream.ok || !upstream.body) {
-      const text = await upstream.text().catch(() => '')
-      if (shouldRequireChatLive()) {
-        return NextResponse.json(
-          {
-            error: text || `Chat API failed (${upstream.status})`,
-            hint: `Set ${paths.envChatApiInternal}`,
-          },
-          { status: upstream.status || 502 },
-        )
-      }
-      return fixtureStream(body)
-    }
-
-    const ndjson = upstream.body.pipeThrough(sseToNdjsonTransform())
-    return new Response(ndjson, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/x-ndjson; charset=utf-8',
-        'Cache-Control': 'no-store',
-      },
-    })
+    return nativeChatNdjsonResponse(body)
   } catch (error) {
     if (shouldRequireChatLive()) {
       return NextResponse.json(
         {
-          error: 'Chat API unavailable',
+          error: 'Native chat unavailable',
           detail: error instanceof Error ? error.message : 'unknown',
-          hint: `Set ${paths.envChatApiInternal}`,
+          hint: `Set ${paths.envOpenAiApiKey} and ${paths.envAiRuntime}=auto|native`,
         },
         { status: 502 },
       )

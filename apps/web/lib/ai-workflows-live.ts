@@ -1,6 +1,6 @@
 /**
- * Wave 2 live AI runners — proxy to AUDION-v2 persona-api / chat-api.
- * Normalizes upstream shapes into V3 contracts (`stubbed: false`).
+ * @deprecated V2 HTTP proxy runners — use ai-workflows-native.ts.
+ * Kept for reference / emergency rollback only. Coolify v3 must not depend on these.
  */
 
 import type {

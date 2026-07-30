@@ -9,13 +9,19 @@ import { TargetGroupListPanel } from '../components/target-group-list-panel'
 import { JourneyDetailPanel } from '../components/journey-detail-panel'
 import { JourneyListPanel } from '../components/journey-list-panel'
 import { paths } from '../lib/paths'
+import { UserPrefsProvider } from '../lib/user-prefs'
 import type { JourneyDetail, JourneyList } from '@audion-v3/contracts'
+import type { ReactElement } from 'react'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
 }))
 
 afterEach(() => cleanup())
+
+function renderWithPrefs(ui: ReactElement) {
+  return render(<UserPrefsProvider>{ui}</UserPrefsProvider>)
+}
 
 const list: PersonaList = {
   items: [
@@ -69,6 +75,10 @@ const detail: PersonaDetail = {
       },
     ],
   },
+  profileDe: null,
+  headlineDe: null,
+  knowledgeEntries: [],
+  documents: [],
 }
 
 const tgList: TargetGroupList = {
@@ -100,6 +110,8 @@ const tgDetail: TargetGroupDetail = {
       avatarUrl: '/fixtures/personas/persona-alex-morgan.svg',
     },
   ],
+  knowledgeEntries: [],
+  documents: [],
 }
 
 describe('persona workspace components', () => {
@@ -117,7 +129,7 @@ describe('persona workspace components', () => {
   })
 
   it('enables edit actions on magazine detail', () => {
-    const { container } = render(<PersonaDetailPanel persona={detail} />)
+    const { container } = renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     expect(screen.getByRole('button', { name: 'Edit persona' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Create from template' })).toBeEnabled()
     expect(document.querySelector('.audion-magazine-topbar .audion-edit-icon-btn')).toBeTruthy()
@@ -125,7 +137,7 @@ describe('persona workspace components', () => {
   })
 
   it('renders quiet reading magazine for long-form content', () => {
-    const { container } = render(<PersonaDetailPanel persona={detail} />)
+    const { container } = renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     expect(container.querySelector('.audion-magazine-body')).toBeTruthy()
     expect(container.querySelector('.signal-stage.audion-magazine-stage')).toBeTruthy()
     expect(container.querySelector('.audion-editable-portrait')).toBeTruthy()
@@ -167,7 +179,7 @@ describe('persona workspace components', () => {
   })
 
   it('opens tile editor from visuals band', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: /Edit Tone tile/i }))
     expect(screen.getByLabelText('Tile category')).toBeInTheDocument()
     expect(screen.getByLabelText('Tile caption')).toBeInTheDocument()
@@ -175,13 +187,13 @@ describe('persona workspace components', () => {
   })
 
   it('opens style keyword editor from visuals band', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'calm editorial' }))
     expect(screen.getByLabelText('Edit style keyword 1')).toBeInTheDocument()
   })
 
   it('opens portrait URL editor from hero', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: /Edit Alex Morgan portrait/i }))
     expect(screen.getByLabelText('Portrait image URL')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
@@ -189,14 +201,14 @@ describe('persona workspace components', () => {
   })
 
   it('opens AI suggest dialog from interests band', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     // Order: Traits, Interests, Values, Goals, Frustrations
     fireEvent.click(screen.getAllByRole('button', { name: 'Suggest' })[1]!)
     expect(screen.getByRole('heading', { name: /Suggest interests/i })).toBeInTheDocument()
   })
 
   it('switches communication layout to tone dial', () => {
-    const { container } = render(<PersonaDetailPanel persona={detail} />)
+    const { container } = renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'Tone' }))
     expect(screen.getByRole('button', { name: 'Tone' })).toHaveAttribute('aria-pressed', 'true')
     expect(container.querySelector('.audion-editable-comm--tone')).toBeTruthy()
@@ -208,25 +220,25 @@ describe('persona workspace components', () => {
   })
 
   it('opens sentence structure editor from communication band', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: /Short, concrete sentences/i }))
     expect(screen.getByLabelText('Edit sentence structure')).toBeInTheDocument()
   })
 
   it('opens vocabulary editor from communication band', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'evidence trail' }))
     expect(screen.getByLabelText('Edit vocabulary item 1')).toBeInTheDocument()
   })
 
   it('opens inline input when clicking a trait label', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'Analytical' }))
     expect(screen.getByLabelText('Edit trait name 1')).toBeInTheDocument()
   })
 
   it('updates trait score via slider', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     const slider = screen.getByRole('slider', { name: 'Score for Analytical' })
     expect(slider).toHaveValue('80')
     fireEvent.change(slider, { target: { value: '55' } })
@@ -234,13 +246,13 @@ describe('persona workspace components', () => {
   })
 
   it('adds a draft trait from the hover Add item footer', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'Add trait' }))
     expect(screen.getByLabelText('Edit trait name 3')).toBeInTheDocument()
   })
 
   it('opens inline input when clicking a goals row', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(
       screen.getByRole('button', {
         name: 'Launch faster with clearer evidence trails across research and delivery.',
@@ -251,31 +263,31 @@ describe('persona workspace components', () => {
   })
 
   it('opens inline input when clicking an interests row', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'Service design' }))
     expect(screen.getByLabelText('Edit interests item 1')).toBeInTheDocument()
   })
 
   it('adds a draft interest from the hover Add item footer', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'Add interest' }))
     expect(screen.getByLabelText('Edit interests item 3')).toBeInTheDocument()
   })
 
   it('opens delete confirm for a list item', () => {
-    const { container } = render(<PersonaDetailPanel persona={detail} />)
+    const { container } = renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'Delete goals item 1' }))
     expect(container.querySelector('.ds-dialog-title')?.textContent).toBe('Delete goal?')
   })
 
   it('adds a draft row from the hover Add item footer', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'Add goal' }))
     expect(screen.getByLabelText('Edit goals item 2')).toBeInTheDocument()
   })
 
   it('opens channel icon picker from bubble click', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(screen.getByRole('button', { name: 'Slack' }))
     expect(document.querySelector('.audion-channel-picker')).toBeTruthy()
     expect(screen.getByRole('menu', { name: 'Change channel' })).toBeInTheDocument()
@@ -283,14 +295,14 @@ describe('persona workspace components', () => {
   })
 
   it('opens channel icon picker via context menu', () => {
-    render(<PersonaDetailPanel persona={detail} />)
+    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.contextMenu(screen.getByRole('button', { name: 'Slack' }))
     expect(document.querySelector('.audion-channel-picker')).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: 'Figma' })).toBeInTheDocument()
   })
 
   it('opens add-channel picker from dashed add bubble', () => {
-    const { container } = render(<PersonaDetailPanel persona={detail} />)
+    const { container } = renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     fireEvent.click(container.querySelector('.audion-channel-bubble--add')!)
     expect(screen.getByRole('menu', { name: 'Add channel' })).toBeInTheDocument()
   })

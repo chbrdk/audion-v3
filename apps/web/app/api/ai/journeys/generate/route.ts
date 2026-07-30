@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import type { GenerateJourneyRequest } from '@audion-v3/contracts'
-import { runStubGenerateJourney, withAiLiveOrStub } from '../../../../../lib/ai-workflows'
-import { runLiveGenerateJourney } from '../../../../../lib/ai-workflows-live'
+import { runStubGenerateJourney, withAiNativeOrStub } from '../../../../../lib/ai-workflows'
+import { runNativeGenerateJourney } from '../../../../../lib/ai-workflows-native'
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as GenerateJourneyRequest
-  const resolved = await withAiLiveOrStub(
+  const resolved = await withAiNativeOrStub(
     request,
-    (authorization) => runLiveGenerateJourney(body, undefined, authorization),
+    (authorization) => runNativeGenerateJourney(body, undefined, authorization),
     () => runStubGenerateJourney(body),
   )
   if (!resolved.ok) {

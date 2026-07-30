@@ -102,7 +102,6 @@ export function TargetGroupDetailPanel({
           entries={targetGroup.knowledgeEntries}
           documents={targetGroup.documents}
           listUrl={paths.routes.apiTargetGroupKnowledge(targetGroup.id)}
-          entryUrl={(entryId) => paths.routes.apiTargetGroupKnowledgeEntry(targetGroup.id, entryId)}
         />
       </div>
     </article>

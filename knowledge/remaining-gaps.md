@@ -18,8 +18,8 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | Projects | `/projects*` magazine list+detail; fixtures; members; counts; knowledge dossier |
 | Settings | `/settings` — display name, theme, locale; rail avatar enabled |
 | **Studies** | `/studies*` create → start/sync → evaluate → compare → Soft-Q/report → F-Fragen→chat; optional V2 proxy |
-| **AI Wave 2** | Live persona-api / chat-api proxy when `NEXT_PERSONA_DATA_SOURCE=auto\|api`; stubs in `fixtures` or on auto fallback — `knowledge/ai-workflows.md` |
-| **Chat live** | Stream prefers chat-api; SSE→NDJSON adapter; history list still fixtures |
+| **AI native** | OpenAI in Next BFF via `NEXT_AI_RUNTIME` — `knowledge/ai-native-2026.md` (V2 proxy deprecated) |
+| **Chat live** | Native OpenAI NDJSON stream; history list still fixtures |
 | **Agent via Studies** | Start/Sync = UX Journey Agent surface; Convert run→journey |
 | **Persona enrich + moodboard** | Enrich topbar + Generate moodboard on Visuals; stub/live Wave 2 |
 | **Journey phase AI + validate** | Generate moments on phases; Validate topbar report |

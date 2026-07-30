@@ -80,7 +80,9 @@
 - Persona avatar helper: `personaAvatarPath(id)` in `apps/web/lib/paths.ts`
 - Channel logo public base: `/fixtures/channels` (`paths.channelLogoBasePath`)
 - Channel icon registry: `apps/web/lib/channel-icons.tsx` (`knowledge/persona-channel-icons.md`)
-- Persona data source env: `NEXT_PERSONA_DATA_SOURCE` (`auto` | `fixtures` | `api`)
+- Persona data source env: `NEXT_PERSONA_DATA_SOURCE` (`auto` | `fixtures` | `api`) — domain only
+- Native AI runtime: `NEXT_AI_RUNTIME` (`stub` | `native` | `auto`) · `OPENAI_API_KEY` · `AI_OPENAI_MODEL` — `knowledge/ai-native-2026.md`
+- Native AI code: `apps/web/lib/ai/` · `ai-workflows-native.ts` · `chat/native-stream.ts`
 - Persona magazine notes: `knowledge/persona-magazine.md`
 - Persona migration map: `knowledge/persona-migration-map.md`
 - Target group migration map: `knowledge/target-group-migration-map.md`

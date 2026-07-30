@@ -361,6 +361,28 @@ export function storeSyncUxWave(studyId: string, waveId: string): UxWaveDetail |
   return next
 }
 
+/** Replace wave runs (native agent) and derive status. */
+export function storePatchUxWaveRuns(
+  studyId: string,
+  waveId: string,
+  runs: UxWaveRunItem[],
+): UxWaveDetail | null {
+  const index = waves.findIndex((w) => w.id === waveId && w.studyId === studyId)
+  if (index < 0) return null
+  const current = waves[index]!
+  const allDone = runs.every((r) => r.agentStatus === 'complete')
+  const status = allDone ? 'complete' : 'running'
+  const next: UxWaveDetail = {
+    ...current,
+    ...waveSummary({ ...current, status, runs }),
+    status,
+    runs,
+    updatedAt: new Date().toISOString(),
+  }
+  waves = [...waves.slice(0, index), next, ...waves.slice(index + 1)]
+  return next
+}
+
 /** Mark a wave run as converted to a magazine journey (idempotent convert). */
 export function storeMarkRunDerivedJourney(
   studyId: string,

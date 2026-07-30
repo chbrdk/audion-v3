@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server'
 import type { GeneratePersonaAvatarRequest } from '@audion-v3/contracts'
-import { runStubGeneratePersonaAvatar, withAiLiveOrStub } from '../../../../../../../lib/ai-workflows'
-import { runLiveGeneratePersonaAvatar } from '../../../../../../../lib/ai-workflows-live'
+import { runStubGeneratePersonaAvatar, withAiNativeOrStub } from '../../../../../../../lib/ai-workflows'
+import { runNativeGeneratePersonaAvatar } from '../../../../../../../lib/ai-workflows-native'
 
 type Params = { params: Promise<{ personaId: string }> }
 
 export async function POST(request: Request, { params }: Params) {
   const { personaId } = await params
   const body = (await request.json().catch(() => ({}))) as GeneratePersonaAvatarRequest
-  const resolved = await withAiLiveOrStub(
+  const resolved = await withAiNativeOrStub(
     request,
-    (authorization) => runLiveGeneratePersonaAvatar(personaId, body, authorization),
+    (authorization) => runNativeGeneratePersonaAvatar(personaId, body, authorization),
     () => runStubGeneratePersonaAvatar(personaId, body),
   )
   if (!resolved.ok) {

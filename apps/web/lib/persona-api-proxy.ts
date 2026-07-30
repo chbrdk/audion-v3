@@ -1,22 +1,26 @@
-/** Shared fetch helper for AUDION-v2 persona-api (FastAPI). */
+/**
+ * @deprecated V2 persona-api / chat-api HTTP proxy helpers.
+ * Coolify/prod v3 uses native OpenAI (`knowledge/ai-native-2026.md`).
+ * Prefer shouldPreferAiNative / ai-workflows-native.
+ */
 
 import { NextResponse } from 'next/server'
 import {
   getChatApiBase,
   getPersonaBackendBase,
-  getPersonaDataSource,
-  shouldUsePersonaFixturesOnly,
+  shouldPreferAiNative,
+  shouldRequireAiNative,
 } from './runtime-config'
 import { paths } from './paths'
 
-/** Prefer live AI when not fixtures-only (`auto` | `api`). */
+/** Prefer native AI (`NEXT_AI_RUNTIME`). Name kept for route compatibility. */
 export function shouldPreferAiLive(): boolean {
-  return !shouldUsePersonaFixturesOnly()
+  return shouldPreferAiNative()
 }
 
-/** Fail hard when upstream unavailable (`api` only). */
+/** Fail hard when native AI unavailable (`NEXT_AI_RUNTIME=native`). */
 export function shouldRequireAiLive(): boolean {
-  return getPersonaDataSource() === 'api'
+  return shouldRequireAiNative()
 }
 
 export type UpstreamFetchResult =

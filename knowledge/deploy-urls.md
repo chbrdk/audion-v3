@@ -30,9 +30,15 @@ PLEXON_AUTH_URL=https://plexon-v3.projects-a.plygrnd.tech
 PLEXON_SERVICE_SECRET=<same as plexon-v3>
 NEXT_PUBLIC_PLEXON_REGISTER_URL=https://plexon-v3.projects-a.plygrnd.tech/register
 NEXT_PERSONA_DATA_SOURCE=fixtures
+NEXT_AI_RUNTIME=auto
+OPENAI_API_KEY=<secret>
+# optional:
+# AI_OPENAI_MODEL=gpt-5.4-mini
+# AI_OPENAI_IMAGE_MODEL=gpt-image-1-mini
 PORT=3000
 ```
 
+Native AI (no V2 persona/chat-api): `knowledge/ai-native-2026.md`
 | Coolify Env Cheat-Sheet | `plexon-v3/knowledge/coolify-plexon-v3-env-cheatsheet.md` |
 | Coolify v3 Runbook | `plexon-v3/knowledge/coolify-v3-staging-runbook.md` |
 | plexon-v3 GitHub | `https://github.com/chbrdk/plexon-v3` |

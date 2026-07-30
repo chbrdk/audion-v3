@@ -1,4 +1,5 @@
 import { paths } from './paths'
+import { hasOpenAiApiKey } from './ai/client'
 
 export const runtimeConfig = {
   appName: 'AUDION v3',
@@ -45,22 +46,44 @@ export function allowPersonaFixtureFallback(): boolean {
   return source === 'fixtures' || source === 'auto'
 }
 
+export type AiRuntimeMode = 'stub' | 'native' | 'auto'
+
+/** Native AI mode — orthogonal to domain DATA_SOURCE. */
+export function getAiRuntime(): AiRuntimeMode {
+  const raw = (process.env[paths.envAiRuntime]?.trim() || paths.aiRuntime) as AiRuntimeMode
+  if (raw === 'stub' || raw === 'native' || raw === 'auto') return raw
+  return 'auto'
+}
+
+/** Prefer native OpenAI when runtime is native, or auto with API key. */
+export function shouldPreferAiNative(): boolean {
+  const mode = getAiRuntime()
+  if (mode === 'stub') return false
+  if (mode === 'native') return true
+  return hasOpenAiApiKey()
+}
+
+/** Fail hard when native unavailable (`native` only). */
+export function shouldRequireAiNative(): boolean {
+  return getAiRuntime() === 'native'
+}
+
 /**
- * Chat fixtures-only when DATA_SOURCE=fixtures.
- * `auto` / `api` prefer live chat-api (see shouldPreferChatLive).
+ * Chat stub stream when AI runtime does not prefer native.
+ * Domain DATA_SOURCE no longer forces chat stubs (orthogonal).
  */
 export function shouldUseChatFixtures(): boolean {
-  return getPersonaDataSource() === 'fixtures'
+  return !shouldPreferAiNative()
 }
 
-/** Try live chat-api (`auto` | `api`). */
+/** Prefer native chat stream. */
 export function shouldPreferChatLive(): boolean {
-  return getPersonaDataSource() !== 'fixtures'
+  return shouldPreferAiNative()
 }
 
-/** Fail hard when chat-api unreachable (`api` only). */
+/** Fail hard when native chat unavailable (`NEXT_AI_RUNTIME=native`). */
 export function shouldRequireChatLive(): boolean {
-  return getPersonaDataSource() === 'api'
+  return shouldRequireAiNative()
 }
 
 /** Plexon auth URL (runtime — do not cache at import). */

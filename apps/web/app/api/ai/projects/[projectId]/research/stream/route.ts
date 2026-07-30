@@ -1,15 +1,11 @@
 import { storeResearchSseChunks, storeResearchStatus } from '../../../../../../../lib/fixtures/research-runs'
-import {
-  shouldPreferAiLive,
-  shouldRequireAiLive,
-} from '../../../../../../../lib/persona-api-proxy'
-import {
-  getPersonaBackendBase,
-  shouldUsePersonaFixturesOnly,
-} from '../../../../../../../lib/runtime-config'
 
 type Params = { params: Promise<{ projectId: string }> }
 
+/**
+ * Research SSE — fixture/native in-process runs only (no V2 upstream).
+ * Native jobs update the same store via research-native.ts.
+ */
 export async function GET(request: Request, { params }: Params) {
   const { projectId } = await params
   const url = new URL(request.url)
@@ -20,48 +16,6 @@ export async function GET(request: Request, { params }: Params) {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
-  }
-
-  if (shouldPreferAiLive() && !shouldUsePersonaFixturesOnly()) {
-    const base = getPersonaBackendBase({ preferPublic: false }).replace(/\/$/, '')
-    const qs = new URLSearchParams({ run_id: runId })
-    if (after) qs.set('after', after)
-    const authorization = request.headers.get('authorization')
-    try {
-      const upstream = await fetch(
-        `${base}/projects/${projectId}/research/stream?${qs.toString()}`,
-        {
-          method: 'GET',
-          headers: {
-            Accept: 'text/event-stream',
-            ...(authorization ? { authorization } : {}),
-          },
-          cache: 'no-store',
-        },
-      )
-      if (upstream.ok && upstream.body) {
-        return new Response(upstream.body, {
-          headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            Connection: 'keep-alive',
-          },
-        })
-      }
-      if (shouldRequireAiLive()) {
-        return new Response(JSON.stringify({ error: 'Upstream stream unavailable' }), {
-          status: upstream.status || 502,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      }
-    } catch {
-      if (shouldRequireAiLive()) {
-        return new Response(JSON.stringify({ error: 'Upstream stream unavailable' }), {
-          status: 502,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      }
-    }
   }
 
   const status = storeResearchStatus(projectId, runId)

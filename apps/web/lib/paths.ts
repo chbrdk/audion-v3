@@ -46,8 +46,12 @@ export const paths = {
   /** Brand channel logos under apps/web/public */
   channelLogoBasePath: '/fixtures/channels',
   channelIconsPath: 'apps/web/lib/channel-icons.tsx',
-  /** Default chat-api (override via env — never hardcode in components) */
+  /** @deprecated V2 chat-api proxy — native AI uses OPENAI_* instead */
   chatApiInternalUrl: 'http://chat-api:8001',
+  /** Native AI runtime: stub | native | auto (auto = native when OPENAI_API_KEY set) */
+  aiRuntime: 'auto' as const,
+  aiOpenAiModel: 'gpt-5.4-mini',
+  aiOpenAiImageModel: 'gpt-image-1-mini',
   defaultDisplayName: 'AUDION',
   displayNameStorageKey: 'audion.v3.displayName',
   themeStorageKey: 'audion.v3.theme',
@@ -163,6 +167,11 @@ export const paths = {
   envPersonaBackendInternal: 'NEXT_PERSONA_BACKEND_INTERNAL_URL',
   envPersonaBackendPublic: 'NEXT_PUBLIC_PERSONA_BACKEND_URL',
   envChatApiInternal: 'NEXT_CHAT_API_INTERNAL_URL',
+  envAiRuntime: 'NEXT_AI_RUNTIME',
+  envOpenAiApiKey: 'OPENAI_API_KEY',
+  envOpenAiApiBaseUrl: 'OPENAI_API_BASE_URL',
+  envAiOpenAiModel: 'AI_OPENAI_MODEL',
+  envAiOpenAiImageModel: 'AI_OPENAI_IMAGE_MODEL',
   /** Plexon federation — knowledge/plexon-federation.md */
   envPlexonAuthUrl: 'PLEXON_AUTH_URL',
   envPlexonServiceSecret: 'PLEXON_SERVICE_SECRET',

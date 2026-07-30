@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server'
 import type { SuggestTargetGroupsRequest } from '@audion-v3/contracts'
-import { runStubSuggestTargetGroups, withAiLiveOrStub } from '../../../../../../lib/ai-workflows'
-import { runLiveSuggestTargetGroups } from '../../../../../../lib/ai-workflows-live'
+import { runStubSuggestTargetGroups, withAiNativeOrStub } from '../../../../../../lib/ai-workflows'
+import { runNativeSuggestTargetGroups } from '../../../../../../lib/ai-workflows-native'
 
 type Params = { params: Promise<{ projectId: string }> }
 
 export async function POST(request: Request, { params }: Params) {
   const { projectId } = await params
   const body = (await request.json().catch(() => ({}))) as SuggestTargetGroupsRequest
-  const resolved = await withAiLiveOrStub(
+  const resolved = await withAiNativeOrStub(
     request,
-    (authorization) => runLiveSuggestTargetGroups(projectId, body, authorization),
+    (authorization) => runNativeSuggestTargetGroups(projectId, body, authorization),
     () => runStubSuggestTargetGroups(projectId, body),
   )
   if (!resolved.ok) {

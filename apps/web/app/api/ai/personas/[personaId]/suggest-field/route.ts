@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server'
 import type { SuggestPersonaFieldRequest } from '@audion-v3/contracts'
-import { runStubSuggestPersonaField, withAiLiveOrStub } from '../../../../../../lib/ai-workflows'
-import { runLiveSuggestPersonaField } from '../../../../../../lib/ai-workflows-live'
+import { runStubSuggestPersonaField, withAiNativeOrStub } from '../../../../../../lib/ai-workflows'
+import { runNativeSuggestPersonaField } from '../../../../../../lib/ai-workflows-native'
 
 type Params = { params: Promise<{ personaId: string }> }
 
 export async function POST(request: Request, { params }: Params) {
   const { personaId } = await params
   const body = (await request.json().catch(() => ({}))) as SuggestPersonaFieldRequest
-  const resolved = await withAiLiveOrStub(
+  const resolved = await withAiNativeOrStub(
     request,
-    (authorization) => runLiveSuggestPersonaField(personaId, body, authorization),
+    (authorization) => runNativeSuggestPersonaField(personaId, body, authorization),
     () => runStubSuggestPersonaField(personaId, body),
   )
   if (!resolved.ok) {

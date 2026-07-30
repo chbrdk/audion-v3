@@ -93,7 +93,7 @@ describe('UX study UI (magazine + DS)', () => {
     expect(container.querySelector('#soft-value-Q1_nuetzlichkeit')).toBeTruthy()
     expect(container.querySelector('#soft-conf-Q1_nuetzlichkeit')).toBeTruthy()
     expect(container.querySelector('.audion-magazine-topbar-actions')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /Start agent/i })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Evaluate' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Compare' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Export report' })).toBeEnabled()
