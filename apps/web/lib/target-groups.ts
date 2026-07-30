@@ -88,6 +88,14 @@ export function normalizeTargetGroupDetail(raw: unknown): TargetGroupDetail | nu
     ...summary,
     personaCount: linkedPersonas.length || summary.personaCount,
     linkedPersonas,
+    knowledgeEntries: Array.isArray(item.knowledgeEntries)
+      ? (item.knowledgeEntries as TargetGroupDetail['knowledgeEntries'])
+      : Array.isArray(item.knowledge_entries)
+        ? (item.knowledge_entries as TargetGroupDetail['knowledgeEntries'])
+        : [],
+    documents: Array.isArray(item.documents)
+      ? (item.documents as TargetGroupDetail['documents'])
+      : [],
   }
 }
 

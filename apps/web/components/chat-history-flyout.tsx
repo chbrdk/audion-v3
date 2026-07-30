@@ -2,10 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import type { ChatConversationList, ChatConversationSummary } from '@audion-v3/contracts'
-import { EmptyState, SectionChrome } from '@msqdx/ui'
+import { EmptyState, Flyout, IconHistory, SectionChrome } from '@msqdx/ui'
 import { paths } from '../lib/paths'
-import { ChatFlyout } from './chat-flyout'
-import { IconHistory } from './nav-icons'
 
 export function ChatHistoryFlyout({
   personaId,
@@ -48,10 +46,11 @@ export function ChatHistoryFlyout({
   }, [personaId])
 
   return (
-    <ChatFlyout
+    <Flyout
       label="History"
       icon={<IconHistory />}
       resetKey={personaId}
+      triggerClassName="audion-chat-topbar-icon"
       panelClassName="audion-chat-history-flyover"
     >
       {() => (
@@ -94,6 +93,6 @@ export function ChatHistoryFlyout({
           </p>
         </>
       )}
-    </ChatFlyout>
+    </Flyout>
   )
 }

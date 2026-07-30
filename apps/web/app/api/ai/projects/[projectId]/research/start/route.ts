@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { ResearchStartRequest } from '@audion-v3/contracts'
-import { runStubResearchStart, withAiLiveOrStub } from '../../../../../../lib/ai-workflows'
-import { runLiveResearchStart } from '../../../../../../lib/ai-workflows-live'
+import { runStubResearchStart, withAiLiveOrStub } from '../../../../../../../lib/ai-workflows'
+import { runLiveResearchStart } from '../../../../../../../lib/ai-workflows-live'
 
 type Params = { params: Promise<{ projectId: string }> }
 

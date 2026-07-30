@@ -445,24 +445,22 @@ export function PersonaEditableVisuals({
 
       <Dialog
         open={deleteTileId != null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTileId(null)
-        }}
+        onClose={() => setDeleteTileId(null)}
         title="Remove visual tile?"
-        description={
-          deleteTile
-            ? `Remove “${deleteTile.caption || deleteTile.category}” from this persona moodboard?`
-            : undefined
+        actions={
+          <div className="audion-editable-list-dialog-actions">
+            <Button type="button" variant="ghost" onClick={() => setDeleteTileId(null)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => void onConfirmDeleteTile()} disabled={saving}>
+              Remove
+            </Button>
+          </div>
         }
       >
-        <div className="audion-editable-list-dialog-actions">
-          <Button type="button" variant="ghost" onClick={() => setDeleteTileId(null)} disabled={saving}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={() => void onConfirmDeleteTile()} disabled={saving}>
-            Remove
-          </Button>
-        </div>
+        {deleteTile
+          ? `Remove “${deleteTile.caption || deleteTile.category}” from this persona moodboard?`
+          : null}
       </Dialog>
     </section>
   )

@@ -155,7 +155,6 @@ export function JourneyEditDialog({
               if (nameError) setNameError(null)
             }}
             placeholder="Journey name"
-            invalid={nameError ? true : undefined}
           />
         </Field>
 

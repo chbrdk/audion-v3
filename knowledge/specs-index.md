@@ -39,6 +39,7 @@
 | Forms wave | `msqdx-ui/specs/domain/msqdx-ui-forms.md` |
 | Extended (Dialog) | `msqdx-ui/specs/domain/msqdx-ui-extended.md` |
 | Chat chrome | `msqdx-ui/specs/domain/msqdx-ui-chat-chrome.md` |
+| Flyout | `msqdx-ui/specs/domain/msqdx-ui-flyout.md` |
 
 ## Migration maps
 

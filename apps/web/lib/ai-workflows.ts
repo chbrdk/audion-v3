@@ -527,7 +527,7 @@ export function runStubGenerateJourney(
   const workflowId: AiWorkflowId = fromProjectId
     ? 'generateJourneyFromProject'
     : 'generateJourney'
-  const pathParams = fromProjectId ? { projectId: fromProjectId } : {}
+  const pathParams: Record<string, string> = fromProjectId ? { projectId: fromProjectId } : {}
   const upstreamBody = {
     target_group_id: tgId,
     journey_type: journeyType,

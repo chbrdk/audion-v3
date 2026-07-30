@@ -26,3 +26,13 @@ export type {
   DivergingBarListProps,
   DivergingBarTone,
 } from '../../../../msqdx-ui/packages/ui/src/components/DivergingBar'
+export { Flyout, useFlyout } from '../../../../msqdx-ui/packages/ui/src/components/Flyout'
+export type { FlyoutProps } from '../../../../msqdx-ui/packages/ui/src/components/Flyout'
+export {
+  IconShare,
+  IconHistory,
+  IconMoodboard,
+  IconMic,
+  IconVideo,
+  IconSend,
+} from '../../../../msqdx-ui/packages/ui/src/components/icons'

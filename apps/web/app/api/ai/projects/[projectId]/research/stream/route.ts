@@ -1,8 +1,10 @@
 import { storeResearchSseChunks, storeResearchStatus } from '../../../../../../../lib/fixtures/research-runs'
 import {
-  getPersonaBackendBase,
   shouldPreferAiLive,
   shouldRequireAiLive,
+} from '../../../../../../../lib/persona-api-proxy'
+import {
+  getPersonaBackendBase,
   shouldUsePersonaFixturesOnly,
 } from '../../../../../../../lib/runtime-config'
 

@@ -2345,34 +2345,7 @@ main { min-height: 100vh; }
   --chat-panel-open-min-height: calc(100vh - 10.5rem);
 }
 
-.audion-chat-flyout {
-  position: relative;
-  flex: 0 0 auto;
-}
-
-.audion-chat-flyover {
-  position: absolute;
-  top: calc(100% + 0.55rem);
-  left: 0;
-  z-index: 40;
-  min-width: min(22rem, calc(100vw - 4rem));
-  max-width: min(36rem, calc(100vw - 3rem));
-  padding: 0.85rem 1rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 0.45rem;
-  background: color-mix(in srgb, var(--surface-1, var(--surface, var(--bg, #fff))) 78%, transparent);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
-  backdrop-filter: blur(16px) saturate(1.2);
-  box-shadow: 0 12px 32px color-mix(in srgb, var(--ink) 12%, transparent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .audion-chat-flyover {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    background: var(--surface-1, var(--surface, var(--bg, #fff)));
-  }
-}
+/* Flyout shell chrome lives in @msqdx/ui (.ds-flyout / .ds-flyover). Product content variants: */
 
 .audion-chat-moodboard-flyover {
   min-width: min(36rem, calc(100vw - 4rem));

@@ -209,7 +209,7 @@ export async function runLiveGenerateJourney(
     use_async: body.use_async ?? false,
   }
   const workflowId = fromProjectId ? 'generateJourneyFromProject' : 'generateJourney'
-  const pathParams = fromProjectId ? { projectId: fromProjectId } : {}
+  const pathParams: Record<string, string> = fromProjectId ? { projectId: fromProjectId } : {}
   const path = formatUpstreamPath(AI_WORKFLOW_TARGETS[workflowId].upstreamPath, pathParams)
   const res = await fetchPersonaApi(path, { body: upstreamBody, authorization })
   if (!res.ok) return { error: res.error, status: res.status, detail: res.detail }

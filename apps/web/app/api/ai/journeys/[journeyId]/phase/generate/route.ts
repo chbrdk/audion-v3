@@ -3,8 +3,8 @@ import type { GenerateJourneyPhaseMomentsRequest } from '@audion-v3/contracts'
 import {
   runStubGenerateJourneyPhaseMoments,
   withAiLiveOrStub,
-} from '../../../../../../lib/ai-workflows'
-import { runLiveGenerateJourneyPhaseMoments } from '../../../../../../lib/ai-workflows-live'
+} from '../../../../../../../lib/ai-workflows'
+import { runLiveGenerateJourneyPhaseMoments } from '../../../../../../../lib/ai-workflows-live'
 
 type Params = { params: Promise<{ journeyId: string }> }
 

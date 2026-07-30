@@ -200,6 +200,26 @@ export function normalizePersonaDetail(raw: unknown): PersonaDetail | null {
     channels: asStringList(item.channels),
     sections,
     visuals: coerceVisuals(moodboard),
+    profileDe:
+      item.profileDe && typeof item.profileDe === 'object'
+        ? (item.profileDe as PersonaDetail['profileDe'])
+        : item.profile_de && typeof item.profile_de === 'object'
+          ? (item.profile_de as PersonaDetail['profileDe'])
+          : null,
+    headlineDe:
+      typeof item.headlineDe === 'string'
+        ? item.headlineDe
+        : typeof item.headline_de === 'string'
+          ? item.headline_de
+          : null,
+    knowledgeEntries: Array.isArray(item.knowledgeEntries)
+      ? (item.knowledgeEntries as PersonaDetail['knowledgeEntries'])
+      : Array.isArray(item.knowledge_entries)
+        ? (item.knowledge_entries as PersonaDetail['knowledgeEntries'])
+        : [],
+    documents: Array.isArray(item.documents)
+      ? (item.documents as PersonaDetail['documents'])
+      : [],
   }
 }
 

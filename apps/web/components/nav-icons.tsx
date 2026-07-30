@@ -165,178 +165,20 @@ export function IconSend({ size = 18 }: { size?: number }) {
   )
 }
 
-/** Mic — voice modality. */
-export function IconMic({ size = 18 }: { size?: number }) {
-  return (
-    <svg
-      className="ui-icon"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <path d="M12 19v3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-      <path
-        d="M19 10v2a7 7 0 0 1-14 0v-2"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-      <rect
-        x="9"
-        y="2"
-        width="6"
-        height="13"
-        rx="3"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-    </svg>
-  )
-}
+/** Mic — voice modality. Prefer `@msqdx/ui` IconMic. */
+export { IconMic } from '@msqdx/ui'
 
-/** Videocam — Tavus / video modality. */
-export function IconVideo({ size = 18 }: { size?: number }) {
-  return (
-    <svg
-      className="ui-icon"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <rect
-        x="2"
-        y="6"
-        width="14"
-        height="12"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-    </svg>
-  )
-}
+/** Videocam — Tavus / video modality. Prefer `@msqdx/ui` IconVideo. */
+export { IconVideo } from '@msqdx/ui'
 
-/** Share — copy public chat link. */
-export function IconShare({ size = 18 }: { size?: number }) {
-  return (
-    <svg
-      className="ui-icon"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.75" />
-      <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.75" />
-      <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.75" />
-      <path
-        d="M8.59 13.51l6.83 3.98"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-      <path
-        d="M15.41 6.51l-6.82 3.98"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
+/** Share — copy public chat link. Prefer `@msqdx/ui` IconShare. */
+export { IconShare } from '@msqdx/ui'
 
-/** History — conversation list. */
-export function IconHistory({ size = 18 }: { size?: number }) {
-  return (
-    <svg
-      className="ui-icon"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M3 3v5h5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-      <path
-        d="M12 7v5l4 2"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
+/** History — conversation list. Prefer `@msqdx/ui` IconHistory. */
+export { IconHistory } from '@msqdx/ui'
 
-/** Moodboard / images grid. */
-export function IconMoodboard({ size = 18 }: { size?: number }) {
-  return (
-    <svg
-      className="ui-icon"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <rect
-        x="3"
-        y="3"
-        width="7"
-        height="7"
-        rx="1.25"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-      <rect
-        x="14"
-        y="3"
-        width="7"
-        height="7"
-        rx="1.25"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-      <rect
-        x="3"
-        y="14"
-        width="7"
-        height="7"
-        rx="1.25"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-      <rect
-        x="14"
-        y="14"
-        width="7"
-        height="7"
-        rx="1.25"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-    </svg>
-  )
-}
+/** Moodboard / images grid. Prefer `@msqdx/ui` IconMoodboard. */
+export { IconMoodboard } from '@msqdx/ui'
 
 /** Trash / delete — local SVG (no lucide SSR dependency). */
 export function IconDelete({ size = 16 }: { size?: number }) {

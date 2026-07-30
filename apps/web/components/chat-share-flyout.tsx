@@ -1,10 +1,8 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
-import { Button, SectionChrome } from '@msqdx/ui'
+import { Button, Flyout, IconShare, SectionChrome } from '@msqdx/ui'
 import { buildChatShareHref } from '../lib/chat/share'
-import { ChatFlyout } from './chat-flyout'
-import { IconShare } from './nav-icons'
 
 export function ChatShareFlyout({
   personaId,
@@ -34,10 +32,11 @@ export function ChatShareFlyout({
   }
 
   return (
-    <ChatFlyout
+    <Flyout
       label="Share"
       icon={<IconShare />}
       resetKey={personaId}
+      triggerClassName="audion-chat-topbar-icon"
       panelClassName="audion-chat-share-flyover"
       disabled={!personaId || !projectId}
     >
@@ -62,6 +61,6 @@ export function ChatShareFlyout({
           </div>
         </>
       )}
-    </ChatFlyout>
+    </Flyout>
   )
 }

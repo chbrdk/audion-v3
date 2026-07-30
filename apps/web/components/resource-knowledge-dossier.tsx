@@ -307,7 +307,7 @@ export function ResourceKnowledgeDossier({
 
       {documents.length ? (
         <div className="audion-resource-documents" aria-label="Sources">
-          <SectionChrome quiet title="Sources" meta={`${documents.length}`} as="h4" />
+          <SectionChrome quiet title="Sources" meta={`${documents.length}`} as="h3" />
           <ul className="audion-research-events">
             {documents.map((doc) => (
               <li key={doc.id}>

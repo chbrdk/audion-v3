@@ -170,7 +170,6 @@ export function JourneyPhaseEditDialog({
               if (nameError) setNameError(null)
             }}
             placeholder="Phase name"
-            invalid={nameError ? true : undefined}
           />
         </Field>
 

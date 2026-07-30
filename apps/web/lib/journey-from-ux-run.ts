@@ -15,8 +15,11 @@ import {
   storeUxStudyDetail,
   storeUxWaveDetail,
 } from './fixtures/ux-study-store'
-import { fetchPersonaApi } from './persona-api-proxy'
-import { shouldPreferAiLive, shouldRequireAiLive } from './runtime-config'
+import {
+  fetchPersonaApi,
+  shouldPreferAiLive,
+  shouldRequireAiLive,
+} from './persona-api-proxy'
 
 export const JOURNEY_FROM_UX_RUN_PATH = '/journeys/from-ux-run'
 

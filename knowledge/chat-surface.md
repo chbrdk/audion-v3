@@ -9,7 +9,7 @@ Conversation sits on the page — **no Panel / card chrome**. Typography carries
 | Layer | Treatment |
 |-------|-----------|
 | Shell | No page title; persona Select + Moodboard / Share / History flyout icons in `topbar-brand` |
-| Flyouts | Shared `ChatFlyout`: frosted panel only (`.audion-chat-flyover` + `backdrop-filter`); no page overlay; Escape / outside click to close |
+| Flyouts | DS `Flyout` (`.ds-flyout` / frosted `.ds-flyover`); product content wrappers for Share / History / Moodboard |
 | Panel | `.chat-panel.chat-panel-open` |
 | User turn | Right-aligned display type, large light weight, tight tracking |
 | Assistant | Left-aligned `--font-body`, ~1.05–1.2rem, weight 300, lh ~1.7; display headings |
@@ -20,7 +20,7 @@ Conversation sits on the page — **no Panel / card chrome**. Typography carries
 ## Product-only CSS
 
 - `.audion-chat-persona-field` / `.audion-chat-topbar-leading` / `.audion-chat-composer-actions` / `.audion-chat-composer-icon`
-- `.audion-chat-flyout` / `.audion-chat-flyover`
+- Product flyout content: `.audion-chat-*-flyover` width variants / lede / actions / footer (shell = DS `.ds-flyout`)
 - `--chat-panel-open-min-height` shell offset on `.audion-chat-panel`
 - `.audion-chat-history` list page width
 - `.visually-hidden` for a11y title
@@ -28,10 +28,10 @@ Conversation sits on the page — **no Panel / card chrome**. Typography carries
 ## Files
 
 - `apps/web/components/audion-chat-workspace.tsx` (topbar chrome)
-- `apps/web/components/chat-flyout.tsx` (+ share / history / moodboard)
+- `apps/web/components/chat-{share,history}-flyout.tsx` · `chat-moodboard-strip.tsx` (compose DS `Flyout`)
 - `apps/web/components/audion-chat-panel.tsx`
 - `apps/web/app/globals.css` (product hooks only)
-- DS: `msqdx-ui/packages/ui/src/css/chat.css` · spec `msqdx-ui-chat-chrome.md`
+- DS: `msqdx-ui` `Flyout` · `msqdx-ui-flyout.md` · chat chrome `msqdx-ui-chat-chrome.md`
 - Tests: `apps/web/__tests__/chat-panel.test.tsx`
 
 History list still uses TG-style cards (`/chat/history`).

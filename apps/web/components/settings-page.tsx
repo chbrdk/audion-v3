@@ -78,7 +78,7 @@ export function SettingsPage() {
             <dt>Email</dt>
             <dd>{accountEmail}</dd>
           </dl>
-          <Button type="button" variant="secondary" onClick={handleLogout} disabled={loggingOut}>
+          <Button type="button" variant="subtle" onClick={handleLogout} disabled={loggingOut}>
             {loggingOut ? 'Signing out…' : 'Sign out'}
           </Button>
         </section>

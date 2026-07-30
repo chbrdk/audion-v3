@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { EmptyState, Panel, Text, TopStatus } from '@msqdx/ui'
-import { AppShell } from '../../components/app-shell'
-import { fetchChatConversationList } from '../../lib/chat/conversations'
-import { paths } from '../../lib/paths'
+import { AppShell } from '../../../components/app-shell'
+import { fetchChatConversationList } from '../../../lib/chat/conversations'
+import { paths } from '../../../lib/paths'
 
 export default async function ChatHistoryPage() {
   const list = fetchChatConversationList()

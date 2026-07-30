@@ -104,7 +104,7 @@ describe('audion chat workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Share' }))
     expect(screen.getByRole('dialog', { name: 'Share' })).toBeInTheDocument()
     expect(container.querySelector('.audion-chat-flyout-backdrop')).toBeNull()
-    expect(screen.getByRole('dialog', { name: 'Share' }).className).toContain('audion-chat-flyover')
+    expect(screen.getByRole('dialog', { name: 'Share' }).className).toContain('ds-flyover')
     expect((screen.getByLabelText('Share link') as HTMLInputElement).value).toContain(
       'personaId=persona-alex-morgan&projectId=proj-audion-core',
     )

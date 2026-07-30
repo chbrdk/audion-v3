@@ -8,7 +8,7 @@ import type {
   ChatTavusSessionResponse,
   PersonaSummary,
 } from '@audion-v3/contracts'
-import { Button, Field, Text } from '@msqdx/ui'
+import { Button, Field, IconMic, IconVideo, Text } from '@msqdx/ui'
 import { AppShell } from './app-shell'
 import { AudionChatPanel } from './audion-chat-panel'
 import { ChatHistoryFlyout } from './chat-history-flyout'
@@ -16,7 +16,6 @@ import { ChatMoodboardStrip } from './chat-moodboard-strip'
 import { ChatShareFlyout } from './chat-share-flyout'
 import { Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
-import { IconMic, IconVideo } from './nav-icons'
 
 type Props = {
   personas: PersonaSummary[]

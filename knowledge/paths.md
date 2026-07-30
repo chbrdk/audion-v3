@@ -67,9 +67,11 @@
 - Chat modalities (share / moodboard / inspect / Voice·Tavus hooks): `knowledge/chat-modalities-2026.md`
 - Chat share helper: `apps/web/lib/chat/share.ts` · `paths.routes.chatShare` · `paths.routes.chatConversation`
 - Upstream Tavus (live): `paths.routes.upstreamPersonaAdminTavusSession`
-- Chat flyouts: `apps/web/components/chat-flyout.tsx` (+ share / history / moodboard)
+- Chat flyouts: product share / history / moodboard compose DS `Flyout` (`knowledge/flyout-ds-2026-07-30.md`)
 - Chat workspace spec: `specs/domain/chat-workspace.md`
+- DS Flyout: `msqdx-ui/specs/domain/msqdx-ui-flyout.md` · `packages/ui/src/components/Flyout.tsx`
 - DS chat chrome: `msqdx-ui/specs/domain/msqdx-ui-chat-chrome.md` · `packages/ui/src/css/chat.css` (`.chat-panel-open`)
+- DS chat icons: `IconShare` · `IconHistory` · `IconMoodboard` · `IconMic` · `IconVideo` (+ `IconSend`)
 - Journey migration map: `knowledge/journey-migration-map.md`
 - Chat migration map: `knowledge/chat-migration-map.md`
 - Project migration map: `knowledge/project-migration-map.md`

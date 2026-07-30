@@ -86,7 +86,7 @@ export function normalizeProjectDetail(raw: unknown): ProjectDetail | null {
       const id = typeof m.id === 'string' ? m.id : null
       const email = typeof m.email === 'string' ? m.email : null
       if (!id || !email) return null
-      const status =
+      const status: 'active' | 'invited' | 'removed' =
         m.status === 'invited' || m.status === 'removed' || m.status === 'active'
           ? m.status
           : 'active'

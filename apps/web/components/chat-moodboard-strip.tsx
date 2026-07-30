@@ -2,10 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import type { ChatShareMoodboard } from '@audion-v3/contracts'
-import { SectionChrome } from '@msqdx/ui'
+import { Flyout, IconMoodboard, SectionChrome } from '@msqdx/ui'
 import { paths } from '../lib/paths'
-import { ChatFlyout } from './chat-flyout'
-import { IconMoodboard } from './nav-icons'
 
 export function ChatMoodboardStrip({
   personaId,
@@ -51,7 +49,7 @@ export function ChatMoodboardStrip({
   if (!board?.tiles.length) return null
 
   return (
-    <ChatFlyout
+    <Flyout
       label="Moodboard"
       icon={<IconMoodboard />}
       resetKey={personaId}
@@ -72,6 +70,6 @@ export function ChatMoodboardStrip({
           </ul>
         </>
       )}
-    </ChatFlyout>
+    </Flyout>
   )
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import type { NextFetchEvent, NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { auth } from './auth'
 import { isPlexonAuthConfigured } from './lib/plexon-auth'
 import { paths } from './lib/paths'
@@ -29,11 +29,11 @@ const gated = auth((req) => {
 })
 
 /** Open when Plexon unset; protect app routes when federated. */
-export default function middleware(req: NextRequest, event: NextFetchEvent) {
+export default function middleware(req: NextRequest) {
   if (!isPlexonAuthConfigured()) {
     return NextResponse.next()
   }
-  return gated(req, event)
+  return gated(req, {} as never)
 }
 
 export const config = {

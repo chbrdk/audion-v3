@@ -1,13 +1,14 @@
 # AUDION v3 — DS component gaps (after magazine + edit wave)
 
-**Date:** 2026-07-29  
+**Date:** 2026-07-30  
 **Index:** `knowledge/specs-index.md` · DS forms: `msqdx-ui/knowledge/forms-edit-wave.md`
 
 ## Already in product
 
 Shell: `AppFrame`, `NavRail`, `BrandCorner`, `PageTitle`, `MsqdxLogoMark`  
 Surfaces: `Avatar`, `Alert`, `TopStatus`, `Button`, `Text`, `Panel`, `EmptyState`, `LoadingText`, `SectionChrome`  
-Forms: `Field`, `Input`, `Textarea`, `Select`, `TagInput`, `Dialog`
+Forms: `Field`, `Input`, `Textarea`, `Select`, `TagInput`, `Dialog`  
+Chat chrome: `Flyout` (+ Share/History/Moodboard/Mic/Video icons)
 
 ## Adopt next (already in `@msqdx/ui`, unused)
 
@@ -18,7 +19,7 @@ Forms: `Field`, `Input`, `Textarea`, `Select`, `TagInput`, `Dialog`
 | P0 | `Skeleton` / `Spinner` | API/`auto` loading chrome (`LoadingText` wired in chat via `lib/msqdx-ui.ts`) |
 | P1 | `StatusDot` / `Chip` | Replace ad-hoc `data-status` CSS |
 | P1 | `Tooltip` | Channel bubbles (today `title` only) |
-| P1 | DS `IconOverview` / `IconPersonas` / … | Drop local `nav-icons.tsx` |
+| P1 | Remaining nav icons (`IconOverview` / …) | Drop rest of local `nav-icons.tsx` |
 
 ## Build in DS (not shipped)
 
@@ -31,6 +32,7 @@ Forms: `Field`, `Input`, `Textarea`, `Select`, `TagInput`, `Dialog`
 
 ## Product composition (not new DS atoms)
 
+- Chat Share / History / Moodboard flyout **content** (compose DS `Flyout`)
 - Notes / sections editor in edit dialog
 - TG sources · knowledge upload · generate-personas (later product slice; can use `DataTable` + Toast)
 - Magazine grids / TG cards / article layout — **keep AUDION-local**
