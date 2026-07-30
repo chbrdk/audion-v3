@@ -1,0 +1,79 @@
+# AUDION v3 Paths and URLs
+
+- Repo root: `/Users/christoph.bordeck/Desktop/GITHUB/audion-v3`
+- Web app: `apps/web`
+- Contracts package: `packages/contracts`
+- Shared UI repo: `/Users/christoph.bordeck/Desktop/GITHUB/msqdx-ui`
+- Shared UI package dep from web: `../../../msqdx-ui/packages/ui`
+- Shared token package dep from web: `../../../msqdx-ui/packages/ui-tokens`
+- Default internal persona backend: `http://api:8000`
+- Env key for internal persona backend: `NEXT_PERSONA_BACKEND_INTERNAL_URL`
+- Env key for optional public persona backend: `NEXT_PUBLIC_PERSONA_BACKEND_URL`
+- Default app port: `3006`
+- Shell paths helper: `apps/web/lib/paths.ts` (`paths.routes.*`)
+- Rail dock storage key: `audion.v3.railDock`
+- Comm layout storage key: `audion.v3.commLayout` (`paths.commLayoutStorageKey`)
+- TG linked personas layout key: `audion.v3.tgLinkedPersonasLayout` (`paths.tgLinkedPersonasLayoutKey`) — `cards` | `list`
+- Runtime config helper: `apps/web/lib/runtime-config.ts`
+- Persona fixtures: `apps/web/lib/fixtures/personas.ts`
+- Persona fixture store: `apps/web/lib/fixtures/persona-store.ts`
+- Persona API routes: `/api/personas`, `/api/personas/[personaId]`
+- Target group fixtures: `apps/web/lib/fixtures/target-groups.ts`
+- Target group fixture store: `apps/web/lib/fixtures/target-group-store.ts`
+- Target group routes: `/target-groups`, `/target-groups/[targetGroupId]`
+- Target group API routes: `/api/target-groups`, `/api/target-groups/[targetGroupId]`
+- Journey routes: `/journeys`, `/journeys/[journeyId]` (`paths.routes.journeys*`)
+- Journey API routes: `/api/journeys`, `/api/journeys/[journeyId]`
+- Journey fixtures/store: `apps/web/lib/fixtures/journeys.ts` · `journey-store.ts`
+- Journey lib: `apps/web/lib/journeys.ts`
+- UX Study routes: `/studies`, `/studies/[studyId]`, `/studies/[studyId]/waves/[waveId]` (`paths.routes.studies*`)
+- UX Study API: `/api/studies*` → optional proxy to v2 `/ux-studies` when `NEXT_PERSONA_DATA_SOURCE=api`
+- UX Study fixtures/store: `apps/web/lib/fixtures/ux-studies.ts` · `ux-study-store.ts`
+- UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts`
+- UX Study knowledge: `knowledge/ux-studies.md`
+- Chat deep-link / F-Fragen prefill: `paths.routes.chatWithContext` · `apps/web/lib/chat/prefill.ts`
+  (`prompt`, `personaId`, `studyId`, `waveId`, `projectId`, `studyName`, `waveKey`)
+- Bosch EBM demo URL: `paths.boschEbikeProduktkombinationenUrl` / `paths.boschEbikeHomeUrl`
+- Project routes: `/projects`, `/projects/[projectId]`
+- Project API: `/api/projects`, `/api/projects/[projectId]`
+- Project fixtures/store: `apps/web/lib/fixtures/projects.ts` · `project-store.ts`
+- Project lib: `apps/web/lib/projects.ts`
+- Project knowledge helpers: `apps/web/lib/project-knowledge.ts`
+- Project knowledge WYSIWYG: `apps/web/components/knowledge-rich-editor.tsx` (TipTap `@tiptap/react` 3.29.x)
+- Shared Accordion: `@msqdx/ui` → `msqdx-ui/packages/ui/src/components/Accordion.tsx` · re-export `apps/web/lib/msqdx-ui.ts` (Vitest/Next alias) · spec `msqdx-ui/specs/domain/msqdx-ui-accordion.md`
+- Shared WizardSteps: same barrel (`apps/web/lib/msqdx-ui.ts`) · source `msqdx-ui/packages/ui/src/components/WizardSteps.tsx`
+- Wave detail DS: `StatLede`/`StatLedeGroup`, `StatusDot`, `StatusMeterPanel` — also re-exported via `apps/web/lib/msqdx-ui.ts`
+- Settings route: `/settings` (`paths.routes.settings`)
+- User prefs keys: `audion.v3.displayName` · `audion.v3.theme` · `audion.v3.locale`
+- Workspace slice clone pattern: `knowledge/workspace-slice-pattern.md`
+- Chat routes: `/chat`, `/chat/history`
+- Chat API proxies: `/api/chat/stream`, `/api/chat/conversations`, `/api/chat/conversations/[id]`
+  - Nested under `app/api/chat/*` → import fixtures via `../../../../lib/fixtures/chat-store` (four levels up)
+- Chat API internal default: `paths.chatApiInternalUrl` · env `NEXT_CHAT_API_INTERNAL_URL`
+- Chat fixtures/store: `apps/web/lib/fixtures/chat-store.ts`
+- Chat answer port: `apps/web/lib/chat/`
+- Chat surface (editorial open): `knowledge/chat-surface.md`
+- Chat workspace spec: `specs/domain/chat-workspace.md`
+- DS chat chrome: `msqdx-ui/specs/domain/msqdx-ui-chat-chrome.md` · `packages/ui/src/css/chat.css` (`.chat-panel-open`)
+- Journey migration map: `knowledge/journey-migration-map.md`
+- Chat migration map: `knowledge/chat-migration-map.md`
+- Project migration map: `knowledge/project-migration-map.md`
+- Settings migration: `knowledge/settings-migration.md`
+- Persona avatar public base: `/fixtures/personas` (`paths.personaAvatarBasePath`)
+- Persona avatar helper: `personaAvatarPath(id)` in `apps/web/lib/paths.ts`
+- Channel logo public base: `/fixtures/channels` (`paths.channelLogoBasePath`)
+- Channel icon registry: `apps/web/lib/channel-icons.tsx` (`knowledge/persona-channel-icons.md`)
+- Persona data source env: `NEXT_PERSONA_DATA_SOURCE` (`auto` | `fixtures` | `api`)
+- Persona magazine notes: `knowledge/persona-magazine.md`
+- Persona migration map: `knowledge/persona-migration-map.md`
+- Target group migration map: `knowledge/target-group-migration-map.md`
+- Shell/persona surface notes: `knowledge/shell-and-persona-surfaces.md`
+- Edit wave notes: `knowledge/edit-wave.md`
+- Specs index: `knowledge/specs-index.md`
+- DS component gaps: `knowledge/ds-component-gaps.md`
+- Journeys + Chat gaps: `knowledge/journeys-chat-gaps.md`
+- Remaining gaps (projects / settings): `knowledge/remaining-gaps.md`
+- AI workflows Wave 1 (stubs + target calls): `knowledge/ai-workflows.md` · `apps/web/lib/ai-workflows.ts`
+- DS forms: `msqdx-ui/specs/domain/msqdx-ui-forms.md`
+- DS field: `msqdx-ui/specs/domain/msqdx-ui-field.md`
+- DS extended: `msqdx-ui/specs/domain/msqdx-ui-extended.md`

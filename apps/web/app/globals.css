@@ -1,0 +1,3428 @@
+@import '@msqdx/ui/styles.css';
+
+:root {
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; min-height: 100%; background: var(--bg0); color: var(--fg); }
+body { font-family: var(--font-body); }
+a { color: inherit; text-decoration: none; }
+main { min-height: 100vh; }
+
+/* Fill the stage next to the rail — no artificial content column cap */
+.app-main {
+  max-width: none;
+  width: 100%;
+}
+
+.audion-page-lead {
+  margin: 0 0 0.85rem;
+  color: var(--muted);
+  font-size: var(--type-sm);
+  line-height: 1.45;
+  max-width: 42rem;
+}
+
+/* Quieter shell title — e.g. target group on persona detail */
+.audion-page-title-link {
+  display: inline-flex;
+  max-width: min(28rem, 100%);
+  color: inherit;
+  text-decoration: none;
+}
+
+.audion-page-title-link:hover .audion-page-title--context,
+.audion-page-title-link:focus-visible .audion-page-title--context {
+  color: var(--accent);
+  outline: none;
+}
+
+.ds-page-title.page-title.audion-page-title--context {
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  font-weight: var(--weight-light);
+  letter-spacing: var(--track-tight, -0.01em);
+  line-height: 1.25;
+  color: var(--muted);
+}
+
+/* —— Personas magazine index —— */
+.audion-index {
+  display: grid;
+  gap: var(--space-5);
+  max-width: none;
+  width: 100%;
+}
+
+.audion-index-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.audion-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: end;
+  max-width: 36rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.audion-search__field { min-width: 0; }
+.audion-search .ds-field-label { font-size: 0.68rem; }
+
+.audion-index-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.audion-index-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--space-3);
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 var(--space-4);
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+  transition: opacity var(--motion-fast, 160ms) ease;
+}
+
+.audion-index-card:hover {
+  opacity: 0.92;
+}
+
+.audion-index-card:hover .audion-index-title {
+  color: var(--accent);
+}
+
+.audion-index-card:focus-visible {
+  outline: none;
+}
+
+.audion-index-card:focus-visible .audion-index-portrait {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.audion-index-card--create {
+  border-bottom-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+}
+
+.audion-index-portrait--create {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+  border: 1px dashed color-mix(in srgb, var(--accent) 28%, var(--line));
+  box-sizing: border-box;
+}
+
+.audion-index-card--create:hover .audion-index-portrait--create,
+.audion-index-card--create:focus-visible .audion-index-portrait--create {
+  border-style: solid;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-2));
+}
+
+.audion-index-portrait {
+  margin: 0;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
+}
+
+.audion-index-portrait .ds-avatar,
+.audion-index-portrait .ds-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  display: block;
+}
+
+.audion-index-portrait .ds-avatar-initials {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+}
+
+.audion-index-copy {
+  display: grid;
+  gap: 0.2rem;
+  align-content: start;
+}
+
+.audion-index-eyebrow {
+  margin: 0;
+  color: var(--muted);
+}
+
+.audion-index-title {
+  margin: 0;
+  font-size: var(--type-xl);
+  font-weight: var(--weight-regular);
+  max-width: 18ch;
+}
+
+.audion-index-role {
+  margin: 0.15rem 0 0.55rem;
+  color: var(--muted);
+  font-size: var(--type-sm);
+}
+
+.audion-index-facets {
+  margin: 0;
+}
+
+.audion-index-facets dd[data-status='ready'] { color: var(--ok, #7dcea0); }
+.audion-index-facets dd[data-status='draft'] { color: var(--warn, #c9a227); }
+.audion-index-facets dd[data-status='archived'] { color: var(--muted); }
+
+/* —— Target group app cards —— */
+.audion-tg-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.audion-tg-card {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.audion-tg-card:focus-visible {
+  outline: none;
+}
+
+.audion-tg-card:focus-visible .audion-tg-card-panel {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.audion-tg-card-panel.ds-panel.module-panel {
+  margin-top: 0;
+  min-height: 22rem;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: clamp(3.5rem, 8vw, 5.5rem) 1.25rem 1.15rem;
+  transition:
+    border-color var(--motion-hover, 160ms) ease,
+    background var(--motion-hover, 160ms) ease;
+}
+
+.audion-tg-card-panel--create.ds-panel.module-panel {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+}
+
+.audion-tg-card:hover .audion-tg-card-panel,
+.audion-tg-card:focus-visible .audion-tg-card-panel {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--surface-2) 88%, var(--accent));
+}
+
+.audion-tg-card--create:hover .audion-tg-card-panel--create,
+.audion-tg-card--create:focus-visible .audion-tg-card-panel--create {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-2));
+}
+
+.audion-tg-card:hover .audion-tg-card-title {
+  color: var(--accent);
+}
+
+.audion-tg-card-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 3.2vw, 2.65rem);
+  font-weight: var(--weight-thin, 200);
+  letter-spacing: var(--track-label, 0.01em);
+  line-height: 1.05;
+  max-width: 14ch;
+}
+
+.audion-tg-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.45rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-xs);
+  letter-spacing: var(--track-meta);
+  line-height: 1.35;
+}
+
+.audion-tg-card-meta [data-status='active'],
+.audion-tg-card-meta [data-status='ready'] {
+  color: var(--ok, #7dcea0);
+}
+
+.audion-tg-card-meta [data-status='draft'] {
+  color: var(--warn, #c9a227);
+}
+
+.audion-tg-card-meta [data-status='archived'] {
+  color: var(--muted);
+}
+
+/* —— Magazine article: full available stage width (reading measure stays on text blocks) —— */
+.audion-magazine.briefing-detail {
+  margin-top: 0;
+  max-width: none;
+  width: 100%;
+  min-width: 0;
+  padding: 0 0 3rem;
+}
+
+.audion-magazine--empty {
+  min-height: 16rem;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  color: var(--muted);
+}
+
+.audion-magazine-status[data-status='ready'] { color: var(--ok, #7dcea0); }
+.audion-magazine-status[data-status='draft'] { color: var(--warn, #c9a227); }
+.audion-magazine-status[data-status='archived'] { color: var(--muted); }
+.audion-magazine-status[data-status='published'] { color: var(--ok, #7dcea0); }
+
+.audion-magazine-hero {
+  display: grid;
+  grid-template-columns: minmax(8.5rem, 12rem) minmax(0, 1fr);
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+  align-items: end;
+  padding-bottom: 1.25rem;
+}
+
+.audion-magazine-hero--text {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.audion-magazine-portrait {
+  margin: 0;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
+}
+
+.audion-magazine-portrait .ds-avatar,
+.audion-magazine-portrait .ds-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  display: block;
+}
+
+.audion-magazine-portrait .ds-avatar-initials {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: var(--weight-regular);
+}
+
+.audion-editable-portrait {
+  position: relative;
+}
+
+.audion-editable-portrait-hit {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.audion-editable-portrait-hit:hover,
+.audion-editable-portrait-hit:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ink) 40%, transparent);
+  outline: none;
+}
+
+.audion-editable-portrait-toolbar {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.audion-editable-portrait:hover .audion-editable-portrait-toolbar,
+.audion-editable-portrait:focus-within .audion-editable-portrait-toolbar {
+  opacity: 1;
+}
+
+.audion-editable-portrait-editor {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.65rem;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  overflow: auto;
+}
+
+.audion-editable-portrait-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: var(--type-xs, 0.75rem);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audion-editable-portrait-field input {
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 0.35rem 0.5rem;
+}
+
+.audion-editable-portrait-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.audion-editable-portrait-error {
+  position: absolute;
+  left: 0.45rem;
+  right: 0.45rem;
+  bottom: 2.6rem;
+  z-index: 2;
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  font-size: var(--type-xs, 0.75rem);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+}
+
+.audion-magazine-hero-copy {
+  display: grid;
+  gap: 0.1rem;
+  align-content: end;
+  min-width: 0;
+}
+
+.audion-magazine-deck {
+  margin: 0.1rem 0 0.75rem;
+  max-width: 36rem;
+  color: var(--muted);
+  font-size: var(--type-md, var(--type-base));
+  line-height: 1.45;
+  font-weight: var(--weight-regular);
+}
+
+/* Reuse ECHON geo-places gradient tiles for persona meta */
+.audion-magazine-facets.geo-places {
+  margin: 0.35rem 0 0;
+  gap: 0.55rem;
+}
+
+.audion-magazine-facets.geo-places li {
+  min-width: 5.5rem;
+  font-size: var(--type-sm);
+  font-weight: var(--weight-regular);
+}
+
+.audion-magazine-facets.geo-places li .meta {
+  font-family: var(--font-body);
+  font-size: var(--type-2xs);
+  font-weight: var(--weight-regular);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-magazine-facets li[data-kind='location'] {
+  border-top-color: var(--accent);
+}
+
+.audion-magazine-facets li[data-kind='age'] {
+  border-top-color: #7a9eb0;
+  background: linear-gradient(180deg, rgba(122, 158, 176, 0.12), transparent);
+}
+
+.audion-magazine-facets li[data-kind='gender'],
+.audion-magazine-facets li[data-kind='attention'] {
+  border-top-color: #9a8f7a;
+  background: linear-gradient(180deg, rgba(154, 143, 122, 0.12), transparent);
+}
+
+.audion-magazine-facets li[data-kind='archetype'] {
+  border-top-color: var(--ok, #7dcea0);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ok, #7dcea0) 14%, transparent), transparent);
+}
+
+.audion-magazine-facets li[data-kind='ready'] {
+  border-top-color: var(--ok, #7dcea0);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ok, #7dcea0) 14%, transparent), transparent);
+}
+
+.audion-magazine-facets li[data-kind='draft'] {
+  border-top-color: var(--warn, #c9a227);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--warn, #c9a227) 14%, transparent), transparent);
+}
+
+.audion-magazine-facets li[data-kind='archived'] {
+  border-top-color: var(--muted);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--muted) 12%, transparent), transparent);
+}
+
+.audion-magazine-lede {
+  margin: 0;
+  max-width: 42rem;
+  padding-block: clamp(1.5rem, 3vw, 2.25rem);
+  padding-inline: 0;
+  border: none;
+  font-family: var(--font-body);
+  font-size: clamp(1.15rem, 2.1vw, 1.45rem);
+  font-weight: var(--weight-light);
+  letter-spacing: var(--track-tight, -0.01em);
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.audion-wave-lede.audion-magazine-lede {
+  max-width: none;
+  padding-block: clamp(1.75rem, 3.5vw, 2.75rem);
+}
+
+.audion-wave-lede-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 2.5rem);
+  align-items: end;
+}
+
+.audion-wave-lede-stats > li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  padding-right: clamp(0.5rem, 2vw, 1.25rem);
+  border-right: 1px solid var(--line);
+}
+
+.audion-wave-lede-stats > li:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.audion-wave-lede-num {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 7vw, 4.5rem);
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.audion-wave-lede-unit {
+  margin-left: 0.05em;
+  font-size: 0.42em;
+  font-weight: var(--weight-regular, 400);
+  letter-spacing: -0.02em;
+  vertical-align: 0.35em;
+  color: var(--muted);
+}
+
+.audion-wave-lede-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.audion-wave-lede-stats > li[data-tone='pos'] .audion-wave-lede-num {
+  color: var(--accent);
+}
+
+.audion-wave-lede-stats > li[data-tone='low'] .audion-wave-lede-num {
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
+}
+
+.audion-wave-lede-stats > li[data-tone='neg'] .audion-wave-lede-num {
+  color: color-mix(in srgb, var(--ink) 45%, #b33);
+}
+
+.audion-wave-lede-stats > li[data-tone='ok'] .audion-wave-lede-num {
+  color: var(--ink);
+}
+
+.audion-wave-lede--empty {
+  max-width: 36rem;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .audion-wave-lede-stats {
+    grid-template-columns: 1fr;
+    gap: 1.15rem;
+  }
+
+  .audion-wave-lede-stats > li {
+    border-right: 0;
+    padding-right: 0;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .audion-wave-lede-stats > li:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.audion-magazine-body {
+  display: grid;
+  gap: clamp(1.75rem, 3vw, 2.5rem);
+  margin-top: var(--space-5);
+}
+
+/* Equal two-column stage — Goals | Frustrations (ECHON signal-stage) */
+.audion-magazine-stage.signal-stage {
+  margin: 0;
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+@media (min-width: 900px) {
+  .audion-magazine-stage.signal-stage {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.audion-magazine-band {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.audion-magazine-band.ds-panel {
+  padding: 0.85rem 0.95rem 1rem;
+}
+
+.audion-magazine-stage .audion-magazine-list-body {
+  max-width: none;
+}
+
+/* Quiet numbered lists — dense enough for long entries */
+.audion-magazine-list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.audion-magazine-list > li {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+
+.audion-magazine-list-num {
+  font-family: var(--font-display);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--track-display, 0.02em);
+  line-height: 1.45;
+  color: var(--accent);
+  padding-top: 0.1rem;
+}
+
+.audion-magazine-band .section-chrome-meta {
+  color: var(--accent);
+}
+
+.audion-magazine-list-body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-regular);
+  line-height: 1.65;
+  color: var(--ink);
+  max-width: 40rem;
+}
+
+.audion-magazine-meters {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4, 1rem);
+}
+
+.audion-magazine-meter-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: 0.35rem;
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--ink);
+}
+
+.audion-magazine-meter-value {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.audion-editable-traits-row .audion-magazine-meter-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.audion-editable-traits-label,
+.audion-editable-traits-score {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.audion-editable-traits-label:hover,
+.audion-editable-traits-label:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.audion-editable-traits-label-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.audion-editable-traits-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 0.35rem;
+  margin: 0;
+  padding: 0;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent) 75%, var(--ink) 25%) 0%,
+    color-mix(in srgb, var(--accent) 75%, var(--ink) 25%) var(--trait-pct, 0%),
+    color-mix(in srgb, var(--line) 80%, transparent) var(--trait-pct, 0%),
+    color-mix(in srgb, var(--line) 80%, transparent) 100%
+  );
+  cursor: pointer;
+}
+
+.audion-editable-traits-slider:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.audion-editable-traits-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 2px solid var(--paper, #fff);
+  background: color-mix(in srgb, var(--accent) 80%, var(--ink) 20%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 18%, transparent);
+  cursor: pointer;
+}
+
+.audion-editable-traits-slider::-moz-range-thumb {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 2px solid var(--paper, #fff);
+  background: color-mix(in srgb, var(--accent) 80%, var(--ink) 20%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 18%, transparent);
+  cursor: pointer;
+}
+
+.audion-editable-traits-slider::-moz-range-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.audion-editable-traits-delete.ds-btn {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fast, 160ms) ease;
+}
+
+.audion-editable-traits-row:hover .audion-editable-traits-delete.ds-btn,
+.audion-editable-traits-row:focus-within .audion-editable-traits-delete.ds-btn,
+.audion-editable-traits-delete.ds-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.audion-magazine-meter-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 80%, transparent);
+  overflow: hidden;
+}
+
+.audion-magazine-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--accent) 75%, var(--ink) 25%);
+}
+
+.audion-magazine-plain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.audion-magazine-plain-list > li {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-light);
+  line-height: 1.55;
+  color: var(--ink);
+  padding-block: 0.15rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.audion-magazine-plain-list--inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.25rem;
+}
+
+.audion-magazine-plain-list--inline > li {
+  border-bottom: none;
+  padding-block: 0;
+  color: var(--muted);
+}
+
+.audion-magazine-comm-lede {
+  margin: 0 0 var(--space-3, 0.75rem);
+  font-family: var(--font-body);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-light);
+  line-height: 1.6;
+  color: var(--ink);
+  max-width: 40rem;
+}
+
+.audion-magazine-comm-meta {
+  margin: 0 0 var(--space-4, 1rem);
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-editable-comm-kicker {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: var(--type-xs, 0.75rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-editable-comm-chrome {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3, 0.75rem);
+  margin-bottom: var(--space-4, 1rem);
+}
+
+.audion-editable-comm-chrome .section-chrome {
+  flex: 1;
+  margin: 0;
+}
+
+.audion-editable-comm-ai-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.audion-editable-comm-layout-switch {
+  display: inline-flex;
+  gap: 0.15rem;
+  padding: 0.15rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 88%, var(--ink) 12%);
+}
+
+.audion-editable-comm-layout-switch button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: var(--type-xs, 0.75rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.audion-editable-comm-layout-switch button.is-active {
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  color: var(--paper, #fff);
+}
+
+.audion-editable-comm-layout--quote {
+  display: grid;
+  gap: var(--space-5, 1.25rem);
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+  padding-bottom: clamp(1.75rem, 4vw, 2.75rem);
+}
+
+.audion-editable-comm-quote-block {
+  margin: 0;
+  padding-top: clamp(2.5rem, 6vw, 4rem);
+}
+
+.audion-editable-comm-quote {
+  appearance: none;
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--space-4, 1rem);
+  padding: 0 0 0.85rem;
+  border: 0;
+  border-bottom: 2px solid color-mix(in srgb, var(--accent) 70%, var(--ink) 30%);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+  font-weight: var(--weight-light);
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.audion-editable-comm-quote:hover,
+.audion-editable-comm-quote:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.audion-editable-comm-layout--tone {
+  display: grid;
+  gap: var(--space-5, 1.25rem);
+}
+
+.audion-editable-comm-caption {
+  max-width: 36rem;
+  font-size: var(--type-md, 1rem);
+  font-style: normal;
+}
+
+.audion-editable-comm-tone-block {
+  max-width: 32rem;
+}
+
+.audion-editable-comm-dial-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+  font-size: var(--type-xs, 0.75rem);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-editable-comm-dial-slider {
+  height: 0.45rem;
+}
+
+.audion-editable-comm-dial-value {
+  display: block;
+  margin-top: 0.45rem;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-editable-comm-chip-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.audion-editable-comm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 2rem;
+  padding: 0.15rem 0.15rem 0.15rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 8%);
+}
+
+.audion-editable-comm-chip-term {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0.2rem 0.25rem;
+  margin: 0;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--ink);
+}
+
+.audion-editable-comm-chip-remove {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.audion-editable-comm-chip-remove:hover {
+  color: var(--accent);
+}
+
+.audion-editable-comm-chip-add {
+  appearance: none;
+  border: 1px dashed var(--line);
+  background: transparent;
+  min-height: 2rem;
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-editable-comm-chip-add:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.audion-editable-comm-chip-input {
+  width: 7rem;
+  border: 0;
+  background: transparent;
+  padding: 0.2rem;
+}
+
+.audion-editable-comm-structure {
+  margin-bottom: var(--space-5, 1.25rem);
+}
+
+.audion-editable-comm-structure-text {
+  appearance: none;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--type-lg, 1.125rem);
+  font-weight: var(--weight-light);
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--ink);
+  max-width: 42rem;
+}
+
+.audion-editable-comm-structure-text:hover,
+.audion-editable-comm-structure-text:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.audion-editable-comm-structure-input {
+  display: block;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 8%);
+  font-family: var(--font-body);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-light);
+  line-height: 1.55;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.audion-editable-comm-vocab {
+  margin-top: var(--space-2, 0.5rem);
+}
+
+.audion-magazine-vocab {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 1.5rem;
+}
+
+.audion-magazine-vocab > li {
+  font-family: var(--font-body);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-light);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .audion-magazine-vocab {
+    grid-template-columns: 1fr;
+  }
+}
+
+.audion-magazine-visuals {
+  margin-top: var(--space-2, 0.5rem);
+}
+
+.audion-magazine-visual-grid {
+  list-style: none;
+  margin: var(--space-4, 1rem) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.audion-magazine-visual-grid > li {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+}
+
+.audion-magazine-visual-grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.audion-magazine-visual-caption {
+  position: absolute;
+  left: 0.65rem;
+  bottom: 0.55rem;
+  font-size: var(--type-xs, 0.75rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, white 88%, transparent);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 720px) {
+  .audion-magazine-visual-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.audion-editable-visuals-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: var(--space-3, 0.75rem);
+}
+
+.audion-editable-visuals-keyword {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.25rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 8%);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  cursor: pointer;
+  text-align: left;
+}
+
+.audion-editable-visuals-keyword:hover:not(:disabled),
+.audion-editable-visuals-keyword:focus-visible {
+  border-color: color-mix(in srgb, var(--ink) 35%, var(--line));
+  outline: none;
+}
+
+.audion-editable-visuals-keyword--add {
+  border-style: dashed;
+  background: transparent;
+  color: var(--muted);
+}
+
+.audion-editable-visuals-keyword--add:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.audion-editable-visuals-keyword-input {
+  min-width: 8rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.8rem;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--ink);
+}
+
+.audion-editable-visuals-tile {
+  position: relative;
+}
+
+.audion-editable-visuals-tile-hit {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.audion-editable-visuals-tile-hit:hover,
+.audion-editable-visuals-tile-hit:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ink) 45%, transparent);
+  outline: none;
+}
+
+.audion-editable-visuals-tile-editor {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.55rem;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  overflow: auto;
+}
+
+.audion-editable-visuals-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: var(--type-xs, 0.75rem);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audion-editable-visuals-field input,
+.audion-editable-visuals-field select {
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 0.25rem 0.4rem;
+}
+
+.audion-editable-visuals-tile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: auto;
+}
+
+.audion-editable-visuals-tile--add {
+  background: transparent;
+  border: 1px dashed var(--line);
+}
+
+.audion-editable-visuals-add-tile {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+}
+
+.audion-editable-visuals-add-tile:hover:not(:disabled),
+.audion-editable-visuals-add-tile:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
+.audion-editable-visuals-add-tile span:first-child {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+/* Inline-editable Goals / Frustrations / Channels on persona magazine */
+.audion-editable-list .section-chrome {
+  align-items: center;
+}
+
+.audion-editable-list-items > .audion-editable-list-row {
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+/* Hover expands the card with a trailing “Add item” row */
+.audion-editable-list-foot {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.audion-editable-list:hover .audion-editable-list-foot,
+.audion-editable-list:focus-within .audion-editable-list-foot {
+  grid-template-rows: 1fr;
+}
+
+.audion-editable-list-foot-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.audion-editable-list-add-row {
+  appearance: none;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  width: 100%;
+  margin: 0;
+  padding: 0.85rem 0 0.15rem;
+  border: 0;
+  border-top: 1px dashed transparent;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateY(-0.35rem);
+  transition:
+    opacity 360ms ease,
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 200ms ease,
+    border-color 280ms ease;
+}
+
+.audion-editable-list:hover .audion-editable-list-add-row,
+.audion-editable-list:focus-within .audion-editable-list-add-row {
+  transform: translateY(0);
+  border-top-color: var(--line);
+}
+
+.audion-editable-list:hover .audion-editable-list-add-row:not(:disabled),
+.audion-editable-list:focus-within .audion-editable-list-add-row:not(:disabled) {
+  opacity: 1;
+}
+
+.audion-editable-list:hover .audion-editable-list-add-row:disabled,
+.audion-editable-list:focus-within .audion-editable-list-add-row:disabled {
+  opacity: 0.4;
+}
+
+.audion-editable-list-add-row:hover:not(:disabled),
+.audion-editable-list-add-row:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.audion-editable-list-add-row:disabled {
+  cursor: not-allowed;
+}
+
+.audion-editable-list-add-label {
+  font-family: var(--font-body);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-light);
+  font-style: italic;
+  line-height: 1.65;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audion-editable-list-foot,
+  .audion-editable-list-add-row {
+    transition: none;
+  }
+
+  .audion-editable-list-add-row {
+    transform: none;
+  }
+}
+
+.audion-channel-editor .section-chrome {
+  align-items: center;
+}
+
+.audion-channel-add-btn.ds-btn {
+  min-width: 2rem;
+  padding-inline: 0.45rem;
+  font-size: var(--type-lg, 1.125rem);
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fast, 160ms) ease;
+}
+
+.audion-channel-editor:hover .audion-channel-add-btn.ds-btn,
+.audion-channel-editor:focus-within .audion-channel-add-btn.ds-btn,
+.audion-channel-add-btn.ds-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.audion-editable-list-row:hover {
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+}
+
+.audion-editable-list-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.audion-editable-list-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--ink);
+}
+
+.audion-editable-list-icon .audion-channel-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.audion-editable-list-text {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0.15rem 0;
+  margin: 0;
+  text-align: left;
+  cursor: text;
+  font-family: var(--font-body);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-regular);
+  line-height: 1.65;
+  color: var(--ink);
+  max-width: 40rem;
+  width: 100%;
+}
+
+.audion-editable-list-text:hover,
+.audion-editable-list-text:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.audion-editable-list-placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.audion-editable-list-input {
+  appearance: none;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0;
+  padding: 0.2rem 0 0.35rem;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 2px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-regular);
+  line-height: 1.65;
+  color: var(--ink);
+  outline: none;
+}
+
+.audion-editable-list-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.audion-editable-list-delete.ds-btn {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fast, 160ms) ease;
+}
+
+.audion-editable-list-row:hover .audion-editable-list-delete.ds-btn,
+.audion-editable-list-row:focus-within .audion-editable-list-delete.ds-btn,
+.audion-editable-list-delete.ds-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.audion-editable-list-error {
+  margin: var(--space-2) 0 0;
+  color: var(--danger, #b42318);
+  font-size: var(--type-sm);
+}
+
+.audion-magazine-tags,
+.audion-channel-bubbles {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0.85rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.audion-channel-bubble {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--motion-fast, 160ms) ease, color var(--motion-fast, 160ms) ease,
+    background var(--motion-fast, 160ms) ease;
+}
+
+.audion-channel-bubble:hover,
+.audion-channel-bubble:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  color: var(--accent);
+  outline: none;
+}
+
+.audion-channel-bubble:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.audion-channel-bubble--add {
+  border-style: dashed;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--type-lg, 1.125rem);
+  line-height: 1;
+}
+
+.audion-channel-bubble--picker {
+  width: 2.5rem;
+  height: 2.5rem;
+  pointer-events: none;
+}
+
+.audion-channel-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+}
+
+.audion-channel-logo {
+  display: block;
+  background-color: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
+.audion-channel-icon.ui-icon {
+  color: currentColor;
+}
+
+/* Floating channel icon picker (context / click) */
+.audion-channel-picker {
+  position: fixed;
+  z-index: 1000;
+  width: 20rem;
+  max-width: calc(100vw - 1.5rem);
+  max-height: min(28rem, calc(100vh - 1.5rem));
+  padding: var(--space-3);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 0.75rem);
+  background: color-mix(in srgb, var(--surface-1, var(--surface)) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+.audion-channel-picker-title {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  color: var(--muted);
+}
+
+.audion-channel-picker-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.audion-channel-picker-group {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-channel-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.audion-channel-picker-item {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.45rem 0.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 0.5rem);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.audion-channel-picker-item:hover:not(:disabled),
+.audion-channel-picker-item:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
+  outline: none;
+}
+
+.audion-channel-picker-item--selected {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.audion-channel-picker-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.audion-channel-picker-label {
+  font-size: 0.65rem;
+  line-height: 1.2;
+  color: var(--muted);
+  text-align: center;
+}
+
+.audion-channel-picker-delete {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  margin: var(--space-2) 0 0;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--danger, #b42318);
+  font-size: var(--type-sm);
+  cursor: pointer;
+}
+
+.audion-channel-picker-delete:hover:not(:disabled),
+.audion-channel-picker-delete:focus-visible {
+  background: color-mix(in srgb, var(--danger, #b42318) 8%, transparent);
+  outline: none;
+}
+
+.audion-magazine-prose {
+  margin-top: var(--space-3);
+  max-width: 40rem;
+}
+
+.audion-magazine-note + .audion-magazine-note {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.audion-magazine-note h3 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--type-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-magazine-note p {
+  margin: 0;
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-regular);
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.audion-tg-grid--nested {
+  margin-top: var(--space-3);
+}
+
+.audion-tg-linked-list {
+  margin-top: var(--space-3);
+}
+
+.audion-tg-linked-list > li {
+  align-items: center;
+}
+
+.audion-tg-linked-list-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.audion-tg-linked-list-row:hover .audion-tg-linked-list-name,
+.audion-tg-linked-list-row:focus-visible .audion-tg-linked-list-name {
+  color: var(--accent);
+}
+
+.audion-tg-linked-list-name {
+  font-family: var(--font-display);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--track-display, 0.02em);
+  color: var(--ink);
+  transition: color 0.15s ease;
+}
+
+.audion-tg-linked-list-meta {
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-tg-linked-list-meta [data-status] {
+  text-transform: lowercase;
+}
+
+.audion-magazine-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin: 0 0 0.75rem;
+}
+
+.audion-magazine-topbar .briefing-nav {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.audion-magazine-topbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.audion-edit-icon-btn.ds-btn {
+  padding: 0.35rem;
+  min-width: 2rem;
+  min-height: 2rem;
+}
+
+.audion-edit-icon-btn .ds-btn__icon {
+  margin: 0;
+}
+
+.audion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+}
+
+.audion-index-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.audion-edit-dialog.ds-dialog {
+  max-width: min(42rem, calc(100vw - 2.5rem));
+  width: 100%;
+}
+
+.audion-edit-dialog .ds-dialog-header {
+  padding: clamp(1.25rem, 3vw, 1.75rem) clamp(1.25rem, 3vw, 1.85rem) 1rem;
+}
+
+.audion-edit-dialog .ds-dialog-title {
+  font-size: clamp(1.45rem, 2.5vw, 1.85rem);
+  letter-spacing: var(--track-label, 0.01em);
+}
+
+.audion-edit-dialog .ds-dialog-body {
+  padding: 0.35rem clamp(1.25rem, 3vw, 1.85rem) 1.35rem;
+}
+
+.audion-edit-dialog .ds-dialog-actions {
+  gap: var(--space-3);
+  padding: 1rem clamp(1.25rem, 3vw, 1.85rem) clamp(1.15rem, 2.5vw, 1.5rem);
+}
+
+.audion-edit-form {
+  display: grid;
+  gap: clamp(1.15rem, 2.5vw, 1.65rem);
+  max-width: none;
+}
+
+.audion-edit-lede {
+  margin: 0 0 0.25rem;
+  max-width: 42ch;
+  color: var(--muted);
+  font-size: var(--type-sm);
+  line-height: 1.5;
+}
+
+.audion-edit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(8rem, 0.75fr);
+  gap: clamp(0.85rem, 2vw, 1.25rem);
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .audion-edit-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.audion-edit-field.ds-field {
+  width: 100%;
+  gap: var(--space-2);
+}
+
+.audion-edit-field--hero .ds-input {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2vw, 1.35rem);
+  font-weight: var(--weight-thin, 200);
+  letter-spacing: var(--track-label, 0.01em);
+  padding-top: 0.55rem;
+  padding-bottom: 0.65rem;
+}
+
+.audion-edit-form .ds-select,
+.audion-edit-form .ds-select-trigger {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+.audion-edit-form .ds-tag-input {
+  min-height: 2.75rem;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+.audion-edit-error {
+  margin: 0;
+  color: var(--danger, #b42318);
+  font-size: var(--type-xs);
+}
+
+.audion-magazine-facets li[data-kind='active'],
+.audion-magazine-facets li[data-kind='published'],
+.audion-magazine-facets li[data-kind='personas'],
+.audion-magazine-facets li[data-kind='groups'],
+.audion-magazine-facets li[data-kind='team'],
+.audion-magazine-facets li[data-kind='phases'],
+.audion-magazine-facets li[data-kind='target-group'] {
+  --geo-place-a: color-mix(in srgb, var(--accent) 18%, transparent);
+  --geo-place-b: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.audion-facet-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.audion-facet-link:hover {
+  color: var(--accent);
+}
+
+.audion-magazine.briefing-detail.audion-magazine--journey {
+  max-width: none;
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+  box-sizing: border-box;
+}
+
+/* Journey hero: no portrait — 50/50 headline | facet tiles */
+.audion-magazine--journey .audion-magazine-hero--split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(1.5rem, 4vw, 3rem);
+}
+
+.audion-magazine--journey .audion-magazine-hero-copy {
+  align-content: start;
+}
+
+.audion-magazine--journey .audion-magazine-deck {
+  margin-bottom: 0;
+  max-width: none;
+}
+
+.audion-magazine--journey .audion-magazine-facets.geo-places {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 200px));
+  justify-content: end;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.audion-magazine--journey .audion-magazine-facets.geo-places li {
+  min-width: 0;
+  width: 100%;
+  max-width: 200px;
+  box-sizing: border-box;
+}
+
+.audion-journey-body {
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.audion-journey-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.audion-journey-timeline-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.audion-journey-timeline-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.audion-journey-timeline-count {
+  min-width: 3.5rem;
+  text-align: center;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.audion-journey-timeline-steps {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
+  padding-bottom: 0.35rem;
+  scrollbar-width: thin;
+}
+
+.audion-journey-timeline-step {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: var(--radius-pill, 999px);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--type-xs);
+  letter-spacing: var(--track-meta);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-hover, 160ms) ease,
+    color var(--motion-hover, 160ms) ease,
+    background var(--motion-hover, 160ms) ease;
+}
+
+.audion-journey-timeline-step:hover {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.audion-journey-timeline-step--active {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.audion-journey-timeline-step-index {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: var(--weight-thin, 200);
+}
+
+.audion-journey-timeline-step-label {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Constrain width so overflow scrolls inside the slider, not the page body */
+.audion-journey-timeline-viewport {
+  display: flex;
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1.5rem;
+  padding: 0.35rem 0.5rem 1.25rem;
+  margin-inline: 0;
+  scrollbar-width: thin;
+}
+
+.audion-journey-timeline-viewport:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--radius-md);
+}
+
+.audion-journey-slide {
+  flex: 0 0 28rem;
+  width: 28rem;
+  max-width: min(28rem, calc(100% - 1rem));
+  scroll-snap-align: center;
+  min-height: 22rem;
+  box-sizing: border-box;
+}
+
+.audion-journey-slide-panel.ds-panel.module-panel {
+  margin-top: 0;
+  height: 100%;
+  min-height: 22rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.1rem, 2vw, 1.6rem);
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  transition:
+    border-color var(--motion-hover, 160ms) ease,
+    background var(--motion-hover, 160ms) ease,
+    box-shadow var(--motion-hover, 160ms) ease;
+}
+
+.audion-journey-slide--active .audion-journey-slide-panel {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.audion-journey-slide-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.audion-journey-slide-head-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'num eyebrow'
+    'title title';
+  column-gap: 0.65rem;
+  row-gap: 0.35rem;
+  align-items: end;
+}
+
+.audion-journey-slide-num {
+  grid-area: num;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: var(--weight-thin, 200);
+  line-height: 0.9;
+  color: var(--accent);
+  letter-spacing: var(--track-label);
+}
+
+.audion-journey-slide-eyebrow {
+  grid-area: eyebrow;
+  display: block;
+  margin: 0;
+  align-self: end;
+  padding-bottom: 0.2rem;
+}
+
+.audion-journey-slide-title {
+  grid-area: title;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  font-weight: var(--weight-thin, 200);
+  line-height: 1.08;
+  max-width: 14ch;
+}
+
+.audion-journey-slide-edit.ds-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.audion-journey-slide-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.audion-delete-icon-btn.ds-btn {
+  color: color-mix(in srgb, var(--ink) 72%, transparent);
+}
+
+.audion-delete-icon-btn.ds-btn:hover {
+  color: var(--ink);
+}
+
+.audion-journey-timeline-step--add .audion-journey-timeline-step-index {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.audion-journey-slide--create {
+  align-self: stretch;
+}
+
+.audion-journey-slide-create-btn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.audion-journey-slide-create-btn:focus-visible {
+  outline: none;
+}
+
+.audion-journey-slide-create-btn:focus-visible .audion-journey-slide-panel--create {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.audion-journey-slide-panel--create.ds-panel.module-panel {
+  align-items: flex-start;
+  justify-content: center;
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--ink) 18%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+}
+
+.audion-journey-slide--create.audion-journey-slide--active .audion-journey-slide-panel--create,
+.audion-journey-slide-create-btn:hover .audion-journey-slide-panel--create {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
+}
+
+.audion-journey-slide-create-mark {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: var(--weight-thin, 200);
+  line-height: 0.85;
+  color: var(--accent);
+}
+
+.audion-journey-slide-section {
+  display: grid;
+  gap: 0.45rem;
+  padding-top: clamp(1rem, 1.8vw, 1.35rem);
+  border-top: 5px solid var(--muted, #8a8a8a);
+}
+
+.audion-journey-slide-section-label {
+  color: var(--accent);
+}
+
+.audion-journey-slide-summary {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--type-sm);
+  line-height: 1.5;
+  max-width: 36ch;
+}
+
+.audion-journey-slide-moments {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.audion-journey-slide-moment {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-2) 94%, transparent);
+}
+
+.audion-journey-slide-moment-kind {
+  text-transform: uppercase;
+  letter-spacing: var(--track-meta);
+  color: var(--accent);
+  font-size: 0.62rem;
+}
+
+.audion-journey-slide-moment-label {
+  font-size: var(--type-sm);
+  line-height: 1.35;
+}
+
+.audion-journey-slide-empty-moments {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-sm);
+}
+
+.audion-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--accent);
+  font-size: var(--type-sm);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.audion-chat-panel.chat-panel-open {
+  --chat-panel-open-min-height: calc(100vh - 10.5rem);
+}
+
+.audion-chat-persona-field {
+  max-width: 18rem;
+  min-width: 12rem;
+  margin: 0;
+}
+
+.audion-chat-persona-field .ds-field-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+}
+
+.audion-chat-history-link {
+  align-self: flex-end;
+  padding-bottom: 0.55rem;
+  white-space: nowrap;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.audion-chat-history {
+  max-width: 64rem;
+}
+
+.audion-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 36rem;
+}
+
+.audion-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.audion-settings-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.audion-settings-help {
+  margin: 0;
+  color: var(--muted);
+}
+
+.audion-project-knowledge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: none;
+  margin-top: var(--space-4);
+}
+
+.audion-knowledge-panel-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.audion-knowledge-title-input {
+  width: 100%;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: var(--weight-medium, 500);
+  color: var(--ink);
+  box-sizing: border-box;
+}
+
+.audion-knowledge-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.audion-knowledge-add {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  margin: 0;
+  padding: 0.75rem 0.15rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  border-radius: 0.35rem;
+}
+
+.audion-knowledge-add:hover:not(:disabled),
+.audion-knowledge-add:focus-visible:not(:disabled) {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  outline: none;
+}
+
+.audion-knowledge-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.audion-knowledge-placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.audion-knowledge-rich {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.audion-knowledge-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.audion-knowledge-toolbar-btn {
+  margin: 0;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.audion-knowledge-toolbar-btn:hover:not(:disabled),
+.audion-knowledge-toolbar-btn.is-active {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 28%, var(--line));
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.audion-knowledge-toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.audion-knowledge-rich-surface {
+  position: relative;
+  min-width: 0;
+}
+
+.audion-knowledge-rich.is-readonly .audion-knowledge-rich-surface {
+  cursor: text;
+}
+
+.audion-knowledge-rich.is-editable .audion-knowledge-rich-surface {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, var(--ink));
+}
+
+.audion-knowledge-rich.is-editable .audion-knowledge-rich-surface:focus-within {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.audion-knowledge-prose {
+  margin: 0;
+  min-height: 7rem;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: clamp(1.05rem, 1.4vw, 1.15rem);
+  font-weight: 300;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--ink) 88%, var(--muted));
+}
+
+.audion-knowledge-prose p,
+.audion-knowledge-prose ul,
+.audion-knowledge-prose ol,
+.audion-knowledge-prose blockquote,
+.audion-knowledge-prose h2,
+.audion-knowledge-prose h3 {
+  margin: 0 0 0.75rem;
+}
+
+.audion-knowledge-prose p:last-child,
+.audion-knowledge-prose ul:last-child,
+.audion-knowledge-prose ol:last-child,
+.audion-knowledge-prose blockquote:last-child,
+.audion-knowledge-prose h2:last-child,
+.audion-knowledge-prose h3:last-child {
+  margin-bottom: 0;
+}
+
+.audion-knowledge-prose h2,
+.audion-knowledge-prose h3 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-medium, 500);
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.audion-knowledge-prose h2 {
+  font-size: 1.2em;
+}
+
+.audion-knowledge-prose h3 {
+  font-size: 1.08em;
+}
+
+.audion-knowledge-prose ul,
+.audion-knowledge-prose ol {
+  padding-left: 1.25rem;
+}
+
+.audion-knowledge-prose blockquote {
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+}
+
+.audion-knowledge-prose p.is-editor-empty:first-child::before,
+.audion-knowledge-prose .is-empty::before {
+  color: var(--muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.audion-knowledge-placeholder--overlay {
+  position: absolute;
+  inset: 0.2rem 0;
+  pointer-events: none;
+}
+
+.audion-project-knowledge-body,
+.audion-project-knowledge-empty {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.15rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: text;
+  border-radius: 0.35rem;
+  transition: background-color 160ms ease;
+}
+
+.audion-project-knowledge-body:hover,
+.audion-project-knowledge-empty:hover,
+.audion-project-knowledge-body:focus-visible,
+.audion-project-knowledge-empty:focus-visible {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  outline: none;
+}
+
+.audion-knowledge-title-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.audion-project-knowledge-empty {
+  min-height: 4.5rem;
+}
+
+.audion-project-knowledge-error {
+  margin: 0;
+  color: var(--danger, #b42318);
+  font-size: var(--type-sm, 0.875rem);
+}
+
+/* Description (~2/3) + Team (larger right rail) */
+.audion-project-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  gap: clamp(1.25rem, 3vw, 2rem);
+  align-items: start;
+  margin-top: var(--space-4);
+}
+
+.audion-project-intro-copy {
+  min-width: 0;
+}
+
+.audion-project-intro-lede.audion-magazine-lede {
+  max-width: none;
+  padding-block: 0;
+}
+
+.audion-project-intro-team {
+  min-width: 0;
+  max-width: 32rem;
+  width: 100%;
+  justify-self: end;
+}
+
+.audion-project-intro-team .audion-project-compact-list {
+  max-width: none;
+}
+
+.audion-project-audience,
+.audion-project-members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.audion-project-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 2rem);
+  align-items: start;
+}
+
+.audion-project-split-col {
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.audion-project-split-col .audion-tg-grid--nested {
+  margin-top: 0.75rem;
+}
+
+.audion-project-compact-list {
+  margin: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.audion-project-compact-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  cursor: pointer;
+  text-decoration: none;
+  max-width: none;
+}
+
+.audion-project-compact-static {
+  cursor: default;
+}
+
+.audion-project-compact-static:hover,
+.audion-project-compact-static:focus-visible {
+  color: var(--ink);
+}
+
+.audion-project-compact-name {
+  font-family: var(--font-display);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-medium);
+  line-height: 1.35;
+  color: inherit;
+}
+
+.audion-project-compact-name-btn {
+  display: block;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  cursor: text;
+}
+
+.audion-project-compact-meta {
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.audion-project-compact-meta-link {
+  text-decoration: none;
+}
+
+.audion-project-compact-meta-link:hover,
+.audion-project-compact-meta-link:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+.audion-project-compact-link:hover .audion-project-compact-meta:not(.audion-project-compact-meta-link),
+.audion-project-compact-link:focus-within .audion-project-compact-name {
+  color: var(--accent);
+}
+
+.audion-project-members li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.audion-project-member-email {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.audion-project-member-meta {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-tg-card-meta [data-status='published'] {
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .audion-magazine-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .audion-project-intro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .audion-project-intro-team {
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  .audion-project-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .audion-magazine--journey .audion-magazine-hero--split {
+    grid-template-columns: 1fr;
+  }
+
+  .audion-magazine-portrait {
+    max-width: 10rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .audion-search { grid-template-columns: 1fr; }
+  .audion-index-grid { grid-template-columns: 1fr; }
+}
+
+/* AI Wave-1 actions */
+.audion-ai-actions-band {
+  margin-bottom: var(--space-4, 1rem);
+}
+
+.audion-ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+  align-items: center;
+}
+
+.audion-ai-target-hint {
+  margin: -0.35rem 0 0;
+  color: var(--muted);
+  font-size: var(--type-xs, 0.8rem);
+  line-height: 1.45;
+}
+
+.audion-ai-target-hint code {
+  font-size: 0.92em;
+  word-break: break-all;
+}
+
+.audion-ai-suggestions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.audion-ai-suggestions li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4, 1rem);
+  align-items: start;
+  padding: clamp(1rem, 2vw, 1.25rem) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.audion-ai-suggestions-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+  min-width: 0;
+}
+
+.audion-ai-suggestions-title {
+  font-family: var(--font-display);
+  font-size: var(--type-lg, 1.15rem);
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: var(--track-label, 0.01em);
+  color: var(--ink);
+}
+
+.audion-ai-suggestions-sub {
+  color: var(--muted);
+  font-size: var(--type-sm, 0.9rem);
+}
+
+.audion-ai-suggestions p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: var(--type-sm, 0.9rem);
+  line-height: 1.5;
+  max-width: 48ch;
+}
+
+.audion-ai-result {
+  margin: 0;
+  padding: var(--space-3, 0.75rem) 0 0;
+  font-size: var(--type-md, 0.95rem);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.audion-tg-card--ai .audion-tg-card-title {
+  color: var(--accent, inherit);
+}
+
+/* UX Studies / Waves — magazine body */
+.audion-study-body,
+.audion-wave-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8, 2.5rem);
+  margin-top: var(--space-6, 1.75rem);
+}
+
+.audion-study-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+.audion-study-hyp-id {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85em;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.audion-wave-segment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  margin-top: var(--space-4, 1rem);
+}
+
+.audion-wave-segment-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-wave-run-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  padding: var(--space-2, 0.5rem) 0 var(--space-1, 0.25rem);
+}
+
+.audion-wave-run-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4, 1rem);
+  padding-bottom: var(--space-3, 0.75rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.audion-wave-run-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.audion-wave-run-kicker {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-wave-run-persona {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.55rem;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.audion-wave-run-persona-lead {
+  font-size: clamp(2rem, 4.2vw, 3rem);
+  letter-spacing: -0.03em;
+}
+
+.audion-wave-run-persona-rest {
+  font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+  font-weight: var(--weight-regular, 400);
+  letter-spacing: -0.015em;
+  color: color-mix(in srgb, var(--ink) 72%, var(--muted));
+}
+
+.audion-wave-run-segment {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-wave-run-evidence {
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding: 0.28rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 0.35rem);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+}
+
+.audion-wave-run-evidence[data-evidence='true'] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+}
+
+.audion-wave-run-evidence[data-evidence='false'] {
+  color: color-mix(in srgb, var(--ink) 55%, #b33);
+  border-color: color-mix(in srgb, #b33 35%, var(--line));
+  background: color-mix(in srgb, #b33 8%, var(--surface-2));
+}
+
+.audion-wave-run-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: var(--space-2, 0.5rem);
+}
+
+.audion-wave-run-stats > li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 0.35rem);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  min-width: 0;
+}
+
+.audion-wave-run-stat-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-wave-run-stat-value {
+  font-family: var(--font-display);
+  font-size: var(--type-md, 1.05rem);
+  font-weight: var(--weight-medium, 500);
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.audion-wave-run-finding {
+  margin: 0;
+  padding: 0.85rem 0 0.15rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.audion-wave-run-finding p {
+  margin: 0.45rem 0 0;
+  max-width: 42rem;
+  font-family: var(--font-display);
+  font-size: var(--type-lg, 1.15rem);
+  font-weight: var(--weight-regular, 400);
+  letter-spacing: var(--track-display, 0.01em);
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.audion-wave-run-blockers-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.audion-wave-run-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.audion-wave-run-chip {
+  display: inline-block;
+  padding: 0.22rem 0.55rem;
+  border: 1px solid color-mix(in srgb, #b33 30%, var(--line));
+  border-radius: 999px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--ink) 70%, #b33);
+  background: color-mix(in srgb, #b33 7%, var(--surface-2));
+}
+
+.audion-wave-run-caveat {
+  margin: 0;
+}
+
+.audion-wave-run-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line);
+}
+
+.audion-wave-run-scoreviz {
+  display: grid;
+  grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr);
+  gap: var(--space-4, 1rem) var(--space-5, 1.5rem);
+  align-items: center;
+}
+
+.audion-wave-run-radar.briefing-radar {
+  margin: 0;
+}
+
+.audion-wave-run-radar .briefing-radar-svg {
+  width: min(100%, 17rem);
+  margin: 0;
+}
+
+.audion-wave-run-radar .briefing-radar-ring.is-zero {
+  stroke: color-mix(in srgb, var(--accent) 35%, var(--line));
+  stroke-dasharray: 3 3;
+}
+
+.audion-wave-run-radar .briefing-radar-shape {
+  animation: audion-wave-radar-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: center;
+}
+
+@keyframes audion-wave-radar-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.audion-wave-run-divbars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.audion-wave-run-divbars > li {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 7.5rem) minmax(0, 1fr) 3.25rem;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.audion-wave-run-divbar-label {
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.8rem);
+  color: var(--muted);
+  text-transform: capitalize;
+  line-height: 1.2;
+}
+
+.audion-wave-run-divbar-track {
+  position: relative;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-2) 80%, var(--line));
+  overflow: hidden;
+}
+
+.audion-wave-run-divbar-zero {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.audion-wave-run-divbar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--bar-pct, 0%);
+  border-radius: 999px;
+  animation: audion-wave-bar-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.audion-wave-run-divbar-fill[data-tone='pos'] {
+  left: 50%;
+  background: color-mix(in srgb, var(--accent) 78%, transparent);
+}
+
+.audion-wave-run-divbar-fill[data-tone='neg'] {
+  right: 50%;
+  background: color-mix(in srgb, #b33 55%, var(--ink));
+}
+
+.audion-wave-run-divbar-fill[data-tone='neu'] {
+  left: 50%;
+  width: 0;
+}
+
+@keyframes audion-wave-bar-in {
+  from {
+    opacity: 0.35;
+    transform: scaleX(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.audion-wave-run-divbar-fill[data-tone='pos'] {
+  transform-origin: left center;
+}
+
+.audion-wave-run-divbar-fill[data-tone='neg'] {
+  transform-origin: right center;
+}
+
+.audion-wave-run-divbar-value {
+  font-family: var(--font-display);
+  font-size: var(--type-sm, 0.85rem);
+  font-weight: var(--weight-medium, 500);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.audion-wave-run-divbars > li[data-tone='pos'] .audion-wave-run-divbar-value {
+  color: var(--accent);
+}
+
+.audion-wave-run-divbars > li[data-tone='neg'] .audion-wave-run-divbar-value {
+  color: color-mix(in srgb, var(--ink) 55%, #b33);
+}
+
+@media (max-width: 720px) {
+  .audion-wave-run-scoreviz {
+    grid-template-columns: 1fr;
+  }
+
+  .audion-wave-run-radar .briefing-radar-svg {
+    margin-inline: auto;
+  }
+
+  .audion-wave-run-divbars > li {
+    grid-template-columns: minmax(4.5rem, 6rem) minmax(0, 1fr) 2.75rem;
+  }
+}
+
+.audion-wave-hyp-rationale {
+  margin: 0;
+  max-width: 48ch;
+  font-size: var(--type-md, 0.95rem);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.audion-wave-run-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  margin: 0;
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-wave-run-meta [data-evidence='true'] {
+  color: var(--accent);
+}
+
+.audion-wave-run-meta [data-evidence='false'] {
+  color: color-mix(in srgb, var(--ink) 70%, #c44);
+}
+
+.audion-wave-run-blockers {
+  margin: 0;
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-soft-q-meters {
+  gap: var(--space-5, 1.25rem);
+}
+
+/* Soft-Q / F-Fragen reuse journey phase card chrome in a responsive grid */
+.audion-study-prompt-grid {
+  list-style: none;
+  margin: var(--space-3, 0.75rem) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
+  gap: var(--space-4, 1rem);
+  align-items: stretch;
+}
+
+.audion-study-prompt-grid > li {
+  min-width: 0;
+  display: flex;
+}
+
+.audion-study-prompt-slide.audion-journey-slide {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  scroll-snap-align: none;
+}
+
+.audion-study-prompt-slide .audion-journey-slide-panel.ds-panel.module-panel {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  padding: clamp(1.15rem, 2.2vw, 1.65rem);
+  gap: clamp(0.85rem, 1.6vw, 1.25rem);
+}
+
+.audion-study-prompt-slide .audion-journey-slide-title {
+  max-width: none;
+  width: 100%;
+  min-width: 0;
+  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.audion-study-prompt-slide .audion-journey-slide-head,
+.audion-study-prompt-slide .audion-journey-slide-head-copy {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.audion-study-prompt-slide .audion-journey-slide-num {
+  font-size: clamp(1.65rem, 3vw, 2.15rem);
+}
+
+.audion-study-prompt-slide .audion-journey-slide-summary {
+  max-width: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.audion-study-prompt-slide .audion-soft-q-lede-choice {
+  min-width: 0;
+}
+
+.audion-soft-q-lede-stats.audion-wave-lede-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1.25rem;
+  align-items: end;
+  margin-top: 0.15rem;
+}
+
+.audion-soft-q-lede-stats > li {
+  padding-right: 0.85rem;
+}
+
+.audion-soft-q-lede-stats .audion-wave-lede-num {
+  font-size: clamp(2.1rem, 4.5vw, 2.85rem);
+}
+
+.audion-soft-q-lede-stats .audion-wave-lede-label {
+  font-size: 0.68rem;
+}
+
+.audion-soft-q-lede-choice {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--ink);
+  text-transform: capitalize;
+  overflow-wrap: anywhere;
+}
+
+.audion-soft-q-lede-stats > li[data-tone='choice'] .audion-soft-q-lede-choice {
+  color: var(--accent);
+}
+
+.audion-soft-q-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .audion-soft-q-edit-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.audion-wave-export-preview {
+  margin: 0;
+  padding: var(--space-4, 1rem);
+  overflow: auto;
+  max-height: 24rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--type-sm, 0.85rem);
+  line-height: 1.5;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface-2) 92%, var(--ink));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 0.5rem);
+}
+
+.audion-magazine--study .audion-tg-card-panel.ds-panel.module-panel,
+.audion-magazine--wave .audion-tg-card-panel.ds-panel.module-panel {
+  min-height: 10rem;
+}

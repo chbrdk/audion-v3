@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" role="img" aria-label="Jonas Richter">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#182018"/>
+      <stop offset="100%" stop-color="#0e120e"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="520" fill="url(#bg)"/>
+  <circle cx="200" cy="210" r="92" fill="#c2b8a8"/>
+  <ellipse cx="200" cy="420" rx="140" ry="120" fill="#2e382e"/>
+  <text x="200" y="500" text-anchor="middle" fill="#9aaa9a" font-family="Georgia, serif" font-size="22" letter-spacing="4">JR</text>
+</svg>

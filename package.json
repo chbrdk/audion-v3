@@ -1,0 +1,16 @@
+{
+  "name": "audion-v3",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @audion-v3/contracts && npm run build -w web",
+    "test": "npm run test -w web",
+    "typecheck": "npm run typecheck -w web"
+  },
+  "dependencies": {
+    "lucide-react": "^1.27.0"
+  }
+}

@@ -1,0 +1,12 @@
+---
+description: AUDION v3 spec-driven rebuild rules
+alwaysApply: true
+---
+
+# AUDION v3
+
+- Treat `specs/` as the source of truth.
+- Shared UI comes from `@msqdx/ui` and `@msqdx/ui-tokens`.
+- If a shared primitive is missing, add it in `msqdx-ui` first.
+- Keep AUDION-specific features in app code, not in the shared UI package.
+- Record all canonical paths and URLs in `knowledge/paths.md`.

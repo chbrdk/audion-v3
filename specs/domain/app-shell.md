@@ -1,0 +1,27 @@
+# App Shell
+
+**Status:** Accepted — 2026-07-30  
+**Implements:** `apps/web/components/app-shell.tsx` · `lib/paths.ts`  
+**DS:** `AppFrame`, `NavRail`, `BrandCorner`, `PageTitle` from `@msqdx/ui`
+
+## Rules
+
+- Shared chrome only via `@msqdx/ui` (server barrel `lib/msqdx-ui.ts`, shell barrel `lib/msqdx-ui-shell.ts`).
+- Composition language: `app-frame`, atmospheric background, floating rail, top-right brand corner, quiet topbar.
+- Topbar: `PageTitle` + optional `TopStatus` / actions / `leading`.
+- Primary nav **enabled:** Home · Projects · Personas · Target groups · Journeys · Chat
+- Settings rail footer: enabled → `paths.routes.settings`; avatar from user prefs display name
+- No MUI and no `@msqdx/react`.
+- Routes and dock keys from `paths` — never hardcode.
+
+## Layout notes
+
+- Project / Persona / TG / Journey **index** and **detail** are full-width magazine pages.
+- Chat is a full-height conversation surface.
+- Settings is a quiet prefs page (ECHON pattern).
+
+## Acceptance
+
+1. Shell works at desktop and stacks on narrow widths.
+2. Shared package styles imported once via `app/globals.css`.
+3. Rail marks active for `/`, `/projects*`, `/personas*`, `/target-groups*`, `/journeys*`, `/chat*`, `/settings*`.

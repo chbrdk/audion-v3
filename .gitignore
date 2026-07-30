@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.turbo/
+dist/
+coverage/
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
+.idea/
+.vscode/
+apps/web/.env.local
