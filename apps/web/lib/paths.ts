@@ -52,6 +52,11 @@ export const paths = {
   aiRuntime: 'auto' as const,
   aiOpenAiModel: 'gpt-5.4-mini',
   aiOpenAiImageModel: 'gpt-image-1-mini',
+  /** Easy Setup optional website fetch (SSRF-safe) — knowledge/easy-setup-2026.md */
+  easySetupUrlFetchTimeoutMs: 20_000,
+  easySetupUrlMaxResponseBytes: 2 * 1024 * 1024,
+  easySetupUrlMaxTextChars: 16_000,
+  easySetupUrlUserAgent: 'AudionEasySetup/1.0 (+https://audion)',
   defaultDisplayName: 'AUDION',
   displayNameStorageKey: 'audion.v3.displayName',
   themeStorageKey: 'audion.v3.theme',
@@ -70,7 +75,10 @@ export const paths = {
       `/api/platform/provisioning/projects/${id}`,
     projects: '/projects',
     projectDetail: (id: string) => `/projects/${id}`,
+    /** Magazine Easy Setup — project + TG + persona bootstrap */
+    setup: '/setup',
     apiProjects: '/api/projects',
+    apiProjectsBootstrap: '/api/projects/bootstrap',
     apiProjectDetail: (id: string) => `/api/projects/${id}`,
     personas: '/personas',
     personaDetail: (id: string) => `/personas/${id}`,

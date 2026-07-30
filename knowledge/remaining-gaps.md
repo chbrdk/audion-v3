@@ -26,6 +26,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | **Research SSE polish** | Poll spine + status/latest/stream; progress UI on Start research |
 | **TG + persona knowledge** | Magazine Accordion CRUD + sources list metadata |
 | **Chat modalities** | Share + moodboard strip + inspect HITL + convert; Voice/Tavus hooks |
+| **Easy Setup** | `/setup` magazine bootstrap — project + TG + persona (`knowledge/easy-setup-2026.md`) |
 
 ## Priority backlog
 
@@ -56,7 +57,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | Queue | Job dashboard (V2 `/admin/queue`) |
 | Settings admin | Providers, prompts + test, API tokens, API docs |
 | Chat modalities | ~~Public share, moodboard drawer, inspect/convert~~ **Done 2026-07-30** (`knowledge/chat-modalities-2026.md`); Voice/Tavus thin hooks |
-| Easy Setup | Project+TG+persona bootstrap |
+| ~~Easy Setup~~ | **Done 2026-07-30** — `/setup` + `POST /api/projects/bootstrap` (`knowledge/easy-setup-2026.md`) |
 
 ### Open / out of scope (product policy)
 
@@ -69,7 +70,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 
 ## Deferred depth (detail pointers)
 
-- Projects: federation, project prompts, bootstrap — `project-migration-map.md`
+- Projects: federation, project prompts — `project-migration-map.md`; ~~bootstrap~~ → `easy-setup-2026.md`
 - Settings: full admin stack — `settings-migration.md`
 - Personas: see `persona-magazine.md` / `persona-migration-map.md`
 - TGs: `target-group-migration-map.md`

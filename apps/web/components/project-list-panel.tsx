@@ -12,6 +12,18 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
         <li>
           <ProjectCreateButton variant="card" />
         </li>
+        <li>
+          <Link href={paths.routes.setup} className="audion-tg-card audion-tg-card--create">
+            <Panel as="div" className="audion-tg-card-panel audion-tg-card-panel--create">
+              <Text role="headline" as="span" className="audion-tg-card-title">
+                Easy setup
+              </Text>
+              <p className="audion-tg-card-meta">
+                <span>Project + group + persona</span>
+              </p>
+            </Panel>
+          </Link>
+        </li>
         {list.items.map((item) => (
           <li key={item.id}>
             <Link

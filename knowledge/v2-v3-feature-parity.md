@@ -42,7 +42,7 @@ Env: `NEXT_PERSONA_DATA_SOURCE` (`fixtures` \| `auto` \| `api`), `NEXT_PERSONA_B
 | **UX Studies** | API+MCP full (start/sync/evaluate/compare); **no web UI** | `/studies*` full loop + Soft-Q/Report/Compare/F-Fragen→Chat | V3 ahead (UI) | `v3_ahead` UI · `proxy` to V2 · `shipped` fixtures |
 | **Chat** | Stream, history, inspect_website, voice, Tavus, convert, share `/chat` | Editorial chat + history + study/persona prefill | Partial | `shipped` text MVP · `proxy` optional · `missing` voice/Tavus/share |
 | **Settings** | Providers, prompts+test, theme, profile, tokens, API docs | Display name / theme / locale prefs | Weak | `shipped` prefs · `missing` admin stack |
-| **Auth / Setup** | `/login`, `/register`, `/admin/setup` bootstrap | — | Missing | `missing` |
+| **Auth / Setup** | `/login`, `/register`, `/admin/setup` bootstrap | `/login` + `/setup` Easy Setup | Partial | `shipped` Easy Setup · login Wave 1 · register via Plexon |
 | **Queue / Ops** | `/admin/queue` | — | Missing | `missing` |
 | **UX Journey Agent UI** | `/admin/ux-journey-agent` | — (Studies Start/Sync can orchestrate via API) | Missing surface | `missing` UI · `proxy` via Studies |
 
@@ -58,7 +58,7 @@ Env: `NEXT_PERSONA_DATA_SOURCE` (`fixtures` \| `auto` \| `api`), `NEXT_PERSONA_B
 | Chat | `/admin/chat`, `/chat` | `/chat`, `/chat/history` |
 | Settings | `/admin/settings*` | `/settings` |
 | Agent | `/admin/ux-journey-agent` | — |
-| Auth | `/login`, `/register` | — |
+| Auth | `/login`, `/register` | `/login` · `/setup` |
 
 Migration maps: `persona-migration-map.md` · `target-group-migration-map.md` · `journey-migration-map.md` · `chat-migration-map.md` · `project-migration-map.md` · `settings-migration.md`.
 
@@ -77,7 +77,7 @@ Migration maps: `persona-migration-map.md` · `target-group-migration-map.md` ·
 | Research start | `stub` (no SSE polish) |
 | Generate journey from project | `stub` |
 | Project prompts / CHECKION topics / PLEXON mirror | `missing` / `out_of_scope` |
-| Easy Setup bootstrap | `missing` |
+| Easy Setup bootstrap | `shipped` (`/setup` · `knowledge/easy-setup-2026.md`) |
 
 ### Personas (`knowledge/persona-migration-map.md` · `persona-magazine.md`)
 
@@ -160,7 +160,7 @@ V3 registry: `knowledge/ai-workflows.md` · `apps/web/lib/ai-workflows.ts`
 | Suggest TGs / personas, research start, generate journey | Buttons + live/`auto` proxy | `proxy` (stub fallback) |
 | Generate persona (TG), avatar, field suggest | Live/`auto` proxy | `proxy` (stub fallback) |
 | Enrich-all, moodboard rebuild, translate, ensure chat prompt | — | `missing` |
-| Easy Setup bootstrap | — | `missing` |
+| Easy Setup bootstrap | `/setup` + native bootstrap API | `shipped` |
 | Journey phase AI, validate, UX-run convert | — | `missing` |
 | UX Journey Agent run UI | — | `missing` (Studies Start can hit API) |
 | Prompt test | — | `missing` |

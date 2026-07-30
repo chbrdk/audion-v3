@@ -42,6 +42,8 @@
 - Bosch EBM demo URL: `paths.boschEbikeProduktkombinationenUrl` / `paths.boschEbikeHomeUrl`
 - Project routes: `/projects`, `/projects/[projectId]`
 - Project API: `/api/projects`, `/api/projects/[projectId]`
+- Easy Setup: `/setup` · `POST /api/projects/bootstrap` (`paths.routes.setup` · `apiProjectsBootstrap`) · `knowledge/easy-setup-2026.md`
+- Easy Setup lib: `apps/web/lib/easy-setup.ts` · `easy-setup-url.ts` · panel `components/easy-setup-panel.tsx`
 - Project fixtures/store: `apps/web/lib/fixtures/projects.ts` · `project-store.ts`
 - Project lib: `apps/web/lib/projects.ts`
 - Project knowledge helpers: `apps/web/lib/project-knowledge.ts`
