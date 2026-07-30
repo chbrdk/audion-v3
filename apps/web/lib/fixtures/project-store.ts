@@ -1,4 +1,5 @@
 import type {
+  ProjectCreateOptions,
   ProjectDetail,
   ProjectKnowledgeChapter,
   ProjectList,
@@ -15,8 +16,58 @@ import {
 
 let projects: ProjectDetail[] = DEMO_PROJECTS.map((p) => structuredClone(p))
 
+/** Inbound Plexon user provisioning shadow (fixture). */
+let provisionedUsers = new Map<
+  string,
+  { email: string; name: string | null; desiredState: string }
+>()
+
 export function resetProjectStore(): void {
   projects = DEMO_PROJECTS.map((p) => structuredClone(p))
+  provisionedUsers = new Map()
+}
+
+export function storeProvisionedUser(
+  plexonUserId: string,
+  data: { email: string; name: string | null; desiredState: string },
+): void {
+  provisionedUsers.set(plexonUserId, data)
+}
+
+export function storeGetProvisionedUser(plexonUserId: string) {
+  return provisionedUsers.get(plexonUserId) ?? null
+}
+
+export function storeUpsertByPlatformProjectId(
+  platformProjectId: string,
+  data: {
+    name: string
+    platformCompanyId: string
+    ownerUserId: string
+    status: 'active' | 'archived'
+  },
+): ProjectDetail {
+  const existing = projects.find((p) => p.platformProjectId === platformProjectId)
+  if (existing) {
+    return (
+      storePatchProject(existing.id, {
+        name: data.name,
+        platformCompanyId: data.platformCompanyId,
+        ownerPlexonUserId: data.ownerUserId,
+        status: data.status === 'archived' ? 'archived' : existing.status,
+      }) ?? existing
+    )
+  }
+  return storeCreateProject(
+    {
+      name: data.name,
+      status: data.status === 'archived' ? 'archived' : 'draft',
+      platformProjectId,
+      platformCompanyId: data.platformCompanyId,
+      ownerPlexonUserId: data.ownerUserId,
+    },
+    { ownerPlexonUserId: data.ownerUserId, platformCompanyId: data.platformCompanyId },
+  )
 }
 
 function countsFor(projectId: string): { personaCount: number; targetGroupCount: number } {
@@ -87,7 +138,10 @@ export function storeProjectDetail(id: string): ProjectDetail | null {
   return found ? withDerived(found) : null
 }
 
-export function storeCreateProject(payload: ProjectWritePayload): ProjectDetail {
+export function storeCreateProject(
+  payload: ProjectWritePayload,
+  options?: ProjectCreateOptions,
+): ProjectDetail {
   const slug =
     payload.name
       .toLowerCase()
@@ -95,6 +149,7 @@ export function storeCreateProject(payload: ProjectWritePayload): ProjectDetail 
       .replace(/^-|-$/g, '') || 'new'
   const id = `proj-${slug}-${Date.now().toString(36)}`
   const knowledgeChapters = chaptersFromWrite(payload)
+  const ownerEmail = options?.ownerEmail?.trim() || 'you@local.example'
   const created: ProjectDetail = withDerived({
     id,
     name: payload.name.trim(),
@@ -107,10 +162,15 @@ export function storeCreateProject(payload: ProjectWritePayload): ProjectDetail 
     targetGroupCount: 0,
     memberCount: 1,
     updatedAt: new Date().toISOString(),
+    platformProjectId: payload.platformProjectId ?? null,
+    platformCompanyId:
+      payload.platformCompanyId ?? options?.platformCompanyId ?? null,
+    ownerPlexonUserId:
+      payload.ownerPlexonUserId ?? options?.ownerPlexonUserId ?? null,
     members: [
       {
         id: `mem-${Date.now().toString(36)}`,
-        email: 'you@local.example',
+        email: ownerEmail,
         role: 'owner',
         status: 'active',
       },
@@ -118,6 +178,28 @@ export function storeCreateProject(payload: ProjectWritePayload): ProjectDetail 
   })
   projects = [created, ...projects]
   return created
+}
+
+export function storeApplyPlatformBinding(
+  id: string,
+  binding: {
+    platformProjectId: string
+    platformCompanyId?: string | null
+    ownerPlexonUserId?: string | null
+  },
+): ProjectDetail | null {
+  const index = projects.findIndex((p) => p.id === id)
+  if (index < 0) return null
+  const current = projects[index]!
+  const next = withDerived({
+    ...current,
+    platformProjectId: binding.platformProjectId,
+    platformCompanyId: binding.platformCompanyId ?? current.platformCompanyId ?? null,
+    ownerPlexonUserId: binding.ownerPlexonUserId ?? current.ownerPlexonUserId ?? null,
+    updatedAt: new Date().toISOString(),
+  })
+  projects = [...projects.slice(0, index), next, ...projects.slice(index + 1)]
+  return next
 }
 
 export function storePatchProject(
@@ -137,6 +219,18 @@ export function storePatchProject(
     companyContext: joinCompanyContext(knowledgeChapters),
     status: payload.status ?? current.status,
     members: payload.members !== undefined ? payload.members : current.members,
+    platformProjectId:
+      payload.platformProjectId !== undefined
+        ? payload.platformProjectId
+        : current.platformProjectId,
+    platformCompanyId:
+      payload.platformCompanyId !== undefined
+        ? payload.platformCompanyId
+        : current.platformCompanyId,
+    ownerPlexonUserId:
+      payload.ownerPlexonUserId !== undefined
+        ? payload.ownerPlexonUserId
+        : current.ownerPlexonUserId,
     updatedAt: new Date().toISOString(),
   })
   projects = [...projects.slice(0, index), next, ...projects.slice(index + 1)]

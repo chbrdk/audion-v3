@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { storeChatConversationDetail } from '../../../../lib/fixtures/chat-store'
+import { storeChatConversationDetail } from '../../../../../lib/fixtures/chat-store'
 
 export async function GET(
   _request: Request,

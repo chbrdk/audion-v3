@@ -13,7 +13,12 @@ export function resetTargetGroupStore(): void {
 }
 
 function withCounts(group: TargetGroupDetail): TargetGroupDetail {
-  return { ...group, personaCount: group.linkedPersonas.length }
+  return {
+    ...group,
+    personaCount: group.linkedPersonas.length,
+    knowledgeEntries: group.knowledgeEntries ?? [],
+    documents: group.documents ?? [],
+  }
 }
 
 export function storeTargetGroupList(): TargetGroupList {
@@ -66,6 +71,8 @@ export function storeCreateTargetGroup(payload: TargetGroupWritePayload): Target
     projectId: payload.projectId ?? null,
     updatedAt: new Date().toISOString(),
     linkedPersonas,
+    knowledgeEntries: payload.knowledgeEntries ?? [],
+    documents: payload.documents ?? [],
   })
   groups = [created, ...groups]
   return created
@@ -87,6 +94,11 @@ export function storePatchTargetGroup(
     status: payload.status ?? current.status,
     projectId: payload.projectId !== undefined ? payload.projectId : current.projectId,
     linkedPersonas,
+    knowledgeEntries:
+      payload.knowledgeEntries !== undefined
+        ? payload.knowledgeEntries
+        : current.knowledgeEntries ?? [],
+    documents: payload.documents !== undefined ? payload.documents : current.documents ?? [],
     updatedAt: new Date().toISOString(),
   })
   groups = [...groups.slice(0, index), next, ...groups.slice(index + 1)]

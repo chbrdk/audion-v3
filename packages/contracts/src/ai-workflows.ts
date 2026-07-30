@@ -1,24 +1,29 @@
-/** Wave-1 AI workflow contracts — stubbed now; live persona-api proxy later. */
+/** Wave-1 stubs + Wave-2 live persona-api / chat-api proxy. */
 
 export type AiWorkflowId =
   | 'generatePersonas'
   | 'generatePersonaAvatar'
   | 'suggestPersonaField'
+  | 'enrichPersona'
+  | 'generateMoodboard'
   | 'suggestTargetGroups'
   | 'suggestPersonas'
   | 'researchStart'
   | 'generateJourney'
   | 'generateJourneyFromProject'
+  | 'generateJourneyPhaseMoments'
+  | 'validateJourney'
 
 export type AiTargetCall = {
   method: 'POST'
-  /** Upstream V2 / persona-api path (not yet proxied). */
+  /** Upstream V2 persona-api or chat-api path. */
   path: string
   body: Record<string, unknown>
 }
 
 export type AiStubMeta = {
-  stubbed: true
+  /** true = fixture stub; false = live upstream proxy */
+  stubbed: boolean
   workflowId: AiWorkflowId
   target: AiTargetCall
 }
@@ -73,6 +78,58 @@ export type ResearchStartResponse = AiStubMeta & {
   status: 'queued' | 'running' | 'idle'
 }
 
+export type ResearchRunStatus = 'queued' | 'running' | 'succeeded' | 'failed'
+
+export type ResearchProgressEventType =
+  | 'run_queued'
+  | 'run_started'
+  | 'crawl_start'
+  | 'page_fetched'
+  | 'crawl_done'
+  | 'synthesize_start'
+  | 'synthesize_done'
+  | 'translate_start'
+  | 'translate_done'
+  | 'summary_saved'
+  | 'run_failed'
+
+export type ResearchProgressEvent = {
+  id: string
+  eventType: ResearchProgressEventType
+  message: string
+  createdAt: string
+  payload?: Record<string, unknown>
+}
+
+export type ResearchStatusResponse = {
+  stubbed: boolean
+  projectId: string
+  runId: string
+  status: ResearchRunStatus
+  events: ResearchProgressEvent[]
+  error?: string | null
+}
+
+export type ResearchSummaryClaim = {
+  text: string
+  citations: string[]
+}
+
+export type ResearchSummarySection = {
+  key: string
+  title: string
+  claims: ResearchSummaryClaim[]
+}
+
+export type ResearchLatestResponse = {
+  stubbed: boolean
+  projectId: string
+  runId: string | null
+  status: ResearchRunStatus | 'missing'
+  summaryEn: ResearchSummarySection[] | null
+  raw: Record<string, unknown> | null
+}
+
 export type GenerateJourneyRequest = {
   target_group_id?: string | null
   journey_type?: string
@@ -118,4 +175,84 @@ export type SuggestPersonaFieldRequest = {
 export type SuggestPersonaFieldResponse = AiStubMeta & {
   field: PersonaSuggestField
   suggestions: AiSuggestionItem[]
+}
+
+export type EnrichPersonaRequest = {
+  output_locale?: string
+  profile_overlay?: {
+    bio?: string | null
+    age?: string | null
+    location?: string | null
+    gender?: string | null
+  }
+}
+
+export type EnrichPersonaResponse = AiStubMeta & {
+  personaId: string
+  facetsUpdated: string[]
+  interests: string[]
+  values: string[]
+  goals: Array<{ label: string; priority: number }>
+  frustrations: Array<{ label: string; evidenceCount: number }>
+  traits: Record<string, number>
+}
+
+export type GenerateMoodboardRequest = {
+  title?: string | null
+}
+
+export type GenerateMoodboardResponse = AiStubMeta & {
+  personaId: string
+  moodboardId: string | null
+  status: 'ready' | 'building' | 'stubbed'
+  visuals: {
+    styleKeywords: string[]
+    tiles: Array<{ id: string; imageUrl: string; category: string; caption: string | null }>
+  }
+}
+
+export type GenerateJourneyPhaseMomentsRequest = {
+  phase_id: string
+  max_suggestions?: number
+  output_locale?: string
+}
+
+export type GenerateJourneyPhaseMomentsResponse = AiStubMeta & {
+  journeyId: string
+  phaseId: string
+  applied: boolean
+  moments: Array<{
+    id: string
+    kind: 'action' | 'thought' | 'feeling' | 'pain' | 'opportunity' | 'other'
+    label: string
+    order: number
+  }>
+}
+
+export type ValidateJourneyRequest = {
+  persona_ids: string[]
+  mode?: 'automated' | 'chat' | 'both'
+}
+
+export type JourneyFrictionPoint = {
+  description: string
+  severity: 'low' | 'medium' | 'high'
+  personaQuote?: string | null
+}
+
+export type JourneyPhaseValidation = {
+  phaseId: string
+  phaseName: string
+  fitScore: number
+  status: 'good' | 'warning' | 'critical'
+  frictionPoints: JourneyFrictionPoint[]
+  recommendations: string[]
+}
+
+export type ValidateJourneyResponse = AiStubMeta & {
+  journeyId: string
+  overallFitScore: number
+  validatedAt: string
+  personaId: string
+  phases: JourneyPhaseValidation[]
 }

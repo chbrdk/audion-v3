@@ -8,13 +8,19 @@ export const runtimeConfig = {
   personaBackendPublicUrl: process.env.NEXT_PUBLIC_PERSONA_BACKEND_URL?.trim() || null,
   chatApiInternalUrl:
     process.env.NEXT_CHAT_API_INTERNAL_URL?.trim() || paths.chatApiInternalUrl,
-  /** fixtures | api | auto — auto falls back to demo data when API is unreachable */
-  personaDataSource: (process.env.NEXT_PERSONA_DATA_SOURCE?.trim() || paths.personaDataSource) as
-    | 'fixtures'
-    | 'api'
-    | 'auto',
+  /** @deprecated prefer getPersonaDataSource() — env can change in tests */
+  get personaDataSource() {
+    return getPersonaDataSource()
+  },
   basePath: process.env.NEXT_PUBLIC_BASE_PATH?.trim() || '',
 } as const
+
+export function getPersonaDataSource(): 'fixtures' | 'api' | 'auto' {
+  return (process.env.NEXT_PERSONA_DATA_SOURCE?.trim() || paths.personaDataSource) as
+    | 'fixtures'
+    | 'api'
+    | 'auto'
+}
 
 export function getPersonaBackendBase(options?: { preferPublic?: boolean }): string {
   if (typeof window !== 'undefined') {
@@ -31,14 +37,45 @@ export function getChatApiBase(): string {
 }
 
 export function shouldUsePersonaFixturesOnly(): boolean {
-  return runtimeConfig.personaDataSource === 'fixtures'
+  return getPersonaDataSource() === 'fixtures'
 }
 
 export function allowPersonaFixtureFallback(): boolean {
-  return runtimeConfig.personaDataSource === 'fixtures' || runtimeConfig.personaDataSource === 'auto'
+  const source = getPersonaDataSource()
+  return source === 'fixtures' || source === 'auto'
 }
 
-/** Chat MVP defaults to fixtures until chat-api is wired in api-only mode. */
+/**
+ * Chat fixtures-only when DATA_SOURCE=fixtures.
+ * `auto` / `api` prefer live chat-api (see shouldPreferChatLive).
+ */
 export function shouldUseChatFixtures(): boolean {
-  return runtimeConfig.personaDataSource !== 'api'
+  return getPersonaDataSource() === 'fixtures'
+}
+
+/** Try live chat-api (`auto` | `api`). */
+export function shouldPreferChatLive(): boolean {
+  return getPersonaDataSource() !== 'fixtures'
+}
+
+/** Fail hard when chat-api unreachable (`api` only). */
+export function shouldRequireChatLive(): boolean {
+  return getPersonaDataSource() === 'api'
+}
+
+/** Plexon auth URL (runtime — do not cache at import). */
+export function getPlexonAuthUrl(): string {
+  return process.env[paths.envPlexonAuthUrl]?.trim() || ''
+}
+
+export function getPlexonServiceSecret(): string {
+  return process.env[paths.envPlexonServiceSecret]?.trim() || ''
+}
+
+export function getPlexonRegisterUrl(): string | null {
+  return process.env[paths.envPlexonRegisterUrl]?.trim() || null
+}
+
+export function isPlexonAuthConfigured(): boolean {
+  return Boolean(getPlexonAuthUrl() && getPlexonServiceSecret())
 }

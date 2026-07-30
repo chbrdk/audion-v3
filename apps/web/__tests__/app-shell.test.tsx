@@ -35,7 +35,10 @@ describe('app shell', () => {
     )
     expect(screen.getByRole('link', { name: /Target groups/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Journeys/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Chat/i })).toBeInTheDocument()
+    const primaryLinks = Array.from(document.querySelectorAll('.nav-rail .rail-link')).map(
+      (el) => el.getAttribute('aria-label'),
+    )
+    expect(primaryLinks[0]).toBe('Chat')
     expect(screen.getByRole('link', { name: /Settings/i })).toHaveAttribute(
       'href',
       paths.routes.settings,

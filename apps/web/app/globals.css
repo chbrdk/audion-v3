@@ -1148,6 +1148,14 @@ main { min-height: 100vh; }
   margin-top: var(--space-2, 0.5rem);
 }
 
+.audion-editable-visuals-chrome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+}
+
 .audion-magazine-visual-grid {
   list-style: none;
   margin: var(--space-4, 1rem) 0 0;
@@ -2202,6 +2210,8 @@ main { min-height: 100vh; }
   gap: 0.15rem;
   flex-shrink: 0;
   margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .audion-delete-icon-btn.ds-btn {
@@ -2335,6 +2345,278 @@ main { min-height: 100vh; }
   --chat-panel-open-min-height: calc(100vh - 10.5rem);
 }
 
+.audion-chat-flyout {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.audion-chat-flyover {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  left: 0;
+  z-index: 40;
+  min-width: min(22rem, calc(100vw - 4rem));
+  max-width: min(36rem, calc(100vw - 3rem));
+  padding: 0.85rem 1rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--surface-1, var(--surface, var(--bg, #fff))) 78%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audion-chat-flyover {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--surface-1, var(--surface, var(--bg, #fff)));
+  }
+}
+
+.audion-chat-moodboard-flyover {
+  min-width: min(36rem, calc(100vw - 4rem));
+  max-width: min(52rem, calc(100vw - 3rem));
+}
+
+.audion-chat-share-flyover {
+  min-width: min(24rem, calc(100vw - 4rem));
+}
+
+.audion-chat-history-flyover {
+  min-width: min(22rem, calc(100vw - 4rem));
+  max-width: min(28rem, calc(100vw - 3rem));
+}
+
+.audion-chat-flyover-lede {
+  margin: 0.35rem 0 0.75rem;
+}
+
+.audion-chat-flyover-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.audion-chat-flyover-footer {
+  margin: 0.75rem 0 0;
+  font-size: var(--type-sm, 0.875rem);
+}
+
+.audion-chat-share-url {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.8125rem);
+}
+
+.audion-chat-history-flyout-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
+.audion-chat-history-flyout-item {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem 0.45rem;
+  border-radius: 0.3rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.audion-chat-history-flyout-item:hover,
+.audion-chat-history-flyout-item:focus-visible {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.audion-chat-history-flyout-title {
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.audion-chat-history-flyout-meta {
+  font-size: var(--type-sm, 0.75rem);
+  color: var(--muted);
+}
+
+.audion-chat-history-empty {
+  margin: 0.5rem 0;
+}
+
+.audion-chat-moodboard-tiles {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  gap: 0.65rem;
+  overflow-x: auto;
+}
+
+.audion-chat-moodboard-tiles li {
+  flex: 0 0 auto;
+  width: 5.5rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.audion-chat-moodboard-tiles img {
+  width: 5.5rem;
+  height: 5.5rem;
+  object-fit: cover;
+  border-radius: 0.35rem;
+  border: 1px solid var(--line);
+}
+
+.audion-chat-moodboard-tiles span {
+  font-size: var(--type-sm, 0.75rem);
+  color: var(--muted);
+}
+
+.audion-chat-tool-card,
+.audion-chat-tool-complete {
+  margin: 0.75rem 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.audion-chat-tool-title {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.audion-chat-tool-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.audion-chat-tool-progress {
+  list-style: none;
+  margin: 0.35rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-chat-composer-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.15rem;
+  flex: 0 0 auto;
+  padding-bottom: 0.15rem;
+}
+
+.audion-chat-topbar-leading {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.audion-chat-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  flex: 0 0 auto;
+  padding-bottom: 0.15rem;
+}
+
+.audion-chat-topbar-icon.ds-btn,
+.audion-chat-topbar-icon {
+  min-width: 2.25rem;
+  width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+.audion-chat-topbar-icon:hover:not(:disabled),
+.audion-chat-topbar-icon:focus-visible:not(:disabled) {
+  color: var(--ink);
+  background: transparent;
+}
+
+.audion-chat-topbar-icon.is-active {
+  color: var(--accent);
+}
+
+.audion-chat-topbar-icon .ds-btn__label {
+  display: none;
+}
+
+.audion-chat-panel .chat-form .audion-chat-composer-icon.ds-btn,
+.audion-chat-panel .chat-form .audion-chat-composer-icon {
+  min-width: 2.5rem;
+  width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+.audion-chat-panel .chat-form .audion-chat-composer-icon:hover:not(:disabled),
+.audion-chat-panel .chat-form .audion-chat-composer-icon:focus-visible:not(:disabled) {
+  color: var(--ink);
+  background: transparent;
+  opacity: 1;
+}
+
+.audion-chat-panel .chat-form .audion-chat-composer-icon.is-active {
+  color: var(--accent);
+}
+
+.audion-chat-panel .chat-form .audion-chat-composer-icon:disabled {
+  opacity: 0.35;
+}
+
+.audion-chat-panel .chat-form .audion-chat-composer-icon .ds-btn__label {
+  display: none;
+}
+
+.audion-chat-share-badge,
+.audion-chat-share-label {
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+  align-self: flex-end;
+  padding-bottom: 0.45rem;
+  white-space: nowrap;
+}
+
+.audion-chat-modality-note,
+.audion-chat-tavus {
+  margin: 0 0 var(--space-2);
+}
+
 .audion-chat-persona-field {
   max-width: 18rem;
   min-width: 12rem;
@@ -2344,12 +2626,6 @@ main { min-height: 100vh; }
 .audion-chat-persona-field .ds-field-label {
   font-size: 0.65rem;
   letter-spacing: 0.08em;
-}
-
-.audion-chat-history-link {
-  align-self: flex-end;
-  padding-bottom: 0.55rem;
-  white-space: nowrap;
 }
 
 .visually-hidden {
@@ -2390,6 +2666,68 @@ main { min-height: 100vh; }
 .audion-settings-help {
   margin: 0;
   color: var(--muted);
+}
+
+.audion-settings-account {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+.audion-settings-account dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.audion-settings-account dd {
+  margin: 0;
+}
+
+.audion-settings-account-link {
+  margin: 0;
+}
+
+.audion-login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6, 2rem);
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, color-mix(in srgb, var(--accent, #c45) 18%, transparent), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 80%, color-mix(in srgb, var(--color-border, #888) 25%, transparent), transparent),
+    var(--color-bg, #0f0f10);
+}
+
+.audion-login-panel {
+  width: min(100%, 24rem);
+  display: grid;
+  gap: var(--space-3, 1rem);
+}
+
+.audion-login-lede {
+  margin: 0;
+  color: var(--muted);
+}
+
+.audion-login-error {
+  margin: 0;
+  color: var(--color-danger, #c44);
+  font-size: 0.9rem;
+}
+
+.audion-login-links {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.audion-link {
+  color: var(--accent, inherit);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .audion-project-knowledge {
@@ -2625,6 +2963,56 @@ main { min-height: 100vh; }
   margin: 0;
   color: var(--danger, #b42318);
   font-size: var(--type-sm, 0.875rem);
+}
+
+.audion-resource-knowledge {
+  margin-top: var(--space-4);
+}
+
+.audion-resource-documents {
+  margin-top: var(--space-3);
+}
+
+.audion-research-progress {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--ink) 3.5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+}
+
+.audion-research-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-research-events code {
+  font-size: 0.78em;
+  color: var(--ink);
+}
+
+.audion-research-summary {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--paper, #fff) 70%, transparent);
+  border: 1px solid var(--line);
+  white-space: pre-wrap;
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.audion-persona-profile-de {
+  margin-bottom: var(--space-3);
 }
 
 /* Description (~2/3) + Team (larger right rail) */
@@ -3425,4 +3813,39 @@ main { min-height: 100vh; }
 .audion-magazine--study .audion-tg-card-panel.ds-panel.module-panel,
 .audion-magazine--wave .audion-tg-card-panel.ds-panel.module-panel {
   min-height: 10rem;
+}
+
+.audion-journey-validation-report {
+  margin-top: var(--space-3, 0.75rem);
+}
+
+.audion-journey-validation-phases {
+  list-style: none;
+  margin: var(--space-2, 0.5rem) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2, 0.5rem);
+}
+
+.audion-journey-validation-phases > li {
+  border-top: 1px solid color-mix(in srgb, var(--color-border, #ccc) 70%, transparent);
+  padding-top: var(--space-2, 0.5rem);
+}
+
+.audion-journey-validation-phase-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+  font-size: 0.9rem;
+}
+
+.audion-journey-validation-phases ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.audion-phase-moments-field {
+  display: grid;
+  gap: var(--space-2, 0.5rem);
 }

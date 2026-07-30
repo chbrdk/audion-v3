@@ -55,4 +55,13 @@ Component gaps (DS adopt/build): `knowledge/ds-component-gaps.md`
 Journeys + Chat overview: `knowledge/journeys-chat-gaps.md`  
 Persona magazine / inline lists: `knowledge/persona-magazine.md`, `knowledge/persona-inline-lists.md`  
 Workspace slice clone pattern (projects/settings): `knowledge/workspace-slice-pattern.md`  
+V2 ↔ V3 feature parity + smoke: `knowledge/v2-v3-feature-parity.md`  
+Remaining gaps / P0–P2: `knowledge/remaining-gaps.md`  
+UX Journey Agent surface: `knowledge/ux-agent-surface.md`  
+AI workflows Wave 2: `knowledge/ai-workflows.md`  
+Persona enrich + moodboard (2026): `knowledge/persona-enrich-moodboard-2026.md`  
+Journey phase AI + validate: `knowledge/journey-phase-ai-validate-2026.md`  
+Project research SSE polish: `knowledge/project-research-sse-2026.md`  
+TG + persona knowledge / profile_de: `knowledge/tg-persona-knowledge-profile-de-2026.md`  
+Chat modalities (share / moodboard / inspect / convert): `knowledge/chat-modalities-2026.md`  
 Canonical URLs/paths: see `knowledge/paths.md`.

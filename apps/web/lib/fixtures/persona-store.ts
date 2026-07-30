@@ -29,6 +29,10 @@ const DETAIL_ONLY_KEYS = [
   'channels',
   'sections',
   'visuals',
+  'profileDe',
+  'headlineDe',
+  'knowledgeEntries',
+  'documents',
 ] as const
 
 function toSummary(persona: PersonaDetail) {
@@ -82,7 +86,15 @@ export function storePersonaList(): PersonaList {
 }
 
 export function storePersonaDetail(id: string): PersonaDetail | null {
-  return personas.find((p) => p.id === id) ?? null
+  const found = personas.find((p) => p.id === id)
+  if (!found) return null
+  return {
+    ...found,
+    profileDe: found.profileDe ?? null,
+    headlineDe: found.headlineDe ?? null,
+    knowledgeEntries: found.knowledgeEntries ?? [],
+    documents: found.documents ?? [],
+  }
 }
 
 export function storeCreatePersona(payload: PersonaWritePayload): PersonaDetail {
@@ -115,6 +127,10 @@ export function storeCreatePersona(payload: PersonaWritePayload): PersonaDetail 
     channels: payload.channels ?? [],
     sections: normalizePersonaSections(payload.sections),
     visuals: payload.visuals ?? null,
+    profileDe: payload.profileDe ?? null,
+    headlineDe: payload.headlineDe ?? null,
+    knowledgeEntries: payload.knowledgeEntries ?? [],
+    documents: payload.documents ?? [],
   }
   personas = [created, ...personas]
   return created
@@ -155,6 +171,14 @@ export function storePatchPersona(id: string, payload: Partial<PersonaWritePaylo
     sections:
       payload.sections !== undefined ? normalizePersonaSections(payload.sections) : current.sections,
     visuals: payload.visuals !== undefined ? payload.visuals : current.visuals,
+    profileDe: payload.profileDe !== undefined ? payload.profileDe : current.profileDe ?? null,
+    headlineDe:
+      payload.headlineDe !== undefined ? payload.headlineDe : current.headlineDe ?? null,
+    knowledgeEntries:
+      payload.knowledgeEntries !== undefined
+        ? payload.knowledgeEntries
+        : current.knowledgeEntries ?? [],
+    documents: payload.documents !== undefined ? payload.documents : current.documents ?? [],
     avatarUrl:
       payload.avatarUrl !== undefined
         ? payload.avatarUrl?.trim()

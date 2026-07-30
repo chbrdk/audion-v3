@@ -1,0 +1,41 @@
+import { NextResponse } from 'next/server'
+import type { NextFetchEvent, NextRequest } from 'next/server'
+import { auth } from './auth'
+import { isPlexonAuthConfigured } from './lib/plexon-auth'
+import { paths } from './lib/paths'
+
+const gated = auth((req) => {
+  const { pathname } = req.nextUrl
+  const isPublic =
+    pathname === paths.routes.login ||
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/health') ||
+    pathname.startsWith('/api/platform/provisioning') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/fixtures') ||
+    pathname === '/favicon.ico'
+
+  if (isPublic) {
+    return NextResponse.next()
+  }
+
+  if (!req.auth) {
+    const login = new URL(paths.routes.login, req.nextUrl.origin)
+    login.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(login)
+  }
+
+  return NextResponse.next()
+})
+
+/** Open when Plexon unset; protect app routes when federated. */
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  if (!isPlexonAuthConfigured()) {
+    return NextResponse.next()
+  }
+  return gated(req, event)
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+}

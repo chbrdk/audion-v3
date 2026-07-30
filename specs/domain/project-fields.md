@@ -18,7 +18,10 @@
 | `memberCount` | number | From members |
 | `updatedAt` | string \| null | ISO |
 | `members` | ProjectMember[] | Detail only |
+| `platformProjectId` | string \| null | Optional — Plexon platform project (Wave 1) |
+| `platformCompanyId` | string \| null | Optional — Plexon company |
+| `ownerPlexonUserId` | string \| null | Optional — Plexon owner |
 
 ## Write payload
 
-`name` required; optional `nameDe`, `description`, `companyContext` (create → initial Brief chapter), `knowledgeChapters` (full replacement), `status`, `members` (full replacement when provided).
+`name` required; optional `nameDe`, `description`, `companyContext` (create → initial Brief chapter), `knowledgeChapters` (full replacement), `status`, `members` (full replacement when provided), `platformProjectId`, `platformCompanyId`, `ownerPlexonUserId`.

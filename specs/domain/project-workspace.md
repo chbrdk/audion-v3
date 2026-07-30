@@ -9,7 +9,7 @@
 
 ## Purpose
 
-Magazine-style project workspace: browse projects, read company context, manage project-scoped target groups and personas — without glass admin accordion or federation/research chrome.
+Magazine-style project workspace: browse projects, read company context, manage project-scoped target groups and personas — without glass admin accordion. Optional Plexon platform IDs on create when federated (`knowledge/plexon-federation.md`).
 
 ## Surfaces
 
@@ -33,7 +33,8 @@ Magazine-style project workspace: browse projects, read company context, manage 
 
 ## Non-goals (MVP)
 
-- Research SSE stream, federation IDs, CHECKION topics, project prompts, bootstrap
+- Research SSE stream, CHECKION topics, project prompts, bootstrap
+- Product Postgres (platform IDs stored on fixtures in Wave 1)
 - Live persona-api proxy for AI (Wave 2) — stubs document target calls
 - Forking Accordion CSS into app globals (use `@msqdx/ui`)
 

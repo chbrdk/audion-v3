@@ -1,28 +1,81 @@
 # AUDION v3 — remaining gaps vs v2 / ECHON
 
-**Date:** 2026-07-30
+**Date:** 2026-07-30  
+**Full parity audit:** `knowledge/v2-v3-feature-parity.md` (domain + AI matrices, smoke checklist)
+
+## Verdict
+
+V3 is **not** feature-complete vs V2. Magazine MVP + UX Studies UI + AI Wave 2 + Plexon Auth Wave 1 are shipped; Queue/admin settings remain open. Studies UI is **ahead** of V2 (V2 is API/MCP only).
 
 ## Done (MVP)
 
-Home · **Projects** · Personas · Target Groups · Journeys · Chat (+ history) · **Settings** (user prefs) · editorial magazine shell
+Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (product loop) · Chat (+ history) · **Settings** (user prefs) · editorial magazine shell · **AI Wave 2** (live proxy + stub fallback) · **Chat live** (`auto`/`api`)
 
 ## Shipped this wave
 
 | Surface | Notes |
 |---------|-------|
-| Projects | `/projects*` magazine list+detail; fixtures; members; counts |
+| Projects | `/projects*` magazine list+detail; fixtures; members; counts; knowledge dossier |
 | Settings | `/settings` — display name, theme, locale; rail avatar enabled |
-| **AI Wave 1** | Magazine AI buttons + stub routes (generate personas, suggest TGs/personas, research start, generate journey). Target calls documented in `knowledge/ai-workflows.md` — live persona-api proxy = Wave 2 |
+| **Studies** | `/studies*` create → start/sync → evaluate → compare → Soft-Q/report → F-Fragen→chat; optional V2 proxy |
+| **AI Wave 2** | Live persona-api / chat-api proxy when `NEXT_PERSONA_DATA_SOURCE=auto\|api`; stubs in `fixtures` or on auto fallback — `knowledge/ai-workflows.md` |
+| **Chat live** | Stream prefers chat-api; SSE→NDJSON adapter; history list still fixtures |
+| **Agent via Studies** | Start/Sync = UX Journey Agent surface; Convert run→journey |
+| **Persona enrich + moodboard** | Enrich topbar + Generate moodboard on Visuals; stub/live Wave 2 |
+| **Journey phase AI + validate** | Generate moments on phases; Validate topbar report |
+| **Research SSE polish** | Poll spine + status/latest/stream; progress UI on Start research |
+| **TG + persona knowledge** | Magazine Accordion CRUD + sources list metadata |
+| **Chat modalities** | Share + moodboard strip + inspect HITL + convert; Voice/Tavus hooks |
 
-## Deferred depth
+## Priority backlog
 
-- Projects: research SSE stream polish, federation, prompts, bootstrap; **live** AI proxy (Wave 2)
-- Settings: providers, prompts, API docs, password/tokens, server profile
-- Personas: docs CRUD, moodboard generate, enrich chips, bilingual `profile_de`
-- TGs: sources / knowledge (generate personas UI shipped as stub)
-- Journeys: phase AI, validation, UX agent (full journey generate UI shipped as stub)
-- Chat: public share, voice/Tavus, moodboard drawer, live chat-api polish
+### P0 — unblock real product use
 
-## Ops (later)
+| Item | Notes |
+|------|-------|
+| ~~AI Wave 2 live proxy~~ | **Done 2026-07-30** — `withAiLiveOrStub` + `ai-workflows-live.ts`; see `knowledge/ai-workflows.md` |
+| ~~Chat live-stable~~ | **Done 2026-07-30** — `auto`/`api` prefer chat-api SSE→NDJSON; fixtures only in `fixtures` mode; study prefill unchanged |
 
-Auth (`/login`, `/register`, setup) · queue · full API docs
+### P1 — domain depth
+
+| Item | Notes |
+|------|-------|
+| ~~UX Journey Agent surface~~ | **Done 2026-07-30** — Studies Start/Sync is official entry (`knowledge/ux-agent-surface.md`); Convert to journey on wave runs |
+| ~~Persona enrich + moodboard~~ | **Done 2026-07-30** — `enrichPersona` / `generateMoodboard` Wave-2 + UI (`knowledge/persona-enrich-moodboard-2026.md`) |
+| ~~Journey phase AI + validate~~ | **Done 2026-07-30** — moments generate + validate report (`knowledge/journey-phase-ai-validate-2026.md`) |
+| ~~Personas knowledge + profile_de~~ | **Done 2026-07-30** — docs/knowledge CRUD + bilingual mirror (`knowledge/tg-persona-knowledge-profile-de-2026.md`); locked-tile rebuild still open |
+| Journeys | ~~Phase AI, validation report~~ **Done**; further: chat-mode validate, report history |
+| ~~Projects research SSE~~ | **Done 2026-07-30** — status/latest/stream + poll UI (`knowledge/project-research-sse-2026.md`) |
+| ~~TGs knowledge / sources~~ | **Done 2026-07-30** — magazine knowledge + sources list (`knowledge/tg-persona-knowledge-profile-de-2026.md`); explorer still open |
+
+### P2 — platform / ops
+
+| Item | Notes |
+|------|-------|
+| ~~Auth~~ | **Done Wave 1** — `/login`, logout, Plexon session (`knowledge/plexon-federation.md`); open when unconfigured |
+| Queue | Job dashboard (V2 `/admin/queue`) |
+| Settings admin | Providers, prompts + test, API tokens, API docs |
+| Chat modalities | ~~Public share, moodboard drawer, inspect/convert~~ **Done 2026-07-30** (`knowledge/chat-modalities-2026.md`); Voice/Tavus thin hooks |
+| Easy Setup | Project+TG+persona bootstrap |
+
+### Open / out of scope (product policy)
+
+- Statistical n=15 / Testbirds parity on Soft-Q
+- Full report versioning / artifact CDN
+- New charting framework (keep ECHON radar + DS bars)
+- V2 Admin Studies UI (not needed — V3 is the Studies UI)
+- Product Postgres (deferred) · Echon/Brandion federation · Plugins, VR, GEO, MCP host
+- **V2 Coolify Prod bleibt getrennt** — siehe `knowledge/v2-v3-runtime-separation.md`
+
+## Deferred depth (detail pointers)
+
+- Projects: federation, project prompts, bootstrap — `project-migration-map.md`
+- Settings: full admin stack — `settings-migration.md`
+- Personas: see `persona-magazine.md` / `persona-migration-map.md`
+- TGs: `target-group-migration-map.md`
+- Journeys + Chat: `journeys-chat-gaps.md`
+- Studies open items: `ux-studies.md` Done vs open table
+
+## Smoke
+
+Manual checklist (fixtures Studies, optional `api` proxy, AI stubs, chat, shell): **§6** in `knowledge/v2-v3-feature-parity.md`.

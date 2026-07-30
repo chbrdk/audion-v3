@@ -1,96 +1,111 @@
-/** Local nav glyphs — avoids lucide React context during Next SSR. */
-export function NavIconOverview() {
+import type { ReactNode } from 'react'
+
+/**
+ * Local nav glyphs (Lucide-aligned paths) — avoids lucide React context during Next SSR.
+ * Differentiation: Personas = single person · Target groups = people group · Journeys = route.
+ */
+function NavSvg({ children }: { children: ReactNode }) {
   return (
-    <svg className="ui-icon" width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3" y="3" width="7" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
-      <rect x="14" y="3" width="7" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
-      <rect x="14" y="12" width="7" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
-      <rect x="3" y="16" width="7" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
+    <svg
+      className="ui-icon"
+      width={20}
+      height={20}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {children}
     </svg>
   )
 }
 
+/** Home — layout dashboard. */
+export function NavIconOverview() {
+  return (
+    <NavSvg>
+      <rect x="3" y="3" width="7" height="9" rx="1.5" />
+      <rect x="14" y="3" width="7" height="5" rx="1.5" />
+      <rect x="14" y="12" width="7" height="9" rx="1.5" />
+      <rect x="3" y="16" width="7" height="5" rx="1.5" />
+    </NavSvg>
+  )
+}
+
+/** Personas — single person (User). */
 export function NavIconPersonas() {
   return (
-    <svg className="ui-icon" width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="9" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.75" />
-      <path d="M3.5 19c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-      <path d="M16 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" stroke="currentColor" strokeWidth="1.75" />
-      <path d="M20 19c0-2.485-1.79-4.5-4-4.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
+    <NavSvg>
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </NavSvg>
   )
 }
 
 export function NavIconResearch() {
   return (
-    <svg className="ui-icon" width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.75" />
-      <path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
+    <NavSvg>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 5 5" />
+    </NavSvg>
   )
 }
 
+/** Projects — folder. */
 export function NavIconProjects() {
   return (
-    <svg className="ui-icon" width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
+    <NavSvg>
+      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9l-.81-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+    </NavSvg>
   )
 }
 
-/** Segments / target groups — distinct from projects list icon. */
+/** Target groups — people group (Users). */
 export function NavIconTargetGroups() {
   return (
-    <svg className="ui-icon" width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
-      <rect x="14" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
-      <rect x="3" y="13" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
-      <rect x="14" y="13" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
-    </svg>
+    <NavSvg>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </NavSvg>
   )
 }
 
+/** Journeys — route with start/end. */
 export function NavIconJourneys() {
   return (
-    <svg className="ui-icon" width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-      <circle cx="8" cy="6" r="2" fill="currentColor" />
-      <circle cx="16" cy="12" r="2" fill="currentColor" />
-      <circle cx="10" cy="18" r="2" fill="currentColor" />
-    </svg>
+    <NavSvg>
+      <circle cx="6" cy="19" r="3" />
+      <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+      <circle cx="18" cy="5" r="3" />
+    </NavSvg>
   )
 }
 
-/** UX Studies / Waves — layered panels. */
+/** UX Studies — clipboard checklist. */
 export function NavIconStudies() {
   return (
-    <svg className="ui-icon" width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M4 6.5h16M4 12h16M4 17.5h16"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-      <path
-        d="M7 4v4M12 9.5v5M17 15v4"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-    </svg>
+    <NavSvg>
+      <rect x="8" y="2" width="8" height="4" rx="1" />
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <path d="M12 11h4" />
+      <path d="M12 16h4" />
+      <path d="M8 11h.01" />
+      <path d="M8 16h.01" />
+    </NavSvg>
   )
 }
 
+/** Chat — message bubble. */
 export function NavIconChat() {
   return (
-    <svg className="ui-icon" width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16H9.5L5 19.5V6.5Z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <NavSvg>
+      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+    </NavSvg>
   )
 }
 
@@ -145,6 +160,179 @@ export function IconSend({ size = 18 }: { size?: number }) {
         strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Mic — voice modality. */
+export function IconMic({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path d="M12 19v3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path
+        d="M19 10v2a7 7 0 0 1-14 0v-2"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <rect
+        x="9"
+        y="2"
+        width="6"
+        height="13"
+        rx="3"
+        stroke="currentColor"
+        strokeWidth="1.75"
+      />
+    </svg>
+  )
+}
+
+/** Videocam — Tavus / video modality. */
+export function IconVideo({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <rect
+        x="2"
+        y="6"
+        width="14"
+        height="12"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.75"
+      />
+    </svg>
+  )
+}
+
+/** Share — copy public chat link. */
+export function IconShare({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.75" />
+      <path
+        d="M8.59 13.51l6.83 3.98"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path
+        d="M15.41 6.51l-6.82 3.98"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+/** History — conversation list. */
+export function IconHistory({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M3 3v5h5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M12 7v5l4 2"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Moodboard / images grid. */
+export function IconMoodboard({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <rect
+        x="3"
+        y="3"
+        width="7"
+        height="7"
+        rx="1.25"
+        stroke="currentColor"
+        strokeWidth="1.75"
+      />
+      <rect
+        x="14"
+        y="3"
+        width="7"
+        height="7"
+        rx="1.25"
+        stroke="currentColor"
+        strokeWidth="1.75"
+      />
+      <rect
+        x="3"
+        y="14"
+        width="7"
+        height="7"
+        rx="1.25"
+        stroke="currentColor"
+        strokeWidth="1.75"
+      />
+      <rect
+        x="14"
+        y="14"
+        width="7"
+        height="7"
+        rx="1.25"
+        stroke="currentColor"
+        strokeWidth="1.75"
       />
     </svg>
   )

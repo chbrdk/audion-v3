@@ -22,6 +22,8 @@ Default data source: fixtures (`NEXT_PERSONA_DATA_SOURCE=fixtures|auto`). Live A
 3. Open a wave → **Start** → confirm Sync polls against v2 `/ux-studies/…/sync`
 4. Fixture mode remains default for UI demos without v2
 
+Full manual checklist (fixtures loop + AI stubs + chat + shell): `knowledge/v2-v3-feature-parity.md` §6. Parity vs V2: same doc · backlog `knowledge/remaining-gaps.md`.
+
 ## Report editing
 
 Wave **Report** band stores `reportMarkdown` (+ `reportUpdatedAt`). Export uses `buildWaveReportMarkdown` (narrative + aggregate + hyps + Soft-Q + runs). Soft-Q rationale, hypothesis verdict/rationale, and run findings PATCH the evaluation/runs slice.
@@ -63,9 +65,12 @@ Wave **Report** band stores `reportMarkdown` (+ `reportUpdatedAt`). Export uses 
 | Done | Open |
 |------|------|
 | Create Study / Wave dialogs | Statistischer n=15 / Testbirds-Parity |
-| Start + Sync poll (fixture + API proxy) | Full report versioning / artifact CDN |
-| Compare picker (multi-wave) | v2 Admin-UI |
-| Report TipTap + structured PATCH + export body | New charting framework |
+| Start + Sync poll (fixture + API proxy) — **official UX Journey Agent surface** | Full report versioning / artifact CDN |
+| Compare picker (multi-wave) | New charting framework |
+| Report TipTap + structured PATCH + export body | |
 | F-Fragen Copy + Chat deep-link (persona + study context) | |
 | Soft-Q value / confidence / rationale PATCH | |
 | DS StatLede / DivergingBar / WizardSteps | |
+| Convert wave run → Journey | |
+
+Agent surface contract: `knowledge/ux-agent-surface.md`.

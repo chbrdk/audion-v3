@@ -54,6 +54,19 @@ export type PersonaVisuals = {
   tiles: PersonaVisualTile[]
 }
 
+export type PersonaProfileDe = {
+  headline?: string | null
+  bio?: string | null
+  interests?: string[]
+  values?: string[]
+  goals?: Array<{ label: string; priority: number }>
+  frustrations?: Array<{ label: string; evidenceCount: number }>
+  channels?: string[]
+  socialMediaUsage?: string[]
+  communicationStyle?: PersonaCommunicationStyle | null
+  traits?: Record<string, number>
+}
+
 export type PersonaDetail = PersonaSummary & {
   age: string | null
   location: string | null
@@ -73,6 +86,11 @@ export type PersonaDetail = PersonaSummary & {
   channels: string[]
   sections: PersonaSection[]
   visuals: PersonaVisuals | null
+  /** German mirror of profile bands (EN remains canonical). */
+  profileDe: PersonaProfileDe | null
+  headlineDe: string | null
+  knowledgeEntries: import('./knowledge-entries').KnowledgeEntry[]
+  documents: import('./knowledge-entries').DocumentSource[]
 }
 
 /** Create / PATCH body — magazine edit wave */
@@ -103,4 +121,8 @@ export type PersonaWritePayload = {
   /** Hero portrait URL — empty string clears to initials. */
   avatarUrl?: string | null
   projectId?: string | null
+  profileDe?: PersonaProfileDe | null
+  headlineDe?: string | null
+  knowledgeEntries?: import('./knowledge-entries').KnowledgeEntry[]
+  documents?: import('./knowledge-entries').DocumentSource[]
 }

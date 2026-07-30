@@ -9,8 +9,12 @@
 - Default internal persona backend: `http://api:8000`
 - Env key for internal persona backend: `NEXT_PERSONA_BACKEND_INTERNAL_URL`
 - Env key for optional public persona backend: `NEXT_PUBLIC_PERSONA_BACKEND_URL`
-- Default app port: `3006`
+- Default app port: `3006` (local) · Coolify/Docker: `3000` (`Dockerfile` `PORT`)
+- Public staging URL: `https://audion-v3.projects-a.plygrnd.tech` — `knowledge/deploy-urls.md`
+- Docker / Coolify: `Dockerfile` · `.dockerignore` · health `paths.routes.apiHealth` (`/api/health`)
 - Shell paths helper: `apps/web/lib/paths.ts` (`paths.routes.*`)
+- Plexon federation Wave 1: `knowledge/plexon-federation.md` · login `/login` · env `PLEXON_AUTH_URL` / `PLEXON_SERVICE_SECRET` / `NEXT_PUBLIC_PLEXON_REGISTER_URL` / `AUTH_SECRET`
+- Rail nav icons: `apps/web/components/nav-icons.tsx` · `knowledge/nav-rail-icons.md`
 - Rail dock storage key: `audion.v3.railDock`
 - Comm layout storage key: `audion.v3.commLayout` (`paths.commLayoutStorageKey`)
 - TG linked personas layout key: `audion.v3.tgLinkedPersonasLayout` (`paths.tgLinkedPersonasLayoutKey`) — `cards` | `list`
@@ -31,6 +35,8 @@
 - UX Study fixtures/store: `apps/web/lib/fixtures/ux-studies.ts` · `ux-study-store.ts`
 - UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts`
 - UX Study knowledge: `knowledge/ux-studies.md`
+- UX Journey Agent surface (Studies Start/Sync): `knowledge/ux-agent-surface.md`
+- Journey from UX run: `apps/web/lib/journey-from-ux-run.ts` · `paths.routes.apiJourneyFromUxRun`
 - Chat deep-link / F-Fragen prefill: `paths.routes.chatWithContext` · `apps/web/lib/chat/prefill.ts`
   (`prompt`, `personaId`, `studyId`, `waveId`, `projectId`, `studyName`, `waveKey`)
 - Bosch EBM demo URL: `paths.boschEbikeProduktkombinationenUrl` / `paths.boschEbikeHomeUrl`
@@ -40,6 +46,11 @@
 - Project lib: `apps/web/lib/projects.ts`
 - Project knowledge helpers: `apps/web/lib/project-knowledge.ts`
 - Project knowledge WYSIWYG: `apps/web/components/knowledge-rich-editor.tsx` (TipTap `@tiptap/react` 3.29.x)
+- Shared resource knowledge dossier: `apps/web/components/resource-knowledge-dossier.tsx`
+- TG/persona knowledge API: `paths.routes.apiTargetGroupKnowledge*` · `apiPersonaKnowledge*`
+- Persona profile_de helpers: `apps/web/lib/persona-profile-de.ts`
+- Research fixture runs: `apps/web/lib/fixtures/research-runs.ts` · `knowledge/project-research-sse-2026.md`
+- TG + persona knowledge / profile_de: `knowledge/tg-persona-knowledge-profile-de-2026.md`
 - Shared Accordion: `@msqdx/ui` → `msqdx-ui/packages/ui/src/components/Accordion.tsx` · re-export `apps/web/lib/msqdx-ui.ts` (Vitest/Next alias) · spec `msqdx-ui/specs/domain/msqdx-ui-accordion.md`
 - Shared WizardSteps: same barrel (`apps/web/lib/msqdx-ui.ts`) · source `msqdx-ui/packages/ui/src/components/WizardSteps.tsx`
 - Wave detail DS: `StatLede`/`StatLedeGroup`, `StatusDot`, `StatusMeterPanel` — also re-exported via `apps/web/lib/msqdx-ui.ts`
@@ -53,6 +64,10 @@
 - Chat fixtures/store: `apps/web/lib/fixtures/chat-store.ts`
 - Chat answer port: `apps/web/lib/chat/`
 - Chat surface (editorial open): `knowledge/chat-surface.md`
+- Chat modalities (share / moodboard / inspect / Voice·Tavus hooks): `knowledge/chat-modalities-2026.md`
+- Chat share helper: `apps/web/lib/chat/share.ts` · `paths.routes.chatShare` · `paths.routes.chatConversation`
+- Upstream Tavus (live): `paths.routes.upstreamPersonaAdminTavusSession`
+- Chat flyouts: `apps/web/components/chat-flyout.tsx` (+ share / history / moodboard)
 - Chat workspace spec: `specs/domain/chat-workspace.md`
 - DS chat chrome: `msqdx-ui/specs/domain/msqdx-ui-chat-chrome.md` · `packages/ui/src/css/chat.css` (`.chat-panel-open`)
 - Journey migration map: `knowledge/journey-migration-map.md`
@@ -72,8 +87,17 @@
 - Specs index: `knowledge/specs-index.md`
 - DS component gaps: `knowledge/ds-component-gaps.md`
 - Journeys + Chat gaps: `knowledge/journeys-chat-gaps.md`
-- Remaining gaps (projects / settings): `knowledge/remaining-gaps.md`
-- AI workflows Wave 1 (stubs + target calls): `knowledge/ai-workflows.md` · `apps/web/lib/ai-workflows.ts`
+- V2 ↔ V3 runtime separation: `knowledge/v2-v3-runtime-separation.md`
+- Deploy URLs (Coolify staging): `knowledge/deploy-urls.md`
+- V2 ↔ V3 feature parity audit + smoke checklist: `knowledge/v2-v3-feature-parity.md`
+- AI workflows Wave 2 (live proxy + stubs): `knowledge/ai-workflows.md` · `apps/web/lib/ai-workflows.ts` · `ai-workflows-live.ts` · `persona-api-proxy.ts`
+- Persona enrich + moodboard (2026 agent notes): `knowledge/persona-enrich-moodboard-2026.md`
+  - Next: `paths.routes.apiAiEnrichPersona` · `apiAiGenerateMoodboard`
+  - Upstream: `POST /personas/{id}/enrich` · `POST /api/persona-admin/{id}/moodboards`
+- Journey phase AI + validate: `knowledge/journey-phase-ai-validate-2026.md`
+  - Next: `paths.routes.apiAiGenerateJourneyPhaseMoments` · `apiAiValidateJourney`
+  - Upstream: `POST /journeys/{id}/ai/generate` · `POST /journeys/{id}/validate`
+- Chat upstream SSE→NDJSON: `apps/web/lib/chat/upstream-stream.ts`
 - DS forms: `msqdx-ui/specs/domain/msqdx-ui-forms.md`
 - DS field: `msqdx-ui/specs/domain/msqdx-ui-field.md`
 - DS extended: `msqdx-ui/specs/domain/msqdx-ui-extended.md`

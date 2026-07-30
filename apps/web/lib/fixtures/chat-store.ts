@@ -7,6 +7,7 @@ import type {
   ChatStreamEvent,
 } from '@audion-v3/contracts'
 import { DEMO_PERSONAS } from './personas'
+import { maybeProposeInspectWebsite } from './chat-share'
 
 type StoredConversation = ChatConversationDetail
 
@@ -90,8 +91,11 @@ function resolvePersonaName(personaId: string): string | null {
   return DEMO_PERSONAS.find((p) => p.id === personaId)?.name ?? null
 }
 
-function fixtureReply(message: string, personaName: string | null): string {
+function fixtureReply(message: string, personaName: string | null, proposedTool: boolean): string {
   const who = personaName || 'this persona'
+  if (proposedTool) {
+    return `## From ${who}\n\nI can inspect that URL for journey signals. **Approve** the tool request below to continue.`
+  }
   return `## From ${who}\n\nYou asked: *${message.trim()}*\n\nHere is a concise take grounded in the magazine brief:\n\n1. Keep decisions tied to evidence\n2. Prefer short loops over big decks\n3. Come back with one concrete next step`
 }
 
@@ -145,10 +149,20 @@ export function* storeChatFakeStream(payload: ChatSendPayload): Generator<ChatSt
     conversations = conversations.map((c) => (c.id === conversation!.id ? conversation! : c))
   }
 
-  const reply = fixtureReply(message, personaName)
+  const proposal = maybeProposeInspectWebsite(
+    message,
+    payload.personaId,
+    payload.projectId ?? null,
+    conversation.id,
+  )
+  const reply = fixtureReply(message, personaName, Boolean(proposal))
   const chunks = reply.match(/.{1,24}/gs) || [reply]
   for (const chunk of chunks) {
     yield { type: 'delta', text: chunk }
+  }
+
+  if (proposal) {
+    yield proposal
   }
 
   const assistantId = `m-asst-${Date.now().toString(36)}`

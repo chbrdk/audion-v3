@@ -28,6 +28,10 @@ export type TargetGroupLinkedPersona = {
 
 export type TargetGroupDetail = TargetGroupSummary & {
   linkedPersonas: TargetGroupLinkedPersona[]
+  /** Magazine knowledge cards (V2 `/target-groups/{id}/knowledge`). */
+  knowledgeEntries: import('./knowledge-entries').KnowledgeEntry[]
+  /** Uploaded sources (V2 `/target-groups/{id}/documents`) — list metadata. */
+  documents: import('./knowledge-entries').DocumentSource[]
 }
 
 /** Create / PATCH body */
@@ -38,4 +42,6 @@ export type TargetGroupWritePayload = {
   status?: TargetGroupStatus
   projectId?: string | null
   linkedPersonaIds?: string[]
+  knowledgeEntries?: import('./knowledge-entries').KnowledgeEntry[]
+  documents?: import('./knowledge-entries').DocumentSource[]
 }

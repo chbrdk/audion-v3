@@ -22,6 +22,18 @@ export function JourneyListPanel({
         <li>
           <GenerateJourneyAiButton variant="card" />
         </li>
+        <li>
+          <Link href={paths.routes.studies} className="audion-tg-card audion-tg-card--draft">
+            <Panel as="div" className="audion-tg-card-panel">
+              <Text role="headline" as="h2" className="audion-tg-card-title">
+                Convert from UX run
+              </Text>
+              <p className="audion-tg-card-meta">
+                Open Studies → wave run → Convert to journey (UX Journey Agent surface)
+              </p>
+            </Panel>
+          </Link>
+        </li>
         {list.items.map((item) => (
           <li key={item.id}>
             <Link

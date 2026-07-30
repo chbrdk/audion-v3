@@ -2,9 +2,14 @@
 
 import React, { useEffect, useId, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { PersonaVisualTile, PersonaVisuals } from '@audion-v3/contracts'
+import type {
+  GenerateMoodboardResponse,
+  PersonaVisualTile,
+  PersonaVisuals,
+} from '@audion-v3/contracts'
 import { Button, EmptyState, SectionChrome } from '@msqdx/ui'
 import { Dialog } from '../lib/msqdx-ui-client'
+import { targetHint } from '../lib/ai-workflows'
 import { paths } from '../lib/paths'
 import {
   blankPersonaVisualTile,
@@ -12,6 +17,7 @@ import {
   resolvePersonaVisuals,
   toPersonaWriteVisuals,
 } from '../lib/persona-visuals'
+import { AiActionButton } from './ai-action-button'
 
 type KeywordMode = { type: 'edit'; index: number } | { type: 'add' } | null
 
@@ -37,6 +43,8 @@ export function PersonaEditableVisuals({
   const [editingTileId, setEditingTileId] = useState<string | null>(null)
   const [tileDraft, setTileDraft] = useState<PersonaVisualTile | null>(null)
   const [deleteTileId, setDeleteTileId] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
+  const moodboardHint = targetHint('generateMoodboard')
 
   useEffect(() => {
     if (keywordMode || editingTileId) return
@@ -191,6 +199,31 @@ export function PersonaEditableVisuals({
     }
   }
 
+  async function generateMoodboard() {
+    if (saving || generating || keywordMode || editingTileId) return
+    setGenerating(true)
+    setError(null)
+    try {
+      const response = await fetch(paths.routes.apiAiGenerateMoodboard(personaId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = (await response.json().catch(() => null)) as
+        | (GenerateMoodboardResponse & { error?: string })
+        | null
+      if (!response.ok) throw new Error(data?.error || `Moodboard failed (${response.status})`)
+      if (data?.visuals) {
+        setLocal(resolvePersonaVisuals(data.visuals))
+      }
+      router.refresh()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Moodboard failed')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const meta = local.tiles.length ? `${local.tiles.length}` : undefined
   const deleteTile = local.tiles.find((t) => t.id === deleteTileId)
   const isEmpty = local.tiles.length === 0 && local.styleKeywords.length === 0
@@ -206,7 +239,16 @@ export function PersonaEditableVisuals({
       className="detail-block audion-magazine-visuals audion-editable-visuals ds-motion-reveal"
       aria-label="Visuals"
     >
-      <SectionChrome quiet title="Visuals" meta={meta} metaTone="accent" as="h3" />
+      <div className="audion-editable-visuals-chrome">
+        <SectionChrome quiet title="Visuals" meta={meta} metaTone="accent" as="h3" />
+        <AiActionButton
+          label="Generate moodboard"
+          targetHint={moodboardHint}
+          loading={generating}
+          disabled={saving || keywordMode != null || editingTileId != null}
+          onClick={() => void generateMoodboard()}
+        />
+      </div>
 
       <div className="audion-editable-visuals-keywords" aria-label="Style keywords">
         {local.styleKeywords.map((keyword, index) => {

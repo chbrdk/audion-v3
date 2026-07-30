@@ -361,6 +361,29 @@ export function storeSyncUxWave(studyId: string, waveId: string): UxWaveDetail |
   return next
 }
 
+/** Mark a wave run as converted to a magazine journey (idempotent convert). */
+export function storeMarkRunDerivedJourney(
+  studyId: string,
+  waveId: string,
+  runKey: string,
+  journeyId: string,
+): UxWaveDetail | null {
+  const index = waves.findIndex((w) => w.id === waveId && w.studyId === studyId)
+  if (index < 0) return null
+  const current = waves[index]!
+  const runs = current.runs.map((r) =>
+    r.runKey === runKey ? { ...r, derivedJourneyId: journeyId } : r,
+  )
+  const next: UxWaveDetail = {
+    ...current,
+    ...waveSummary({ ...current, runs }),
+    runs,
+    updatedAt: new Date().toISOString(),
+  }
+  waves = [...waves.slice(0, index), next, ...waves.slice(index + 1)]
+  return next
+}
+
 export function storeEvaluateUxWave(studyId: string, waveId: string): UxWaveDetail | null {
   const index = waves.findIndex((w) => w.id === waveId && w.studyId === studyId)
   if (index < 0) return null

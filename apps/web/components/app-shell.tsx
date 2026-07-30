@@ -27,6 +27,12 @@ import { paths } from '../lib/paths'
 import { useUserPrefs } from '../lib/user-prefs'
 
 const PRIMARY_NAV = [
+  {
+    id: 'chat',
+    href: paths.routes.chat,
+    label: 'Chat',
+    icon: <NavIconChat />,
+  },
   { id: 'home', href: paths.routes.home, label: 'Home', icon: <NavIconOverview /> },
   {
     id: 'projects',
@@ -52,12 +58,6 @@ const PRIMARY_NAV = [
     href: paths.routes.studies,
     label: 'Studies',
     icon: <NavIconStudies />,
-  },
-  {
-    id: 'chat',
-    href: paths.routes.chat,
-    label: 'Chat',
-    icon: <NavIconChat />,
   },
 ]
 

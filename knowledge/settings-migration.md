@@ -45,24 +45,26 @@ Nav: `msqdx-glass-admin-layout.tsx` — separate Profile + Settings items.
 | — | Prompts builder |
 | — | API docs iframe |
 | — | Projects settings redirect (use Projects workspace when built) |
-| Logout (when auth ships) | — |
+| Account band + logout (Plexon Wave 1) | Password change, API tokens, providers, prompts, API docs |
 
-## C) audion-v3 (shipped 2026-07-30)
+## C) audion-v3 (shipped 2026-07-30; Account Wave 1 2026-07-30)
 
 - Route: `/settings` · `apps/web/app/settings/page.tsx` · `components/settings-page.tsx`
 - Prefs: `apps/web/lib/user-prefs.tsx` · keys in `paths` (`displayNameStorageKey`, `themeStorageKey`, `localeStorageKey`)
+- Account: NextAuth session → name/email from Plexon; Sign out → `/login` · see `knowledge/plexon-federation.md`
 - Shell: rail avatar enabled → `paths.routes.settings`
 - Spec: `specs/domain/settings.md`
-- Tests: `__tests__/projects-settings.test.tsx` · `app-shell.test.tsx`
+- Tests: `__tests__/projects-settings.test.tsx` · `app-shell.test.tsx` · `login-page.test.tsx`
 
 ## Recommended MVP composition
 
 Single page `/settings` (ECHON chrome, not v2 card-landing):
 
-1. **Profile** — display name + Avatar preview (UserPrefs / localStorage).
-2. **Appearance** — ThemeToggle (`@msqdx/ui` ToggleGroup).
-3. **Language** — LocaleToggle.
-4. Enable rail avatar → `paths.routes.settings`; active when pathname starts with settings.
-5. Optional stub section “Account” (logout / auth) only when auth lands; do not port providers/prompts/api-docs for MVP.
+1. **Account** — Plexon session read + logout (Wave 1); Sign in link when unauthenticated.
+2. **Profile** — display name + Avatar preview (UserPrefs / localStorage; seed from session name when default).
+3. **Appearance** — ThemeToggle (`@msqdx/ui` ToggleGroup).
+4. **Language** — LocaleToggle.
+5. Enable rail avatar → `paths.routes.settings`; active when pathname starts with settings.
+6. Do not port providers/prompts/api-docs for MVP.
 
 Clone order: see `knowledge/workspace-slice-pattern.md` (settings is prefs-only — lighter than domain slices; still add paths + specs + tests).

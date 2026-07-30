@@ -2,13 +2,17 @@ import { describe, expect, it, afterEach } from 'vitest'
 import {
   AI_WORKFLOW_TARGETS,
   buildTargetCall,
+  runStubEnrichPersona,
   runStubGenerateJourney,
+  runStubGenerateJourneyPhaseMoments,
+  runStubGenerateMoodboard,
   runStubGeneratePersonaAvatar,
   runStubGeneratePersonas,
   runStubResearchStart,
   runStubSuggestPersonaField,
   runStubSuggestPersonas,
   runStubSuggestTargetGroups,
+  runStubValidateJourney,
 } from '../lib/ai-workflows'
 import { resetPersonaStore, storePersonaDetail, storePersonaList } from '../lib/fixtures/persona-store'
 import { resetTargetGroupStore, storeTargetGroupDetail } from '../lib/fixtures/target-group-store'
@@ -23,6 +27,17 @@ afterEach(() => {
 })
 
 describe('AI workflow stubs', () => {
+  it('buildTargetCall fills path params', () => {
+    const call = buildTargetCall(
+      'generatePersonas',
+      { tgId: 'tg-digital-product-leads' },
+      { segment: 'Leads', filter_mode: 'auto' },
+    )
+    expect(call.method).toBe('POST')
+    expect(call.path).toBe('/target-groups/tg-digital-product-leads/personas/generate')
+    expect(call.body.segment).toBe('Leads')
+  })
+
   it('registry documents V2 upstream paths', () => {
     expect(AI_WORKFLOW_TARGETS.generatePersonas.upstreamPath).toContain(
       '/personas/generate',
@@ -31,22 +46,15 @@ describe('AI workflow stubs', () => {
       '/generate-image',
     )
     expect(AI_WORKFLOW_TARGETS.suggestPersonaField.upstreamPath).toContain('/ai/')
+    expect(AI_WORKFLOW_TARGETS.enrichPersona.upstreamPath).toBe('/personas/{personaId}/enrich')
+    expect(AI_WORKFLOW_TARGETS.generateMoodboard.upstreamPath).toContain('/moodboards')
     expect(AI_WORKFLOW_TARGETS.suggestTargetGroups.upstreamPath).toContain(
       'suggest-target-groups',
     )
     expect(AI_WORKFLOW_TARGETS.researchStart.upstreamPath).toContain('research/start')
-    expect(AI_WORKFLOW_TARGETS.generateJourney.upstreamPath).toBe('/api/journeys/generate')
-  })
-
-  it('buildTargetCall fills path params', () => {
-    const call = buildTargetCall(
-      'generatePersonas',
-      { tgId: 'tg-digital-product-leads' },
-      { segment: 'Leads', filter_mode: 'auto' },
-    )
-    expect(call.method).toBe('POST')
-    expect(call.path).toBe('/api/target-groups/tg-digital-product-leads/personas/generate')
-    expect(call.body.segment).toBe('Leads')
+    expect(AI_WORKFLOW_TARGETS.generateJourney.upstreamPath).toBe('/journeys/generate')
+    expect(AI_WORKFLOW_TARGETS.generateJourneyPhaseMoments.upstreamPath).toContain('/ai/generate')
+    expect(AI_WORKFLOW_TARGETS.validateJourney.upstreamPath).toContain('/validate')
   })
 
   it('generatePersonas creates fixture personas and returns stubbed target', () => {
@@ -128,7 +136,7 @@ describe('AI workflow stubs', () => {
     if ('error' in result) return
     expect(result.stubbed).toBe(true)
     expect(result.workflowId).toBe('generatePersonaAvatar')
-    expect(result.target.path).toBe('/api/persona-admin/persona-alex-morgan/generate-image')
+    expect(result.target.path).toBe('/personas/persona-alex-morgan/generate-image')
     expect(result.avatarUrl).toBeTruthy()
     expect(result.avatarUrl).not.toBe(before?.avatarUrl)
     expect(storePersonaDetail('persona-alex-morgan')?.avatarUrl).toBe(result.avatarUrl)
@@ -156,12 +164,92 @@ describe('AI workflow stubs', () => {
     const vocab = runStubSuggestPersonaField('persona-alex-morgan', { field: 'vocabulary' })
     expect('error' in vocab).toBe(false)
     if ('error' in vocab) return
-    expect(vocab.target.path).toBe('/api/ai-assist')
+    expect(vocab.target.path).toBe('/ai-assist')
     expect(vocab.target.body.template_id).toBe('persona.vocabulary')
 
     expect(runStubSuggestPersonaField('missing', { field: 'values' })).toMatchObject({
       error: 'Persona not found',
       status: 404,
+    })
+  })
+
+  it('enrichPersona merges facets into the fixture store', () => {
+    const before = storePersonaDetail('persona-alex-morgan')
+    expect(before).toBeTruthy()
+    const interestCount = before!.interests.length
+    const result = runStubEnrichPersona('persona-alex-morgan', { output_locale: 'en' })
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+    expect(result.stubbed).toBe(true)
+    expect(result.workflowId).toBe('enrichPersona')
+    expect(result.target.path).toBe('/personas/persona-alex-morgan/enrich')
+    expect(result.facetsUpdated).toContain('interests')
+    expect(result.interests.length).toBeGreaterThan(interestCount)
+    expect(storePersonaDetail('persona-alex-morgan')?.interests).toEqual(result.interests)
+
+    expect(runStubEnrichPersona('missing', {})).toMatchObject({
+      error: 'Persona not found',
+      status: 404,
+    })
+  })
+
+  it('generateMoodboard writes style keywords and tiles', () => {
+    const result = runStubGenerateMoodboard('persona-alex-morgan', {})
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+    expect(result.stubbed).toBe(true)
+    expect(result.workflowId).toBe('generateMoodboard')
+    expect(result.status).toBe('stubbed')
+    expect(result.visuals.styleKeywords.length).toBeGreaterThan(0)
+    expect(result.visuals.tiles.length).toBe(4)
+    expect(result.visuals.tiles[0]?.imageUrl).toContain('/fixtures/personas/visuals/')
+    expect(storePersonaDetail('persona-alex-morgan')?.visuals?.tiles).toHaveLength(4)
+
+    expect(runStubGenerateMoodboard('missing', {})).toMatchObject({
+      error: 'Persona not found',
+      status: 404,
+    })
+  })
+
+  it('generateJourneyPhaseMoments merges moments into a phase', () => {
+    const before = storeJourneyDetail('journey-product-discovery')
+    const phase = before!.phases[0]!
+    const count = phase.elements.length
+    const result = runStubGenerateJourneyPhaseMoments('journey-product-discovery', {
+      phase_id: phase.id,
+      max_suggestions: 3,
+    })
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+    expect(result.stubbed).toBe(true)
+    expect(result.workflowId).toBe('generateJourneyPhaseMoments')
+    expect(result.applied).toBe(true)
+    expect(result.moments.length).toBeGreaterThan(count)
+    expect(result.target.body.template_id).toBe('journey.moments')
+    expect(
+      storeJourneyDetail('journey-product-discovery')?.phases[0]?.elements.length,
+    ).toBeGreaterThan(count)
+
+    expect(
+      runStubGenerateJourneyPhaseMoments('journey-product-discovery', { phase_id: 'missing' }),
+    ).toMatchObject({ error: 'Phase not found', status: 404 })
+  })
+
+  it('validateJourney returns a fit report against a persona', () => {
+    const result = runStubValidateJourney('journey-product-discovery', {
+      persona_ids: ['persona-alex-morgan'],
+    })
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+    expect(result.stubbed).toBe(true)
+    expect(result.workflowId).toBe('validateJourney')
+    expect(result.overallFitScore).toBeGreaterThan(0)
+    expect(result.phases.length).toBe(4)
+    expect(result.phases[0]?.status).toMatch(/good|warning|critical/)
+
+    expect(runStubValidateJourney('journey-product-discovery', { persona_ids: [] })).toMatchObject({
+      error: 'At least one persona_id required',
+      status: 400,
     })
   })
 })

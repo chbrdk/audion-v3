@@ -494,16 +494,56 @@ function WaveReportBand({
 
 function RunPanel({
   run,
+  studyId,
+  waveId,
   onPatchFinding,
+  onConverted,
 }: {
   run: UxWaveRunItem
+  studyId: string
+  waveId: string
   onPatchFinding: (runKey: string, finding: string) => Promise<void>
+  onConverted: (journeyId: string) => void
 }) {
+  const [converting, setConverting] = useState(false)
+  const [convertError, setConvertError] = useState<string | null>(null)
   const evidence = evidenceLabel(run.validEvidence)
   const categoryEntries = Object.entries(run.categories || {}).filter(
     ([, v]) => typeof v === 'number',
   ) as Array<[string, number]>
   const persona = splitPersonaName(run.personaName || 'Unassigned persona')
+
+  async function onConvert() {
+    setConverting(true)
+    setConvertError(null)
+    try {
+      const res = await fetch(paths.routes.apiJourneyFromUxRun, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studyId,
+          waveId,
+          runKey: run.runKey,
+          jobId: run.jobId,
+          personaId: run.personaId,
+          mode: 'deterministic',
+          journeyType: 'ux_audit',
+        }),
+      })
+      const data = (await res.json().catch(() => null)) as {
+        error?: string
+        journey?: { id: string }
+      } | null
+      if (!res.ok || !data?.journey?.id) {
+        throw new Error(data?.error || `Convert failed (${res.status})`)
+      }
+      onConverted(data.journey.id)
+    } catch (e) {
+      setConvertError(e instanceof Error ? e.message : 'Convert failed')
+    } finally {
+      setConverting(false)
+    }
+  }
 
   return (
     <div className="audion-wave-run-panel">
@@ -616,6 +656,32 @@ function RunPanel({
           <CategoryScoreChart categories={run.categories} />
         </div>
       ) : null}
+
+      <div className="audion-wave-run-convert">
+        {run.derivedJourneyId ? (
+          <Link
+            href={paths.routes.journeyDetail(run.derivedJourneyId)}
+            className="audion-wave-run-convert-link"
+          >
+            Open journey
+          </Link>
+        ) : (
+          <Button
+            type="button"
+            variant="subtle"
+            size="sm"
+            disabled={converting}
+            onClick={() => void onConvert()}
+          >
+            {converting ? 'Converting…' : 'Convert to journey'}
+          </Button>
+        )}
+        {convertError ? (
+          <p className="audion-edit-error" role="alert">
+            {convertError}
+          </p>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -794,7 +860,7 @@ export function WaveDetailPanel({
             onClick={() => setStartOpen(true)}
             disabled={busy || liveWave.status === 'running'}
           >
-            Start
+            Start agent
           </Button>
           <Button type="button" variant="primary" size="sm" onClick={onEvaluate} disabled={busy}>
             Evaluate
@@ -817,8 +883,8 @@ export function WaveDetailPanel({
       {liveWave.status === 'running' ? (
         <StatusMeterPanel
           className="ds-motion-reveal"
-          title="Wave orchestration"
-          meta="sync polling"
+          title="UX Journey Agent"
+          meta="Studies Start/Sync · official agent surface"
           level="warn"
           banner={`${runningCount} running · ${completeCount}/${liveWave.runs.length} complete`}
           meters={liveWave.runs.slice(0, 3).map((r) => ({
@@ -937,10 +1003,21 @@ export function WaveDetailPanel({
                   panel: (
                     <RunPanel
                       run={r}
+                      studyId={study.id}
+                      waveId={liveWave.id}
                       onPatchFinding={async (runKey, finding) => {
                         await patchWave({
                           runs: [{ runKey, url: r.url, task: r.task, finding }],
                         })
+                      }}
+                      onConverted={(journeyId) => {
+                        setLiveWave((prev) => ({
+                          ...prev,
+                          runs: prev.runs.map((run) =>
+                            run.id === r.id ? { ...run, derivedJourneyId: journeyId } : run,
+                          ),
+                        }))
+                        router.push(paths.routes.journeyDetail(journeyId))
                       }}
                     />
                   ),
@@ -1128,14 +1205,17 @@ export function WaveDetailPanel({
       {startOpen ? (
         <ConfirmDialog
           open
-          title="Start wave?"
+          title="Start UX Journey Agent?"
           confirmLabel="Start"
           onClose={() => setStartOpen(false)}
           onConfirm={() => void onStartConfirm()}
         >
           <p>
-            Start orchestration for <strong>{liveWave.waveKey}</strong>? Fixtures simulate run
-            progress via sync polling; API mode calls v2 start/sync.
+            Start the <strong>UX Journey Agent</strong> for wave{' '}
+            <strong>{liveWave.waveKey}</strong>? This is the official agent entry in audion-v3
+            (no separate Agent page). Fixtures simulate progress via Sync polling;{' '}
+            <code>NEXT_PERSONA_DATA_SOURCE=api</code> proxies to v2 <code>/ux-studies/…/start</code>{' '}
+            and Sync.
           </p>
         </ConfirmDialog>
       ) : null}

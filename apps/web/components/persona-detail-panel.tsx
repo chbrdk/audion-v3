@@ -11,6 +11,9 @@ import { PersonaEditableNotes } from './persona-editable-notes'
 import { PersonaEditablePortrait } from './persona-editable-portrait'
 import { PersonaEditableTraits } from './persona-editable-traits'
 import { PersonaEditableVisuals } from './persona-editable-visuals'
+import { PersonaLocalizedHeroCopy } from './persona-localized-hero-copy'
+import { PersonaProfileDeBand } from './persona-profile-de-band'
+import { ResourceKnowledgeDossier } from './resource-knowledge-dossier'
 
 /** ECHON geo-places gradient tiles for persona meta. */
 function FacetTile({
@@ -67,9 +70,7 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
           <Text role="headline" as="h2" className="signal-title">
             {persona.name}
           </Text>
-          <Text role="body" className="audion-magazine-deck">
-            {persona.role}
-          </Text>
+          <PersonaLocalizedHeroCopy persona={persona} />
           <ul className="geo-places audion-magazine-facets" aria-label="Persona attributes">
             {persona.location ? (
               <FacetTile label="Location" value={persona.location} kind="location" />
@@ -87,11 +88,9 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
         </div>
       </header>
 
-      {persona.bio ? (
-        <p className="audion-magazine-lede ds-motion-reveal">{persona.bio}</p>
-      ) : null}
-
       <div className="audion-magazine-body">
+        <PersonaProfileDeBand persona={persona} />
+
         <PersonaEditableTraits personaId={persona.id} traits={persona.traits} />
 
         <div className="signal-stage audion-magazine-stage ds-motion-reveal">
@@ -140,6 +139,14 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
         />
 
         <PersonaEditableNotes personaId={persona.id} sections={persona.sections} />
+
+        <ResourceKnowledgeDossier
+          title="Documents & knowledge"
+          entries={persona.knowledgeEntries}
+          documents={persona.documents}
+          listUrl={paths.routes.apiPersonaKnowledge(persona.id)}
+          entryUrl={(entryId) => paths.routes.apiPersonaKnowledgeEntry(persona.id, entryId)}
+        />
 
         <PersonaEditableVisuals personaId={persona.id} visuals={persona.visuals} />
       </div>

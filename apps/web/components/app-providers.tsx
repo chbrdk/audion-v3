@@ -1,9 +1,14 @@
 'use client'
 
 import React from 'react'
+import { SessionProvider } from 'next-auth/react'
 import { UserPrefsProvider } from '../lib/user-prefs'
 
-/** Client providers for prefs / theme (wraps server layout children). */
+/** Client providers for session + prefs / theme (wraps server layout children). */
 export function AppProviders({ children }: { children: React.ReactNode }) {
-  return <UserPrefsProvider>{children}</UserPrefsProvider>
+  return (
+    <SessionProvider>
+      <UserPrefsProvider>{children}</UserPrefsProvider>
+    </SessionProvider>
+  )
 }

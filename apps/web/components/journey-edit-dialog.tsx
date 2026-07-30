@@ -7,6 +7,7 @@ import { Button, Field, Input, Panel, Text, Textarea } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { IconDelete, IconEdit } from './nav-icons'
+import { ValidateJourneyButton } from './validate-journey-button'
 
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
@@ -237,6 +238,7 @@ export function JourneyDetailActions({ journey }: { journey: JourneyDetail }) {
 
   return (
     <div className="audion-magazine-topbar-actions">
+      <ValidateJourneyButton journey={journey} />
       <Button
         type="button"
         variant="ghost"

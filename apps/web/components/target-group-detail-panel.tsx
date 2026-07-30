@@ -5,6 +5,7 @@ import { EmptyState, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { TargetGroupDetailActions } from './target-group-edit-dialog'
 import { GeneratePersonasAiButton } from './ai-workflow-actions'
+import { ResourceKnowledgeDossier } from './resource-knowledge-dossier'
 import { TargetGroupLinkedPersonas } from './target-group-linked-personas'
 
 function FacetTile({
@@ -96,6 +97,13 @@ export function TargetGroupDetailPanel({
 
       <div className="audion-magazine-body">
         <TargetGroupLinkedPersonas personas={targetGroup.linkedPersonas} />
+        <ResourceKnowledgeDossier
+          title="Knowledge"
+          entries={targetGroup.knowledgeEntries}
+          documents={targetGroup.documents}
+          listUrl={paths.routes.apiTargetGroupKnowledge(targetGroup.id)}
+          entryUrl={(entryId) => paths.routes.apiTargetGroupKnowledgeEntry(targetGroup.id, entryId)}
+        />
       </div>
     </article>
   )

@@ -1,6 +1,6 @@
 /**
  * AI workflow registry — single source of truth for V2 target calls.
- * Wave 1 stubs fixtures; Wave 2 proxies via getPersonaBackendBase().
+ * Wave 1 stubs fixtures; Wave 2 proxies via getPersonaBackendBase() / chat-api.
  * Spec twin: knowledge/ai-workflows.md
  */
 
@@ -9,12 +9,19 @@ import type {
   AiSuggestionItem,
   AiTargetCall,
   AiWorkflowId,
+  EnrichPersonaRequest,
+  EnrichPersonaResponse,
+  GenerateJourneyPhaseMomentsRequest,
+  GenerateJourneyPhaseMomentsResponse,
   GenerateJourneyRequest,
   GenerateJourneyResponse,
+  GenerateMoodboardRequest,
+  GenerateMoodboardResponse,
   GeneratePersonaAvatarRequest,
   GeneratePersonaAvatarResponse,
   GeneratePersonasRequest,
   GeneratePersonasResponse,
+  JourneyElementKind,
   PersonaSuggestField,
   ResearchStartRequest,
   ResearchStartResponse,
@@ -24,15 +31,19 @@ import type {
   SuggestPersonasResponse,
   SuggestTargetGroupsRequest,
   SuggestTargetGroupsResponse,
+  ValidateJourneyRequest,
+  ValidateJourneyResponse,
 } from '@audion-v3/contracts'
-import { storeCreateJourney } from './fixtures/journey-store'
+import { storeCreateJourney, storeJourneyDetail, storePatchJourney } from './fixtures/journey-store'
 import { storeCreatePersona, storePatchPersona, storePersonaDetail } from './fixtures/persona-store'
 import {
   storePatchTargetGroup,
   storeTargetGroupDetail,
 } from './fixtures/target-group-store'
 import { storeProjectDetail } from './fixtures/project-store'
-import { personaAvatarPath } from './paths'
+import { storeCreateResearchRun } from './fixtures/research-runs'
+import { personaAvatarPath, personaVisualPath } from './paths'
+import { shouldPreferAiLive, shouldRequireAiLive } from './persona-api-proxy'
 
 export type AiWorkflowTargetDef = {
   id: AiWorkflowId
@@ -48,58 +59,88 @@ export const AI_WORKFLOW_TARGETS: Record<AiWorkflowId, AiWorkflowTargetDef> = {
   generatePersonas: {
     id: 'generatePersonas',
     label: 'Generate personas',
-    upstreamPath: '/api/target-groups/{tgId}/personas/generate',
+    /** V2 FastAPI (persona-api) — no /api prefix */
+    upstreamPath: '/target-groups/{tgId}/personas/generate',
     method: 'POST',
     v2Source: 'msqdx-glass-target-group-personas-panel / personas overview',
   },
   generatePersonaAvatar: {
     id: 'generatePersonaAvatar',
     label: 'Generate avatar',
-    upstreamPath: '/api/persona-admin/{personaId}/generate-image',
+    /** V2 chat-api portrait generate */
+    upstreamPath: '/personas/{personaId}/generate-image',
     method: 'POST',
-    v2Source: 'msqdx-glass-persona-admin-panel · knowledge/avatar-generation.md (AUDION-v2)',
+    v2Source: 'chat-api · generate-image (V2 Next proxies via persona-admin)',
   },
   suggestPersonaField: {
     id: 'suggestPersonaField',
     label: 'Suggest field',
-    upstreamPath: '/api/personas/{personaId}/ai/{fieldKey}',
+    upstreamPath: '/personas/{personaId}/ai/{fieldKey}',
     method: 'POST',
     v2Source: 'msqdx-glass-chip-editor / persona enrich · ai-assist templates',
+  },
+  enrichPersona: {
+    id: 'enrichPersona',
+    label: 'Enrich persona',
+    upstreamPath: '/personas/{personaId}/enrich',
+    method: 'POST',
+    v2Source: 'persona admin Enrich — AiAssist facet batch',
+  },
+  generateMoodboard: {
+    id: 'generateMoodboard',
+    label: 'Generate moodboard',
+    upstreamPath: '/api/persona-admin/{personaId}/moodboards',
+    method: 'POST',
+    v2Source: 'persona-admin moodboards + Celery moodboard.build',
   },
   suggestTargetGroups: {
     id: 'suggestTargetGroups',
     label: 'Suggest target groups',
-    upstreamPath: '/api/projects/{projectId}/suggest-target-groups',
+    upstreamPath: '/projects/{projectId}/suggest-target-groups',
     method: 'POST',
     v2Source: 'msqdx-glass-project-admin-panel / target-groups overview',
   },
   suggestPersonas: {
     id: 'suggestPersonas',
     label: 'Suggest personas',
-    upstreamPath: '/api/target-groups/{tgId}/suggest-personas',
+    upstreamPath: '/target-groups/{tgId}/suggest-personas',
     method: 'POST',
     v2Source: 'msqdx-glass-project-admin-panel',
   },
   researchStart: {
     id: 'researchStart',
     label: 'Start research',
-    upstreamPath: '/api/projects/{projectId}/research/start',
+    upstreamPath: '/projects/{projectId}/research/start',
     method: 'POST',
     v2Source: 'msqdx-glass-project-admin-panel',
   },
   generateJourney: {
     id: 'generateJourney',
     label: 'Generate journey',
-    upstreamPath: '/api/journeys/generate',
+    upstreamPath: '/journeys/generate',
     method: 'POST',
     v2Source: 'admin/journeys/new',
   },
   generateJourneyFromProject: {
     id: 'generateJourneyFromProject',
     label: 'Generate journey',
-    upstreamPath: '/api/projects/{projectId}/generate-journey',
+    upstreamPath: '/projects/{projectId}/generate-journey',
     method: 'POST',
     v2Source: 'msqdx-glass-project-admin-panel',
+  },
+  generateJourneyPhaseMoments: {
+    id: 'generateJourneyPhaseMoments',
+    label: 'Generate phase moments',
+    upstreamPath: '/journeys/{journeyId}/ai/generate',
+    method: 'POST',
+    v2Source: 'journey editor · journey.moments template',
+  },
+  validateJourney: {
+    id: 'validateJourney',
+    label: 'Validate journey',
+    upstreamPath: '/journeys/{journeyId}/validate',
+    method: 'POST',
+    v2Source: 'JourneyValidationService — rule-based fit vs persona',
   },
 }
 
@@ -173,39 +214,39 @@ export function runStubGeneratePersonaAvatar(
   return { ...meta, avatarUrl: patched.avatarUrl! }
 }
 
-const FIELD_UPSTREAM: Record<
+export const FIELD_UPSTREAM: Record<
   PersonaSuggestField,
   { fieldKey: string; path: string; templateId?: string }
 > = {
   interests: {
     fieldKey: 'interests',
-    path: '/api/personas/{personaId}/ai/interests',
+    path: '/personas/{personaId}/ai/interests',
   },
   values: {
     fieldKey: 'values',
-    path: '/api/personas/{personaId}/ai/values',
+    path: '/personas/{personaId}/ai/values',
   },
   goals: {
     fieldKey: 'goals',
-    path: '/api/personas/{personaId}/ai/goals',
+    path: '/personas/{personaId}/ai/goals',
   },
   frustrations: {
     fieldKey: 'pain-points',
-    path: '/api/personas/{personaId}/ai/pain-points',
+    path: '/personas/{personaId}/ai/pain-points',
   },
   traits: {
     fieldKey: 'traits',
-    path: '/api/ai-assist',
+    path: '/ai-assist',
     templateId: 'persona.traits',
   },
   vocabulary: {
     fieldKey: 'vocabulary',
-    path: '/api/ai-assist',
+    path: '/ai-assist',
     templateId: 'persona.vocabulary',
   },
   sentenceStructure: {
     fieldKey: 'sentence_structure',
-    path: '/api/ai-assist',
+    path: '/ai-assist',
     templateId: 'persona.sentence_structure',
   },
 }
@@ -427,7 +468,7 @@ export function runStubResearchStart(
     max_depth: body.max_depth ?? 2,
   }
   const meta = stubMeta('researchStart', { projectId }, upstreamBody)
-  const jobId = `research-stub-${projectId}-${Date.now().toString(36)}`
+  const jobId = storeCreateResearchRun(projectId, String(body.seed_url ?? ''), true)
 
   return { ...meta, jobId, status: 'queued' }
 }
@@ -513,7 +554,332 @@ export function runStubGenerateJourney(
   }
 }
 
+function uniqStrings(items: string[], max: number): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of items) {
+    const s = raw.trim()
+    if (!s) continue
+    const key = s.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(s)
+    if (out.length >= max) break
+  }
+  return out
+}
+
+export function runStubEnrichPersona(
+  personaId: string,
+  body: EnrichPersonaRequest = {},
+): EnrichPersonaResponse | { error: string; status: number } {
+  const persona = storePersonaDetail(personaId)
+  if (!persona) return { error: 'Persona not found', status: 404 }
+
+  const locale = body.output_locale ?? 'en'
+  const upstreamBody: Record<string, unknown> = {
+    output_locale: locale,
+    profile_overlay: body.profile_overlay ?? undefined,
+  }
+  const meta = stubMeta('enrichPersona', { personaId }, upstreamBody)
+
+  const seedTag = persona.archetype || persona.role || 'audience'
+  const interests = uniqStrings(
+    [...persona.interests, `Evidence for ${seedTag}`, 'Workshop synthesis', 'Decision trails'],
+    8,
+  )
+  const values = uniqStrings([...persona.values, 'Clarity', 'Shared ownership', 'Craft'], 6)
+  const goals = [
+    ...persona.goals,
+    { label: `Make ${seedTag} decisions evidence-led`, priority: persona.goals.length + 1 },
+    { label: 'Keep the magazine brief alive after workshops', priority: persona.goals.length + 2 },
+  ].slice(0, 6)
+  const frustrations = [
+    ...persona.frustrations,
+    { label: 'Stale personas nobody updates', evidenceCount: 1 },
+    { label: 'Slide decks that replace decisions', evidenceCount: 1 },
+  ].slice(0, 6)
+  const traits = {
+    ...persona.traits,
+    Curious: persona.traits.Curious ?? 0.72,
+    Decisive: persona.traits.Decisive ?? 0.64,
+    Empathetic: persona.traits.Empathetic ?? 0.7,
+  }
+
+  const patched = storePatchPersona(personaId, {
+    bio: body.profile_overlay?.bio?.trim() || persona.bio,
+    age: body.profile_overlay?.age?.trim() || persona.age,
+    location: body.profile_overlay?.location?.trim() || persona.location,
+    gender: body.profile_overlay?.gender?.trim() || persona.gender,
+    interests,
+    values,
+    goals,
+    frustrations,
+    traits,
+  })
+  if (!patched) return { error: 'Persona not found', status: 404 }
+
+  return {
+    ...meta,
+    personaId,
+    facetsUpdated: ['interests', 'values', 'goals', 'frustrations', 'traits'],
+    interests: patched.interests,
+    values: patched.values,
+    goals: patched.goals,
+    frustrations: patched.frustrations,
+    traits: patched.traits,
+  }
+}
+
+export function runStubGenerateMoodboard(
+  personaId: string,
+  body: GenerateMoodboardRequest = {},
+): GenerateMoodboardResponse | { error: string; status: number } {
+  const persona = storePersonaDetail(personaId)
+  if (!persona) return { error: 'Persona not found', status: 404 }
+
+  const upstreamBody = { title: body.title?.trim() || `${persona.name} moodboard` }
+  const meta = stubMeta('generateMoodboard', { personaId }, upstreamBody)
+
+  const styleKeywords = uniqStrings(
+    [
+      ...(persona.visuals?.styleKeywords ?? []),
+      ...(persona.colorPalette ?? []),
+      persona.attentionSpan || '',
+      'editorial light',
+      'tactile paper',
+      'calm UI chrome',
+      persona.archetype || persona.role,
+    ],
+    8,
+  )
+
+  const tileDefs = [
+    { slug: 'tone-warm', category: 'tone', caption: 'Atmosphere' },
+    { slug: 'material-soft', category: 'material', caption: 'Texture' },
+    { slug: 'ui-calm', category: 'ui', caption: 'Interface cues' },
+    { slug: 'space-studio', category: 'space', caption: 'Context space' },
+  ] as const
+
+  const tiles = tileDefs.map((def, i) => ({
+    id: `mood-stub-${personaId}-${i + 1}`,
+    imageUrl: personaVisualPath(def.slug),
+    category: def.category,
+    caption: `${def.caption} · ${persona.name}`,
+  }))
+
+  const visuals = { styleKeywords, tiles }
+  const patched = storePatchPersona(personaId, { visuals })
+  if (!patched) return { error: 'Persona not found', status: 404 }
+
+  return {
+    ...meta,
+    personaId,
+    moodboardId: `moodboard-stub-${personaId}`,
+    status: 'stubbed',
+    visuals: patched.visuals ?? visuals,
+  }
+}
+
+const KIND_CYCLE: JourneyElementKind[] = [
+  'action',
+  'thought',
+  'feeling',
+  'pain',
+  'opportunity',
+]
+
+function newMomentId(): string {
+  return `el-ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+}
+
+export function runStubGenerateJourneyPhaseMoments(
+  journeyId: string,
+  body: GenerateJourneyPhaseMomentsRequest,
+): GenerateJourneyPhaseMomentsResponse | { error: string; status: number } {
+  const journey = storeJourneyDetail(journeyId)
+  if (!journey) return { error: 'Journey not found', status: 404 }
+  const phase = journey.phases.find((p) => p.id === body.phase_id)
+  if (!phase) return { error: 'Phase not found', status: 404 }
+
+  const max = Math.min(Math.max(body.max_suggestions ?? 4, 1), 8)
+  const upstreamBody: Record<string, unknown> = {
+    template_id: 'journey.moments',
+    phase_id: body.phase_id,
+    max_suggestions: max,
+    output_locale: body.output_locale ?? 'en',
+    phase_context: {
+      phase_name: phase.name,
+      phase_summary: phase.summary,
+    },
+  }
+  const meta = stubMeta('generateJourneyPhaseMoments', { journeyId }, upstreamBody)
+
+  const seeds = [
+    `Act on ${phase.name.toLowerCase()}`,
+    `Ask: does this match the brief?`,
+    `Notice tension in ${phase.name.toLowerCase()}`,
+    `Capture a decision signal`,
+    `Hand off with a clear owner`,
+  ]
+  const existingLabels = new Set(phase.elements.map((el) => el.label.toLowerCase()))
+  const fresh = seeds.filter((s) => !existingLabels.has(s.toLowerCase())).slice(0, max)
+  const startOrder = phase.elements.length
+  const newMoments = fresh.map((label, i) => ({
+    id: newMomentId(),
+    kind: KIND_CYCLE[i % KIND_CYCLE.length]!,
+    label,
+    order: startOrder + i,
+  }))
+  const moments = [...phase.elements, ...newMoments].map((el, order) => ({ ...el, order }))
+
+  const phases = journey.phases.map((p) =>
+    p.id === phase.id ? { ...p, elements: moments } : p,
+  )
+  const patched = storePatchJourney(journeyId, {
+    name: journey.name,
+    journeyType: journey.journeyType,
+    status: journey.status,
+    description: journey.description,
+    targetGroupId: journey.targetGroupId,
+    projectId: journey.projectId,
+    phases,
+  })
+  if (!patched) return { error: 'Journey not found', status: 404 }
+
+  const appliedPhase = patched.phases.find((p) => p.id === phase.id)
+  return {
+    ...meta,
+    journeyId,
+    phaseId: phase.id,
+    applied: true,
+    moments: appliedPhase?.elements ?? moments,
+  }
+}
+
+function fitStatus(score: number): 'good' | 'warning' | 'critical' {
+  if (score >= 70) return 'good'
+  if (score >= 45) return 'warning'
+  return 'critical'
+}
+
+export function runStubValidateJourney(
+  journeyId: string,
+  body: ValidateJourneyRequest,
+): ValidateJourneyResponse | { error: string; status: number } {
+  const journey = storeJourneyDetail(journeyId)
+  if (!journey) return { error: 'Journey not found', status: 404 }
+  const personaIds = body.persona_ids?.filter(Boolean) ?? []
+  if (!personaIds.length) return { error: 'At least one persona_id required', status: 400 }
+  const personaId = personaIds[0]!
+  const persona = storePersonaDetail(personaId)
+  if (!persona) return { error: 'Persona not found', status: 404 }
+
+  const upstreamBody: Record<string, unknown> = {
+    persona_ids: personaIds,
+    mode: body.mode ?? 'automated',
+  }
+  const meta = stubMeta('validateJourney', { journeyId }, upstreamBody)
+
+  const goalHints = persona.goals.map((g) => g.label.toLowerCase())
+  const painHints = persona.frustrations.map((f) => f.label.toLowerCase())
+
+  const phases = journey.phases.map((phase) => {
+    const density = Math.min(100, 40 + phase.elements.length * 12)
+    const text = `${phase.name} ${phase.summary ?? ''} ${phase.elements.map((e) => e.label).join(' ')}`.toLowerCase()
+    const goalHit = goalHints.some((g) => g && text.includes(g.slice(0, 12)))
+    const painHit = painHints.some((p) => p && text.includes(p.slice(0, 12)))
+    let fitScore = density
+    if (goalHit) fitScore = Math.min(100, fitScore + 12)
+    if (painHit) fitScore = Math.min(100, fitScore + 8)
+    if (!phase.elements.length) fitScore = Math.max(20, fitScore - 25)
+    fitScore = Math.round(fitScore * 10) / 10
+
+    const frictionPoints =
+      phase.elements.length === 0
+        ? [
+            {
+              description: `Phase “${phase.name}” has no moments for ${persona.name} to react to.`,
+              severity: 'high' as const,
+              personaQuote: `I need concrete steps in ${phase.name}.`,
+            },
+          ]
+        : painHit
+          ? []
+          : [
+              {
+                description: `Little explicit connection to ${persona.name}'s known frustrations.`,
+                severity: 'medium' as const,
+                personaQuote: null,
+              },
+            ]
+
+    const recommendations: string[] = []
+    if (!phase.elements.length) {
+      recommendations.push('Generate moments for this phase before validating again.')
+    } else if (!goalHit) {
+      recommendations.push(`Tie a moment to a goal of ${persona.name}.`)
+    }
+    if (fitScore < 70) {
+      recommendations.push('Add a decision or handoff moment with a clear owner.')
+    }
+
+    return {
+      phaseId: phase.id,
+      phaseName: phase.name,
+      fitScore,
+      status: fitStatus(fitScore),
+      frictionPoints,
+      recommendations,
+    }
+  })
+
+  const overallFitScore =
+    phases.length === 0
+      ? 0
+      : Math.round((phases.reduce((sum, p) => sum + p.fitScore, 0) / phases.length) * 10) / 10
+
+  return {
+    ...meta,
+    journeyId,
+    overallFitScore,
+    validatedAt: new Date().toISOString(),
+    personaId,
+    phases,
+  }
+}
+
 export function targetHint(workflowId: AiWorkflowId): string {
   const def = AI_WORKFLOW_TARGETS[workflowId]
-  return `Stub → ${def.method} ${def.upstreamPath}`
+  return `${def.method} ${def.upstreamPath}`
+}
+
+type AiErr = { error: string; status: number; detail?: string }
+
+/** Route helper: try live when preferred; fall back to stub unless api-only. */
+export async function withAiLiveOrStub<T extends { stubbed: boolean }>(
+  request: Request,
+  live: (authorization: string | null) => Promise<T | AiErr>,
+  stub: () => T | { error: string; status: number },
+): Promise<{ ok: true; data: T } | { ok: false; error: string; status: number; detail?: string }> {
+  if (shouldPreferAiLive()) {
+    const authorization = request.headers.get('authorization')
+    const liveResult = await live(authorization)
+    if (!('error' in liveResult)) {
+      return { ok: true, data: liveResult }
+    }
+    if (shouldRequireAiLive()) {
+      return {
+        ok: false,
+        error: liveResult.error,
+        status: liveResult.status,
+        detail: liveResult.detail,
+      }
+    }
+  }
+  const stubResult = stub()
+  if ('error' in stubResult) {
+    return { ok: false, error: stubResult.error, status: stubResult.status }
+  }
+  return { ok: true, data: stubResult }
 }

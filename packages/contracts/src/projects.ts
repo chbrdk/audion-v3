@@ -39,6 +39,10 @@ export type ProjectDetail = ProjectSummary & {
   members: ProjectMember[]
   /** Accordion chapters for project knowledge. Empty → fall back to companyContext as one Brief. */
   knowledgeChapters: ProjectKnowledgeChapter[]
+  /** Plexon platform project id when federated (Wave 1). */
+  platformProjectId?: string | null
+  platformCompanyId?: string | null
+  ownerPlexonUserId?: string | null
 }
 
 /** Create / PATCH body */
@@ -51,4 +55,14 @@ export type ProjectWritePayload = {
   status?: ProjectStatus
   /** Full members replacement when provided (detail edit) */
   members?: ProjectMember[]
+  platformProjectId?: string | null
+  platformCompanyId?: string | null
+  ownerPlexonUserId?: string | null
+}
+
+/** Options for fixture create (session / federation). */
+export type ProjectCreateOptions = {
+  ownerEmail?: string
+  ownerPlexonUserId?: string | null
+  platformCompanyId?: string | null
 }

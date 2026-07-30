@@ -64,6 +64,8 @@ export type UxWaveRunItem = {
   goalReached: boolean | null
   finding: string | null
   categories: Record<string, number>
+  /** Set after Convert to Journey (fixture or live). */
+  derivedJourneyId?: string | null
 }
 
 export type SoftScoreEntry = {

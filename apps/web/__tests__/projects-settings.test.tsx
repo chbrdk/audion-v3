@@ -22,6 +22,11 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }))
 
+vi.mock('next-auth/react', () => ({
+  useSession: () => ({ data: null, status: 'unauthenticated' }),
+  signOut: vi.fn(),
+}))
+
 vi.mock('../components/knowledge-rich-editor', () => ({
   KnowledgeRichEditor: ({
     content,
@@ -108,6 +113,11 @@ describe('settings page', () => {
     }
     expect(screen.getByRole('group', { name: 'Theme' })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Language' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Account' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Sign in/i })).toHaveAttribute(
+      'href',
+      paths.routes.login,
+    )
   })
 })
 

@@ -1,7 +1,10 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Avatar, Field, Hint, Input, SectionChrome, Text, ToggleGroup } from '@msqdx/ui'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { signOut, useSession } from 'next-auth/react'
+import { Avatar, Button, Field, Hint, Input, SectionChrome, Text, ToggleGroup } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { useUserPrefs, type UiLocaleId, type UiThemeId } from '../lib/user-prefs'
 
@@ -18,20 +21,80 @@ const LOCALE_LABELS: Record<UiLocaleId, string> = {
 }
 
 export function SettingsPage() {
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const { displayName, setDisplayName, theme, setTheme, locale, setLocale } = useUserPrefs()
   const [draft, setDraft] = useState(displayName)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
     setDraft(displayName)
   }, [displayName])
 
+  useEffect(() => {
+    const sessionName = session?.user?.name?.trim()
+    if (status !== 'authenticated' || !sessionName) return
+    if (displayName === paths.defaultDisplayName || !displayName.trim()) {
+      setDisplayName(sessionName)
+      setDraft(sessionName)
+    }
+  }, [status, session?.user?.name, displayName, setDisplayName])
+
   function commitName() {
     setDisplayName(draft)
   }
 
+  async function handleLogout() {
+    setLoggingOut(true)
+    try {
+      await signOut({ redirect: false })
+      router.replace(paths.routes.login)
+      router.refresh()
+    } finally {
+      setLoggingOut(false)
+    }
+  }
+
+  const accountEmail = session?.user?.email ?? null
+  const accountName = session?.user?.name ?? null
+
   return (
     <div className="audion-settings">
       <Hint panel>Device-local preferences — theme, language, and how you appear in the rail.</Hint>
+
+      {status === 'authenticated' && accountEmail ? (
+        <section className="audion-settings-section">
+          <SectionChrome quiet title="Account" as="h2" />
+          <Text role="body" className="audion-settings-help">
+            Signed in via Plexon. Identity is owned by the platform control plane.
+          </Text>
+          <dl className="audion-settings-account">
+            {accountName ? (
+              <>
+                <dt>Name</dt>
+                <dd>{accountName}</dd>
+              </>
+            ) : null}
+            <dt>Email</dt>
+            <dd>{accountEmail}</dd>
+          </dl>
+          <Button type="button" variant="secondary" onClick={handleLogout} disabled={loggingOut}>
+            {loggingOut ? 'Signing out…' : 'Sign out'}
+          </Button>
+        </section>
+      ) : status !== 'loading' ? (
+        <section className="audion-settings-section">
+          <SectionChrome quiet title="Account" as="h2" />
+          <Text role="body" className="audion-settings-help">
+            No Plexon session. Fixture mode stays open without login when auth env is unset.
+          </Text>
+          <p className="audion-settings-account-link">
+            <Link href={paths.routes.login} className="audion-link">
+              Sign in
+            </Link>
+          </p>
+        </section>
+      ) : null}
 
       <section className="audion-settings-section">
         <SectionChrome quiet title="Profile" as="h2" />

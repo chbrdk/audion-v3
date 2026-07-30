@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PersonaSummary } from '@audion-v3/contracts'
 import { AudionChatPanel } from '../components/audion-chat-panel'
 import { AudionChatWorkspace } from '../components/audion-chat-workspace'
@@ -35,14 +35,32 @@ vi.mock('../components/app-shell', () => ({
   ),
 }))
 
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
+
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        personaId: 'persona-alex-morgan',
+        projectId: 'proj-audion-core',
+        styleKeywords: [],
+        tiles: [],
+      }),
+    }),
+  )
+})
 
 const personas: PersonaSummary[] = [
   {
     id: 'persona-alex-morgan',
     name: 'Alex Morgan',
     role: 'Product Lead',
-    projectId: null,
+    projectId: 'proj-audion-core',
     status: 'ready',
     archetype: 'Builder',
     updatedAt: null,
@@ -51,7 +69,7 @@ const personas: PersonaSummary[] = [
 ]
 
 describe('audion chat workspace', () => {
-  it('puts persona picker and history in the topbar', () => {
+  it('puts persona + Share/History in the topbar and Voice/Video by the composer', () => {
     const { container } = render(
       <AudionChatWorkspace
         personas={personas}
@@ -65,12 +83,8 @@ describe('audion chat workspace', () => {
     expect(topbar?.querySelector('.topbar-brand .audion-chat-persona-field')).toBeTruthy()
     expect(topbar?.querySelector('.ds-page-title')).toBeNull()
     expect(screen.getByRole('heading', { name: 'Chat', hidden: true })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /History/i })).toHaveAttribute(
-      'href',
-      paths.routes.chatHistory,
-    )
+    expect(topbar?.querySelector('#chat-modality')).toBeNull()
     expect(container.querySelector('.page-body .audion-chat-persona-field')).toBeNull()
-    expect(container.querySelector('.page-body a.audion-link')).toBeNull()
     expect(screen.getByLabelText('Persona chat')).toBeInTheDocument()
     expect(container.querySelector('.ds-panel')).toBeNull()
     expect(container.querySelector('.chat-panel-open')).toBeTruthy()
@@ -79,11 +93,80 @@ describe('audion chat workspace', () => {
     expect(form).toBeTruthy()
     expect(form?.classList.contains('is-expanded')).toBe(false)
     expect(form?.querySelector('.ds-field')).toBeTruthy()
+    expect(form?.querySelector('.audion-chat-composer-actions')).toBeTruthy()
+    expect(form?.querySelector('[aria-label="Share"]')).toBeNull()
+    expect(form?.querySelector('[aria-label="History"]')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Voice' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Video' })).toBeInTheDocument()
+    expect(topbar?.querySelector('[aria-label="Share"]')).toBeTruthy()
+    expect(topbar?.querySelector('[aria-label="History"]')).toBeTruthy()
+    expect(topbar?.querySelector('a[aria-label="History"]')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }))
+    expect(screen.getByRole('dialog', { name: 'Share' })).toBeInTheDocument()
+    expect(container.querySelector('.audion-chat-flyout-backdrop')).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'Share' }).className).toContain('audion-chat-flyover')
+    expect((screen.getByLabelText('Share link') as HTMLInputElement).value).toContain(
+      'personaId=persona-alex-morgan&projectId=proj-audion-core',
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'History' }))
+    expect(screen.getByRole('dialog', { name: 'History' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Open full history/i })).toHaveAttribute(
+      'href',
+      paths.routes.chatHistory,
+    )
     expect(screen.getByRole('button', { name: 'Send' })).toBeInTheDocument()
     expect(container.querySelector('.chat-send-icon')).toBeTruthy()
     expect(container.querySelector('.chat-send-icon .ds-btn__label')).toBeNull()
-    expect(container.querySelector('.top-status')).toBeNull()
     expect(container.querySelector('.audion-page-lead')).toBeNull()
+  })
+
+  it('toggles voice modality via composer icon', () => {
+    render(
+      <AudionChatWorkspace
+        personas={personas}
+        initialPersonaId="persona-alex-morgan"
+        initialConversation={null}
+      />,
+    )
+    const voice = screen.getByRole('button', { name: 'Voice' })
+    expect(voice).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(voice)
+    expect(voice).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText(/Voice mode stub/i)).toBeInTheDocument()
+    fireEvent.click(voice)
+    expect(voice).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('locks share chrome when projectId share token is set', () => {
+    render(
+      <AudionChatWorkspace
+        personas={personas}
+        initialPersonaId="persona-alex-morgan"
+        initialConversation={null}
+        shareProjectId="proj-audion-core"
+        moodboardTiles={[
+          {
+            id: 'tile-1',
+            imageUrl: '/fixtures/personas/persona-alex-morgan.png',
+            category: 'look',
+            caption: 'Desk',
+          },
+        ]}
+      />,
+    )
+    expect(screen.getByText('Public share')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'History' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'History' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Voice' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Shared chat', hidden: true })).toBeInTheDocument()
+    const moodboardBtn = screen.getByRole('button', { name: 'Moodboard' })
+    expect(moodboardBtn).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('dialog', { name: 'Moodboard' })).toBeNull()
+    fireEvent.click(moodboardBtn)
+    expect(moodboardBtn).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('dialog', { name: 'Moodboard' })).toBeInTheDocument()
+    expect(screen.getByText('Desk')).toBeInTheDocument()
   })
 
   it('prefills composer from study F-Fragen deep-link draft', () => {

@@ -11,6 +11,7 @@ import type {
 import { Button, Field, Input, Textarea } from '@msqdx/ui'
 import { Dialog, TagInput } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { GeneratePhaseMomentsButton } from './generate-phase-moments-button'
 
 function newPhaseId(): string {
   return `phase-${Date.now().toString(36)}`
@@ -185,13 +186,22 @@ export function JourneyPhaseEditDialog({
         </Field>
 
         <Field label="Moments" size="md" htmlFor="phase-moments" className="audion-edit-field">
-          <TagInput
-            id="phase-moments"
-            size="md"
-            value={moments}
-            onChange={setMoments}
-            placeholder="Add moment…"
-          />
+          <div className="audion-phase-moments-field">
+            {mode === 'edit' && phase ? (
+              <GeneratePhaseMomentsButton
+                journeyId={journey.id}
+                phase={phase}
+                onApplied={setMoments}
+              />
+            ) : null}
+            <TagInput
+              id="phase-moments"
+              size="md"
+              value={moments}
+              onChange={setMoments}
+              placeholder="Add moment…"
+            />
+          </div>
         </Field>
 
         {saveError ? (

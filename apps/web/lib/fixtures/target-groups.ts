@@ -29,6 +29,31 @@ export const DEMO_TARGET_GROUPS: TargetGroupDetail[] = [
         avatarUrl: personaAvatarPath('persona-samira-khan'),
       },
     ],
+    knowledgeEntries: [
+      {
+        id: 'tg-know-icp',
+        title: 'ICP notes',
+        content:
+          '<p>Decision-makers who own roadmap clarity and refuse workshop-only personas.</p>',
+        updatedAt: '2026-07-28T12:00:00.000Z',
+      },
+      {
+        id: 'tg-know-signals',
+        title: 'Buying signals',
+        content:
+          '<p>Asks for living profiles, evidence trails, and research-to-sprint handoffs.</p>',
+        updatedAt: '2026-07-28T12:05:00.000Z',
+      },
+    ],
+    documents: [
+      {
+        id: 'tg-doc-brief',
+        name: 'segment-brief.pdf',
+        status: 'ready',
+        mimeType: 'application/pdf',
+        updatedAt: '2026-07-27T09:00:00.000Z',
+      },
+    ],
   },
   {
     id: 'tg-brand-narrative',
@@ -48,6 +73,8 @@ export const DEMO_TARGET_GROUPS: TargetGroupDetail[] = [
         avatarUrl: personaAvatarPath('persona-jonas-richter'),
       },
     ],
+    knowledgeEntries: [],
+    documents: [],
   },
   {
     id: 'tg-service-ops',
@@ -67,5 +94,7 @@ export const DEMO_TARGET_GROUPS: TargetGroupDetail[] = [
         avatarUrl: personaAvatarPath('persona-lena-vogel'),
       },
     ],
+    knowledgeEntries: [],
+    documents: [],
   },
 ]

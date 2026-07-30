@@ -38,12 +38,21 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
   return data as T
 }
 
-function StubTargetNote({ hint, lede }: { hint: string; lede: string }) {
+function StubTargetNote({ hint, lede, stubbed }: { hint: string; lede: string; stubbed?: boolean }) {
+  const isStub = stubbed !== false
   return (
     <>
       <p className="audion-edit-lede">{lede}</p>
-      <p className="audion-ai-target-hint" title={`Later: ${hint}`}>
-        Stub · later <code>{hint}</code>
+      <p className="audion-ai-target-hint" title={hint}>
+        {isStub ? (
+          <>
+            Stub · target <code>{hint}</code>
+          </>
+        ) : (
+          <>
+            Live · <code>{hint}</code>
+          </>
+        )}
       </p>
     </>
   )
@@ -191,6 +200,7 @@ export function GeneratePersonasAiButton({
             <StubTargetNote
               lede="Create draft personas for a segment — same flow as V2 generate."
               hint={AI_WORKFLOW_TARGETS.generatePersonas.upstreamPath}
+              stubbed={result?.stubbed}
             />
             {!targetGroupId ? (
               <Field label="Target group" size="md" className="audion-edit-field">
@@ -257,12 +267,14 @@ export function SuggestTargetGroupsAiButton({
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<AiSuggestionItem[] | null>(null)
   const [targetPath, setTargetPath] = useState(AI_WORKFLOW_TARGETS.suggestTargetGroups.upstreamPath)
+  const [stubbed, setStubbed] = useState(true)
   const hint = targetHint('suggestTargetGroups')
 
   useEffect(() => {
     if (!open) return
     setSuggestions(null)
     setError(null)
+    setStubbed(true)
     setPid(projectId ?? '')
     if (!projectId) {
       void loadOptions()
@@ -285,6 +297,7 @@ export function SuggestTargetGroupsAiButton({
       )
       setSuggestions(data.suggestions)
       setTargetPath(data.target.path)
+      setStubbed(data.stubbed)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Suggest failed')
     } finally {
@@ -361,6 +374,7 @@ export function SuggestTargetGroupsAiButton({
             <StubTargetNote
               lede="Propose audience segments for this project, then create the ones you keep."
               hint={targetPath}
+              stubbed={stubbed}
             />
             {!projectId ? (
               <Field label="Project" size="md" className="audion-edit-field">
@@ -403,15 +417,18 @@ export function SuggestPersonasAiButton({
   const [open, setOpen] = useState(false)
   const [tgId, setTgId] = useState(targetGroups[0]?.id ?? '')
   const [busy, setBusy] = useState(false)
+  const [accepting, setAccepting] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<AiSuggestionItem[] | null>(null)
   const [targetPath, setTargetPath] = useState(AI_WORKFLOW_TARGETS.suggestPersonas.upstreamPath)
+  const [stubbed, setStubbed] = useState(true)
   const hint = targetHint('suggestPersonas')
 
   useEffect(() => {
     if (!open) return
     setSuggestions(null)
     setError(null)
+    setStubbed(true)
     setTgId(targetGroups[0]?.id ?? '')
   }, [open, targetGroups])
 
@@ -429,6 +446,7 @@ export function SuggestPersonasAiButton({
       )
       setSuggestions(data.suggestions)
       setTargetPath(data.target.path)
+      setStubbed(data.stubbed)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Suggest failed')
     } finally {
@@ -505,6 +523,7 @@ export function SuggestPersonasAiButton({
             <StubTargetNote
               lede="Propose persona briefs for a target group, then create selected profiles."
               hint={targetPath}
+              stubbed={stubbed}
             />
             <Field label="Target group" size="md" className="audion-edit-field">
               <Select
@@ -543,6 +562,11 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [job, setJob] = useState<ResearchStartResponse | null>(null)
+  const [events, setEvents] = useState<
+    Array<{ id: string; eventType: string; message: string }>
+  >([])
+  const [runStatus, setRunStatus] = useState<string | null>(null)
+  const [latestSummary, setLatestSummary] = useState<string | null>(null)
   const hint = targetHint('researchStart')
 
   useEffect(() => {
@@ -550,11 +574,63 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
     setJob(null)
     setError(null)
     setSeedUrl('')
+    setEvents([])
+    setRunStatus(null)
+    setLatestSummary(null)
   }, [open])
+
+  useEffect(() => {
+    if (!job?.jobId || !open) return
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+
+    async function poll() {
+      try {
+        const res = await fetch(
+          `${paths.routes.apiAiResearchStatus(projectId)}?run_id=${encodeURIComponent(job!.jobId)}`,
+        )
+        const data = (await res.json().catch(() => null)) as {
+          status?: string
+          events?: Array<{ id: string; eventType: string; message: string }>
+          error?: string
+        } | null
+        if (!res.ok) throw new Error(data?.error || `Status failed (${res.status})`)
+        if (cancelled) return
+        setRunStatus(data?.status ?? null)
+        setEvents(data?.events ?? [])
+        if (data?.status === 'succeeded') {
+          const latestRes = await fetch(paths.routes.apiAiResearchLatest(projectId))
+          const latest = (await latestRes.json().catch(() => null)) as {
+            summaryEn?: Array<{ title: string; claims: Array<{ text: string }> }> | null
+          } | null
+          if (!cancelled && latest?.summaryEn?.length) {
+            setLatestSummary(
+              latest.summaryEn
+                .map((s) => `${s.title}: ${s.claims.map((c) => c.text).join(' ')}`)
+                .join('\n'),
+            )
+          }
+          return
+        }
+        if (data?.status === 'failed') return
+        timer = setTimeout(() => void poll(), 900)
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Status poll failed')
+      }
+    }
+
+    void poll()
+    return () => {
+      cancelled = true
+      if (timer) clearTimeout(timer)
+    }
+  }, [job?.jobId, open, projectId])
 
   async function run() {
     setBusy(true)
     setError(null)
+    setEvents([])
+    setLatestSummary(null)
     try {
       const data = await postJson<ResearchStartResponse>(paths.routes.apiAiResearchStart(projectId), {
         seed_url: seedUrl,
@@ -562,6 +638,7 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
         max_depth: 2,
       })
       setJob(data)
+      setRunStatus(data.status)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Research start failed')
     } finally {
@@ -593,8 +670,9 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
         >
           <div className="audion-edit-form">
             <StubTargetNote
-              lede="Queue a research crawl from a seed URL. Live streaming comes in Wave 2."
+              lede="Queue a research crawl, then follow progress (poll spine; SSE available)."
               hint={AI_WORKFLOW_TARGETS.researchStart.upstreamPath}
+              stubbed={job?.stubbed}
             />
             <Field label="Seed URL" size="md" className="audion-edit-field">
               <Input
@@ -603,6 +681,7 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
                 value={seedUrl}
                 onChange={(e) => setSeedUrl(e.target.value)}
                 placeholder="https://…"
+                disabled={Boolean(job)}
               />
             </Field>
             {error ? (
@@ -611,11 +690,26 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
               </p>
             ) : null}
             {job ? (
-              <p className="audion-ai-result" role="status">
-                Stub job <code>{job.jobId}</code> · status {job.status}
-                <br />
-                Later: <code>{job.target.method} {job.target.path}</code>
-              </p>
+              <div className="audion-research-progress" role="status">
+                <p className="audion-ai-result">
+                  Job <code>{job.jobId}</code> · {runStatus ?? job.status}
+                  {job.stubbed ? ' · stub' : ' · live'}
+                </p>
+                {events.length ? (
+                  <ul className="audion-research-events">
+                    {events.map((ev) => (
+                      <li key={ev.id}>
+                        <code>{ev.eventType}</code> — {ev.message}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="audion-edit-lede">Waiting for progress…</p>
+                )}
+                {latestSummary ? (
+                  <pre className="audion-research-summary">{latestSummary}</pre>
+                ) : null}
+              </div>
             ) : null}
           </div>
         </Dialog>

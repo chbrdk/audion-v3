@@ -7,6 +7,7 @@ import { Button, Panel, SectionChrome, Text } from '@msqdx/ui'
 import { Dialog } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { IconDelete, IconEdit } from './nav-icons'
+import { GeneratePhaseMomentsButton } from './generate-phase-moments-button'
 import { JourneyPhaseEditDialog } from './journey-phase-edit-dialog'
 
 async function patchJourneyPhases(journey: JourneyDetail, phases: JourneyPhase[]) {
@@ -30,12 +31,14 @@ async function patchJourneyPhases(journey: JourneyDetail, phases: JourneyPhase[]
 }
 
 function PhaseSlideCard({
+  journeyId,
   phase,
   index,
   active,
   onEdit,
   onDelete,
 }: {
+  journeyId: string
   phase: JourneyPhase
   index: number
   active: boolean
@@ -63,6 +66,7 @@ function PhaseSlideCard({
             </Text>
           </div>
           <div className="audion-journey-slide-actions">
+            <GeneratePhaseMomentsButton journeyId={journeyId} phase={phase} />
             <Button
               type="button"
               variant="ghost"
@@ -317,6 +321,7 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
         {phases.map((phase, index) => (
           <PhaseSlideCard
             key={phase.id}
+            journeyId={journey.id}
             phase={phase}
             index={index}
             active={index === activeIndex}

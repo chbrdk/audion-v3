@@ -3,7 +3,9 @@ import { AudionChatWorkspace } from '../../components/audion-chat-workspace'
 import { AppShell } from '../../components/app-shell'
 import { buildChatPrefillDraft } from '../../lib/chat/prefill'
 import { fetchChatConversationDetail } from '../../lib/chat/conversations'
+import { storeShareMoodboard, storeSharePersona } from '../../lib/fixtures/chat-share'
 import { fetchPersonaList } from '../../lib/personas'
+import type { PersonaSummary } from '@audion-v3/contracts'
 
 export default async function ChatPage({
   searchParams,
@@ -23,14 +25,50 @@ export default async function ChatPage({
   const personaId = typeof params.personaId === 'string' ? params.personaId : null
   const conversationId =
     typeof params.conversationId === 'string' ? params.conversationId : null
+  const projectId = typeof params.projectId === 'string' ? params.projectId : null
   const prompt = typeof params.prompt === 'string' ? params.prompt : ''
   const studyName = typeof params.studyName === 'string' ? params.studyName : null
   const waveKey = typeof params.waveKey === 'string' ? params.waveKey : null
   const initialDraft = prompt
     ? buildChatPrefillDraft({ prompt, studyName, waveKey })
     : null
+  const shareMode = Boolean(projectId && personaId)
 
   try {
+    if (shareMode && personaId && projectId) {
+      const shared = storeSharePersona(personaId, projectId)
+      if ('error' in shared) {
+        return (
+          <AppShell title="Shared chat">
+            <Alert tone="error">{shared.error}</Alert>
+          </AppShell>
+        )
+      }
+      const mood = storeShareMoodboard(personaId, projectId)
+      const personas: PersonaSummary[] = [
+        {
+          id: shared.id,
+          name: shared.name,
+          role: shared.role,
+          projectId: shared.projectId,
+          status: 'ready',
+          archetype: null,
+          updatedAt: null,
+          avatarUrl: shared.avatarUrl,
+        },
+      ]
+      return (
+        <AudionChatWorkspace
+          personas={personas}
+          initialPersonaId={shared.id}
+          initialConversation={null}
+          initialDraft={initialDraft}
+          shareProjectId={projectId}
+          moodboardTiles={'error' in mood ? undefined : mood.tiles}
+        />
+      )
+    }
+
     const [personaResult, conversation] = await Promise.all([
       fetchPersonaList(),
       Promise.resolve(conversationId ? fetchChatConversationDetail(conversationId) : null),
@@ -41,6 +79,7 @@ export default async function ChatPage({
         initialPersonaId={personaId || conversation?.personaId || null}
         initialConversation={conversation}
         initialDraft={initialDraft}
+        shareProjectId={null}
       />
     )
   } catch (error) {

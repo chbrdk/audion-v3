@@ -26,6 +26,10 @@ const EMPTY_PROFILE = {
   socialMediaUsage: [] as string[],
   communicationStyle: null as PersonaDetail['communicationStyle'],
   visuals: null as PersonaDetail['visuals'],
+  profileDe: null as PersonaDetail['profileDe'],
+  headlineDe: null as string | null,
+  knowledgeEntries: [] as PersonaDetail['knowledgeEntries'],
+  documents: [] as PersonaDetail['documents'],
 }
 
 /** Local demo personas for AUDION v3 when no API is available. */
@@ -163,6 +167,31 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
         },
       ],
     },
+    headlineDe: 'Product Lead · Evidenz vor Folien',
+    profileDe: {
+      headline: 'Product Lead · Evidenz vor Folien',
+      bio: 'Ergebnisorientierte Product Lead für digitale Service-Plattformen. Verbindet Roadmap-Klarheit mit Forschungsevidenz und hält Discovery an Lieferentscheidungen gekoppelt.',
+      interests: ['Service-Design-Systeme', 'Evidenzbasiertes Roadmapping', 'Product Ops'],
+      values: ['Klarheit statt Theater', 'Geteiltes Insight-Ownership', 'Nachvollziehbare Entscheidungen'],
+    },
+    knowledgeEntries: [
+      {
+        id: 'alex-know-ops',
+        title: 'Operational notes',
+        content:
+          '<p>Prefers dated working briefs over polished decks. Ask for the decision, evidence, and open questions.</p>',
+        updatedAt: '2026-07-28T10:00:00.000Z',
+      },
+    ],
+    documents: [
+      {
+        id: 'alex-doc-interview',
+        name: 'alex-interview-notes.md',
+        status: 'ready',
+        mimeType: 'text/markdown',
+        updatedAt: '2026-07-27T11:00:00.000Z',
+      },
+    ],
   },
   {
     id: 'persona-samira-khan',
@@ -265,6 +294,10 @@ const DETAIL_ONLY_KEYS = new Set([
   'channels',
   'sections',
   'visuals',
+  'profileDe',
+  'headlineDe',
+  'knowledgeEntries',
+  'documents',
 ])
 
 export function demoPersonaList(): PersonaList {

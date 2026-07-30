@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import type { PersonaDetail } from '@audion-v3/contracts'
 import { Button, Panel, Text } from '@msqdx/ui'
+import { EnrichPersonaButton } from './enrich-persona-button'
 import { IconEdit } from './nav-icons'
 import { PersonaEditDialog, type PersonaEditMode } from './persona-edit-dialog'
 
@@ -12,6 +13,7 @@ export function PersonaDetailActions({ persona }: { persona: PersonaDetail }) {
   return (
     <>
       <div className="audion-magazine-topbar-actions">
+        <EnrichPersonaButton personaId={persona.id} personaName={persona.name} />
         <Button
           type="button"
           variant="ghost"

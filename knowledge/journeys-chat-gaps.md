@@ -1,22 +1,28 @@
 # AUDION v3 — Journeys + Chat gaps
 
-**Date:** 2026-07-29 · Chat MVP shipped  
-**Status:** Journeys + Chat MVPs implemented  
-**Specs index:** `knowledge/specs-index.md`
+**Date:** 2026-07-30 · Chat live + UX-run convert shipped  
+**Status:** Journeys + Chat MVPs + convert from Studies  
+**Specs index:** `knowledge/specs-index.md`  
+**Agent surface:** `knowledge/ux-agent-surface.md`
 
 ## Done
 
 ### Journeys
 - Contracts, fixtures, `/journeys*`, horizontal phase slider, edit dialog, rail
+- AI generate (Wave 2 live/stub)
+- **Convert from UX run** — wave run panel + `POST /api/journeys/from-ux-run` (fixture + live `/journeys/from-ux-run`)
 
 ### Chat
 - Contracts `packages/contracts/src/chat.ts`
-- Fixture stream + `/api/chat/stream` · conversations list/detail
-- `/chat` open (no card) editorial surface: display user lines, light body answers, underline composer
-- `/chat/history` app-card list
+- Stream: fixtures **or** chat-api SSE→NDJSON (`auto`/`api`)
+- `/chat` open editorial surface + study/persona prefill
+- `/chat/history` app-card list (fixtures)
 - Rail **Chat**
 
 ## Deferred
 
-- Journeys: AI generate / validation / phase editor / UX agent
-- Chat: live chat-api wire-only mode polish, moodboard, share public, Tavus/voice, citations hydrate
+- Chat: ~~moodboard drawer, share public~~ **Done** (`knowledge/chat-modalities-2026.md`); ~~inspect HITL / convert~~ **Done**; Tavus/voice thin hooks; citations hydrate, live history list
+
+## Shipped (2026-07-30)
+
+- Journeys: **phase moments AI** + **validate report** — `knowledge/journey-phase-ai-validate-2026.md`
