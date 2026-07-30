@@ -1,8 +1,8 @@
 # AUDION v3 / Plexon v3 — deploy URLs (Coolify)
 
 **Date:** 2026-07-30  
-**Policy:** `PLEXON/knowledge/ecosystem-v3-parallel-track.md`  
-**Runbook:** `PLEXON/knowledge/coolify-v3-staging-runbook.md`
+**Policy:** `plexon-v3/knowledge/ecosystem-v3-parallel-track.md` (Prod-mirror note: `PLEXON/knowledge/plexon-v3-repo.md`)  
+**Runbook:** `plexon-v3/knowledge/coolify-v3-staging-runbook.md`
 
 Central place for public origins — reference from Coolify env / docs; do not hardcode in app UI.
 
@@ -33,5 +33,7 @@ NEXT_PERSONA_DATA_SOURCE=fixtures
 PORT=3000
 ```
 
-| Coolify Env Cheat-Sheet | `PLEXON/knowledge/coolify-plexon-v3-env-cheatsheet.md` |
-| Coolify v3 Runbook | `PLEXON/knowledge/coolify-v3-staging-runbook.md` |
+| Coolify Env Cheat-Sheet | `plexon-v3/knowledge/coolify-plexon-v3-env-cheatsheet.md` |
+| Coolify v3 Runbook | `plexon-v3/knowledge/coolify-v3-staging-runbook.md` |
+| plexon-v3 GitHub | `https://github.com/chbrdk/plexon-v3` |
+| Coolify source switch | `plexon-v3/knowledge/coolify-switch-to-plexon-v3-repo.md` |
