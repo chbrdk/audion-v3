@@ -4,6 +4,9 @@ import { AppShell } from '../../../components/app-shell'
 import { fetchChatConversationList } from '../../../lib/chat/conversations'
 import { paths } from '../../../lib/paths'
 
+/** Avoid SSG hitting Postgres when Coolify injects DATABASE_URL at build time. */
+export const dynamic = 'force-dynamic'
+
 export default async function ChatHistoryPage() {
   const list = await fetchChatConversationList()
   return (
