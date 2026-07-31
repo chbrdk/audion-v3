@@ -47,8 +47,8 @@ describe('settings-admin prompts', () => {
     vi.unstubAllEnvs()
   })
 
-  it('lists assist templates with labels and bodies', () => {
-    const { templates } = listAssistTemplates()
+  it('lists assist templates with labels and bodies', async () => {
+    const { templates } = await listAssistTemplates()
     expect(templates.length).toBeGreaterThan(15)
     expect(templates.some((t) => t.id === 'project.suggest_target_groups')).toBe(true)
     expect(templates.some((t) => t.id === 'persona.geo_questions')).toBe(true)

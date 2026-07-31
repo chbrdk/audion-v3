@@ -4,11 +4,13 @@ import {
   storeChatConversationList,
 } from '../fixtures/chat-store'
 
-/** MVP: fixture conversations (chat-api history proxy later). */
-export function fetchChatConversationList(): ChatConversationList {
+/** MVP: fixture / Postgres conversations (chat-api history proxy later). */
+export async function fetchChatConversationList(): Promise<ChatConversationList> {
   return storeChatConversationList()
 }
 
-export function fetchChatConversationDetail(id: string): ChatConversationDetail | null {
+export async function fetchChatConversationDetail(
+  id: string,
+): Promise<ChatConversationDetail | null> {
   return storeChatConversationDetail(id)
 }

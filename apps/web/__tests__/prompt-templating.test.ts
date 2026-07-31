@@ -43,8 +43,8 @@ describe('assist prompt render', () => {
     expect(de).toMatch(/AUSGABESPRACHE DEUTSCH/)
   })
 
-  it('renders ported persona.interests with locale name', () => {
-    const t = getAssistTemplate('persona.interests')
+  it('renders ported persona.interests with locale name', async () => {
+    const t = await getAssistTemplate('persona.interests')
     expect(t.prompt.length).toBeGreaterThan(200)
     expect(t.prompt).toContain('${max_items}')
     const { user } = renderTemplate(t, {
@@ -65,6 +65,7 @@ describe('assist prompt render', () => {
     expect(ASSIST_TEMPLATES['persona.geo_questions']).toBeTruthy()
     expect(ASSIST_TEMPLATES['moodboard.style_keywords']).toBeTruthy()
     expect(ASSIST_TEMPLATES['journey.validate_chat']).toBeTruthy()
+    expect(ASSIST_TEMPLATES['persona.chat_system_default']).toBeTruthy()
   })
 })
 
@@ -73,14 +74,14 @@ describe('assist prompt overrides', () => {
     resetPromptOverridesStore()
   })
 
-  it('lists labels and applies override then reset', () => {
-    const listed = listAssistTemplates()
+  it('lists labels and applies override then reset', async () => {
+    const listed = await listAssistTemplates()
     const interests = listed.templates.find((t) => t.id === 'persona.interests')
     expect(interests?.label).toMatch(/Interest/i)
     expect(interests?.overridden).toBe(false)
     expect(interests?.prompt.length).toBeGreaterThan(100)
 
-    const updated = updateAssistTemplate('persona.interests', {
+    const updated = await updateAssistTemplate('persona.interests', {
       prompt: 'OVERRIDE ${max_items} ${generated_text_locale_name}',
     })
     expect('error' in updated).toBe(false)
@@ -88,28 +89,28 @@ describe('assist prompt overrides', () => {
     expect(updated.overridden).toBe(true)
     expect(updated.prompt).toContain('OVERRIDE')
 
-    const rendered = renderTemplate(getAssistTemplate('persona.interests'), {
+    const rendered = renderTemplate(await getAssistTemplate('persona.interests'), {
       locale: 'de',
       max_items: '2',
     })
     expect(rendered.user).toContain('OVERRIDE 2 German')
 
-    const reset = resetAssistTemplate('persona.interests')
+    const reset = await resetAssistTemplate('persona.interests')
     expect('error' in reset).toBe(false)
     if ('error' in reset) return
     expect(reset.overridden).toBe(false)
-    expect(deletePromptOverride('persona.interests')).toBe(false)
+    expect(await deletePromptOverride('persona.interests')).toBe(false)
   })
 
-  it('rejects empty update', () => {
-    expect(updateAssistTemplate('persona.interests', {})).toEqual({
+  it('rejects empty update', async () => {
+    expect(await updateAssistTemplate('persona.interests', {})).toEqual({
       error: 'Provide system, user, and/or prompt',
       status: 400,
     })
   })
 
-  it('upserts via store helper', () => {
-    upsertPromptOverride('journey.moments', { system: 'SYS' })
-    expect(getAssistTemplate('journey.moments').system).toBe('SYS')
+  it('upserts via store helper', async () => {
+    await upsertPromptOverride('journey.moments', { system: 'SYS' })
+    expect((await getAssistTemplate('journey.moments')).system).toBe('SYS')
   })
 })

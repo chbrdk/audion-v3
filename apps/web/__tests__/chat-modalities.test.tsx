@@ -109,13 +109,14 @@ describe('chat share fixtures', () => {
 
 describe('inspect_website fixture stream + decision', () => {
   it('proposes inspect_website when message contains a URL', async () => {
-    const events = [
-      ...storeChatFakeStream({
-        personaId: 'persona-alex-morgan',
-        message: 'Please review https://example.com/landing',
-        projectId: 'proj-audion-core',
-      }),
-    ]
+    const events = []
+    for await (const event of storeChatFakeStream({
+      personaId: 'persona-alex-morgan',
+      message: 'Please review https://example.com/landing',
+      projectId: 'proj-audion-core',
+    })) {
+      events.push(event)
+    }
     expect(events.some((e) => e.type === 'tool_proposed')).toBe(true)
     expect(events.some((e) => e.type === 'done')).toBe(true)
     const proposed = events.find((e) => e.type === 'tool_proposed')

@@ -13,6 +13,7 @@ import {
   finalizeAssistVars,
   substituteVars,
 } from './render'
+import { AUDION_ASSIST_SYSTEM } from './system'
 import { V2_PORTED_TEMPLATES } from './v2-ported'
 
 export type AssistTemplateId =
@@ -27,6 +28,7 @@ export type AssistTemplateId =
   | 'persona.build_chat_prompt'
   | 'persona.translate_chat_system_prompt_de'
   | 'persona.translate_profile_json_de'
+  | 'persona.chat_system_default'
   | 'project.suggest_target_groups'
   | 'target_group.suggest_personas'
   | 'journey.moments'
@@ -56,9 +58,6 @@ export type AssistTemplate = {
   json: boolean
 }
 
-const SYSTEM =
-  'You are an expert product research assistant for AUDION. Follow the user instructions and output schema exactly.'
-
 function fromV2(id: AssistTemplateId): AssistTemplate {
   const t = V2_PORTED_TEMPLATES[id]
   if (!t) throw new Error(`Missing V2 port for ${id}`)
@@ -76,13 +75,30 @@ function fromV2(id: AssistTemplateId): AssistTemplate {
 
 /** V3-only templates (not in V2 YAML) — use ${var} syntax. */
 const V3_EXTRA: Partial<Record<AssistTemplateId, AssistTemplate>> = {
+  'persona.chat_system_default': {
+    id: 'persona.chat_system_default',
+    label: 'Persona chat system (default)',
+    description:
+      'Default first-person persona chat system prompt (local substituteVars — no LLM).',
+    category: 'persona',
+    json: false,
+    system: AUDION_ASSIST_SYSTEM,
+    user: '',
+    prompt: `You are \${name}, \${role}.
+Bio: \${bio}
+Archetype: \${archetype}
+Interests: \${interests}
+Values: \${values}
+Answer in first person as this persona. Be concrete, magazine-brief, and evidence-minded.
+Use short markdown (## headings, lists) when helpful.`,
+  },
   'project.suggest_target_groups': {
     id: 'project.suggest_target_groups',
     label: 'Suggest target groups',
     description: 'Suggest target-group segments for a research project.',
     category: 'project',
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     user: '',
     prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
 
@@ -100,7 +116,7 @@ FORMAT:
     description: 'Suggest named personas for a target group.',
     category: 'target_group',
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     user: '',
     prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
 
@@ -118,7 +134,7 @@ FORMAT:
     description: 'Persona first-person reactions to journey phases.',
     category: 'journey',
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     user: '',
     prompt: `LANGUAGE: Quotes and recommendations in \${generated_text_locale_name}.
 
@@ -140,7 +156,7 @@ FORMAT:
     description: 'Draft personas for a target group.',
     category: 'persona',
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     user: '',
     prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
 
@@ -158,7 +174,7 @@ FORMAT:
     description: 'Enrich magazine persona brief (interests, values, goals, traits).',
     category: 'persona',
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     user: '',
     prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
 
@@ -175,7 +191,7 @@ FORMAT:
     description: 'Visual moodboard style keywords and tile captions.',
     category: 'persona',
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     user: '',
     prompt: `LANGUAGE: Keywords/captions in \${generated_text_locale_name}.
 
@@ -196,7 +212,7 @@ FORMAT:
     description: 'Synthesize project research from crawled page text.',
     category: 'project',
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     user: '',
     prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
 
@@ -214,7 +230,7 @@ FORMAT:
     description: 'Simulate UX journey agent observation for one persona run.',
     category: 'ux_study',
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     user: '',
     prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
 
@@ -279,8 +295,8 @@ function applyOverride(
   }
 }
 
-export function getAssistTemplate(templateId: AssistTemplateId): AssistTemplate {
-  return applyOverride(ASSIST_TEMPLATES[templateId], getPromptOverride(templateId))
+export async function getAssistTemplate(templateId: AssistTemplateId): Promise<AssistTemplate> {
+  return applyOverride(ASSIST_TEMPLATES[templateId], await getPromptOverride(templateId))
 }
 
 export function listAssistTemplateIds(): AssistTemplateId[] {

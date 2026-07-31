@@ -71,7 +71,7 @@ export default async function ChatPage({
 
     const [personaResult, conversation] = await Promise.all([
       fetchPersonaList(),
-      Promise.resolve(conversationId ? fetchChatConversationDetail(conversationId) : null),
+      conversationId ? fetchChatConversationDetail(conversationId) : Promise.resolve(null),
     ])
     return (
       <AudionChatWorkspace

@@ -30,7 +30,7 @@ export async function getPersonaPromptDetail(
 ): Promise<SettingsPersonaPromptDetail | PersonaPromptsError> {
   const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
-  const custom = storeGetPersonaPromptRecord(personaId)
+  const custom = await storeGetPersonaPromptRecord(personaId)
   return {
     personaId,
     name: persona.name,
@@ -52,7 +52,7 @@ export async function updatePersonaPrompt(
   if (!systemPrompt) {
     return { error: 'systemPrompt is required', status: 400 }
   }
-  storeUpsertPersonaPrompt(personaId, {
+  await storeUpsertPersonaPrompt(personaId, {
     systemPrompt,
     systemPromptDe: body.systemPromptDe,
     templateVersion: body.templateVersion,
@@ -65,7 +65,7 @@ export async function resetPersonaPrompt(
 ): Promise<SettingsPersonaPromptDetail | PersonaPromptsError> {
   const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
-  storeDeletePersonaPrompt(personaId)
+  await storeDeletePersonaPrompt(personaId)
   return (await getPersonaPromptDetail(personaId)) as SettingsPersonaPromptDetail
 }
 

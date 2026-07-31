@@ -5,7 +5,7 @@ import { fetchChatConversationList } from '../../../lib/chat/conversations'
 import { paths } from '../../../lib/paths'
 
 export default async function ChatHistoryPage() {
-  const list = fetchChatConversationList()
+  const list = await fetchChatConversationList()
   return (
     <AppShell
       title="Chat history"

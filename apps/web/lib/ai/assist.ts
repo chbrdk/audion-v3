@@ -98,7 +98,7 @@ export async function runAssist(
   if (!isAssistTemplateId(templateId)) {
     return { error: 'Unknown assist template', status: 400, detail: templateId }
   }
-  const base = getAssistTemplate(templateId)
+  const base = await getAssistTemplate(templateId)
   const template = {
     ...base,
     system: override?.system?.trim() ? override.system : base.system,

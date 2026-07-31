@@ -7,6 +7,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import type {
+  ChatMessage,
   DocumentSource,
   JourneyPhase,
   KnowledgeEntry,
@@ -142,3 +143,43 @@ export const uxWaves = pgTable('ux_waves', {
 
 export type UxWaveRow = typeof uxWaves.$inferSelect
 export type UxWaveInsert = typeof uxWaves.$inferInsert
+
+/** Chat conversation history (messages jsonb). */
+export const chatConversations = pgTable('chat_conversations', {
+  id: text('id').primaryKey(),
+  personaId: text('persona_id').notNull(),
+  personaName: text('persona_name'),
+  projectId: text('project_id'),
+  title: text('title'),
+  preview: text('preview'),
+  messages: jsonb('messages').$type<ChatMessage[]>().notNull().default([]),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type ChatConversationRow = typeof chatConversations.$inferSelect
+export type ChatConversationInsert = typeof chatConversations.$inferInsert
+
+/** Global assist template overrides (settings admin). */
+export const assistPromptOverrides = pgTable('assist_prompt_overrides', {
+  templateId: text('template_id').primaryKey(),
+  system: text('system'),
+  user: text('user'),
+  prompt: text('prompt'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type AssistPromptOverrideRow = typeof assistPromptOverrides.$inferSelect
+export type AssistPromptOverrideInsert = typeof assistPromptOverrides.$inferInsert
+
+/** Per-persona chat system prompt overrides. */
+export const personaChatPrompts = pgTable('persona_chat_prompts', {
+  personaId: text('persona_id').primaryKey(),
+  systemPrompt: text('system_prompt').notNull(),
+  systemPromptDe: text('system_prompt_de'),
+  templateVersion: text('template_version').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type PersonaChatPromptRow = typeof personaChatPrompts.$inferSelect
+export type PersonaChatPromptInsert = typeof personaChatPrompts.$inferInsert

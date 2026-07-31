@@ -11,16 +11,20 @@
 | Users, passwords, companies, entitlements | **Plexon** | Validate + profile only |
 | Platform projects + product bindings | **Plexon** | Origin call on project create |
 | Usage ledger | **Plexon** | Thin `reportUsage` from chat stream |
-| Personas, TGs, journeys, studies, chat fixtures | **AUDION fixtures** | Local stores when no `DATABASE_URL` |
+| Personas, TGs, journeys, studies | **AUDION fixtures** | Local stores when no `DATABASE_URL` |
 | Projects (list / create / Plexon provisioning) | **AUDION Postgres** | `projects` table when `DATABASE_URL` set; else in-memory fixtures |
 | Personas + target groups | **AUDION Postgres** | `personas` / `target_groups` tables when `DATABASE_URL` set; else fixtures |
 | Journeys + UX studies / waves | **AUDION Postgres** | `journeys` / `ux_studies` / `ux_waves` when `DATABASE_URL` set; else fixtures |
+| Chat conversations | **AUDION Postgres** | `chat_conversations` when `DATABASE_URL` set; else fixtures |
+| Assist prompt overrides + persona chat prompts | **AUDION Postgres** | `assist_prompt_overrides` / `persona_chat_prompts` when `DATABASE_URL` set; else fixtures |
 
 **Projects persistence:** With `DATABASE_URL`, inbound `PUT …/platform/provisioning/projects/{id}` and UI create/list write Postgres. Redeploy keeps rows. Without `DATABASE_URL` (local), memory fixtures remain (wiped on process restart).
 
 **Personas / target groups:** Same `DATABASE_URL` gate. Tables `personas` (scalar list cols + jsonb `payload`) and `target_groups` (linked persona ids + knowledge jsonb). Catalog GET and CRUD use Postgres when configured; otherwise DEMO fixtures.
 
 **Journeys / UX studies:** Same `DATABASE_URL` gate. Tables `journeys` (phases jsonb), `ux_studies` (hypothesis templates jsonb), and `ux_waves` (runs / evaluation / report jsonb). Fixture stores remain the API surface and fall back to memory when unset.
+
+**Chat / prompt overrides:** Same `DATABASE_URL` gate. Tables `chat_conversations` (messages jsonb), `assist_prompt_overrides` (per-template system/user/prompt), and `persona_chat_prompts` (per-persona system prompt). Facades in `chat-store`, `prompt-overrides-store`, and `persona-prompts-store` fall back to memory when unset.
 
 ## Write rules
 
@@ -75,7 +79,6 @@ Deep-links (Audion app origin, not `/admin`): `/target-groups/{id}`, `/personas/
 
 ## Later waves
 
-- Journeys / studies / chat on Product Postgres
 - Full usage coverage (AI actions)
 - Echon / Brandion federation
 - Coolify v3 island: `PLEXON/knowledge/coolify-v3-staging-runbook.md`

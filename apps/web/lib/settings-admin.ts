@@ -73,32 +73,31 @@ export function getSettingsProviders(): SettingsProvidersResponse {
   }
 }
 
-function toSummary(id: AssistTemplateId): SettingsAssistTemplateSummary {
-  const t = getAssistTemplate(id)
+async function toSummary(id: AssistTemplateId): Promise<SettingsAssistTemplateSummary> {
+  const t = await getAssistTemplate(id)
   return {
     id: t.id,
     label: t.label,
     description: t.description,
     category: t.category,
     json: t.json,
-    overridden: Boolean(getPromptOverride(id)),
+    overridden: Boolean(await getPromptOverride(id)),
     system: t.system,
     user: resolvedUserBody(t),
     prompt: t.prompt || '',
   }
 }
 
-export function listAssistTemplates(): SettingsAssistTemplatesResponse {
+export async function listAssistTemplates(): Promise<SettingsAssistTemplatesResponse> {
+  const templates = await Promise.all(listAssistTemplateIds().map((id) => toSummary(id)))
   return {
-    templates: listAssistTemplateIds()
-      .map(toSummary)
-      .sort((a, b) => a.id.localeCompare(b.id)),
+    templates: templates.sort((a, b) => a.id.localeCompare(b.id)),
   }
 }
 
-export function getAssistTemplateSummary(
+export async function getAssistTemplateSummary(
   templateId: string,
-): SettingsAssistTemplateSummary | { error: string; status: number } {
+): Promise<SettingsAssistTemplateSummary | { error: string; status: number }> {
   if (!isAssistTemplateId(templateId)) {
     return { error: `Unknown templateId: ${templateId}`, status: 404 }
   }
@@ -107,10 +106,10 @@ export function getAssistTemplateSummary(
 
 export type SettingsAdminError = { error: string; status: number }
 
-export function updateAssistTemplate(
+export async function updateAssistTemplate(
   templateId: string,
   body: SettingsAssistPromptUpdateRequest,
-): SettingsAssistTemplateSummary | SettingsAdminError {
+): Promise<SettingsAssistTemplateSummary | SettingsAdminError> {
   if (!isAssistTemplateId(templateId)) {
     return { error: `Unknown templateId: ${templateId}`, status: 404 }
   }
@@ -119,7 +118,7 @@ export function updateAssistTemplate(
   if (!hasAny) {
     return { error: 'Provide system, user, and/or prompt', status: 400 }
   }
-  upsertPromptOverride(templateId, {
+  await upsertPromptOverride(templateId, {
     system: body.system,
     user: body.user,
     prompt: body.prompt,
@@ -127,13 +126,13 @@ export function updateAssistTemplate(
   return toSummary(templateId)
 }
 
-export function resetAssistTemplate(
+export async function resetAssistTemplate(
   templateId: string,
-): SettingsAssistTemplateSummary | SettingsAdminError {
+): Promise<SettingsAssistTemplateSummary | SettingsAdminError> {
   if (!isAssistTemplateId(templateId)) {
     return { error: `Unknown templateId: ${templateId}`, status: 404 }
   }
-  deletePromptOverride(templateId)
+  await deletePromptOverride(templateId)
   return toSummary(templateId)
 }
 

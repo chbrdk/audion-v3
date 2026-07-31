@@ -3,6 +3,8 @@
  * Do not hardcode paths here — see knowledge/paths.md + specs/domain/prompt-templating.md
  */
 
+import { AUDION_ASSIST_SYSTEM } from './system'
+
 export type V2PortedTemplate = {
   id: string
   label: string
@@ -14,8 +16,6 @@ export type V2PortedTemplate = {
   system: string
 }
 
-const SYSTEM = 'You are an expert product research assistant for AUDION. Follow the user instructions and output schema exactly.'
-
 export const V2_PORTED_TEMPLATES: Record<string, V2PortedTemplate> = {
   'journey.moments': {
     id: 'journey.moments',
@@ -23,7 +23,7 @@ export const V2_PORTED_TEMPLATES: Record<string, V2PortedTemplate> = {
     description: "Generate concise actions, thoughts, touchpoints or opportunities for a single journey phase.",
     category: "journey",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `You are a Senior Journey Strategist. You support a team in concretizing a journey phase.
 
 LANGUAGE: All user-visible strings in the JSON ("title", "content", and any descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON keys and "element_type" values unchanged.
@@ -72,7 +72,7 @@ FORMAT
     description: "Expand or improve the narrative description for a journey phase.",
     category: "journey",
     json: false,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: The full response (plain text paragraphs) must be written exclusively in \${generated_text_locale_name}. Do not mix languages.
 
 Write a concise and inspiring description for a customer journey phase.
@@ -93,7 +93,7 @@ the second shows dominant actions or thoughts. Return as plain text without JSON
     description: "Suggest additional pain points or frictions for a selected persona.",
     category: "persona",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: All generated user-facing strings (JSON fields "title", "content", descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
 
 Analyze the persona information and suggest additional pain points
@@ -120,7 +120,7 @@ FORMAT:
     description: "Suggest additional goals or aspirations for a selected persona.",
     category: "persona",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: All generated user-facing strings (JSON fields "title", "content", descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
 
 Analyze the persona information and suggest additional goals
@@ -147,7 +147,7 @@ FORMAT:
     description: "Generate natural buyer questions in persona voice for GEO competitive checks.",
     category: "persona",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: All questions must be written exclusively in \${generated_text_locale_name}. Do not mix languages.
 
 You are \${persona_name} (\${persona_segment}). Use the full persona profile below — goals, pain points, communication style — to write exactly \${max_items} authentic questions you would ask ChatGPT, Perplexity, or a similar AI when researching vendors.
@@ -182,7 +182,7 @@ FORMAT:
     description: "Suggest additional interests or hobbies for a selected persona.",
     category: "persona",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: All generated user-facing strings (JSON fields "title", "content", descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
 
 Analyze the persona information and suggest additional interests
@@ -209,7 +209,7 @@ FORMAT:
     description: "Suggest additional values or principles for a selected persona.",
     category: "persona",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: All generated user-facing strings (JSON fields "title", "content", descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
 
 Analyze the persona information and suggest additional values
@@ -236,7 +236,7 @@ FORMAT:
     description: "Generate personality traits based on knowledge graph relationships and research context.",
     category: "persona",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: Trait names ("name" / content) and descriptions ("description") must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
 
 You are an experienced Persona Analyst. Create personality traits based on knowledge graph relationships and research context.
@@ -289,7 +289,7 @@ FORMAT
     description: "Generate vocabulary words based on knowledge graph relationships and research context.",
     category: "persona",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: Vocabulary words ("word" / content) and short descriptions ("description") must be written exclusively in \${generated_text_locale_name} (typical terms this persona would use in that language). Keep JSON key names unchanged.
 
 You are an experienced Communication Analyst. Create vocabulary words based on knowledge graph relationships and research context.
@@ -342,7 +342,7 @@ FORMAT
     description: "Generate a short description of how this persona structures sentences (e.g. short vs long, formal vs casual).",
     category: "persona",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: The paragraph in "content" must be written exclusively in \${generated_text_locale_name}.
 
 You are a Communication Analyst. Based on the persona and target group, describe how this persona typically structures sentences when they write or speak.
@@ -375,7 +375,7 @@ FORMAT
     description: "Build a rich, psychologically grounded chat system prompt (English) from full persona profile data.",
     category: "persona",
     json: false,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `You are an expert in psychologically plausible persona simulation for dialogue. From the profile data below, write a detailed **English** system prompt that makes a language model consistently act, feel, and speak like this persona.
 
 PERSONA PROFILE INPUT (use everything relevant)
@@ -409,7 +409,7 @@ Target length: about **1,500–4,000 characters** — substantive and behavior-s
     description: "Translate an English persona chat system prompt into German while preserving constraints and first-person roleplay intent.",
     category: "persona",
     json: false,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `You are a professional translator and UX writing editor.
 
 INPUT (English system prompt for a persona simulation)
@@ -433,7 +433,7 @@ Return only the German system prompt text. No JSON, no Markdown headings, no pre
     description: "Translate all string leaf values in a persona profile JSON from English to German while preserving JSON structure.",
     category: "persona",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `You are a careful JSON editor.
 
 INPUT JSON (English canonical persona profile)
@@ -460,7 +460,7 @@ Return JSON only (no markdown fences).`,
     description: "Generate a complete journey phase including name, description, duration, and expected emotion based on journey context.",
     category: "journey",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `You are an experienced Journey Designer. Create a complete journey phase with emotion.
 
 LANGUAGE: "name" and "description" must be in \${generated_text_locale_name}. The "expected_emotion" field must remain exactly one of: frustrated|anxious|neutral|hopeful|satisfied|delighted (English tokens). "duration_unit" stays minutes|hours|days (English).
@@ -526,7 +526,7 @@ FORMAT
     description: "Generate a complete customer journey map with multiple phases, elements, and emotions based on target group and personas.",
     category: "journey",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: All human-readable strings in the JSON (journey name, description, phase names, phase descriptions, element "content") must be in \${generated_text_locale_name}. Keep JSON structure, keys, "element_type", "expected_emotion" (English emotion tokens), and "duration_unit" values as specified below.
 
 Based on the following information:
@@ -592,7 +592,7 @@ Output as JSON with the following structure:
     description: "Convert a UX-journey-agent browser walkthrough (steps, observations, scorecard) into a structured Customer Journey.",
     category: "journey",
     json: true,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: All human-readable strings in the JSON (journey name, description, phase names, phase descriptions, element "content") must be written exclusively in \${generated_text_locale_name}. Keep JSON keys, "element_type", "expected_emotion" tokens and "duration_unit" values in English as specified.
 
 You are a senior UX researcher. A persona walked through a website (real browser session). Below you find:
@@ -663,7 +663,7 @@ Output STRICT JSON:
     description: "Generate a concise, user-focused name for a journey phase.",
     category: "journey",
     json: false,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `LANGUAGE: The phase name you return must be written exclusively in \${generated_text_locale_name}.
 
 Create a concise phase name (max. 50 characters) for a customer journey phase.
@@ -684,7 +684,7 @@ Return only the name, without further explanations.`,
     description: "Suggest appropriate emotions for a journey phase based on context.",
     category: "journey",
     json: false,
-    system: SYSTEM,
+    system: AUDION_ASSIST_SYSTEM,
     prompt: `Suggest an appropriate emotion for this journey phase.
 
 Journey: \${journey_name}

@@ -13,9 +13,9 @@ import { reportUsage } from '../../../../lib/usage-report'
 
 function fixtureStream(body: ChatSendPayload): Response {
   const stream = new ReadableStream({
-    start(controller) {
+    async start(controller) {
       const encoder = new TextEncoder()
-      for (const event of storeChatFakeStream(body)) {
+      for await (const event of storeChatFakeStream(body)) {
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
       }
       controller.close()

@@ -16,23 +16,32 @@ describe('chat answer formatting', () => {
 })
 
 describe('chat fixture stream', () => {
-  it('emits deltas and done for a valid send', () => {
+  it('emits deltas and done for a valid send', async () => {
     resetChatStore()
-    const events = [...storeChatFakeStream({
+    const events = []
+    for await (const event of storeChatFakeStream({
       personaId: 'persona-alex-morgan',
       message: 'Hello persona',
-    })]
+    })) {
+      events.push(event)
+    }
     expect(events.some((e) => e.type === 'delta')).toBe(true)
     const done = events.find((e) => e.type === 'done')
     expect(done?.type).toBe('done')
     if (done?.type === 'done') {
       expect(done.conversationId).toBeTruthy()
     }
-    expect(storeChatConversationList().total).toBeGreaterThanOrEqual(1)
+    expect((await storeChatConversationList()).total).toBeGreaterThanOrEqual(1)
   })
 
-  it('errors when message is empty', () => {
-    const events = [...storeChatFakeStream({ personaId: 'persona-alex-morgan', message: '  ' })]
+  it('errors when message is empty', async () => {
+    const events = []
+    for await (const event of storeChatFakeStream({
+      personaId: 'persona-alex-morgan',
+      message: '  ',
+    })) {
+      events.push(event)
+    }
     expect(events[0]).toEqual({ type: 'error', message: 'Message is required' })
   })
 })

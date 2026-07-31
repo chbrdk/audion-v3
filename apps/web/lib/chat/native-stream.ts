@@ -29,7 +29,7 @@ export async function* nativeChatStreamEvents(
     return
   }
 
-  const turn = storeChatBeginUserTurn(payload)
+  const turn = await storeChatBeginUserTurn(payload)
   if ('error' in turn) {
     yield { type: 'error', message: turn.error }
     return
@@ -64,7 +64,7 @@ export async function* nativeChatStreamEvents(
     )
     if (proposal) yield proposal
 
-    const done = storeChatAppendAssistant(turn.conversationId, full || '…')
+    const done = await storeChatAppendAssistant(turn.conversationId, full || '…')
     yield {
       type: 'done',
       conversationId: done.conversationId,
