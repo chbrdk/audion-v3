@@ -17,6 +17,16 @@ const API_CATALOG: Array<{ group: string; routes: Array<{ method: string; path: 
       routes: [
         { method: 'GET', path: paths.routes.apiSettingsProviders, note: 'Provider status' },
         { method: 'GET', path: paths.routes.apiSettingsPrompts, note: 'Assist template list' },
+        {
+          method: 'PUT',
+          path: paths.routes.apiSettingsPromptDetail('{id}'),
+          note: 'Upsert assist template override',
+        },
+        {
+          method: 'DELETE',
+          path: paths.routes.apiSettingsPromptDetail('{id}'),
+          note: 'Reset assist template override',
+        },
         { method: 'POST', path: paths.routes.apiSettingsPromptTest, note: 'Assist prompt test' },
       ],
     },

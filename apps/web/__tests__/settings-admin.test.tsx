@@ -60,7 +60,19 @@ describe('SettingsAdminPromptsPanel', () => {
       if (url === paths.routes.apiSettingsPrompts) {
         return new Response(
           JSON.stringify({
-            templates: [{ id: 'persona.interests', json: true }],
+            templates: [
+              {
+                id: 'persona.interests',
+                label: 'Interests',
+                description: 'desc',
+                category: 'persona',
+                json: true,
+                overridden: false,
+                system: 'sys',
+                user: 'user body',
+                prompt: 'PROMPT ${max_items}',
+              },
+            ],
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         )
@@ -77,6 +89,22 @@ describe('SettingsAdminPromptsPanel', () => {
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         )
       }
+      if (url.includes('/api/settings/prompts/persona.interests') && init?.method === 'PUT') {
+        return new Response(
+          JSON.stringify({
+            id: 'persona.interests',
+            label: 'Interests',
+            description: 'desc',
+            category: 'persona',
+            json: true,
+            overridden: true,
+            system: 'sys',
+            user: 'saved',
+            prompt: 'saved',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        )
+      }
       return new Response('not found', { status: 404 })
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -85,6 +113,7 @@ describe('SettingsAdminPromptsPanel', () => {
     await waitFor(() => {
       expect(screen.getByTestId('settings-admin-prompt-test')).toBeTruthy()
     })
+    expect(screen.getByTestId('settings-admin-prompt-body')).toBeTruthy()
     fireEvent.click(screen.getByTestId('settings-admin-prompt-test'))
     await waitFor(() => {
       expect(screen.getByTestId('settings-admin-prompt-result')).toBeTruthy()

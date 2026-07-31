@@ -45,6 +45,11 @@ import {
   toAiNativeError,
   type AiNativeError,
 } from './ai/client'
+import {
+  buildJourneyPhaseAssistVars,
+  buildPersonaAssistVars,
+  personaProfileText,
+} from './ai/prompts/context'
 import type { AssistTemplateId } from './ai/prompts/templates'
 import { storeCreateJourney, storeJourneyDetail, storePatchJourney } from './fixtures/journey-store'
 import { storeAppendValidationReport } from './fixtures/journey-validation-store'
@@ -71,20 +76,6 @@ function nativeMeta(
     workflowId,
     target: buildTargetCall(workflowId, pathParams, body),
   }
-}
-
-function personaProfileText(persona: NonNullable<ReturnType<typeof storePersonaDetail>>): string {
-  return [
-    `Name: ${persona.name}`,
-    `Role: ${persona.role}`,
-    `Archetype: ${persona.archetype ?? ''}`,
-    `Bio: ${persona.bio ?? ''}`,
-    `Interests: ${persona.interests.join(', ')}`,
-    `Values: ${persona.values.join(', ')}`,
-    `Goals: ${persona.goals.map((g) => g.label).join('; ')}`,
-    `Frustrations: ${persona.frustrations.map((f) => f.label).join('; ')}`,
-    `Traits: ${Object.keys(persona.traits).join(', ')}`,
-  ].join('\n')
 }
 
 const FIELD_TEMPLATE: Record<PersonaSuggestField, AssistTemplateId> = {
@@ -121,8 +112,13 @@ const KIND_CYCLE: JourneyElementKind[] = [
 ]
 
 function parseKind(raw: unknown, index: number): JourneyElementKind {
-  const s = String(raw || '').toLowerCase()
+  const s = String(raw || '').toLowerCase().replace(/[_-]/g, '')
   if (KIND_CYCLE.includes(s as JourneyElementKind)) return s as JourneyElementKind
+  if (s === 'painpoint' || s === 'pain') return 'pain'
+  if (s === 'touchpoint' || s === 'feeling' || s === 'quote') return 'feeling'
+  if (s === 'opportunity') return 'opportunity'
+  if (s === 'thought') return 'thought'
+  if (s === 'action') return 'action'
   return KIND_CYCLE[index % KIND_CYCLE.length]!
 }
 
@@ -153,11 +149,10 @@ export async function runNativeSuggestPersonaField(
     path: formatUpstreamPath(upstream.path, { personaId }),
     body: upstreamBody,
   }
-  const assist = await runAssist(FIELD_TEMPLATE[field], {
-    locale,
-    max_items: String(max),
-    persona_profile: personaProfileText(persona),
-  })
+  const assist = await runAssist(
+    FIELD_TEMPLATE[field],
+    buildPersonaAssistVars(persona, { locale, maxItems: max }),
+  )
   if ('error' in assist) return assist
   const suggestions: AiSuggestionItem[] = assist.suggestions.slice(0, max).map((s, i) => ({
     ...s,
@@ -192,10 +187,7 @@ export async function runNativeEnrichPersona(
     goals?: Array<{ label?: string } | string>
     frustrations?: Array<{ label?: string } | string>
     traits?: Record<string, number>
-  }>('persona.enrich_facets', {
-    locale,
-    persona_profile: personaProfileText(persona),
-  })
+  }>('persona.enrich_facets', buildPersonaAssistVars(persona, { locale }))
   if ('error' in assist) return assist
   const data = assist.data
   const interests = uniqStrings(
@@ -445,24 +437,29 @@ export async function runNativeGenerateJourneyPhaseMoments(
   }
   const meta = nativeMeta('generateJourneyPhaseMoments', { journeyId }, upstreamBody)
   const assist = await runAssistJson<{
-    moments?: Array<{ kind?: string; label?: string }>
-  }>('journey.moments', {
-    locale,
-    max_items: String(max),
-    context: `Phase: ${phase.name}\nSummary: ${phase.summary ?? ''}\nExisting: ${phase.elements
-      .map((e) => e.label)
-      .join('; ')}`,
-  })
+    moments?: Array<{
+      kind?: string
+      label?: string
+      element_type?: string
+      title?: string
+      content?: string
+    }>
+  }>('journey.moments', buildJourneyPhaseAssistVars(journey, body.phase_id, { locale, maxItems: max }))
   if ('error' in assist) return assist
   const existingLabels = new Set(phase.elements.map((el) => el.label.toLowerCase()))
   const fresh = (assist.data.moments ?? [])
+    .map((m) => {
+      const label = (m.label || m.title || m.content || '').trim()
+      const kindRaw = m.kind || m.element_type
+      return { label, kindRaw }
+    })
     .filter((m) => m.label && !existingLabels.has(m.label.toLowerCase()))
     .slice(0, max)
   const startOrder = phase.elements.length
   const newMoments = fresh.map((m, i) => ({
     id: `el-ai-${Date.now().toString(36)}-${i}`,
-    kind: parseKind(m.kind, i),
-    label: m.label!.trim(),
+    kind: parseKind(m.kindRaw, i),
+    label: m.label,
     order: startOrder + i,
   }))
   const moments = [...phase.elements, ...newMoments].map((el, order) => ({ ...el, order }))

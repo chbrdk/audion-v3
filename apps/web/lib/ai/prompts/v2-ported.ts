@@ -1,0 +1,700 @@
+/**
+ * Ported V2 AiAssist prompt bodies from AUDION-v2 templates.yaml (2026-07-31).
+ * Do not hardcode paths here — see knowledge/paths.md + specs/domain/prompt-templating.md
+ */
+
+export type V2PortedTemplate = {
+  id: string
+  label: string
+  description: string
+  category: string
+  json: boolean
+  /** Single-body prompt (V2). Rendered as the user message. */
+  prompt: string
+  system: string
+}
+
+const SYSTEM = 'You are an expert product research assistant for AUDION. Follow the user instructions and output schema exactly.'
+
+export const V2_PORTED_TEMPLATES: Record<string, V2PortedTemplate> = {
+  'journey.moments': {
+    id: 'journey.moments',
+    label: "Journey Moments (Actions & Touchpoints)",
+    description: "Generate concise actions, thoughts, touchpoints or opportunities for a single journey phase.",
+    category: "journey",
+    json: true,
+    system: SYSTEM,
+    prompt: `You are a Senior Journey Strategist. You support a team in concretizing a journey phase.
+
+LANGUAGE: All user-visible strings in the JSON ("title", "content", and any descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON keys and "element_type" values unchanged.
+
+JOURNEY BASIS
+-------------
+Journey Name: \${journey_name}
+Journey Type: \${journey_type}
+
+TARGET GROUP
+------------
+\${target_group_summary}
+
+PERSONAS (Excerpts)
+--------------------
+\${persona_summaries}
+
+CURRENT PHASE
+-------------
+Name: \${phase_name}
+Description: \${phase_description}
+Expected Emotion: \${phase_expected_emotion}
+
+TASK
+----
+- Create up to \${max_items} Journey Moments as JSON.
+- Use mixed element types: action, thought, feeling, touchpoint, pain_point, opportunity, quote.
+- Content per moment max. 220 characters, active and concrete.
+- Do not deliver duplicates; focus on relevant aspects.
+
+FORMAT
+------
+{
+  "moments": [
+    {
+      "element_type": "action|thought|touchpoint|...",
+      "title": "short title",
+      "content": "description"
+    }
+  ]
+}`,
+  },
+  'journey.description': {
+    id: 'journey.description',
+    label: "Journey Phase Description",
+    description: "Expand or improve the narrative description for a journey phase.",
+    category: "journey",
+    json: false,
+    system: SYSTEM,
+    prompt: `LANGUAGE: The full response (plain text paragraphs) must be written exclusively in \${generated_text_locale_name}. Do not mix languages.
+
+Write a concise and inspiring description for a customer journey phase.
+Avoid marketing language; stay concrete and from the user's perspective.
+
+Journey: \${journey_name} (\${journey_type})
+Phase: \${phase_name}
+Raw Description: \${phase_description}
+Expected Emotion: \${phase_expected_emotion}
+Target Group Context: \${target_group_summary}
+
+TASK: Create 2 paragraphs with 2 sentences each. The first describes motivation & context,
+the second shows dominant actions or thoughts. Return as plain text without JSON.`,
+  },
+  'persona.pain_points': {
+    id: 'persona.pain_points',
+    label: "Persona Pain Points Expansion",
+    description: "Suggest additional pain points or frictions for a selected persona.",
+    category: "persona",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: All generated user-facing strings (JSON fields "title", "content", descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
+
+Analyze the persona information and suggest additional pain points
+that the team has not yet documented. Focus on concrete situations
+or triggers, maximum \${max_items} points.
+
+TARGET GROUP: \${target_group_summary}
+PERSONA PROFILE: \${persona_profile}
+EXISTING PAIN POINTS: \${persona_pain_points}
+
+FORMAT:
+{
+  "items": [
+    {
+      "title": "short name",
+      "content": "pain point description"
+    }
+  ]
+}`,
+  },
+  'persona.goals': {
+    id: 'persona.goals',
+    label: "Persona Goals Expansion",
+    description: "Suggest additional goals or aspirations for a selected persona.",
+    category: "persona",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: All generated user-facing strings (JSON fields "title", "content", descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
+
+Analyze the persona information and suggest additional goals
+that the team has not yet documented. Focus on concrete aspirations,
+motivations, or desired outcomes, maximum \${max_items} points.
+
+TARGET GROUP: \${target_group_summary}
+PERSONA PROFILE: \${persona_profile}
+EXISTING GOALS: \${persona_goals}
+
+FORMAT:
+{
+  "items": [
+    {
+      "title": "short name",
+      "content": "goal description"
+    }
+  ]
+}`,
+  },
+  'persona.geo_questions': {
+    id: 'persona.geo_questions',
+    label: "Persona GEO Questions",
+    description: "Generate natural buyer questions in persona voice for GEO competitive checks.",
+    category: "persona",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: All questions must be written exclusively in \${generated_text_locale_name}. Do not mix languages.
+
+You are \${persona_name} (\${persona_segment}). Use the full persona profile below — goals, pain points, communication style — to write exactly \${max_items} authentic questions you would ask ChatGPT, Perplexity, or a similar AI when researching vendors.
+
+TARGET GROUP: \${target_group_summary}
+PERSONA PROFILE: \${persona_profile}
+PERSONA GOALS: \${persona_goals}
+PERSONA PAIN POINTS: \${persona_pain_points}
+
+COMPANY BEING EVALUATED: \${brand_name}
+WEBSITE: \${brand_url}
+
+RULES:
+- Write like a real buyer: first person ("Ich …") or natural search/chat phrasing
+- Questions must match YOUR role and needs — not generic SEO keyword lists
+- Reference the evaluated company or ask for alternatives/comparisons where natural
+- NO meta labels or suffixes like "Branche:", "Zielgruppe:", "Bezug:", "Segment:"
+- NO agency jargon or keyword stuffing
+- Maximum 160 characters per question
+- Each question must be a complete, standalone sentence
+
+FORMAT:
+{
+  "items": [
+    { "content": "question text here" }
+  ]
+}`,
+  },
+  'persona.interests': {
+    id: 'persona.interests',
+    label: "Persona Interests Expansion",
+    description: "Suggest additional interests or hobbies for a selected persona.",
+    category: "persona",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: All generated user-facing strings (JSON fields "title", "content", descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
+
+Analyze the persona information and suggest additional interests
+that the team has not yet documented. Focus on hobbies, activities,
+or topics the persona might be interested in, maximum \${max_items} points.
+
+TARGET GROUP: \${target_group_summary}
+PERSONA PROFILE: \${persona_profile}
+EXISTING INTERESTS: \${persona_interests}
+
+FORMAT:
+{
+  "items": [
+    {
+      "title": "short name",
+      "content": "interest description"
+    }
+  ]
+}`,
+  },
+  'persona.values': {
+    id: 'persona.values',
+    label: "Persona Values Expansion",
+    description: "Suggest additional values or principles for a selected persona.",
+    category: "persona",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: All generated user-facing strings (JSON fields "title", "content", descriptions) must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
+
+Analyze the persona information and suggest additional values
+that the team has not yet documented. Focus on principles, beliefs,
+or moral values the persona might hold, maximum \${max_items} points.
+
+TARGET GROUP: \${target_group_summary}
+PERSONA PROFILE: \${persona_profile}
+EXISTING VALUES: \${persona_values}
+
+FORMAT:
+{
+  "items": [
+    {
+      "title": "short name",
+      "content": "value description"
+    }
+  ]
+}`,
+  },
+  'persona.traits': {
+    id: 'persona.traits',
+    label: "Persona Traits (from Knowledge Graph)",
+    description: "Generate personality traits based on knowledge graph relationships and research context.",
+    category: "persona",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: Trait names ("name" / content) and descriptions ("description") must be written exclusively in \${generated_text_locale_name}. Do not mix languages. Keep JSON key names unchanged.
+
+You are an experienced Persona Analyst. Create personality traits based on knowledge graph relationships and research context.
+
+PERSONA BASIS
+------------
+Persona Name: \${persona_name}
+Persona Headline: \${persona_headline}
+Persona Bio: \${persona_bio}
+
+EXISTING TRAITS
+---------------
+\${existing_traits}
+
+KNOWLEDGE GRAPH RELATIONSHIPS
+------------------------------
+\${graph_relationships_summary}
+
+KNOWLEDGE CONTEXT (Research Chunks)
+-----------------------------------
+\${knowledge_context}
+
+TARGET GROUP
+------------
+\${target_group_summary}
+
+TASK
+----
+- Analyze the knowledge graph relationships and research chunks
+- Identify personality traits that emerge from the data
+- Create maximum \${max_items} new, relevant traits
+- Avoid duplicates of existing traits
+- Traits should be concrete, observable, and relevant
+- Format: Single-word or two-word traits (e.g., "organizer", "tech-savvy", "detail-oriented")
+
+FORMAT
+------
+{
+  "traits": [
+    {
+      "name": "trait_name",
+      "description": "Brief justification based on knowledge graph/research"
+    }
+  ]
+}`,
+  },
+  'persona.vocabulary': {
+    id: 'persona.vocabulary',
+    label: "Persona Vocabulary (from Knowledge Graph)",
+    description: "Generate vocabulary words based on knowledge graph relationships and research context.",
+    category: "persona",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: Vocabulary words ("word" / content) and short descriptions ("description") must be written exclusively in \${generated_text_locale_name} (typical terms this persona would use in that language). Keep JSON key names unchanged.
+
+You are an experienced Communication Analyst. Create vocabulary words based on knowledge graph relationships and research context.
+
+PERSONA BASIS
+------------
+Persona Name: \${persona_name}
+Persona Headline: \${persona_headline}
+Persona Bio: \${persona_bio}
+
+EXISTING VOCABULARY
+-------------------
+\${existing_vocabulary}
+
+KNOWLEDGE GRAPH RELATIONSHIPS
+------------------------------
+\${graph_relationships_summary}
+
+KNOWLEDGE CONTEXT (Research Chunks)
+-----------------------------------
+\${knowledge_context}
+
+TARGET GROUP
+------------
+\${target_group_summary}
+
+TASK
+----
+- Analyze the knowledge graph relationships and research chunks
+- Identify typical words and terms that this persona uses
+- Create maximum \${max_items} new, relevant vocabulary words
+- Avoid duplicates of existing vocabulary
+- Words should be typical for this persona's communication
+- Format: Single words or short phrases (e.g., "quality", "freedom", "self-realization", "resort to")
+
+FORMAT
+------
+{
+  "vocabulary": [
+    {
+      "word": "vocabulary_word",
+      "description": "Brief justification based on knowledge graph/research"
+    }
+  ]
+}`,
+  },
+  'persona.sentence_structure': {
+    id: 'persona.sentence_structure',
+    label: "Persona Sentence Structure",
+    description: "Generate a short description of how this persona structures sentences (e.g. short vs long, formal vs casual).",
+    category: "persona",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: The paragraph in "content" must be written exclusively in \${generated_text_locale_name}.
+
+You are a Communication Analyst. Based on the persona and target group, describe how this persona typically structures sentences when they write or speak.
+
+PERSONA
+-------
+Name: \${persona_name}
+Headline: \${persona_headline}
+Bio: \${persona_bio}
+
+TARGET GROUP
+------------
+\${target_group_summary}
+
+FULL PROFILE (for context)
+--------------------------
+\${persona_profile}
+
+TASK
+----
+Write one short paragraph (2-4 sentences) describing this persona's typical sentence structure: length (short vs long), formality, use of bullet points or narrative, typical phrasing. Output a JSON object with a key "sentence_structure" whose value is an array of one object with key "content" containing this description text.
+
+FORMAT
+------
+{"sentence_structure": [{"content": "Your 2-4 sentence description here."}]}`,
+  },
+  'persona.build_chat_prompt': {
+    id: 'persona.build_chat_prompt',
+    label: "Persona Chat Prompt (LLM, EN canonical)",
+    description: "Build a rich, psychologically grounded chat system prompt (English) from full persona profile data.",
+    category: "persona",
+    json: false,
+    system: SYSTEM,
+    prompt: `You are an expert in psychologically plausible persona simulation for dialogue. From the profile data below, write a detailed **English** system prompt that makes a language model consistently act, feel, and speak like this persona.
+
+PERSONA PROFILE INPUT (use everything relevant)
+----------------------------------------------
+\${persona_profile_summary_en}
+
+TASK
+----
+Write a system prompt in **English**. The model must not describe the persona — it must **respond in first person** as the human with this biography.
+
+The prompt must cover at least:
+1) **Identity & self-image**: name, segment/role, headline; how they see themselves (pride, ambition, vulnerabilities).
+2) **Motivation & goals**: concrete desires from goals; what emotionally drives them.
+3) **Pain points & triggers**: typical stressors, when they feel insecure, what makes them withdraw — derived from pain points.
+4) **Values & beliefs**: what matters morally/personally; how it biases decisions.
+5) **Interests & lifestyle**: leisure, status, media/social (only if it affects reactions).
+6) **Communication**: vocabulary, sentence length, emotionality, skepticism level; include typical phrasing.
+7) **Traits**: translate numeric/qualitative traits into concrete behavior (e.g., “narrative” → longer, vivid sentences).
+8) **Behavior rules**: always in-role; never as AI/coach/neutral explainer; no meta commentary about simulation; no doc/chunk IDs; don’t enumerate your own rules in chat.
+9) **Reaction logic (short)**: how they respond to criticism, technical depth, ads, time pressure — derived from pain points/values.
+
+FORMAT
+------
+Output only the final system prompt as continuous prose (multiple paragraphs allowed and encouraged).
+No JSON, no Markdown headings, no prefix like "System prompt:".
+Target length: about **1,500–4,000 characters** — substantive and behavior-steering rather than short. No filler; every paragraph should steer model behavior.`,
+  },
+  'persona.translate_chat_system_prompt_de': {
+    id: 'persona.translate_chat_system_prompt_de',
+    label: "Persona Chat Prompt Translation (EN → DE)",
+    description: "Translate an English persona chat system prompt into German while preserving constraints and first-person roleplay intent.",
+    category: "persona",
+    json: false,
+    system: SYSTEM,
+    prompt: `You are a professional translator and UX writing editor.
+
+INPUT (English system prompt for a persona simulation)
+-------------------------------------------------------
+\${english_system_prompt}
+
+TASK
+----
+Translate the entire prompt into **natural German** while preserving:
+- first-person roleplay intent (the model should still behave as the persona, not describe them)
+- all behavioral constraints and prohibitions
+- approximate length and paragraphing (do not drastically shorten)
+
+OUTPUT
+------
+Return only the German system prompt text. No JSON, no Markdown headings, no prefix.`,
+  },
+  'persona.translate_profile_json_de': {
+    id: 'persona.translate_profile_json_de',
+    label: "Persona Profile JSON Translation (EN → DE mirror)",
+    description: "Translate all string leaf values in a persona profile JSON from English to German while preserving JSON structure.",
+    category: "persona",
+    json: true,
+    system: SYSTEM,
+    prompt: `You are a careful JSON editor.
+
+INPUT JSON (English canonical persona profile)
+--------------------------------------------
+\${english_profile_json}
+
+TASK
+----
+Return ONE JSON object that is **structurally identical** to the input:
+- Same keys at every object level
+- Same array lengths and element types (object/string/number/boolean/null)
+- Translate **only string values** into natural German
+- Keep numbers, booleans, and nulls unchanged
+- Do not add/remove keys
+- Do not translate JSON keys
+
+OUTPUT
+------
+Return JSON only (no markdown fences).`,
+  },
+  'journey.phase.create': {
+    id: 'journey.phase.create',
+    label: "Journey Phase Creation (with Emotion)",
+    description: "Generate a complete journey phase including name, description, duration, and expected emotion based on journey context.",
+    category: "journey",
+    json: true,
+    system: SYSTEM,
+    prompt: `You are an experienced Journey Designer. Create a complete journey phase with emotion.
+
+LANGUAGE: "name" and "description" must be in \${generated_text_locale_name}. The "expected_emotion" field must remain exactly one of: frustrated|anxious|neutral|hopeful|satisfied|delighted (English tokens). "duration_unit" stays minutes|hours|days (English).
+
+JOURNEY CONTEXT
+---------------
+Journey Name: \${journey_name}
+Journey Type: \${journey_type}
+Journey Description: \${journey_description}
+
+TARGET GROUP
+------------
+\${target_group_summary}
+
+PERSONAS
+--------
+\${persona_summaries}
+
+EXISTING PHASES
+---------------
+\${existing_phases_summary}
+
+LAST PHASE (Reference for the next phase)
+-----------------------------------------
+\${last_phase_summary}
+
+TASK
+----
+Create the NEXT phase in the journey (Phase \${next_phase_number}).
+
+CRITICALLY IMPORTANT:
+- The new phase must be DISTINCTLY different from the last phase "\${last_phase_name}"
+- It must represent PROGRESS in the journey (not a repetition)
+- The emotional development should continue (e.g., from "\${last_phase_emotion}" to a different emotion)
+- The phase should be a logical NEXT step after "\${last_phase_name}"
+- Ensure that name, description, and content differ from all existing phases
+- Consider the emotional progression (e.g., frustrated → anxious → neutral → hopeful → satisfied → delighted)
+- Realistic duration based on journey type
+- Concrete, user-centered description
+
+AVOID:
+- Duplicates of the last phase
+- Similar names or descriptions
+- Same emotion as the last phase (unless logically necessary)
+
+The new phase should show clear progress and be distinctly different from "\${last_phase_name}".
+
+FORMAT
+------
+{
+  "name": "Short phase name (max 50 characters)",
+  "description": "2-3 sentences describing the phase",
+  "expected_emotion": "frustrated|anxious|neutral|hopeful|satisfied|delighted",
+  "emotion_intensity": 0.0-1.0,
+  "expected_duration_min": number,
+  "expected_duration_max": number,
+  "duration_unit": "minutes|hours|days"
+}`,
+  },
+  'journey.full_generation': {
+    id: 'journey.full_generation',
+    label: "Complete Journey Generation",
+    description: "Generate a complete customer journey map with multiple phases, elements, and emotions based on target group and personas.",
+    category: "journey",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: All human-readable strings in the JSON (journey name, description, phase names, phase descriptions, element "content") must be in \${generated_text_locale_name}. Keep JSON structure, keys, "element_type", "expected_emotion" (English emotion tokens), and "duration_unit" values as specified below.
+
+Based on the following information:
+
+COMPANY / PROJECT CONTEXT:
+\${company_context}
+
+TARGET GROUP: \${target_group_name}
+TARGET GROUP SUMMARY: \${target_group_summary}
+JOURNEY TYPE: \${journey_type}
+
+PERSONAS:
+\${persona_summaries}
+
+KNOWLEDGE CONTEXT:
+\${knowledge_context}
+
+Create a Customer Journey Map with the following structure:
+
+PHASES:
+For each phase I need:
+- Name (max 50 characters)
+- Description (2-3 sentences)
+- Expected Duration (min-max in minutes/hours/days)
+- Expected Emotion (frustrated/anxious/neutral/hopeful/satisfied/delighted)
+- Emotion Intensity (0.0-1.0)
+
+ELEMENTS per Phase:
+- Actions: What does the user do?
+- Thoughts: What does the user think?
+- Touchpoints: Which channels does the user use?
+- Pain Points: Where are the friction points?
+- Opportunities: Improvement potential?
+
+Output as JSON with the following structure:
+{
+  "name": "Journey Name",
+  "description": "Journey Description",
+  "phases": [
+    {
+      "name": "Phase Name",
+      "description": "Phase Description",
+      "phase_order": 1,
+      "expected_duration_min": 5,
+      "expected_duration_max": 10,
+      "duration_unit": "minutes",
+      "expected_emotion": "neutral",
+      "emotion_intensity": 0.5,
+      "elements": [
+        {
+          "element_type": "action",
+          "content": "User action description",
+          "element_order": 1
+        }
+      ]
+    }
+  ]
+}`,
+  },
+  'journey.from_ux_run': {
+    id: 'journey.from_ux_run',
+    label: "Journey From UX-Run",
+    description: "Convert a UX-journey-agent browser walkthrough (steps, observations, scorecard) into a structured Customer Journey.",
+    category: "journey",
+    json: true,
+    system: SYSTEM,
+    prompt: `LANGUAGE: All human-readable strings in the JSON (journey name, description, phase names, phase descriptions, element "content") must be written exclusively in \${generated_text_locale_name}. Keep JSON keys, "element_type", "expected_emotion" tokens and "duration_unit" values in English as specified.
+
+You are a senior UX researcher. A persona walked through a website (real browser session). Below you find:
+- the persona summary
+- the task the persona was trying to complete
+- the target site URL
+- an aggregated UX scorecard (KPIs, per-category ratings, strengths/weaknesses)
+- a step-by-step transcript (action + target + reasoning) of what happened
+- validated step observations (positive/negative findings per UX category)
+
+Your job: turn this walkthrough into a structured Customer Journey with logical PHASES (3-6 phases), so that the team can map it back to their journey workflow.
+
+PERSONA:
+\${persona_summary}
+
+TASK: \${task}
+SITE: \${site_url}
+JOURNEY TYPE: \${journey_type}
+
+SCORECARD (aggregated):
+\${scorecard_summary}
+
+STEP TRANSCRIPT:
+\${steps_brief}
+
+OBSERVATIONS:
+\${observations_brief}
+
+Phase rules:
+- Cluster consecutive steps by intent / URL section (e.g. "Discover", "Compare", "Configure", "Checkout").
+- 3-6 phases total, each with a phase_order (1-based), name (max 50 chars), description (1-2 sentences).
+- expected_emotion MUST be one of: frustrated, anxious, neutral, hopeful, satisfied, delighted. Derive from observations + scorecard for that phase.
+- emotion_intensity: float between 0.0 and 1.0.
+- duration_unit always "minutes" unless the task implies otherwise.
+
+Element rules per phase:
+- Convert step actions into element_type "action".
+- Use observed user reasoning as element_type "thought" (short, first-person if locale allows).
+- Negative observations (polarity < 0) become element_type "pain_point".
+- Positive observations (polarity > 0) become element_type "opportunity".
+- Step targets representing UI touchpoints (URLs, key elements) become element_type "touchpoint".
+- Include 3-8 elements per phase total; keep "content" concise (one sentence each).
+
+Output STRICT JSON:
+{
+  "name": "string",
+  "description": "string",
+  "phases": [
+    {
+      "name": "string",
+      "description": "string",
+      "phase_order": 1,
+      "expected_duration_min": 1,
+      "expected_duration_max": 5,
+      "duration_unit": "minutes",
+      "expected_emotion": "neutral",
+      "emotion_intensity": 0.5,
+      "elements": [
+        { "element_type": "action", "content": "string", "element_order": 1 }
+      ]
+    }
+  ]
+}`,
+  },
+  'journey.phase.name': {
+    id: 'journey.phase.name',
+    label: "Phase Name Suggestion",
+    description: "Generate a concise, user-focused name for a journey phase.",
+    category: "journey",
+    json: false,
+    system: SYSTEM,
+    prompt: `LANGUAGE: The phase name you return must be written exclusively in \${generated_text_locale_name}.
+
+Create a concise phase name (max. 50 characters) for a customer journey phase.
+
+Journey: \${journey_name} (\${journey_type})
+Current Phase Description: \${phase_description}
+Expected Emotion: \${phase_expected_emotion}
+Context: \${target_group_summary}
+
+The name should be formulated from the user's perspective, active and concrete.
+Examples: "Select E-Bike", "Order Online", "Test Product"
+
+Return only the name, without further explanations.`,
+  },
+  'journey.phase.emotion': {
+    id: 'journey.phase.emotion',
+    label: "Phase Emotion Suggestion",
+    description: "Suggest appropriate emotions for a journey phase based on context.",
+    category: "journey",
+    json: false,
+    system: SYSTEM,
+    prompt: `Suggest an appropriate emotion for this journey phase.
+
+Journey: \${journey_name}
+Phase Name: \${phase_name}
+Phase Description: \${phase_description}
+Context: \${target_group_summary}
+
+Possible Emotions: frustrated, anxious, neutral, hopeful, satisfied, delighted
+
+IMPORTANT: Return ONLY a single word - the emotion. No explanations, no sentences, just the word.
+Example responses: "hopeful", "anxious", "neutral", "satisfied"`,
+  },
+}

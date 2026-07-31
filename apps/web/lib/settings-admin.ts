@@ -1,20 +1,31 @@
 /**
- * Settings Admin — providers status + assist template list / test.
- * Spec: knowledge/settings-admin-2026.md
+ * Settings Admin — providers status + assist template list / test / override.
+ * Spec: specs/api/settings-prompts.md · knowledge/settings-admin-2026.md
  */
 
 import type {
   SettingsAssistPromptTestRequest,
   SettingsAssistPromptTestResponse,
+  SettingsAssistPromptUpdateRequest,
+  SettingsAssistTemplateSummary,
   SettingsAssistTemplatesResponse,
   SettingsProvidersResponse,
 } from '@audion-v3/contracts'
 import { getAiOpenAiModel, getAiOpenAiImageModel, hasOpenAiApiKey } from './ai/client'
 import { runAssist } from './ai/assist'
 import {
-  ASSIST_TEMPLATES,
+  getAssistTemplate,
+  isAssistTemplateId,
+  listAssistTemplateIds,
+  resolvedUserBody,
   type AssistTemplateId,
 } from './ai/prompts/templates'
+import { finalizeAssistVars } from './ai/prompts/render'
+import {
+  deletePromptOverride,
+  getPromptOverride,
+  upsertPromptOverride,
+} from './fixtures/prompt-overrides-store'
 import { paths } from './paths'
 import {
   getAiRuntime,
@@ -62,20 +73,69 @@ export function getSettingsProviders(): SettingsProvidersResponse {
   }
 }
 
-export function listAssistTemplates(): SettingsAssistTemplatesResponse {
+function toSummary(id: AssistTemplateId): SettingsAssistTemplateSummary {
+  const t = getAssistTemplate(id)
   return {
-    templates: Object.values(ASSIST_TEMPLATES).map((t) => ({
-      id: t.id,
-      json: t.json,
-    })),
+    id: t.id,
+    label: t.label,
+    description: t.description,
+    category: t.category,
+    json: t.json,
+    overridden: Boolean(getPromptOverride(id)),
+    system: t.system,
+    user: resolvedUserBody(t),
+    prompt: t.prompt || '',
   }
 }
 
-function isAssistTemplateId(id: string): id is AssistTemplateId {
-  return id in ASSIST_TEMPLATES
+export function listAssistTemplates(): SettingsAssistTemplatesResponse {
+  return {
+    templates: listAssistTemplateIds()
+      .map(toSummary)
+      .sort((a, b) => a.id.localeCompare(b.id)),
+  }
+}
+
+export function getAssistTemplateSummary(
+  templateId: string,
+): SettingsAssistTemplateSummary | { error: string; status: number } {
+  if (!isAssistTemplateId(templateId)) {
+    return { error: `Unknown templateId: ${templateId}`, status: 404 }
+  }
+  return toSummary(templateId)
 }
 
 export type SettingsAdminError = { error: string; status: number }
+
+export function updateAssistTemplate(
+  templateId: string,
+  body: SettingsAssistPromptUpdateRequest,
+): SettingsAssistTemplateSummary | SettingsAdminError {
+  if (!isAssistTemplateId(templateId)) {
+    return { error: `Unknown templateId: ${templateId}`, status: 404 }
+  }
+  const hasAny =
+    body.system !== undefined || body.user !== undefined || body.prompt !== undefined
+  if (!hasAny) {
+    return { error: 'Provide system, user, and/or prompt', status: 400 }
+  }
+  upsertPromptOverride(templateId, {
+    system: body.system,
+    user: body.user,
+    prompt: body.prompt,
+  })
+  return toSummary(templateId)
+}
+
+export function resetAssistTemplate(
+  templateId: string,
+): SettingsAssistTemplateSummary | SettingsAdminError {
+  if (!isAssistTemplateId(templateId)) {
+    return { error: `Unknown templateId: ${templateId}`, status: 404 }
+  }
+  deletePromptOverride(templateId)
+  return toSummary(templateId)
+}
 
 export async function testAssistPrompt(
   body: SettingsAssistPromptTestRequest,
@@ -88,14 +148,33 @@ export async function testAssistPrompt(
     return { error: `Unknown templateId: ${templateId}`, status: 400 }
   }
 
-  const vars: Record<string, string> = {
+  const vars = finalizeAssistVars({
     locale: body.locale?.trim() || 'en',
     context: body.context?.trim() || 'Sample project context for prompt test.',
     persona_profile:
       body.persona_profile?.trim() ||
       'Name: Test Persona\nRole: Decision maker\nBio: Uses this product daily.',
     max_items: body.max_items?.trim() || '3',
-  }
+    journey_name: 'Sample journey',
+    journey_type: 'purchase',
+    phase_name: 'Awareness',
+    phase_description: 'User discovers the product.',
+    phase_expected_emotion: 'hopeful',
+    target_group_summary: 'Urban professionals, 30–45.',
+    persona_summaries: 'Alex — research lead',
+    persona_name: 'Test Persona',
+    persona_headline: 'Decision maker',
+    persona_bio: 'Uses this product daily.',
+    persona_interests: '(none)',
+    persona_values: '(none)',
+    persona_goals: '(none)',
+    persona_pain_points: '(none)',
+    existing_traits: '(none)',
+    existing_vocabulary: '(none)',
+    knowledge_context: '(none)',
+    graph_relationships_summary: '(none)',
+    ...(body.vars ?? {}),
+  })
 
   if (!shouldPreferAiNative()) {
     return {
@@ -106,7 +185,7 @@ export async function testAssistPrompt(
           items: [
             {
               title: 'Stub suggestion',
-              description: `Demo output for ${templateId} (AI stub mode)`,
+              content: `Demo output for ${templateId} (AI stub mode)`,
             },
           ],
         },
@@ -117,7 +196,7 @@ export async function testAssistPrompt(
         items: [
           {
             title: 'Stub suggestion',
-            description: `Demo output for ${templateId} (AI stub mode)`,
+            content: `Demo output for ${templateId} (AI stub mode)`,
           },
         ],
       },

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type {
   SettingsAssistPromptTestResponse,
+  SettingsAssistTemplateSummary,
   SettingsAssistTemplatesResponse,
 } from '@audion-v3/contracts'
 import { Alert, Button, Field, Hint, Input, Panel, Text, Textarea } from '@msqdx/ui'
@@ -11,27 +12,42 @@ import { Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 
 export function SettingsAdminPromptsPanel() {
-  const [templates, setTemplates] = useState<SettingsAssistTemplatesResponse['templates']>([])
+  const [templates, setTemplates] = useState<SettingsAssistTemplateSummary[]>([])
   const [templateId, setTemplateId] = useState('')
   const [locale, setLocale] = useState('en')
   const [context, setContext] = useState('')
   const [profile, setProfile] = useState('')
+  const [system, setSystem] = useState('')
+  const [prompt, setPrompt] = useState('')
   const [loadingList, setLoadingList] = useState(true)
   const [testing, setTesting] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<SettingsAssistPromptTestResponse | null>(null)
+
+  function applyTemplate(t: SettingsAssistTemplateSummary | undefined) {
+    if (!t) return
+    setTemplateId(t.id)
+    setSystem(t.system)
+    setPrompt(t.prompt || t.user)
+  }
+
+  async function reloadList(preferId?: string) {
+    const res = await fetch(paths.routes.apiSettingsPrompts)
+    if (!res.ok) throw new Error(`Failed to load templates (${res.status})`)
+    const json = (await res.json()) as SettingsAssistTemplatesResponse
+    setTemplates(json.templates)
+    const nextId = preferId || templateId || json.templates[0]?.id || ''
+    const selected = json.templates.find((t) => t.id === nextId) ?? json.templates[0]
+    applyTemplate(selected)
+    return json.templates
+  }
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch(paths.routes.apiSettingsPrompts)
-        if (!res.ok) throw new Error(`Failed to load templates (${res.status})`)
-        const json = (await res.json()) as SettingsAssistTemplatesResponse
-        if (!cancelled) {
-          setTemplates(json.templates)
-          if (json.templates[0]) setTemplateId(json.templates[0].id)
-        }
+        await reloadList()
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load templates')
       } finally {
@@ -41,7 +57,60 @@ export function SettingsAdminPromptsPanel() {
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only load
   }, [])
+
+  function onSelectTemplate(id: string) {
+    const t = templates.find((row) => row.id === id)
+    applyTemplate(t)
+    setResult(null)
+    setError(null)
+  }
+
+  async function onSave() {
+    if (!templateId) {
+      setError('Select a template')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(paths.routes.apiSettingsPromptDetail(templateId), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ system, prompt }),
+      })
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as { error?: string } | null
+        throw new Error(err?.error || `Save failed (${res.status})`)
+      }
+      await reloadList(templateId)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function onReset() {
+    if (!templateId) return
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(paths.routes.apiSettingsPromptDetail(templateId), {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as { error?: string } | null
+        throw new Error(err?.error || `Reset failed (${res.status})`)
+      }
+      await reloadList(templateId)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Reset failed')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   async function onTest() {
     if (!templateId) {
@@ -73,6 +142,8 @@ export function SettingsAdminPromptsPanel() {
     }
   }
 
+  const selected = templates.find((t) => t.id === templateId)
+
   return (
     <div className="audion-stack" data-testid="settings-admin-prompts">
       <p>
@@ -81,8 +152,9 @@ export function SettingsAdminPromptsPanel() {
         </Link>
       </p>
       <Hint panel>
-        Native assist templates are read-only. Test runs stub seeds when AI runtime does not prefer
-        native OpenAI.
+        Ported V2 assist templates with dollar-brace variable substitution. Edit + save writes a
+        global fixture override; reset restores the catalog. Test stubs when AI runtime is not
+        native.
       </Hint>
       {loadingList ? <Text role="meta">Loading templates…</Text> : null}
       {!loadingList ? (
@@ -90,15 +162,56 @@ export function SettingsAdminPromptsPanel() {
           <Field label="Template">
             <Select
               value={templateId}
-              onChange={(value) => setTemplateId(String(value))}
+              onChange={(value) => onSelectTemplate(String(value))}
               options={templates.map((t) => ({
                 value: t.id,
-                label: `${t.id}${t.json ? ' (JSON)' : ''}`,
+                label: `${t.id}${t.overridden ? ' • overridden' : ''}${t.json ? ' (JSON)' : ''}`,
               }))}
               aria-label="Assist template"
               data-testid="settings-admin-template"
             />
           </Field>
+          {selected ? (
+            <Text role="meta">
+              {selected.label} · {selected.category}
+              {selected.overridden ? ' · overridden' : ''}
+            </Text>
+          ) : null}
+          <Field label="System">
+            <Textarea
+              value={system}
+              onChange={(e) => setSystem(e.target.value)}
+              rows={3}
+              data-testid="settings-admin-system"
+            />
+          </Field>
+          <Field label="Prompt body">
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={12}
+              data-testid="settings-admin-prompt-body"
+            />
+          </Field>
+          <div className="audion-row" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Button
+              type="button"
+              onClick={onSave}
+              disabled={saving || !templateId}
+              data-testid="settings-admin-prompt-save"
+            >
+              {saving ? 'Saving…' : 'Save override'}
+            </Button>
+            <Button
+              type="button"
+              variant="subtle"
+              onClick={onReset}
+              disabled={saving || !templateId || !selected?.overridden}
+              data-testid="settings-admin-prompt-reset"
+            >
+              Reset
+            </Button>
+          </div>
           <Field label="Locale">
             <Input
               value={locale}

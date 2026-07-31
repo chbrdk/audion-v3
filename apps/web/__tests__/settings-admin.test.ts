@@ -47,10 +47,15 @@ describe('settings-admin prompts', () => {
     vi.unstubAllEnvs()
   })
 
-  it('lists assist templates', () => {
+  it('lists assist templates with labels and bodies', () => {
     const { templates } = listAssistTemplates()
-    expect(templates.length).toBeGreaterThan(5)
+    expect(templates.length).toBeGreaterThan(15)
     expect(templates.some((t) => t.id === 'project.suggest_target_groups')).toBe(true)
+    expect(templates.some((t) => t.id === 'persona.geo_questions')).toBe(true)
+    const interests = templates.find((t) => t.id === 'persona.interests')
+    expect(interests?.label).toBeTruthy()
+    expect(interests?.prompt.length).toBeGreaterThan(100)
+    expect(interests?.overridden).toBe(false)
   })
 
   it('returns stub payload when AI is not preferred', async () => {

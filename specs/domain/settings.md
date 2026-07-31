@@ -26,7 +26,9 @@ Device-local user prefs (display name, theme, locale) plus optional Plexon Accou
 
 ## Non-goals (MVP)
 
-Providers, prompts, API docs, password/tokens, brand color, PATCH profile to Plexon (Wave 1 read + logout only)
+Providers, API docs iframe, password/tokens, brand color, PATCH profile to Plexon (Wave 1 read + logout only)
+
+Admin prompts / providers live under `/settings/admin` (see `specs/domain/prompt-templating.md`).
 
 ## Acceptance
 

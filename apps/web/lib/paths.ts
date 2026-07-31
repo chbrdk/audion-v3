@@ -141,6 +141,8 @@ export const paths = {
     settingsAdminApiDocs: '/settings/admin/api-docs',
     apiSettingsProviders: '/api/settings/providers',
     apiSettingsPrompts: '/api/settings/prompts',
+    apiSettingsPromptDetail: (templateId: string) =>
+      `/api/settings/prompts/${encodeURIComponent(templateId)}`,
     apiSettingsPromptTest: '/api/settings/prompts/test',
     queue: '/queue',
     apiQueueStats: '/api/queue/stats',

@@ -4,7 +4,8 @@
 
 import type { AiSuggestionItem } from '@audion-v3/contracts'
 import {
-  ASSIST_TEMPLATES,
+  getAssistTemplate,
+  isAssistTemplateId,
   renderTemplate,
   type AssistTemplateId,
 } from './prompts/templates'
@@ -37,16 +38,26 @@ function extractJson(raw: string): unknown {
   return null
 }
 
-function suggestionsFromJson(json: unknown, prefix: string): AiSuggestionItem[] {
-  if (!json || typeof json !== 'object') return []
+function itemsFromJson(json: unknown): unknown[] {
+  if (!json || typeof json !== 'object') {
+    return Array.isArray(json) ? json : []
+  }
   const rec = json as Record<string, unknown>
-  const items = Array.isArray(rec.items)
-    ? rec.items
-    : Array.isArray(rec.suggestions)
-      ? rec.suggestions
-      : Array.isArray(json)
-        ? json
-        : []
+  for (const key of [
+    'items',
+    'suggestions',
+    'moments',
+    'traits',
+    'vocabulary',
+    'sentence_structure',
+  ]) {
+    if (Array.isArray(rec[key])) return rec[key] as unknown[]
+  }
+  return Array.isArray(json) ? json : []
+}
+
+function suggestionsFromJson(json: unknown, prefix: string): AiSuggestionItem[] {
+  const items = itemsFromJson(json)
   return items.map((item, index) => {
     if (typeof item === 'string') {
       return { id: `${prefix}-${index + 1}`, title: item }
@@ -56,7 +67,9 @@ function suggestionsFromJson(json: unknown, prefix: string): AiSuggestionItem[] 
       const title =
         (typeof row.title === 'string' && row.title) ||
         (typeof row.name === 'string' && row.name) ||
+        (typeof row.word === 'string' && row.word) ||
         (typeof row.label === 'string' && row.label) ||
+        (typeof row.content === 'string' && row.content.slice(0, 80)) ||
         `Item ${index + 1}`
       return {
         id: typeof row.id === 'string' ? row.id : `${prefix}-${index + 1}`,
@@ -64,9 +77,11 @@ function suggestionsFromJson(json: unknown, prefix: string): AiSuggestionItem[] 
         subtitle:
           (typeof row.subtitle === 'string' && row.subtitle) ||
           (typeof row.role === 'string' && row.role) ||
+          (typeof row.element_type === 'string' && row.element_type) ||
           null,
         description:
           (typeof row.description === 'string' && row.description) ||
+          (typeof row.content === 'string' && row.content) ||
           (typeof row.detail === 'string' && row.detail) ||
           null,
       }
@@ -79,10 +94,10 @@ export async function runAssist(
   templateId: AssistTemplateId,
   vars: Record<string, string>,
 ): Promise<AssistResult> {
-  const template = ASSIST_TEMPLATES[templateId]
-  if (!template) {
+  if (!isAssistTemplateId(templateId)) {
     return { error: 'Unknown assist template', status: 400, detail: templateId }
   }
+  const template = getAssistTemplate(templateId)
   try {
     const client = createOpenAiClient()
     const { system, user } = renderTemplate(template, vars)

@@ -57,7 +57,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 |------|-------|
 | ~~Auth~~ | **Done Wave 1** — `/login`, logout, Plexon session (`knowledge/plexon-federation.md`); open when unconfigured |
 | ~~Queue~~ | **Done 2026-07-30** — `/queue` fixture dashboard (`knowledge/queue-dashboard-2026.md`) |
-| ~~Settings admin~~ | **Done 2026-07-30** — hub `/settings/admin` (`knowledge/settings-admin-2026.md`); API tokens still open |
+| ~~Settings admin~~ | **Done 2026-07-30** — hub `/settings/admin`; ~~prompt port + edit/override~~ **Done 2026-07-31** (`knowledge/v2-prompt-templating-parity-2026-07-31.md`); API tokens still open |
 | Chat modalities | ~~Public share, moodboard drawer, inspect/convert~~ **Done 2026-07-30** (`knowledge/chat-modalities-2026.md`); Voice/Tavus thin hooks |
 | ~~Easy Setup~~ | **Done 2026-07-30** — `/setup` + `POST /api/projects/bootstrap` (`knowledge/easy-setup-2026.md`) |
 

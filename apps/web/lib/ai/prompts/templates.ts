@@ -1,6 +1,19 @@
 /**
- * Prompt templates for native AiAssist (ported conceptually from V2 templates.yaml).
+ * Prompt templates for native AiAssist.
+ * V2 YAML bodies via v2-ported.ts; V3-only ids kept here.
+ * Spec: specs/domain/prompt-templating.md
  */
+
+import {
+  getPromptOverride,
+  type AssistTemplateOverridePayload,
+} from '../../fixtures/prompt-overrides-store'
+import {
+  appendLocaleOutputGuard,
+  finalizeAssistVars,
+  substituteVars,
+} from './render'
+import { V2_PORTED_TEMPLATES } from './v2-ported'
 
 export type AssistTemplateId =
   | 'persona.interests'
@@ -10,10 +23,19 @@ export type AssistTemplateId =
   | 'persona.traits'
   | 'persona.vocabulary'
   | 'persona.sentence_structure'
+  | 'persona.geo_questions'
+  | 'persona.build_chat_prompt'
+  | 'persona.translate_chat_system_prompt_de'
+  | 'persona.translate_profile_json_de'
   | 'project.suggest_target_groups'
   | 'target_group.suggest_personas'
   | 'journey.moments'
+  | 'journey.description'
+  | 'journey.phase.create'
+  | 'journey.phase.name'
+  | 'journey.phase.emotion'
   | 'journey.full_generation'
+  | 'journey.from_ux_run'
   | 'journey.validate_chat'
   | 'persona.generate_batch'
   | 'persona.enrich_facets'
@@ -23,131 +45,263 @@ export type AssistTemplateId =
 
 export type AssistTemplate = {
   id: AssistTemplateId
+  label: string
+  description: string
+  category: string
   system: string
+  /** Optional dual-message user body (legacy v3). */
   user: string
-  /** Prefer JSON array/object parse */
+  /** V2 single-body prompt — preferred when set; rendered as user message. */
+  prompt: string
   json: boolean
 }
 
-const LOCALE = '{{locale}}'
-const PROFILE = '{{persona_profile}}'
-const MAX = '{{max_items}}'
-const CONTEXT = '{{context}}'
+const SYSTEM =
+  'You are an expert product research assistant for AUDION. Follow the user instructions and output schema exactly.'
 
-export const ASSIST_TEMPLATES: Record<AssistTemplateId, AssistTemplate> = {
-  'persona.interests': {
-    id: 'persona.interests',
-    json: true,
-    system: `You suggest concise interest chips for a persona magazine. Locale: ${LOCALE}. Return JSON: {"items":[{"title":"...","description":"..."}]}`,
-    user: `Persona:\n${PROFILE}\n\nSuggest up to ${MAX} fresh interests not already listed. Avoid duplicates.`,
-  },
-  'persona.values': {
-    id: 'persona.values',
-    json: true,
-    system: `You suggest core values as short chips. Locale: ${LOCALE}. Return JSON: {"items":[{"title":"...","description":"..."}]}`,
-    user: `Persona:\n${PROFILE}\n\nSuggest up to ${MAX} values.`,
-  },
-  'persona.goals': {
-    id: 'persona.goals',
-    json: true,
-    system: `You suggest actionable persona goals. Locale: ${LOCALE}. Return JSON: {"items":[{"title":"...","description":"..."}]}`,
-    user: `Persona:\n${PROFILE}\n\nSuggest up to ${MAX} goals.`,
-  },
-  'persona.pain_points': {
-    id: 'persona.pain_points',
-    json: true,
-    system: `You suggest frustrations / pain points. Locale: ${LOCALE}. Return JSON: {"items":[{"title":"...","description":"..."}]}`,
-    user: `Persona:\n${PROFILE}\n\nSuggest up to ${MAX} frustrations.`,
-  },
-  'persona.traits': {
-    id: 'persona.traits',
-    json: true,
-    system: `You suggest personality trait labels (single words or short phrases). Locale: ${LOCALE}. Return JSON: {"items":[{"title":"...","description":"..."}]}`,
-    user: `Persona:\n${PROFILE}\n\nSuggest up to ${MAX} traits.`,
-  },
-  'persona.vocabulary': {
-    id: 'persona.vocabulary',
-    json: true,
-    system: `You suggest vocabulary words this persona would use. Locale: ${LOCALE}. Return JSON: {"items":[{"title":"...","description":"..."}]}`,
-    user: `Persona:\n${PROFILE}\n\nSuggest up to ${MAX} vocabulary chips.`,
-  },
-  'persona.sentence_structure': {
-    id: 'persona.sentence_structure',
-    json: true,
-    system: `You suggest how this persona structures sentences (style notes). Locale: ${LOCALE}. Return JSON: {"items":[{"title":"...","description":"..."}]}`,
-    user: `Persona:\n${PROFILE}\n\nSuggest up to ${MAX} sentence-structure notes.`,
-  },
+function fromV2(id: AssistTemplateId): AssistTemplate {
+  const t = V2_PORTED_TEMPLATES[id]
+  if (!t) throw new Error(`Missing V2 port for ${id}`)
+  return {
+    id,
+    label: t.label,
+    description: t.description,
+    category: t.category,
+    system: t.system,
+    user: '',
+    prompt: t.prompt,
+    json: t.json,
+  }
+}
+
+/** V3-only templates (not in V2 YAML) — use ${var} syntax. */
+const V3_EXTRA: Partial<Record<AssistTemplateId, AssistTemplate>> = {
   'project.suggest_target_groups': {
     id: 'project.suggest_target_groups',
+    label: 'Suggest target groups',
+    description: 'Suggest target-group segments for a research project.',
+    category: 'project',
     json: true,
-    system: `You suggest target-group segments for a research project. Locale: ${LOCALE}. Return JSON: {"items":[{"title":"...","subtitle":"...","description":"..."}]}`,
-    user: `Project context:\n${CONTEXT}\n\nSuggest up to ${MAX} target groups.`,
+    system: SYSTEM,
+    user: '',
+    prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
+
+Suggest up to \${max_items} target-group segments for this project.
+
+PROJECT CONTEXT:
+\${context}
+
+FORMAT:
+{"items":[{"title":"...","subtitle":"...","description":"..."}]}`,
   },
   'target_group.suggest_personas': {
     id: 'target_group.suggest_personas',
+    label: 'Suggest personas',
+    description: 'Suggest named personas for a target group.',
+    category: 'target_group',
     json: true,
-    system: `You suggest named personas for a target group. Locale: ${LOCALE}. Return JSON: {"items":[{"title":"...","subtitle":"...","description":"..."}]}`,
-    user: `Target group:\n${CONTEXT}\n\nSuggest up to ${MAX} personas (name + role).`,
-  },
-  'journey.moments': {
-    id: 'journey.moments',
-    json: true,
-    system: `You generate journey phase moments (action/thought/feeling/pain/opportunity). Locale: ${LOCALE}. Return JSON: {"moments":[{"kind":"action|thought|feeling|pain|opportunity","label":"..."}]}`,
-    user: `Journey phase:\n${CONTEXT}\n\nGenerate up to ${MAX} moments.`,
-  },
-  'journey.full_generation': {
-    id: 'journey.full_generation',
-    json: true,
-    system: `You generate a customer journey with 3–5 phases. Locale: ${LOCALE}. Return JSON: {"name":"...","description":"...","phases":[{"name":"...","summary":"...","elements":[{"kind":"action|thought|feeling|pain|opportunity","label":"..."}]}]}`,
-    user: `Generate a journey from:\n${CONTEXT}`,
+    system: SYSTEM,
+    user: '',
+    prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
+
+Suggest up to \${max_items} personas (name + role) for this target group.
+
+TARGET GROUP:
+\${context}
+
+FORMAT:
+{"items":[{"title":"...","subtitle":"...","description":"..."}]}`,
   },
   'journey.validate_chat': {
     id: 'journey.validate_chat',
+    label: 'Journey validate (chat mode)',
+    description: 'Persona first-person reactions to journey phases.',
+    category: 'journey',
     json: true,
-    system: `You are the persona validating a journey map in chat mode. Locale: ${LOCALE}. Return JSON: {"phaseQuotes":[{"phaseId":"...","personaQuote":"...","friction":"...","recommendation":"..."}]}`,
-    user: `Persona:\n${PROFILE}\n\nJourney phases to react to:\n${CONTEXT}\n\nSpeak in first person as the persona. One entry per phaseId.`,
+    system: SYSTEM,
+    user: '',
+    prompt: `LANGUAGE: Quotes and recommendations in \${generated_text_locale_name}.
+
+You are the persona validating a journey map in chat mode.
+Speak in first person as the persona. One entry per phaseId.
+
+PERSONA:
+\${persona_profile}
+
+JOURNEY PHASES:
+\${context}
+
+FORMAT:
+{"phaseQuotes":[{"phaseId":"...","personaQuote":"...","friction":"...","recommendation":"..."}]}`,
   },
   'persona.generate_batch': {
     id: 'persona.generate_batch',
+    label: 'Generate persona batch',
+    description: 'Draft personas for a target group.',
+    category: 'persona',
     json: true,
-    system: `You generate draft personas for a target group. Locale: ${LOCALE}. Return JSON: {"personas":[{"name":"...","role":"...","archetype":"...","bio":"...","interests":["..."]}]}`,
-    user: `Target group:\n${CONTEXT}\n\nGenerate exactly ${MAX} personas.`,
+    system: SYSTEM,
+    user: '',
+    prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
+
+Generate exactly \${max_items} draft personas for this target group.
+
+TARGET GROUP:
+\${context}
+
+FORMAT:
+{"personas":[{"name":"...","role":"...","archetype":"...","bio":"...","interests":["..."]}]}`,
   },
   'persona.enrich_facets': {
     id: 'persona.enrich_facets',
+    label: 'Enrich persona facets',
+    description: 'Enrich magazine persona brief (interests, values, goals, traits).',
+    category: 'persona',
     json: true,
-    system: `You enrich a persona magazine brief. Locale: ${LOCALE}. Return JSON: {"interests":["..."],"values":["..."],"goals":[{"label":"..."}],"frustrations":[{"label":"..."}],"traits":{"TraitName":0.0-1.0}}`,
-    user: `Enrich this persona (keep existing signal, add depth):\n${PROFILE}`,
+    system: SYSTEM,
+    user: '',
+    prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
+
+Enrich this persona (keep existing signal, add depth):
+
+\${persona_profile}
+
+FORMAT:
+{"interests":["..."],"values":["..."],"goals":[{"label":"..."}],"frustrations":[{"label":"..."}],"traits":{"TraitName":0.0}}`,
   },
   'moodboard.style_keywords': {
     id: 'moodboard.style_keywords',
+    label: 'Moodboard style keywords',
+    description: 'Visual moodboard style keywords and tile captions.',
+    category: 'persona',
     json: true,
-    system: `You invent visual moodboard style keywords for a persona. Locale: ${LOCALE}. Return JSON: {"styleKeywords":["..."],"tileCaptions":["..."]}`,
-    user: `Persona:\n${PROFILE}\n\nContext: ${CONTEXT}`,
+    system: SYSTEM,
+    user: '',
+    prompt: `LANGUAGE: Keywords/captions in \${generated_text_locale_name}.
+
+Invent visual moodboard style keywords for this persona.
+
+PERSONA:
+\${persona_profile}
+
+CONTEXT:
+\${context}
+
+FORMAT:
+{"styleKeywords":["..."],"tileCaptions":["..."]}`,
   },
   'research.synthesize': {
     id: 'research.synthesize',
+    label: 'Research synthesize',
+    description: 'Synthesize project research from crawled page text.',
+    category: 'project',
     json: true,
-    system: `You synthesize project research from crawled page text. Locale: ${LOCALE}. Return JSON: {"title":"...","summary":"...","sections":[{"heading":"...","body":"..."}],"citations":[{"url":"...","note":"..."}]}`,
-    user: `Seed URL and page extracts:\n${CONTEXT}`,
+    system: SYSTEM,
+    user: '',
+    prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
+
+Synthesize project research from crawled page text.
+
+SEED URL AND EXTRACTS:
+\${context}
+
+FORMAT:
+{"title":"...","summary":"...","sections":[{"heading":"...","body":"..."}],"citations":[{"url":"...","note":"..."}]}`,
   },
   'ux_study.run_summary': {
     id: 'ux_study.run_summary',
+    label: 'UX study run summary',
+    description: 'Simulate UX journey agent observation for one persona run.',
+    category: 'ux_study',
     json: true,
-    system: `You simulate a UX journey agent observation for one persona run. Locale: ${LOCALE}. Return JSON: {"outcome":"pass|fail|partial","summary":"...","findings":[{"severity":"high|medium|low","title":"...","detail":"..."}],"quotes":["..."]}`,
-    user: `Study / wave / persona run context:\n${CONTEXT}`,
+    system: SYSTEM,
+    user: '',
+    prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
+
+Simulate a UX journey agent observation for one persona run.
+
+STUDY / WAVE / PERSONA RUN:
+\${context}
+
+FORMAT:
+{"outcome":"pass|fail|partial","summary":"...","findings":[{"severity":"high|medium|low","title":"...","detail":"..."}],"quotes":["..."]}`,
   },
 }
 
+const V2_IDS: AssistTemplateId[] = [
+  'journey.moments',
+  'journey.description',
+  'persona.pain_points',
+  'persona.goals',
+  'persona.geo_questions',
+  'persona.interests',
+  'persona.values',
+  'persona.traits',
+  'persona.vocabulary',
+  'persona.sentence_structure',
+  'persona.build_chat_prompt',
+  'persona.translate_chat_system_prompt_de',
+  'persona.translate_profile_json_de',
+  'journey.phase.create',
+  'journey.full_generation',
+  'journey.from_ux_run',
+  'journey.phase.name',
+  'journey.phase.emotion',
+]
+
+function buildBaseCatalog(): Record<AssistTemplateId, AssistTemplate> {
+  const catalog = {} as Record<AssistTemplateId, AssistTemplate>
+  for (const id of V2_IDS) {
+    catalog[id] = fromV2(id)
+  }
+  for (const [id, t] of Object.entries(V3_EXTRA) as Array<[AssistTemplateId, AssistTemplate]>) {
+    catalog[id] = t
+  }
+  return catalog
+}
+
+export const ASSIST_TEMPLATES: Record<AssistTemplateId, AssistTemplate> = buildBaseCatalog()
+
+export function isAssistTemplateId(id: string): id is AssistTemplateId {
+  return id in ASSIST_TEMPLATES
+}
+
+function applyOverride(
+  base: AssistTemplate,
+  override: AssistTemplateOverridePayload | null,
+): AssistTemplate {
+  if (!override) return base
+  return {
+    ...base,
+    system: override.system != null && override.system !== '' ? override.system : base.system,
+    user: override.user != null ? override.user : base.user,
+    prompt: override.prompt != null && override.prompt !== '' ? override.prompt : base.prompt,
+  }
+}
+
+export function getAssistTemplate(templateId: AssistTemplateId): AssistTemplate {
+  return applyOverride(ASSIST_TEMPLATES[templateId], getPromptOverride(templateId))
+}
+
+export function listAssistTemplateIds(): AssistTemplateId[] {
+  return Object.keys(ASSIST_TEMPLATES) as AssistTemplateId[]
+}
+
+/** Resolved user body: prefer `prompt` (V2), else `user`. */
+export function resolvedUserBody(template: AssistTemplate): string {
+  return (template.prompt || template.user || '').trim()
+}
+
+/**
+ * Render system + user with ${}/{‌{}} vars and locale footer on the user body.
+ */
 export function renderTemplate(
   template: AssistTemplate,
   vars: Record<string, string>,
 ): { system: string; user: string } {
-  const fill = (text: string) =>
-    text
-      .replaceAll('{{locale}}', vars.locale ?? 'en')
-      .replaceAll('{{persona_profile}}', vars.persona_profile ?? '')
-      .replaceAll('{{max_items}}', vars.max_items ?? '3')
-      .replaceAll('{{context}}', vars.context ?? '')
-  return { system: fill(template.system), user: fill(template.user) }
+  const safe = finalizeAssistVars(vars)
+  const system = substituteVars(template.system, safe)
+  const body = substituteVars(resolvedUserBody(template), safe)
+  const user = appendLocaleOutputGuard(body, safe.output_locale)
+  return { system, user }
 }

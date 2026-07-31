@@ -1,4 +1,4 @@
-/** Settings Admin hub — providers status + assist prompt test. */
+/** Settings Admin hub — providers status + assist prompt test / edit. */
 
 export type SettingsProviderInfo = {
   id: string
@@ -19,11 +19,24 @@ export type SettingsProvidersResponse = {
 
 export type SettingsAssistTemplateSummary = {
   id: string
+  label: string
+  description: string
+  category: string
   json: boolean
+  overridden: boolean
+  system: string
+  user: string
+  prompt: string
 }
 
 export type SettingsAssistTemplatesResponse = {
   templates: SettingsAssistTemplateSummary[]
+}
+
+export type SettingsAssistPromptUpdateRequest = {
+  system?: string | null
+  user?: string | null
+  prompt?: string | null
 }
 
 export type SettingsAssistPromptTestRequest = {
@@ -32,6 +45,8 @@ export type SettingsAssistPromptTestRequest = {
   context?: string | null
   persona_profile?: string | null
   max_items?: string | null
+  /** Extra ${var} values merged into the render context. */
+  vars?: Record<string, string> | null
 }
 
 export type SettingsAssistPromptTestResponse = {
