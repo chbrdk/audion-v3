@@ -34,6 +34,7 @@ function stepMessage(status: UxJourneyAgentJobStatus): string {
 function stepsFingerprint(status: UxJourneyAgentJobStatus): string {
   const steps = status.result?.steps ?? []
   const last = steps[steps.length - 1]
+  const meta = last?.reasoningMeta
   return [
     status.status,
     steps.length,
@@ -41,6 +42,9 @@ function stepsFingerprint(status: UxJourneyAgentJobStatus): string {
     last?.action,
     last?.screenshotUrl ?? '',
     (last?.reasoning || '').slice(0, 80),
+    (meta?.memory || '').slice(0, 40),
+    (meta?.next_goal || '').slice(0, 40),
+    (meta?.evaluation_previous_goal || '').slice(0, 40),
   ].join('|')
 }
 

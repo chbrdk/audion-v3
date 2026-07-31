@@ -9,6 +9,11 @@ export type UxJourneyAgentStep = {
   target?: string
   result?: string
   reasoning?: string
+  reasoningMeta?: {
+    evaluation_previous_goal?: string | null
+    memory?: string | null
+    next_goal?: string | null
+  } | null
   observations?: unknown
   screenshot?: string | null
   screenshotUrl?: string | null

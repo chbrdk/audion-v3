@@ -24,11 +24,18 @@ describe('ux journey step media helpers', () => {
         action: 'navigate',
         target: 'https://msqdx.com',
         reasoning: 'Opening the homepage',
+        reasoningMeta: {
+          evaluation_previous_goal: 'Landed on homepage as expected.',
+          memory: 'Hero CTA label: Start free',
+          next_goal: 'Click the Start free button [12]',
+        },
         screenshotUrl: '/run/job-1/step/1/screenshot',
       },
     ])
     expect(steps[0]?.screenshotUrl).toBe('/api/ux-journey-agent/run/job-1/step/1/screenshot')
     expect(chatUxJourneyStepShotSrc(steps[0]!)).toContain('/api/ux-journey-agent/')
+    expect(steps[0]?.reasoningMeta?.memory).toBe('Hero CTA label: Start free')
+    expect(steps[0]?.reasoningMeta?.next_goal).toContain('Start free')
     expect(bffVideoUrlForJob('job-1', '/run/job-1/video')).toBe(
       '/api/ux-journey-agent/run/job-1/video',
     )

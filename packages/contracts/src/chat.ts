@@ -63,13 +63,22 @@ export type ChatSharePersona = {
 
 export type ChatToolName = 'inspect_website'
 
+/** Structured think-aloud bookkeeping from browser-use (V2 reasoningMeta). */
+export type ChatUxJourneyStepReasoningMeta = {
+  evaluation_previous_goal?: string | null
+  memory?: string | null
+  next_goal?: string | null
+}
+
 /** One browser-agent step surfaced in chat (live + completed). */
 export type ChatUxJourneyStep = {
   step?: number
   action?: string
   target?: string
   result?: string
+  /** Think-aloud / Denken */
   reasoning?: string
+  reasoningMeta?: ChatUxJourneyStepReasoningMeta | null
   /** data: URL or absolute/relative path */
   screenshot?: string | null
   /** Agent-relative `/run/{jobId}/step/{n}/screenshot` or BFF path */
