@@ -299,7 +299,7 @@ export async function runNativeSuggestTargetGroups(
   body: SuggestTargetGroupsRequest,
   _authorization?: string | null,
 ): Promise<SuggestTargetGroupsResponse | NativeError> {
-  const project = storeProjectDetail(projectId)
+  const project = await storeProjectDetail(projectId)
   if (!project) return { error: 'Project not found', status: 404 }
   const max = Math.min(Math.max(body.max_suggestions ?? 5, 1), 8)
   const locale = body.output_locale ?? 'en'
@@ -323,7 +323,7 @@ export async function runNativeSuggestPersonas(
   body: SuggestPersonasRequest,
   _authorization?: string | null,
 ): Promise<SuggestPersonasResponse | NativeError> {
-  if (!storeProjectDetail(projectId)) return { error: 'Project not found', status: 404 }
+  if (!(await storeProjectDetail(projectId))) return { error: 'Project not found', status: 404 }
   const tgId = body.target_group_id
   const tg = storeTargetGroupDetail(tgId)
   if (!tg) return { error: 'Target group not found', status: 404 }
@@ -346,7 +346,7 @@ export async function runNativeGenerateJourney(
   _authorization?: string | null,
 ): Promise<GenerateJourneyResponse | NativeError> {
   const projectId = fromProjectId ?? body.project_id ?? null
-  if (fromProjectId && !storeProjectDetail(fromProjectId)) {
+  if (fromProjectId && !(await storeProjectDetail(fromProjectId))) {
     return { error: 'Project not found', status: 404 }
   }
   const journeyType = body.journey_type?.trim() || 'customer'
@@ -664,7 +664,7 @@ export async function runNativeResearchStart(
   body: ResearchStartRequest,
   _authorization?: string | null,
 ): Promise<ResearchStartResponse | NativeError> {
-  if (!storeProjectDetail(projectId)) return { error: 'Project not found', status: 404 }
+  if (!(await storeProjectDetail(projectId))) return { error: 'Project not found', status: 404 }
   const seedUrl = String(body.seed_url ?? '').trim() || 'https://example.com'
   const upstreamBody = {
     seed_url: seedUrl,

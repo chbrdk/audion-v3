@@ -149,7 +149,7 @@ async function fetchJson(url: string): Promise<Response> {
 }
 
 export async function fetchProjectList(): Promise<ProjectListResult> {
-  const fixtures = storeProjectList()
+  const fixtures = await storeProjectList()
   if (shouldUsePersonaFixturesOnly()) {
     return { ...fixtures, origin: 'fixtures' }
   }
@@ -172,7 +172,7 @@ export async function fetchProjectList(): Promise<ProjectListResult> {
       page: typeof json.page === 'number' ? json.page : 1,
       pageSize: typeof json.page_size === 'number' ? json.page_size : 50,
     }
-    // Plexon → AUDION provisioning upserts the fixture store; always surface those rows.
+    // Persistable / fixture projects (incl. Plexon provisioning) always surface in the UI.
     return { ...mergeProjectLists(fromApi, fixtures), origin: 'api' }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
@@ -181,7 +181,7 @@ export async function fetchProjectList(): Promise<ProjectListResult> {
 }
 
 export async function fetchProjectDetail(id: string): Promise<ProjectDetailResult> {
-  const fixture = storeProjectDetail(id)
+  const fixture = await storeProjectDetail(id)
   if (shouldUsePersonaFixturesOnly()) {
     return { project: fixture, origin: 'fixtures' }
   }

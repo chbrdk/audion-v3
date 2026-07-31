@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     platformCompanyId = profile?.default_platform_company_id ?? null
   }
 
-  let project = storeCreateProject(body, {
+  let project = await storeCreateProject(body, {
     ownerEmail,
     ownerPlexonUserId,
     platformCompanyId,
@@ -40,11 +40,11 @@ export async function POST(request: Request) {
     })
     if (origin?.platformProjectId) {
       project =
-        storeApplyPlatformBinding(project.id, {
+        (await storeApplyPlatformBinding(project.id, {
           platformProjectId: origin.platformProjectId,
           platformCompanyId: origin.platformCompanyId ?? platformCompanyId,
           ownerPlexonUserId,
-        }) ?? project
+        })) ?? project
     }
   }
 

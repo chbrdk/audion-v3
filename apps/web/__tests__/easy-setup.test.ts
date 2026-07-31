@@ -110,7 +110,7 @@ describe('runEasySetup', () => {
       true,
     )
 
-    const project = storeProjectDetail(result.project.id)
+    const project = await storeProjectDetail(result.project.id)
     expect(project?.personaCount).toBe(1)
     expect(project?.targetGroupCount).toBe(1)
     expect(storeTargetGroupDetail(result.targetGroup.id)?.personaCount).toBe(1)

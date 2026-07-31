@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   const { projectId } = await context.params
   const body = (await request.json()) as Partial<ProjectWritePayload>
-  const project = storePatchProject(projectId, body)
+  const project = await storePatchProject(projectId, body)
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(project)
 }

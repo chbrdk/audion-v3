@@ -1,3 +1,8 @@
+/**
+ * Project persistence facade.
+ * - With DATABASE_URL: Postgres (drizzle)
+ * - Without: in-memory fixtures (local/dev/tests)
+ */
 import type {
   ProjectCreateOptions,
   ProjectDetail,
@@ -13,10 +18,20 @@ import {
   newKnowledgeChapterId,
   resolveKnowledgeChapters,
 } from '../project-knowledge'
+import { isProjectsDatabaseConfigured } from '../db/client'
+import {
+  dbApplyPlatformBinding,
+  dbCreateProject,
+  dbGetByPlatformProjectId,
+  dbPatchProject,
+  dbProjectDetail,
+  dbProjectList,
+  dbUpsertByPlatformProjectId,
+} from '../db/projects'
 
 let projects: ProjectDetail[] = DEMO_PROJECTS.map((p) => structuredClone(p))
 
-/** Inbound Plexon user provisioning shadow (fixture). */
+/** Inbound Plexon user provisioning shadow (fixture; not yet Postgres). */
 let provisionedUsers = new Map<
   string,
   { email: string; name: string | null; desiredState: string }
@@ -36,43 +51,6 @@ export function storeProvisionedUser(
 
 export function storeGetProvisionedUser(plexonUserId: string) {
   return provisionedUsers.get(plexonUserId) ?? null
-}
-
-export function storeGetByPlatformProjectId(platformProjectId: string): ProjectDetail | null {
-  const existing = projects.find((p) => p.platformProjectId === platformProjectId)
-  return existing ? withDerived(existing) : null
-}
-
-export function storeUpsertByPlatformProjectId(
-  platformProjectId: string,
-  data: {
-    name: string
-    platformCompanyId: string
-    ownerUserId: string
-    status: 'active' | 'archived'
-  },
-): ProjectDetail {
-  const existing = projects.find((p) => p.platformProjectId === platformProjectId)
-  if (existing) {
-    return (
-      storePatchProject(existing.id, {
-        name: data.name,
-        platformCompanyId: data.platformCompanyId,
-        ownerPlexonUserId: data.ownerUserId,
-        status: data.status === 'archived' ? 'archived' : existing.status,
-      }) ?? existing
-    )
-  }
-  return storeCreateProject(
-    {
-      name: data.name,
-      status: data.status === 'archived' ? 'archived' : 'draft',
-      platformProjectId,
-      platformCompanyId: data.platformCompanyId,
-      ownerPlexonUserId: data.ownerUserId,
-    },
-    { ownerPlexonUserId: data.ownerUserId, platformCompanyId: data.platformCompanyId },
-  )
 }
 
 function countsFor(projectId: string): { personaCount: number; targetGroupCount: number } {
@@ -125,7 +103,6 @@ function chaptersFromWrite(
     if (existing.length === 0) {
       return [{ id: newKnowledgeChapterId(), title: 'Brief', body: brief }]
     }
-    // Keep chapters; still update flattened companyContext via withDerived join from chapters only
     return existing
   }
   return current
@@ -133,17 +110,22 @@ function chaptersFromWrite(
     : []
 }
 
-export function storeProjectList(): ProjectList {
+function memoryGetByPlatformProjectId(platformProjectId: string): ProjectDetail | null {
+  const existing = projects.find((p) => p.platformProjectId === platformProjectId)
+  return existing ? withDerived(existing) : null
+}
+
+function memoryProjectList(): ProjectList {
   const items = projects.map(toSummary)
   return { items, total: items.length, page: 1, pageSize: 50 }
 }
 
-export function storeProjectDetail(id: string): ProjectDetail | null {
+function memoryProjectDetail(id: string): ProjectDetail | null {
   const found = projects.find((p) => p.id === id)
   return found ? withDerived(found) : null
 }
 
-export function storeCreateProject(
+function memoryCreateProject(
   payload: ProjectWritePayload,
   options?: ProjectCreateOptions,
 ): ProjectDetail {
@@ -168,10 +150,8 @@ export function storeCreateProject(
     memberCount: 1,
     updatedAt: new Date().toISOString(),
     platformProjectId: payload.platformProjectId ?? null,
-    platformCompanyId:
-      payload.platformCompanyId ?? options?.platformCompanyId ?? null,
-    ownerPlexonUserId:
-      payload.ownerPlexonUserId ?? options?.ownerPlexonUserId ?? null,
+    platformCompanyId: payload.platformCompanyId ?? options?.platformCompanyId ?? null,
+    ownerPlexonUserId: payload.ownerPlexonUserId ?? options?.ownerPlexonUserId ?? null,
     members: [
       {
         id: `mem-${Date.now().toString(36)}`,
@@ -185,29 +165,7 @@ export function storeCreateProject(
   return created
 }
 
-export function storeApplyPlatformBinding(
-  id: string,
-  binding: {
-    platformProjectId: string
-    platformCompanyId?: string | null
-    ownerPlexonUserId?: string | null
-  },
-): ProjectDetail | null {
-  const index = projects.findIndex((p) => p.id === id)
-  if (index < 0) return null
-  const current = projects[index]!
-  const next = withDerived({
-    ...current,
-    platformProjectId: binding.platformProjectId,
-    platformCompanyId: binding.platformCompanyId ?? current.platformCompanyId ?? null,
-    ownerPlexonUserId: binding.ownerPlexonUserId ?? current.ownerPlexonUserId ?? null,
-    updatedAt: new Date().toISOString(),
-  })
-  projects = [...projects.slice(0, index), next, ...projects.slice(index + 1)]
-  return next
-}
-
-export function storePatchProject(
+function memoryPatchProject(
   id: string,
   payload: Partial<ProjectWritePayload>,
 ): ProjectDetail | null {
@@ -240,4 +198,116 @@ export function storePatchProject(
   })
   projects = [...projects.slice(0, index), next, ...projects.slice(index + 1)]
   return next
+}
+
+function memoryApplyPlatformBinding(
+  id: string,
+  binding: {
+    platformProjectId: string
+    platformCompanyId?: string | null
+    ownerPlexonUserId?: string | null
+  },
+): ProjectDetail | null {
+  const index = projects.findIndex((p) => p.id === id)
+  if (index < 0) return null
+  const current = projects[index]!
+  const next = withDerived({
+    ...current,
+    platformProjectId: binding.platformProjectId,
+    platformCompanyId: binding.platformCompanyId ?? current.platformCompanyId ?? null,
+    ownerPlexonUserId: binding.ownerPlexonUserId ?? current.ownerPlexonUserId ?? null,
+    updatedAt: new Date().toISOString(),
+  })
+  projects = [...projects.slice(0, index), next, ...projects.slice(index + 1)]
+  return next
+}
+
+function memoryUpsertByPlatformProjectId(
+  platformProjectId: string,
+  data: {
+    name: string
+    platformCompanyId: string
+    ownerUserId: string
+    status: 'active' | 'archived'
+  },
+): ProjectDetail {
+  const existing = projects.find((p) => p.platformProjectId === platformProjectId)
+  if (existing) {
+    return (
+      memoryPatchProject(existing.id, {
+        name: data.name,
+        platformCompanyId: data.platformCompanyId,
+        ownerPlexonUserId: data.ownerUserId,
+        status: data.status === 'archived' ? 'archived' : existing.status,
+      }) ?? existing
+    )
+  }
+  return memoryCreateProject(
+    {
+      name: data.name,
+      status: data.status === 'archived' ? 'archived' : 'draft',
+      platformProjectId,
+      platformCompanyId: data.platformCompanyId,
+      ownerPlexonUserId: data.ownerUserId,
+    },
+    { ownerPlexonUserId: data.ownerUserId, platformCompanyId: data.platformCompanyId },
+  )
+}
+
+export async function storeGetByPlatformProjectId(
+  platformProjectId: string,
+): Promise<ProjectDetail | null> {
+  if (isProjectsDatabaseConfigured()) return dbGetByPlatformProjectId(platformProjectId)
+  return memoryGetByPlatformProjectId(platformProjectId)
+}
+
+export async function storeUpsertByPlatformProjectId(
+  platformProjectId: string,
+  data: {
+    name: string
+    platformCompanyId: string
+    ownerUserId: string
+    status: 'active' | 'archived'
+  },
+): Promise<ProjectDetail> {
+  if (isProjectsDatabaseConfigured()) return dbUpsertByPlatformProjectId(platformProjectId, data)
+  return memoryUpsertByPlatformProjectId(platformProjectId, data)
+}
+
+export async function storeProjectList(): Promise<ProjectList> {
+  if (isProjectsDatabaseConfigured()) return dbProjectList()
+  return memoryProjectList()
+}
+
+export async function storeProjectDetail(id: string): Promise<ProjectDetail | null> {
+  if (isProjectsDatabaseConfigured()) return dbProjectDetail(id)
+  return memoryProjectDetail(id)
+}
+
+export async function storeCreateProject(
+  payload: ProjectWritePayload,
+  options?: ProjectCreateOptions,
+): Promise<ProjectDetail> {
+  if (isProjectsDatabaseConfigured()) return dbCreateProject(payload, options)
+  return memoryCreateProject(payload, options)
+}
+
+export async function storeApplyPlatformBinding(
+  id: string,
+  binding: {
+    platformProjectId: string
+    platformCompanyId?: string | null
+    ownerPlexonUserId?: string | null
+  },
+): Promise<ProjectDetail | null> {
+  if (isProjectsDatabaseConfigured()) return dbApplyPlatformBinding(id, binding)
+  return memoryApplyPlatformBinding(id, binding)
+}
+
+export async function storePatchProject(
+  id: string,
+  payload: Partial<ProjectWritePayload>,
+): Promise<ProjectDetail | null> {
+  if (isProjectsDatabaseConfigured()) return dbPatchProject(id, payload)
+  return memoryPatchProject(id, payload)
 }

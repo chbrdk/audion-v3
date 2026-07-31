@@ -79,8 +79,8 @@ describe('AI workflow stubs', () => {
     expect(tg?.linkedPersonas.some((p) => p.id === result.personas[0]!.id)).toBe(true)
   })
 
-  it('suggestTargetGroups returns suggestions with target meta', () => {
-    const result = runStubSuggestTargetGroups('proj-audion-core', { max_suggestions: 3 })
+  it('suggestTargetGroups returns suggestions with target meta', async () => {
+    const result = await runStubSuggestTargetGroups('proj-audion-core', { max_suggestions: 3 })
     expect('error' in result).toBe(false)
     if ('error' in result) return
     expect(result.stubbed).toBe(true)
@@ -88,13 +88,13 @@ describe('AI workflow stubs', () => {
     expect(result.target.path).toContain('proj-audion-core/suggest-target-groups')
   })
 
-  it('suggestPersonas requires a known target group', () => {
-    const missing = runStubSuggestPersonas('proj-audion-core', {
+  it('suggestPersonas requires a known target group', async () => {
+    const missing = await runStubSuggestPersonas('proj-audion-core', {
       target_group_id: 'missing',
     })
     expect(missing).toMatchObject({ error: 'Target group not found', status: 404 })
 
-    const result = runStubSuggestPersonas('proj-audion-core', {
+    const result = await runStubSuggestPersonas('proj-audion-core', {
       target_group_id: 'tg-digital-product-leads',
       max_suggestions: 2,
     })
@@ -104,8 +104,8 @@ describe('AI workflow stubs', () => {
     expect(result.target.path).toContain('suggest-personas')
   })
 
-  it('researchStart returns queued stub job', () => {
-    const result = runStubResearchStart('proj-audion-core', {
+  it('researchStart returns queued stub job', async () => {
+    const result = await runStubResearchStart('proj-audion-core', {
       seed_url: 'https://example.com',
     })
     expect('error' in result).toBe(false)
@@ -115,8 +115,8 @@ describe('AI workflow stubs', () => {
     expect(result.target.body.seed_url).toBe('https://example.com')
   })
 
-  it('generateJourney creates journey with phases', () => {
-    const result = runStubGenerateJourney(
+  it('generateJourney creates journey with phases', async () => {
+    const result = await runStubGenerateJourney(
       {
         target_group_id: 'tg-digital-product-leads',
         journey_type: 'customer',

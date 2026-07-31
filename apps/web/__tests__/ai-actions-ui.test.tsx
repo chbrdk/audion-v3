@@ -44,12 +44,12 @@ describe('AI action buttons smoke', () => {
     expect(screen.getByRole('button', { name: /Generate with AI/i })).toBeTruthy()
   })
 
-  it('renders project AI band actions', () => {
-    const project = storeProjectDetail('proj-audion-core')
+  it('renders project AI band actions', async () => {
+    const project = await storeProjectDetail('proj-audion-core')
     expect(project).toBeTruthy()
     render(
       <ProjectDetailPanel
-        project={project}
+        project={project!}
         personas={[]}
         targetGroups={[
           {

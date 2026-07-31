@@ -12,9 +12,10 @@
 | Platform projects + product bindings | **Plexon** | Origin call on project create |
 | Usage ledger | **Plexon** | Thin `reportUsage` from chat stream |
 | Personas, TGs, journeys, studies, chat fixtures | **AUDION fixtures** | Local stores only |
-| Product Postgres | — | **Deferred** |
+| Projects (list / create / Plexon provisioning) | **AUDION Postgres** | `projects` table when `DATABASE_URL` set; else in-memory fixtures |
+| Product Postgres (personas+) | — | **Deferred** |
 
-**Important (Wave 1):** Inbound project provisioning (`PUT …/platform/provisioning/projects/{id}`) writes the **in-memory fixture store**, not a durable DB. The [Projects](https://audion-v3.projects-a.plygrnd.tech/projects) UI lists that store (merged with FastAPI when `NEXT_PERSONA_DATA_SOURCE=auto`). **Redeploy / multi-replica wipes memory** — Plexon bindings stay `in_sync`, but Audion no longer has the row until you sync again.
+**Projects persistence:** With `DATABASE_URL`, inbound `PUT …/platform/provisioning/projects/{id}` and UI create/list write Postgres. Redeploy keeps rows. Without `DATABASE_URL` (local), memory fixtures remain (wiped on process restart).
 
 ## Write rules
 
@@ -49,7 +50,7 @@ When `PLEXON_AUTH_URL` + `PLEXON_SERVICE_SECRET` are **unset**, middleware does 
 
 ## Later waves
 
-- Product Postgres for domain data
+- Personas / TGs / journeys / chat on Product Postgres
 - Full usage coverage (AI actions)
 - Echon / Brandion federation
 - Coolify v3 island: `PLEXON/knowledge/coolify-v3-staging-runbook.md`

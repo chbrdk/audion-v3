@@ -381,11 +381,11 @@ export function runStubGeneratePersonas(
   }
 }
 
-export function runStubSuggestTargetGroups(
+export async function runStubSuggestTargetGroups(
   projectId: string,
   body: SuggestTargetGroupsRequest,
-): SuggestTargetGroupsResponse | { error: string; status: number } {
-  const project = storeProjectDetail(projectId)
+): Promise<SuggestTargetGroupsResponse | { error: string; status: number }> {
+  const project = await storeProjectDetail(projectId)
   if (!project) return { error: 'Project not found', status: 404 }
 
   const max = Math.min(Math.max(body.max_suggestions ?? 5, 1), 8)
@@ -432,11 +432,11 @@ export function runStubSuggestTargetGroups(
   return { ...meta, suggestions: seeds.slice(0, max) }
 }
 
-export function runStubSuggestPersonas(
+export async function runStubSuggestPersonas(
   projectId: string,
   body: SuggestPersonasRequest,
-): SuggestPersonasResponse | { error: string; status: number } {
-  if (!storeProjectDetail(projectId)) return { error: 'Project not found', status: 404 }
+): Promise<SuggestPersonasResponse | { error: string; status: number }> {
+  if (!(await storeProjectDetail(projectId))) return { error: 'Project not found', status: 404 }
   const tgId = body.target_group_id
   const tg = storeTargetGroupDetail(tgId)
   if (!tg) return { error: 'Target group not found', status: 404 }
@@ -458,11 +458,11 @@ export function runStubSuggestPersonas(
   return { ...meta, suggestions }
 }
 
-export function runStubResearchStart(
+export async function runStubResearchStart(
   projectId: string,
   body: ResearchStartRequest,
-): ResearchStartResponse | { error: string; status: number } {
-  if (!storeProjectDetail(projectId)) return { error: 'Project not found', status: 404 }
+): Promise<ResearchStartResponse | { error: string; status: number }> {
+  if (!(await storeProjectDetail(projectId))) return { error: 'Project not found', status: 404 }
 
   const upstreamBody = {
     seed_url: body.seed_url ?? '',
@@ -510,12 +510,12 @@ function stubPhases(prefix: string) {
   ]
 }
 
-export function runStubGenerateJourney(
+export async function runStubGenerateJourney(
   body: GenerateJourneyRequest,
   fromProjectId?: string,
-): GenerateJourneyResponse | { error: string; status: number } {
+): Promise<GenerateJourneyResponse | { error: string; status: number }> {
   const projectId = fromProjectId ?? body.project_id ?? null
-  if (fromProjectId && !storeProjectDetail(fromProjectId)) {
+  if (fromProjectId && !(await storeProjectDetail(fromProjectId))) {
     return { error: 'Project not found', status: 404 }
   }
 
@@ -922,7 +922,7 @@ type AiErr = { error: string; status: number; detail?: string }
 export async function withAiNativeOrStub<T extends { stubbed: boolean }>(
   request: Request,
   live: (authorization: string | null) => Promise<T | AiErr>,
-  stub: () => T | { error: string; status: number },
+  stub: () => T | { error: string; status: number } | Promise<T | { error: string; status: number }>,
 ): Promise<{ ok: true; data: T } | { ok: false; error: string; status: number; detail?: string }> {
   if (shouldPreferAiLive()) {
     const authorization = request.headers.get('authorization')
@@ -939,7 +939,7 @@ export async function withAiNativeOrStub<T extends { stubbed: boolean }>(
       }
     }
   }
-  const stubResult = stub()
+  const stubResult = await stub()
   if ('error' in stubResult) {
     return { ok: false, error: stubResult.error, status: stubResult.status }
   }

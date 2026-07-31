@@ -26,6 +26,7 @@ Central place for public origins — reference from Coolify env / docs; do not h
 
 ```bash
 AUTH_SECRET=<≥32 chars>
+DATABASE_URL=postgresql://USER:PASSWORD@audion-v3-postgres:5432/audion
 PLEXON_AUTH_URL=https://plexon-v3.projects-a.plygrnd.tech
 PLEXON_SERVICE_SECRET=<same as plexon-v3>
 NEXT_PUBLIC_PLEXON_REGISTER_URL=https://plexon-v3.projects-a.plygrnd.tech/register
@@ -37,6 +38,14 @@ OPENAI_API_KEY=<secret>
 # AI_OPENAI_IMAGE_MODEL=gpt-image-1-mini
 PORT=3000
 ```
+
+### Postgres (Coolify)
+
+1. Add Postgres resource `audion-v3-postgres` in the same environment (own volume; never V2).
+2. Wire Internal URL into Web app `DATABASE_URL`.
+3. Container start runs `drizzle-kit push` for the `projects` table (`scripts/docker-entrypoint.sh`).
+
+**Acceptance:** Plexon Collection sync → project on `/projects` → redeploy Audion → row still present.
 
 Native AI (no V2 persona/chat-api): `knowledge/ai-native-2026.md`
 | Coolify Env Cheat-Sheet | `plexon-v3/knowledge/coolify-plexon-v3-env-cheatsheet.md` |

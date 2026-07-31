@@ -1,7 +1,7 @@
 # AUDION v3 – Docker image for Coolify / self-hosted.
 # Context: repository root (audion-v3).
 # Build:  docker build -t audion-v3 .
-# Run:    docker run -p 3000:3000 -e AUTH_SECRET=… audion-v3
+# Run:    docker run -p 3000:3000 -e AUTH_SECRET=… -e DATABASE_URL=… audion-v3
 #
 # Sibling design system: clones github.com/chbrdk/msqdx-ui next to the app
 # so webpack aliases (`../../../msqdx-ui/…`) and barrels resolve.
@@ -65,8 +65,14 @@ COPY --from=builder /workspace/audion-v3/apps/web/package.json ./apps/web/packag
 COPY --from=builder /workspace/audion-v3/apps/web/public ./apps/web/public
 COPY --from=builder /workspace/audion-v3/apps/web/.next ./apps/web/.next
 COPY --from=builder /workspace/audion-v3/apps/web/next.config.ts ./apps/web/next.config.ts
+COPY --from=builder /workspace/audion-v3/apps/web/tsconfig.json ./apps/web/tsconfig.json
+COPY --from=builder /workspace/audion-v3/apps/web/drizzle.config.ts ./apps/web/drizzle.config.ts
+COPY --from=builder /workspace/audion-v3/apps/web/lib/db ./apps/web/lib/db
+COPY --from=builder /workspace/audion-v3/scripts ./scripts
 # Runtime webpack aliases still resolve into msqdx-ui source (server components / SSR).
 COPY --from=builder /workspace/msqdx-ui /workspace/msqdx-ui
 
+RUN chmod +x ./scripts/docker-entrypoint.sh ./scripts/check-database-url.mjs
+
 WORKDIR /workspace/audion-v3
-CMD ["npm", "run", "start", "-w", "web"]
+CMD ["./scripts/docker-entrypoint.sh"]

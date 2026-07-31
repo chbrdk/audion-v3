@@ -153,7 +153,7 @@ export async function runEasySetup(
   const companyContext = `${about}${websiteAppendix}`.trim()
   const locale = payload.output_locale?.trim() || 'en'
 
-  let project = storeCreateProject(
+  let project = await storeCreateProject(
     {
       name: projectName,
       description,
@@ -176,11 +176,11 @@ export async function runEasySetup(
     })
     if (origin?.platformProjectId) {
       project =
-        storeApplyPlatformBinding(project.id, {
+        (await storeApplyPlatformBinding(project.id, {
           platformProjectId: origin.platformProjectId,
           platformCompanyId: origin.platformCompanyId ?? owner.platformCompanyId,
           ownerPlexonUserId: owner.ownerPlexonUserId,
-        }) ?? project
+        })) ?? project
     }
   }
 
@@ -222,7 +222,7 @@ export async function runEasySetup(
       linkedPersonaIds: [persona.id],
     }) ?? targetGroup
 
-  const refreshedProject = storeProjectDetail(project.id) ?? project
+  const refreshedProject = (await storeProjectDetail(project.id)) ?? project
   const refreshedTg = storeTargetGroupDetail(targetGroup.id) ?? targetGroup
 
   return {

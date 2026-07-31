@@ -19,7 +19,7 @@ export default async function ProjectsPage({
         title="Projects"
         description={
           demo
-            ? 'In-memory fixtures (Wave 1). Plexon-synced projects appear after sync and reset on redeploy until Postgres.'
+            ? 'Local fixtures (no DATABASE_URL). Staging uses Postgres — Plexon-synced projects survive redeploy.'
             : undefined
         }
         status={

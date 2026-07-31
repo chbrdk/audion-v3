@@ -67,7 +67,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 - Full report versioning / artifact CDN
 - New charting framework (keep ECHON radar + DS bars)
 - V2 Admin Studies UI (not needed — V3 is the Studies UI)
-- Product Postgres (deferred) · Echon/Brandion federation · Plugins, VR, GEO, MCP host
+- Product Postgres for **projects** — done (staging `DATABASE_URL`); personas/TGs/journeys/chat still fixtures · Echon/Brandion federation · Plugins, VR, GEO, MCP host
 - **V2 Coolify Prod bleibt getrennt** — siehe `knowledge/v2-v3-runtime-separation.md`
 
 ## Deferred depth (detail pointers)

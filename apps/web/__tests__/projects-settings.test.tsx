@@ -156,19 +156,19 @@ describe('project contracts', () => {
     expect(detail?.knowledgeChapters).toEqual([{ id: 'ch-1', title: 'Market', body: 'B2B' }])
   })
 
-  it('lists, creates, and patches via store', () => {
-    const list = storeProjectList()
+  it('lists, creates, and patches via store', async () => {
+    const list = await storeProjectList()
     expect(list.total).toBeGreaterThanOrEqual(3)
-    expect(storeProjectDetail('proj-audion-core')?.name).toBe('AUDION Core')
+    expect((await storeProjectDetail('proj-audion-core'))?.name).toBe('AUDION Core')
 
-    const created = storeCreateProject({ name: 'New Lab', status: 'draft' })
+    const created = await storeCreateProject({ name: 'New Lab', status: 'draft' })
     expect(created.id).toContain('proj-')
-    expect(storeProjectDetail(created.id)?.status).toBe('draft')
+    expect((await storeProjectDetail(created.id))?.status).toBe('draft')
 
-    const patched = storePatchProject(created.id, { description: 'Brief' })
+    const patched = await storePatchProject(created.id, { description: 'Brief' })
     expect(patched?.description).toBe('Brief')
 
-    const withMember = storePatchProject(created.id, {
+    const withMember = await storePatchProject(created.id, {
       members: [
         { id: 'm-new', email: 'new@example.com', role: 'member', status: 'invited' },
       ],
@@ -176,7 +176,7 @@ describe('project contracts', () => {
     expect(withMember?.members).toHaveLength(1)
     expect(withMember?.memberCount).toBe(1)
 
-    const filtered = filterProjectList(storeProjectList(), 'audion')
+    const filtered = filterProjectList(await storeProjectList(), 'audion')
     expect(filtered.items.every((i) => i.name.toLowerCase().includes('audion'))).toBe(true)
   })
 })

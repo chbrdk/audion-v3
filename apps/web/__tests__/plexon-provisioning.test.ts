@@ -19,8 +19,8 @@ describe('project platform binding', () => {
     vi.restoreAllMocks()
   })
 
-  it('stores owner from options and applies platformProjectId', () => {
-    const created = storeCreateProject(
+  it('stores owner from options and applies platformProjectId', async () => {
+    const created = await storeCreateProject(
       { name: 'Federated' },
       {
         ownerEmail: 'owner@example.com',
@@ -32,13 +32,13 @@ describe('project platform binding', () => {
     expect(created.ownerPlexonUserId).toBe('plex-user-1')
     expect(created.platformCompanyId).toBe('co-1')
 
-    const bound = storeApplyPlatformBinding(created.id, {
+    const bound = await storeApplyPlatformBinding(created.id, {
       platformProjectId: 'plat-proj-9',
       platformCompanyId: 'co-1',
       ownerPlexonUserId: 'plex-user-1',
     })
     expect(bound?.platformProjectId).toBe('plat-proj-9')
-    expect(storeProjectDetail(created.id)?.platformProjectId).toBe('plat-proj-9')
+    expect((await storeProjectDetail(created.id))?.platformProjectId).toBe('plat-proj-9')
   })
 })
 
@@ -123,7 +123,7 @@ describe('provisioning routes', () => {
     }
     expect(body.platformProjectId).toBe('plat-1')
     expect(body.externalProjectId).toBe(body.projectId)
-    expect(storeProjectDetail(body.projectId)?.platformProjectId).toBe('plat-1')
+    expect((await storeProjectDetail(body.projectId))?.platformProjectId).toBe('plat-1')
   })
 })
 

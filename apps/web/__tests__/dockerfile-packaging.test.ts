@@ -16,7 +16,9 @@ describe('Dockerfile Coolify packaging', () => {
     expect(df).toContain('audion-v3.projects-a.plygrnd.tech')
     expect(df).toContain('msqdx-ui')
     expect(df).toContain('EXPOSE 3000')
-    expect(df).toMatch(/npm run start -w web|start", "-w", "web/)
+    expect(df).toContain('docker-entrypoint.sh')
+    expect(df).toContain('apps/web/drizzle.config.ts')
+    expect(df).toMatch(/docker-entrypoint\.sh|npm run start -w web/)
   })
 
   it('keeps health path for Traefik probes', () => {

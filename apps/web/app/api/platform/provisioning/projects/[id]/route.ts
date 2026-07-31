@@ -33,7 +33,7 @@ export async function GET(
   if (!platformProjectId?.trim()) {
     return NextResponse.json({ error: 'platform project id required' }, { status: 400 })
   }
-  const project = storeGetByPlatformProjectId(platformProjectId.trim())
+  const project = await storeGetByPlatformProjectId(platformProjectId.trim())
   if (!project) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
@@ -74,7 +74,7 @@ export async function PUT(
   if (!body.name?.trim() || !body.platformCompanyId?.trim() || !body.ownerUserId?.trim()) {
     return NextResponse.json({ error: 'name, platformCompanyId, ownerUserId required' }, { status: 400 })
   }
-  const project = storeUpsertByPlatformProjectId(platformProjectId.trim(), {
+  const project = await storeUpsertByPlatformProjectId(platformProjectId.trim(), {
     name: body.name.trim(),
     platformCompanyId: body.platformCompanyId.trim(),
     ownerUserId: body.ownerUserId.trim(),

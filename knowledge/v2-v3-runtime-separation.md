@@ -19,17 +19,18 @@
 | Repo | `AUDION-v2` | `audion-v3` (eigenes Repo) |
 | Coolify | bestehendes Projekt / Stack **unverändert** | **neues** Coolify-Projekt, z. B. `audion-v3` |
 | Domain | bestehende Prod-URL | eigene Preview/Staging-URL (`v3.…` / `audion-v3.…`) |
-| DB / Volumes | V2 Postgres + Nebenstores | erst Fixtures; später **eigene** Product-DB |
+| DB / Volumes | V2 Postgres + Nebenstores | **eigene** Product-DB für Projects (`DATABASE_URL`); Personas+ noch Fixtures |
 | Auth | V2 Auth (wie heute) | Plexon Control Plane (`knowledge/plexon-federation.md`) |
 | Upstream APIs | V2 persona-/chat-api | optional Proxy auf **Kopie** oder Staging-APIs — nie Prod-V2 mutierend ohne Freigabe |
 | Secrets | V2 Env | eigene `AUTH_SECRET`, `PLEXON_*`, API keys |
 
 ## Was schon gilt (Code)
 
-- V3 Domain-Daten: Fixture-Stores (Wave 1)
+- V3 Projects: Postgres wenn `DATABASE_URL`, sonst Fixture-Store
+- V3 Personas/TGs/Journeys/Chat: Fixture-Stores
 - V3 Identity: Plexon (wenn Env gesetzt), sonst offener Fixture-Dev
 - Kein Shared Cookie mit Plexon / V2
-- Product Postgres in V3 **deferred** (`remaining-gaps.md`)
+- Personas+ Product Postgres weiter deferred (`remaining-gaps.md`)
 
 ## Empfohlene nächste Schritte (Reihenfolge)
 
