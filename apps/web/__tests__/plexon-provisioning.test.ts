@@ -116,8 +116,13 @@ describe('provisioning routes', () => {
       { params: Promise.resolve({ id: 'plat-1' }) },
     )
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { platformProjectId: string; projectId: string }
+    const body = (await res.json()) as {
+      platformProjectId: string
+      projectId: string
+      externalProjectId: string
+    }
     expect(body.platformProjectId).toBe('plat-1')
+    expect(body.externalProjectId).toBe(body.projectId)
     expect(storeProjectDetail(body.projectId)?.platformProjectId).toBe('plat-1')
   })
 })

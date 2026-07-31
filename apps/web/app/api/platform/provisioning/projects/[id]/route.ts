@@ -51,6 +51,8 @@ export async function PUT(
   })
   return jsonWithContract({
     status: 'applied',
+    /** Federation contract field consumed by PLEXON binding sync. */
+    externalProjectId: project.id,
     projectId: project.id,
     platformProjectId: platformProjectId.trim(),
   })
