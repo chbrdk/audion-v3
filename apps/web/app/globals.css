@@ -2546,6 +2546,25 @@ main { min-height: 100vh; }
   color: var(--muted);
 }
 
+.audion-ux-live {
+  margin: 0.5rem 0 0.75rem;
+  max-width: 42rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  min-height: 7.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audion-ux-live-frame {
+  width: 100%;
+  display: block;
+  object-fit: contain;
+}
+
 .audion-chat-composer-actions {
   display: flex;
   align-items: flex-end;

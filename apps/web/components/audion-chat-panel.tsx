@@ -23,6 +23,7 @@ import { ChatAnswer } from '../lib/chat/chat-answer'
 import { postChatStream } from '../lib/chat/stream-client'
 import { paths } from '../lib/paths'
 import { IconSend } from './nav-icons'
+import { UxJourneyLivePoll } from './ux-journey-live-poll'
 
 type Props = {
   personas: PersonaSummary[]
@@ -59,6 +60,7 @@ export function AudionChatPanel({
   const [toolBusy, setToolBusy] = useState(false)
   const [toolProgress, setToolProgress] = useState<string[]>([])
   const [toolComplete, setToolComplete] = useState<ChatToolCompleteEvent | null>(null)
+  const [inspectJobId, setInspectJobId] = useState<string | null>(null)
   const [convertBusy, setConvertBusy] = useState(false)
   const [convertedJourneyId, setConvertedJourneyId] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -86,6 +88,7 @@ export function AudionChatPanel({
     setPendingTool(null)
     setToolProgress([])
     setToolComplete(null)
+    setInspectJobId(null)
     setConvertedJourneyId(null)
     syncUrl({ personaId, conversationId: null })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- syncUrl closes over latest ids
@@ -147,12 +150,15 @@ export function AudionChatPanel({
       setPendingTool(event)
       setToolComplete(null)
       setToolProgress([])
+      setInspectJobId(null)
       setConvertedJourneyId(null)
     } else if (event.type === 'tool_started' || event.type === 'tool_progress') {
       setToolProgress((prev) => [...prev, event.message])
+      if ('jobId' in event && event.jobId) setInspectJobId(event.jobId)
     } else if (event.type === 'tool_complete') {
       setPendingTool(null)
       setToolComplete(event)
+      if (event.jobId) setInspectJobId(event.jobId)
     } else if (event.type === 'tool_denied') {
       setPendingTool(null)
       setToolProgress((prev) => [...prev, event.message])
@@ -175,6 +181,7 @@ export function AudionChatPanel({
     setBusy(true)
     setPendingTool(null)
     setToolComplete(null)
+    setInspectJobId(null)
     setToolProgress([])
     setConvertedJourneyId(null)
 
@@ -375,9 +382,26 @@ export function AudionChatPanel({
           </ul>
         ) : null}
 
+        {inspectJobId && !toolComplete ? <UxJourneyLivePoll jobId={inspectJobId} /> : null}
+
         {toolComplete ? (
           <div className="audion-chat-tool-complete">
             <p className="audion-edit-lede">{toolComplete.summary}</p>
+            {toolComplete.videoUrl || toolComplete.jobId ? (
+              <p className="audion-edit-lede">
+                <a
+                  className="audion-link"
+                  href={
+                    toolComplete.videoUrl ||
+                    paths.routes.apiUxJourneyAgentVideo(toolComplete.jobId || inspectJobId || '')
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open recording
+                </a>
+              </p>
+            ) : null}
             {allowConvert && toolComplete.convert && !convertedJourneyId ? (
               <Button
                 type="button"

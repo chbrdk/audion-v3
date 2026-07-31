@@ -1,0 +1,19 @@
+# UX Journey Agent for AUDION
+# Python 3.11+
+#
+# The browser-automation library is now our soft fork `audion-agent`,
+# vendored at `./audion-agent/` (forked from browser-use 0.12.6).
+# It is installed by the Dockerfile in a previous build step:
+#
+#     pip install /opt/audion-agent[video]
+#
+# So this requirements.txt only lists the *app-specific* extras on top of
+# what audion-agent already pulls in (FastAPI, uvicorn, playwright pin).
+#
+# For local development:
+#     cd apps/ux-journey-agent
+#     pip install -e ./audion-agent[video]
+#     pip install -r requirements.txt
+fastapi>=0.115.0
+uvicorn[standard]>=0.27.0
+playwright>=1.40.0

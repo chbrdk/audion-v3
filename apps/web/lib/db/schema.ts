@@ -183,3 +183,33 @@ export const personaChatPrompts = pgTable('persona_chat_prompts', {
 
 export type PersonaChatPromptRow = typeof personaChatPrompts.$inferSelect
 export type PersonaChatPromptInsert = typeof personaChatPrompts.$inferInsert
+
+/** Browser UX journey run summaries (chat inspect / studies). */
+export const personaUxJourneyRuns = pgTable(
+  'persona_ux_journey_runs',
+  {
+    id: text('id').primaryKey(),
+    personaId: text('persona_id').notNull(),
+    jobId: text('job_id').notNull(),
+    task: text('task').notNull(),
+    siteUrl: text('site_url').notNull(),
+    success: text('success'),
+    stepsCount: integer('steps_count').notNull().default(0),
+    scorecard: jsonb('scorecard').$type<Record<string, unknown> | null>(),
+    /** Step transcript for convert after agent restart. */
+    steps: jsonb('steps').$type<unknown[]>().notNull().default([]),
+    derivedJourneyId: text('derived_journey_id'),
+    projectId: text('project_id'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    personaJobUnique: uniqueIndex('persona_ux_journey_runs_persona_job_unique').on(
+      t.personaId,
+      t.jobId,
+    ),
+  }),
+)
+
+export type PersonaUxJourneyRunRow = typeof personaUxJourneyRuns.$inferSelect
+export type PersonaUxJourneyRunInsert = typeof personaUxJourneyRuns.$inferInsert

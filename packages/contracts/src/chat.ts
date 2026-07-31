@@ -84,6 +84,8 @@ export type ChatToolProgressEvent = {
   callId: string
   tool: ChatToolName
   message: string
+  jobId?: string | null
+  stepCount?: number | null
 }
 
 export type ChatToolCompleteEvent = {
@@ -99,6 +101,8 @@ export type ChatToolCompleteEvent = {
     task: string
     source: 'chat_inspect'
   } | null
+  jobId?: string | null
+  videoUrl?: string | null
 }
 
 export type ChatToolDeniedEvent = {

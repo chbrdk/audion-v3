@@ -44,8 +44,21 @@ describe('journey from UX run (stub)', () => {
     expect(again.journey.id).toBe(result.journey.id)
   })
 
-  it('requires study/wave/run in fixture mode', async () => {
-    expect(await runStubConvertUxRunToJourney({ jobId: 'x' })).toMatchObject({
+  it('treats bare jobId as chat_inspect convert', async () => {
+    const result = await runStubConvertUxRunToJourney({
+      jobId: 'job-abc',
+      url: 'https://example.com',
+      task: 'Find pricing',
+      mode: 'deterministic',
+    })
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+    expect(result.stubbed).toBe(true)
+    expect(result.journey.phaseCount).toBeGreaterThanOrEqual(3)
+  })
+
+  it('requires study/wave/run when not chat_inspect', async () => {
+    expect(await runStubConvertUxRunToJourney({ source: 'study_wave' })).toMatchObject({
       error: expect.stringContaining('required'),
       status: 400,
     })

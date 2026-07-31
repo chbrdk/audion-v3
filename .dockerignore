@@ -21,3 +21,6 @@ apps/web/test.setup.ts
 knowledge
 specs
 .cursor
+services/ux-journey-agent/**/__pycache__
+services/ux-journey-agent/**/*.pyc
+services/ux-journey-agent/.venv

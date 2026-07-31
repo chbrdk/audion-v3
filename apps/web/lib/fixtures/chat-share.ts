@@ -74,6 +74,16 @@ export function storeRegisterToolProposal(
   pending.set(event.callId, { ...event, ...meta })
 }
 
+export function storePeekToolProposal(callId: string): PendingTool | null {
+  return pending.get(callId) ?? null
+}
+
+export function storeConsumeToolProposal(callId: string): PendingTool | null {
+  const tool = pending.get(callId) ?? null
+  if (tool) pending.delete(callId)
+  return tool
+}
+
 export function* storeChatToolDecisionStream(
   callId: string,
   payload: ChatToolDecisionPayload,

@@ -133,6 +133,11 @@ export const paths = {
     apiChatConversations: '/api/chat/conversations',
     apiChatConversationDetail: (id: string) => `/api/chat/conversations/${id}`,
     apiChatToolDecision: (callId: string) => `/api/chat/tool-call/decision/${callId}`,
+    apiUxJourneyAgentRun: (jobId: string) => `/api/ux-journey-agent/run/${jobId}`,
+    apiUxJourneyAgentLive: (jobId: string) => `/api/ux-journey-agent/run/${jobId}/live`,
+    apiUxJourneyAgentLiveStream: (jobId: string) =>
+      `/api/ux-journey-agent/run/${jobId}/live/stream`,
+    apiUxJourneyAgentVideo: (jobId: string) => `/api/ux-journey-agent/run/${jobId}/video`,
     apiChatTavusSession: '/api/chat/tavus/session',
     apiChatVoiceStream: '/api/chat/voice/stream',
     /** Upstream persona-api / persona-admin Tavus session (live proxy). */

@@ -33,10 +33,30 @@ NEXT_PUBLIC_PLEXON_REGISTER_URL=https://plexon-v3.projects-a.plygrnd.tech/regist
 NEXT_PERSONA_DATA_SOURCE=fixtures
 NEXT_AI_RUNTIME=auto
 OPENAI_API_KEY=<secret>
+# UX Journey Agent (browser website exploration) — Coolify service audion-v3-ux-journey-agent
+UX_JOURNEY_AGENT_URL=http://audion-v3-ux-journey-agent:8320
+UX_JOURNEY_AGENT_SECRET=<shared-with-agent-service>
 # optional:
 # AI_OPENAI_MODEL=gpt-5.4-mini
 # AI_OPENAI_IMAGE_MODEL=gpt-image-1-mini
 PORT=3000
+```
+
+### Coolify app `audion-v3-ux-journey-agent`
+
+| Setting | Value |
+|---------|--------|
+| Repo | `audion-v3` |
+| Base directory | `services/ux-journey-agent` |
+| Dockerfile | `Dockerfile` |
+| Port | `8320` |
+| Volume | e.g. `/data/journey-videos` → `UX_JOURNEY_VIDEO_DIR` |
+
+```bash
+UX_JOURNEY_AGENT_SECRET=<same as web>
+UX_JOURNEY_VIDEO_DIR=/data/journey-videos
+OPENAI_API_KEY=<secret>
+# and/or ANTHROPIC_API_KEY=
 ```
 
 ### Postgres (Coolify)
