@@ -38,6 +38,11 @@ export function storeGetProvisionedUser(plexonUserId: string) {
   return provisionedUsers.get(plexonUserId) ?? null
 }
 
+export function storeGetByPlatformProjectId(platformProjectId: string): ProjectDetail | null {
+  const existing = projects.find((p) => p.platformProjectId === platformProjectId)
+  return existing ? withDerived(existing) : null
+}
+
 export function storeUpsertByPlatformProjectId(
   platformProjectId: string,
   data: {

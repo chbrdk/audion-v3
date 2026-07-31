@@ -5,12 +5,43 @@ import {
   isProvisioningAuthorized,
 } from '../../../../../../lib/plexon-contract'
 import { getPlexonServiceSecret } from '../../../../../../lib/runtime-config'
-import { storeUpsertByPlatformProjectId } from '../../../../../../lib/fixtures/project-store'
+import {
+  storeGetByPlatformProjectId,
+  storeUpsertByPlatformProjectId,
+} from '../../../../../../lib/fixtures/project-store'
 
 function jsonWithContract(body: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers)
   headers.set(PLEXON_CONTRACT_VERSION_HEADER, PLEXON_FEDERATION_CONTRACT_VERSION)
   return NextResponse.json(body, { ...init, headers })
+}
+
+/** Dashboard BFF: persona summary for a mirrored platform project. */
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  const secret = getPlexonServiceSecret()
+  if (!isProvisioningAuthorized(request, secret)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const plexonUserId = request.headers.get('X-Plexon-User-Id')?.trim()
+  if (!plexonUserId) {
+    return NextResponse.json({ error: 'X-Plexon-User-Id required' }, { status: 400 })
+  }
+  const { id: platformProjectId } = await context.params
+  if (!platformProjectId?.trim()) {
+    return NextResponse.json({ error: 'platform project id required' }, { status: 400 })
+  }
+  const project = storeGetByPlatformProjectId(platformProjectId.trim())
+  if (!project) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  return jsonWithContract({
+    externalProjectId: project.id,
+    personaCount: project.personaCount ?? 0,
+    platformProjectId: platformProjectId.trim(),
+  })
 }
 
 export async function PUT(
