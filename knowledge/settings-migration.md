@@ -40,7 +40,7 @@ Nav: `msqdx-glass-admin-layout.tsx` — separate Profile + Settings items.
 | Display name (ECHON local or map from auth name) | Server profile email/company/avatar URL (needs auth) |
 | Theme toggle (ECHON-style) | Brand/sidebar color (v2 MUI glass) |
 | Locale toggle | Password change |
-| **Admin hub** `/settings/admin` — providers status, prompts+test, API catalog (`knowledge/settings-admin-2026.md`) | API tokens CRUD |
+| **Admin hub** `/settings/admin` — providers, prompts+edit, API tokens, API catalog (`knowledge/settings-admin-2026.md`, `knowledge/settings-api-tokens-2026.md`) | — |
 | Account band + logout (Plexon Wave 1) | Full V2 PromptBuilder edit/persist |
 
 ## C) audion-v3 (shipped 2026-07-30; Account Wave 1 2026-07-30; Admin hub 2026-07-30)
@@ -63,6 +63,6 @@ Single page `/settings` (ECHON chrome, not v2 card-landing):
 4. **Language** — LocaleToggle.
 5. **Admin** — link to `/settings/admin` (providers / prompts test / API docs).
 6. Enable rail avatar → `paths.routes.settings`; active when pathname starts with settings.
-7. Do not port API token CRUD yet.
+7. API token CRUD lives under `/settings/admin/tokens` (see `knowledge/settings-api-tokens-2026.md`).
 
 Clone order: see `knowledge/workspace-slice-pattern.md` (settings is prefs-only — lighter than domain slices; still add paths + specs + tests).

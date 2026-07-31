@@ -61,3 +61,29 @@ export type SettingsAssistPromptTestResponse = {
     description?: string | null
   }>
 }
+
+/** API tokens — list never includes secrets. */
+export type SettingsApiTokenSummary = {
+  id: string
+  name: string | null
+  createdAt: string
+}
+
+export type SettingsApiTokenListResponse = {
+  items: SettingsApiTokenSummary[]
+}
+
+export type SettingsApiTokenCreateRequest = {
+  name?: string | null
+}
+
+export type SettingsApiTokenCreateResponse = SettingsApiTokenSummary & {
+  /** Raw Bearer token — shown once. */
+  token: string
+}
+
+export type SettingsApiTokenVerifyResponse = {
+  ok: true
+  ownerId: string
+  tokenId: string
+}

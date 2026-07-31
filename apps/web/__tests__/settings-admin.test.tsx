@@ -20,13 +20,16 @@ vi.mock('next-auth/react', () => ({
 describe('SettingsAdminHubPanel', () => {
   afterEach(() => cleanup())
 
-  it('links to providers, prompts, and api-docs', () => {
+  it('links to providers, prompts, tokens, and api-docs', () => {
     render(<SettingsAdminHubPanel />)
     expect(screen.getByRole('link', { name: /Providers/i }).getAttribute('href')).toBe(
       paths.routes.settingsAdminProviders,
     )
     expect(screen.getByRole('link', { name: /Prompts/i }).getAttribute('href')).toBe(
       paths.routes.settingsAdminPrompts,
+    )
+    expect(screen.getByRole('link', { name: /API tokens/i }).getAttribute('href')).toBe(
+      paths.routes.settingsAdminTokens,
     )
     expect(screen.getByRole('link', { name: /API docs/i }).getAttribute('href')).toBe(
       paths.routes.settingsAdminApiDocs,

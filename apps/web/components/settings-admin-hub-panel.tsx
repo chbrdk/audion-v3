@@ -15,6 +15,11 @@ const ADMIN_CARDS = [
     meta: 'Assist templates and test',
   },
   {
+    href: paths.routes.settingsAdminTokens,
+    title: 'API tokens',
+    meta: 'Personal Bearer tokens',
+  },
+  {
     href: paths.routes.settingsAdminApiDocs,
     title: 'API docs',
     meta: 'Route catalog and health',

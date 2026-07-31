@@ -33,6 +33,11 @@ export const paths = {
   projectFixturesPath: 'apps/web/lib/fixtures/projects.ts',
   projectStorePath: 'apps/web/lib/fixtures/project-store.ts',
   queueStorePath: 'apps/web/lib/fixtures/queue-store.ts',
+  apiTokensStorePath: 'apps/web/lib/fixtures/api-tokens-store.ts',
+  /** V2-compatible personal API token prefix (`audion_` + hex). */
+  apiTokenPrefix: 'audion_',
+  apiTokenBytes: 32,
+  apiTokenFixtureOwnerId: 'local-admin',
   uxStudyFixturesPath: 'apps/web/lib/fixtures/ux-studies.ts',
   uxStudyStorePath: 'apps/web/lib/fixtures/ux-study-store.ts',
   /** Demo target for EBM Produktkombinationen (central key; resolve via backend/urls) */
@@ -139,11 +144,16 @@ export const paths = {
     settingsAdminProviders: '/settings/admin/providers',
     settingsAdminPrompts: '/settings/admin/prompts',
     settingsAdminApiDocs: '/settings/admin/api-docs',
+    settingsAdminTokens: '/settings/admin/tokens',
     apiSettingsProviders: '/api/settings/providers',
     apiSettingsPrompts: '/api/settings/prompts',
     apiSettingsPromptDetail: (templateId: string) =>
       `/api/settings/prompts/${encodeURIComponent(templateId)}`,
     apiSettingsPromptTest: '/api/settings/prompts/test',
+    apiSettingsTokens: '/api/settings/tokens',
+    apiSettingsTokenDetail: (tokenId: string) =>
+      `/api/settings/tokens/${encodeURIComponent(tokenId)}`,
+    apiSettingsTokenVerify: '/api/settings/tokens/verify',
     queue: '/queue',
     apiQueueStats: '/api/queue/stats',
     apiQueueJobs: '/api/queue/jobs',

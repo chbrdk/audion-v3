@@ -28,6 +28,18 @@ const API_CATALOG: Array<{ group: string; routes: Array<{ method: string; path: 
           note: 'Reset assist template override',
         },
         { method: 'POST', path: paths.routes.apiSettingsPromptTest, note: 'Assist prompt test' },
+        { method: 'GET', path: paths.routes.apiSettingsTokens, note: 'List API tokens' },
+        { method: 'POST', path: paths.routes.apiSettingsTokens, note: 'Create API token' },
+        {
+          method: 'DELETE',
+          path: paths.routes.apiSettingsTokenDetail('{id}'),
+          note: 'Revoke API token',
+        },
+        {
+          method: 'POST',
+          path: paths.routes.apiSettingsTokenVerify,
+          note: 'Verify Bearer API token',
+        },
       ],
     },
     {

@@ -57,7 +57,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 |------|-------|
 | ~~Auth~~ | **Done Wave 1** — `/login`, logout, Plexon session (`knowledge/plexon-federation.md`); open when unconfigured |
 | ~~Queue~~ | **Done 2026-07-30** — `/queue` fixture dashboard (`knowledge/queue-dashboard-2026.md`) |
-| ~~Settings admin~~ | **Done 2026-07-30** — hub `/settings/admin`; ~~prompt port + edit/override~~ **Done 2026-07-31** (`knowledge/v2-prompt-templating-parity-2026-07-31.md`); API tokens still open |
+| ~~Settings admin~~ | **Done 2026-07-30** — hub `/settings/admin`; ~~prompt port + edit/override~~ **Done 2026-07-31**; ~~API tokens CRUD~~ **Done 2026-07-31** (`knowledge/settings-api-tokens-2026.md`) |
 | Chat modalities | ~~Public share, moodboard drawer, inspect/convert~~ **Done 2026-07-30** (`knowledge/chat-modalities-2026.md`); Voice/Tavus thin hooks |
 | ~~Easy Setup~~ | **Done 2026-07-30** — `/setup` + `POST /api/projects/bootstrap` (`knowledge/easy-setup-2026.md`) |
 
@@ -73,7 +73,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 ## Deferred depth (detail pointers)
 
 - Projects: federation, project prompts — `project-migration-map.md`; ~~bootstrap~~ → `easy-setup-2026.md`
-- Settings: full admin stack — ~~hub shipped~~ `settings-admin-2026.md`; tokens still open — `settings-migration.md`
+- Settings: full admin stack — ~~hub + prompts + tokens shipped~~ `settings-admin-2026.md` / `settings-api-tokens-2026.md` — `settings-migration.md`
 - Personas: see `persona-magazine.md` / `persona-migration-map.md`
 - TGs: `target-group-migration-map.md`
 - Journeys + Chat: `journeys-chat-gaps.md`
