@@ -2,6 +2,7 @@ import type { NextConfig } from 'next'
 import path from 'node:path'
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['pg', 'drizzle-orm'],
   webpack: (config) => {
     config.resolve = config.resolve || {}
     config.resolve.alias = {

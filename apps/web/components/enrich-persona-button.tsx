@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { EnrichPersonaResponse } from '@audion-v3/contracts'
 import { ConfirmDialog } from '../lib/msqdx-ui-client'
-import { targetHint } from '../lib/ai-workflows'
+import { targetHint } from '../lib/ai-workflow-targets'
 import { paths } from '../lib/paths'
 import { AiActionButton } from './ai-action-button'
 

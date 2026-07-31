@@ -4,7 +4,7 @@ import React, { useEffect, useId, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { GeneratePersonaAvatarResponse } from '@audion-v3/contracts'
 import { Avatar, Button } from '@msqdx/ui'
-import { targetHint } from '../lib/ai-workflows'
+import { targetHint } from '../lib/ai-workflow-targets'
 import { paths } from '../lib/paths'
 import { AiActionButton } from './ai-action-button'
 

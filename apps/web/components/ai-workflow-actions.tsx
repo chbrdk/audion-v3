@@ -12,7 +12,7 @@ import type {
 } from '@audion-v3/contracts'
 import { Button, Field, Input, Textarea } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
-import { AI_WORKFLOW_TARGETS, targetHint } from '../lib/ai-workflows'
+import { AI_WORKFLOW_TARGETS, targetHint } from '../lib/ai-workflow-targets'
 import { paths } from '../lib/paths'
 import { AiActionButton } from './ai-action-button'
 

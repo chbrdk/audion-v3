@@ -18,16 +18,11 @@ import {
   newKnowledgeChapterId,
   resolveKnowledgeChapters,
 } from '../project-knowledge'
-import { isProjectsDatabaseConfigured } from '../db/client'
-import {
-  dbApplyPlatformBinding,
-  dbCreateProject,
-  dbGetByPlatformProjectId,
-  dbPatchProject,
-  dbProjectDetail,
-  dbProjectList,
-  dbUpsertByPlatformProjectId,
-} from '../db/projects'
+import { isProjectsDatabaseConfigured } from '../db/config'
+
+async function dbApi() {
+  return import('../db/projects')
+}
 
 let projects: ProjectDetail[] = DEMO_PROJECTS.map((p) => structuredClone(p))
 
@@ -257,7 +252,10 @@ function memoryUpsertByPlatformProjectId(
 export async function storeGetByPlatformProjectId(
   platformProjectId: string,
 ): Promise<ProjectDetail | null> {
-  if (isProjectsDatabaseConfigured()) return dbGetByPlatformProjectId(platformProjectId)
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbGetByPlatformProjectId(platformProjectId)
+  }
   return memoryGetByPlatformProjectId(platformProjectId)
 }
 
@@ -270,17 +268,26 @@ export async function storeUpsertByPlatformProjectId(
     status: 'active' | 'archived'
   },
 ): Promise<ProjectDetail> {
-  if (isProjectsDatabaseConfigured()) return dbUpsertByPlatformProjectId(platformProjectId, data)
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbUpsertByPlatformProjectId(platformProjectId, data)
+  }
   return memoryUpsertByPlatformProjectId(platformProjectId, data)
 }
 
 export async function storeProjectList(): Promise<ProjectList> {
-  if (isProjectsDatabaseConfigured()) return dbProjectList()
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbProjectList()
+  }
   return memoryProjectList()
 }
 
 export async function storeProjectDetail(id: string): Promise<ProjectDetail | null> {
-  if (isProjectsDatabaseConfigured()) return dbProjectDetail(id)
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbProjectDetail(id)
+  }
   return memoryProjectDetail(id)
 }
 
@@ -288,7 +295,10 @@ export async function storeCreateProject(
   payload: ProjectWritePayload,
   options?: ProjectCreateOptions,
 ): Promise<ProjectDetail> {
-  if (isProjectsDatabaseConfigured()) return dbCreateProject(payload, options)
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbCreateProject(payload, options)
+  }
   return memoryCreateProject(payload, options)
 }
 
@@ -300,7 +310,10 @@ export async function storeApplyPlatformBinding(
     ownerPlexonUserId?: string | null
   },
 ): Promise<ProjectDetail | null> {
-  if (isProjectsDatabaseConfigured()) return dbApplyPlatformBinding(id, binding)
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbApplyPlatformBinding(id, binding)
+  }
   return memoryApplyPlatformBinding(id, binding)
 }
 
@@ -308,6 +321,9 @@ export async function storePatchProject(
   id: string,
   payload: Partial<ProjectWritePayload>,
 ): Promise<ProjectDetail | null> {
-  if (isProjectsDatabaseConfigured()) return dbPatchProject(id, payload)
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbPatchProject(id, payload)
+  }
   return memoryPatchProject(id, payload)
 }

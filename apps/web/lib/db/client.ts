@@ -18,8 +18,6 @@ export function getDb() {
   return globalForDb.__audionV3Db.db
 }
 
-export function isProjectsDatabaseConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL?.trim())
-}
+export { isProjectsDatabaseConfigured } from './config'
 
 export type Db = ReturnType<typeof createDb>['db']

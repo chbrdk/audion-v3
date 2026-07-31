@@ -9,7 +9,7 @@ import type {
 } from '@audion-v3/contracts'
 import { Button, EmptyState, SectionChrome } from '@msqdx/ui'
 import { Dialog } from '../lib/msqdx-ui-client'
-import { targetHint } from '../lib/ai-workflows'
+import { targetHint } from '../lib/ai-workflow-targets'
 import { paths } from '../lib/paths'
 import {
   blankPersonaVisualTile,
