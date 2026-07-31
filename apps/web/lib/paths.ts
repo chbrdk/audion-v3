@@ -150,6 +150,9 @@ export const paths = {
     apiSettingsPromptDetail: (templateId: string) =>
       `/api/settings/prompts/${encodeURIComponent(templateId)}`,
     apiSettingsPromptTest: '/api/settings/prompts/test',
+    apiSettingsPersonaPrompts: '/api/settings/persona-prompts',
+    apiSettingsPersonaPromptDetail: (personaId: string) =>
+      `/api/settings/persona-prompts/${encodeURIComponent(personaId)}`,
     apiSettingsTokens: '/api/settings/tokens',
     apiSettingsTokenDetail: (tokenId: string) =>
       `/api/settings/tokens/${encodeURIComponent(tokenId)}`,

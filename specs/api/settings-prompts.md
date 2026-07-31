@@ -52,8 +52,17 @@ Empty strings clear that field on the override. At least one of `system` / `user
   persona_profile?: string
   max_items?: string
   vars?: Record<string, string>  // optional extra ${} vars
+  /** Unsaved editor bodies — test without persisting override */
+  system?: string
+  prompt?: string
 }
 ```
+
+When `system` / `prompt` are provided, the test run uses them instead of the stored resolved template (V2 `testPrompt` parity).
+
+## Related
+
+Persona chat prompts: `specs/api/settings-persona-prompts.md` · workspace: `specs/domain/prompt-builder-workspace.md`
 
 ## Errors
 
@@ -67,4 +76,5 @@ Empty strings clear that field on the override. At least one of `system` / `user
 
 1. List returns ported labels and full bodies for editing.
 2. PUT then GET shows `overridden: true` and merged text.
-3. DELETE restores base; test uses resolved template.
+3. DELETE restores base; test uses resolved template (or unsaved `prompt`/`system` when sent).
+4. Prompt Builder workspace can Save and Test from the same surface.

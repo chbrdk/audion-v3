@@ -210,7 +210,10 @@ export async function testAssistPrompt(
     }
   }
 
-  const result = await runAssist(templateId, vars)
+  const result = await runAssist(templateId, vars, {
+    system: body.system,
+    prompt: body.prompt,
+  })
   if ('error' in result) {
     return { error: result.detail || result.error, status: result.status || 502 }
   }

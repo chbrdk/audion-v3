@@ -57,7 +57,7 @@
 - Shared WizardSteps: same barrel (`apps/web/lib/msqdx-ui.ts`) · source `msqdx-ui/packages/ui/src/components/WizardSteps.tsx`
 - Wave detail DS: `StatLede`/`StatLedeGroup`, `StatusDot`, `StatusMeterPanel` — also re-exported via `apps/web/lib/msqdx-ui.ts`
 - Settings route: `/settings` (`paths.routes.settings`)
-- Settings Admin hub: `/settings/admin*` · `paths.routes.settingsAdmin*` · `apiSettingsProviders` / `apiSettingsPrompts` / `apiSettingsPromptDetail` / `apiSettingsPromptTest` / `apiSettingsTokens*` · `knowledge/settings-admin-2026.md` · `knowledge/settings-api-tokens-2026.md` · prompt templating `knowledge/v2-prompt-templating-parity-2026-07-31.md` · `specs/domain/prompt-templating.md` · `specs/domain/settings-api-tokens.md`
+- Settings Admin hub: `/settings/admin*` · `paths.routes.settingsAdmin*` · `apiSettingsProviders` / `apiSettingsPrompts` / `apiSettingsPromptDetail` / `apiSettingsPromptTest` / `apiSettingsPersonaPrompts*` / `apiSettingsTokens*` · `knowledge/settings-admin-2026.md` · `knowledge/settings-api-tokens-2026.md` · `knowledge/prompt-builder-workspace-2026.md` · prompt templating `knowledge/v2-prompt-templating-parity-2026-07-31.md` · `specs/domain/prompt-templating.md` · `specs/domain/prompt-builder-workspace.md` · `specs/domain/settings-api-tokens.md`
 - Queue dashboard: `/queue` · `paths.routes.queue` · `apiQueueStats` / `apiQueueJobs` / `apiQueueJobDetail` / `apiQueueJobRetry` · store `paths.queueStorePath` · `knowledge/queue-dashboard-2026.md`
 - User prefs keys: `audion.v3.displayName` · `audion.v3.theme` · `audion.v3.locale`
 - Workspace slice clone pattern: `knowledge/workspace-slice-pattern.md`

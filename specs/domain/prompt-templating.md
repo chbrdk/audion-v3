@@ -41,13 +41,16 @@ Call sites pass thin string maps. Shared helpers fill persona/journey fields:
 
 ## Admin surface
 
-`/settings/admin/prompts`: list templates, view/edit `system` + `user`/`prompt`, test, save override, reset to base.
+`/settings/admin/prompts` — full-height **Prompt Builder workspace** (see `specs/domain/prompt-builder-workspace.md`):
+
+- Assist catalog + Persona chat prompts
+- Variable palette (click/drag insert), live preview, Save in toolbar, Test
 
 ## Non-goals (this wave)
 
 - Per-project overrides (Postgres)
-- Full V2 PromptBuilder chrome / variable palette
-- Chat `persona_prompts` builder + DE translate templates (catalog may include ids later)
+- Extended entity resolvers in live preview
+- Create/delete new assist template ids
 - Avatar DB `{{ name }}` templates
 - Prompt cache prefix/suffix split
 
@@ -57,4 +60,5 @@ Call sites pass thin string maps. Shared helpers fill persona/journey fields:
 2. `${var}` and `{{var}}` both substitute; locale footer present on native runs.
 3. Overrides persist in-process (fixture store) and apply on `runAssist`.
 4. Suggest-field + journey moments native paths pass rich context vars.
-5. Specs + tests + knowledge updated.
+5. Prompt Builder workspace ships Assist + Persona bands with Save/Test.
+6. Specs + tests + knowledge updated.

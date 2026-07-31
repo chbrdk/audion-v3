@@ -28,9 +28,9 @@
 ## Still deferred
 
 - Per-project overrides (Postgres)
-- Extended `${persona:${id}.…}` / knowledge resolvers
-- Full PromptBuilder chrome
-- Chat `persona_prompts` builder wiring (templates ported, not product-wired)
+- Extended `${persona:${id}.…}` / knowledge resolvers in live preview
+- Full PromptBuilder chrome → **shipped** `knowledge/prompt-builder-workspace-2026.md`
+- Chat `persona_prompts` builder → **shipped** (fixture store + rail band)
 - Avatar DB `{{ name }}` templates
 - Prompt cache prefix/suffix split
 

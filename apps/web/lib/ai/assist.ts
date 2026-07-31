@@ -93,11 +93,20 @@ function suggestionsFromJson(json: unknown, prefix: string): AiSuggestionItem[] 
 export async function runAssist(
   templateId: AssistTemplateId,
   vars: Record<string, string>,
+  override?: { system?: string | null; prompt?: string | null },
 ): Promise<AssistResult> {
   if (!isAssistTemplateId(templateId)) {
     return { error: 'Unknown assist template', status: 400, detail: templateId }
   }
-  const template = getAssistTemplate(templateId)
+  const base = getAssistTemplate(templateId)
+  const template = {
+    ...base,
+    system: override?.system?.trim() ? override.system : base.system,
+    prompt: override?.prompt?.trim()
+      ? override.prompt
+      : base.prompt,
+    user: override?.prompt?.trim() ? '' : base.user,
+  }
   try {
     const client = createOpenAiClient()
     const { system, user } = renderTemplate(template, vars)

@@ -1,0 +1,208 @@
+/**
+ * Prompt Builder workspace styles — magazine tokens, no purple/glow.
+ * Spec: specs/domain/prompt-builder-workspace.md
+ */
+
+.pb-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: calc(100vh - 10rem);
+}
+
+.pb-workspace__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.pb-workspace__toolbar-meta {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.pb-workspace__toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pb-workspace__body {
+  display: flex;
+  flex: 1;
+  min-height: 28rem;
+  gap: 0;
+  border: 1px solid var(--msqdx-color-border, rgba(0, 0, 0, 0.12));
+  border-radius: 2px;
+  background: var(--msqdx-color-bg, #fff);
+  overflow: hidden;
+}
+
+.pb-workspace__center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  overflow: auto;
+}
+
+.pb-workspace__right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  overflow: auto;
+  height: 100%;
+}
+
+.pb-resizable {
+  position: relative;
+  display: flex;
+  background: var(--msqdx-color-bg-subtle, rgba(0, 0, 0, 0.03));
+  border-inline-end: 1px solid var(--msqdx-color-border, rgba(0, 0, 0, 0.1));
+}
+
+.pb-resizable--right {
+  border-inline-end: none;
+  border-inline-start: 1px solid var(--msqdx-color-border, rgba(0, 0, 0, 0.1));
+}
+
+.pb-resizable__body {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 0.75rem;
+}
+
+.pb-resizable__handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  border: 0;
+  padding: 0;
+  cursor: col-resize;
+  background: transparent;
+}
+
+.pb-resizable--left .pb-resizable__handle {
+  right: -3px;
+}
+
+.pb-resizable--right .pb-resizable__handle {
+  left: -3px;
+}
+
+.pb-resizable__handle:hover,
+.pb-resizable__handle:focus-visible {
+  background: var(--msqdx-color-border, rgba(0, 0, 0, 0.2));
+}
+
+.pb-rail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pb-rail__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.pb-rail__item:hover {
+  background: var(--msqdx-color-bg, #fff);
+  border-color: var(--msqdx-color-border, rgba(0, 0, 0, 0.08));
+}
+
+.pb-rail__item--active {
+  background: var(--msqdx-color-bg, #fff);
+  border-color: var(--msqdx-color-fg, #111);
+}
+
+.pb-rail__item-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pb-rail__item-meta {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.pb-palette__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pb-palette__heading {
+  margin: 0.5rem 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+}
+
+.pb-editor__textarea {
+  width: 100%;
+  min-height: 18rem;
+  font-family: var(--msqdx-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.pb-editor--drag {
+  outline: 1px dashed var(--msqdx-color-fg, #111);
+  outline-offset: 2px;
+}
+
+.pb-preview__pre,
+.pb-output__pre {
+  margin: 0;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--msqdx-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  background: var(--msqdx-color-bg-subtle, rgba(0, 0, 0, 0.04));
+  border-radius: 2px;
+  max-height: 20rem;
+  overflow: auto;
+}
+
+.pb-output__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.pb-mock-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}

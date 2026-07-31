@@ -47,6 +47,9 @@ export type SettingsAssistPromptTestRequest = {
   max_items?: string | null
   /** Extra ${var} values merged into the render context. */
   vars?: Record<string, string> | null
+  /** Unsaved editor bodies for test-without-save. */
+  system?: string | null
+  prompt?: string | null
 }
 
 export type SettingsAssistPromptTestResponse = {
@@ -86,4 +89,32 @@ export type SettingsApiTokenVerifyResponse = {
   ok: true
   ownerId: string
   tokenId: string
+}
+
+/** Persona chat system prompts (admin Prompt Builder). */
+export type SettingsPersonaPromptSummary = {
+  personaId: string
+  name: string
+  hasCustom: boolean
+  updatedAt: string | null
+}
+
+export type SettingsPersonaPromptListResponse = {
+  items: SettingsPersonaPromptSummary[]
+}
+
+export type SettingsPersonaPromptDetail = {
+  personaId: string
+  name: string
+  systemPrompt: string
+  systemPromptDe: string | null
+  templateVersion: string
+  hasCustom: boolean
+  updatedAt: string | null
+}
+
+export type SettingsPersonaPromptUpdateRequest = {
+  systemPrompt: string
+  systemPromptDe?: string | null
+  templateVersion?: string | null
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SettingsAdminHubPanel } from '../components/settings-admin-hub-panel'
 import { SettingsAdminPromptsPanel } from '../components/settings-admin-prompts-panel'
@@ -57,8 +57,8 @@ describe('SettingsAdminPromptsPanel', () => {
     vi.unstubAllGlobals()
   })
 
-  it('loads templates and shows stub test result', async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+  it('renders Prompt Builder workspace after catalog load', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
       if (url === paths.routes.apiSettingsPrompts) {
         return new Response(
@@ -72,41 +72,19 @@ describe('SettingsAdminPromptsPanel', () => {
                 json: true,
                 overridden: false,
                 system: 'sys',
-                user: 'user body',
-                prompt: 'PROMPT ${max_items}',
+                user: 'PROMPT',
+                prompt: 'PROMPT',
               },
             ],
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         )
       }
-      if (url === paths.routes.apiSettingsPromptTest && init?.method === 'POST') {
-        return new Response(
-          JSON.stringify({
-            stubbed: true,
-            templateId: 'persona.interests',
-            text: '{"items":[{"title":"Stub suggestion"}]}',
-            json: { items: [{ title: 'Stub suggestion' }] },
-            suggestions: [{ id: 's1', title: 'Stub suggestion' }],
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        )
-      }
-      if (url.includes('/api/settings/prompts/persona.interests') && init?.method === 'PUT') {
-        return new Response(
-          JSON.stringify({
-            id: 'persona.interests',
-            label: 'Interests',
-            description: 'desc',
-            category: 'persona',
-            json: true,
-            overridden: true,
-            system: 'sys',
-            user: 'saved',
-            prompt: 'saved',
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        )
+      if (url === paths.routes.apiSettingsPersonaPrompts) {
+        return new Response(JSON.stringify({ items: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
       }
       return new Response('not found', { status: 404 })
     })
@@ -114,13 +92,8 @@ describe('SettingsAdminPromptsPanel', () => {
 
     render(<SettingsAdminPromptsPanel />)
     await waitFor(() => {
-      expect(screen.getByTestId('settings-admin-prompt-test')).toBeTruthy()
+      expect(screen.getByTestId('prompt-builder-workspace')).toBeTruthy()
+      expect(screen.getByTestId('pb-editor')).toBeTruthy()
     })
-    expect(screen.getByTestId('settings-admin-prompt-body')).toBeTruthy()
-    fireEvent.click(screen.getByTestId('settings-admin-prompt-test'))
-    await waitFor(() => {
-      expect(screen.getByTestId('settings-admin-prompt-result')).toBeTruthy()
-    })
-    expect(screen.getByTestId('settings-admin-prompt-result').textContent).toMatch(/Stubbed/i)
   })
 })

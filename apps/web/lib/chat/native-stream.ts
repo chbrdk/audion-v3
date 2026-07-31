@@ -4,29 +4,15 @@
 
 import type { ChatSendPayload, ChatStreamEvent } from '@audion-v3/contracts'
 import { createOpenAiClient, getAiOpenAiModel, toAiNativeError } from '../ai/client'
-import { storePersonaDetail } from '../fixtures/persona-store'
 import {
   storeChatAppendAssistant,
   storeChatBeginUserTurn,
 } from '../fixtures/chat-store'
 import { maybeProposeInspectWebsite } from '../fixtures/chat-share'
+import { resolvePersonaSystemPrompt } from '../fixtures/persona-prompts-store'
 
 function systemPromptForPersona(personaId: string): string {
-  const persona = storePersonaDetail(personaId)
-  if (!persona) {
-    return 'You are a helpful audience research assistant speaking as a persona.'
-  }
-  return [
-    `You are ${persona.name}, ${persona.role}.`,
-    persona.bio ? `Bio: ${persona.bio}` : '',
-    persona.archetype ? `Archetype: ${persona.archetype}` : '',
-    `Interests: ${persona.interests.join(', ') || 'n/a'}`,
-    `Values: ${persona.values.join(', ') || 'n/a'}`,
-    'Answer in first person as this persona. Be concrete, magazine-brief, and evidence-minded.',
-    'Use short markdown (## headings, lists) when helpful.',
-  ]
-    .filter(Boolean)
-    .join('\n')
+  return resolvePersonaSystemPrompt(personaId)
 }
 
 /** Async generator of NDJSON chat events for native OpenAI streaming. */

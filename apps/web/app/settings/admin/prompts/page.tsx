@@ -3,7 +3,7 @@ import { SettingsAdminPromptsPanel } from '../../../../components/settings-admin
 
 export default function SettingsAdminPromptsPage() {
   return (
-    <AppShell title="Prompts" description="Native assist templates and prompt test.">
+    <AppShell title="Prompts" description="Prompt Builder — Assist templates and persona chat prompts.">
       <SettingsAdminPromptsPanel />
     </AppShell>
   )

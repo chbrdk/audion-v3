@@ -40,6 +40,16 @@ const API_CATALOG: Array<{ group: string; routes: Array<{ method: string; path: 
           path: paths.routes.apiSettingsTokenVerify,
           note: 'Verify Bearer API token',
         },
+        {
+          method: 'GET',
+          path: paths.routes.apiSettingsPersonaPrompts,
+          note: 'List persona chat prompts',
+        },
+        {
+          method: 'PUT',
+          path: paths.routes.apiSettingsPersonaPromptDetail('{id}'),
+          note: 'Upsert persona chat prompt',
+        },
       ],
     },
     {

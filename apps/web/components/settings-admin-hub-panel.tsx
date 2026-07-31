@@ -12,7 +12,7 @@ const ADMIN_CARDS = [
   {
     href: paths.routes.settingsAdminPrompts,
     title: 'Prompts',
-    meta: 'Assist templates and test',
+    meta: 'Prompt Builder workspace',
   },
   {
     href: paths.routes.settingsAdminTokens,

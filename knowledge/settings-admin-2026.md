@@ -8,7 +8,7 @@ Magazine ops surface for providers status, assist prompt edit/test, API tokens, 
 |----|------|----------|
 | Hub | `/settings/admin` | `paths.routes.settingsAdmin` |
 | Providers | `/settings/admin/providers` | `settingsAdminProviders` |
-| Prompts | `/settings/admin/prompts` | `settingsAdminPrompts` |
+| Prompts | `/settings/admin/prompts` | `settingsAdminPrompts` — Prompt Builder workspace |
 | API tokens | `/settings/admin/tokens` | `settingsAdminTokens` |
 | API docs | `/settings/admin/api-docs` | `settingsAdminApiDocs` |
 
@@ -23,7 +23,8 @@ Entry: **Admin** section on `/settings` → Open settings admin.
 | GET | `/api/settings/prompts/[id]` | Single resolved template |
 | PUT | `/api/settings/prompts/[id]` | Upsert global fixture override |
 | DELETE | `/api/settings/prompts/[id]` | Reset override → base catalog |
-| POST | `/api/settings/prompts/test` | Run assist (native) or stub payload |
+| GET | `/api/settings/persona-prompts` | List persona chat prompts |
+| GET/PUT/DELETE | `/api/settings/persona-prompts/[id]` | Persona system prompt CRUD |
 | GET | `/api/settings/tokens` | List API tokens (no secrets) |
 | POST | `/api/settings/tokens` | Create token (raw once) |
 | DELETE | `/api/settings/tokens/[id]` | Revoke token |
