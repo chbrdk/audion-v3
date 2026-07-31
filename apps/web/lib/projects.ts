@@ -120,6 +120,24 @@ export function filterProjectList(list: ProjectList, query: string): ProjectList
   return { ...list, items, total: items.length }
 }
 
+/** Union API rows with in-memory fixture projects (Plexon provisioning writes fixtures). */
+export function mergeProjectLists(primary: ProjectList, fixtures: ProjectList): ProjectList {
+  const byId = new Map<string, ProjectSummary>()
+  for (const item of fixtures.items) byId.set(item.id, item)
+  for (const item of primary.items) byId.set(item.id, item)
+  const items = Array.from(byId.values()).sort((a, b) => {
+    const aAt = a.updatedAt || ''
+    const bAt = b.updatedAt || ''
+    return bAt.localeCompare(aAt)
+  })
+  return {
+    items,
+    total: items.length,
+    page: primary.page,
+    pageSize: Math.max(primary.pageSize, fixtures.pageSize, items.length),
+  }
+}
+
 async function fetchJson(url: string): Promise<Response> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 1500)
@@ -131,8 +149,9 @@ async function fetchJson(url: string): Promise<Response> {
 }
 
 export async function fetchProjectList(): Promise<ProjectListResult> {
+  const fixtures = storeProjectList()
   if (shouldUsePersonaFixturesOnly()) {
-    return { ...storeProjectList(), origin: 'fixtures' }
+    return { ...fixtures, origin: 'fixtures' }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
@@ -147,31 +166,35 @@ export async function fetchProjectList(): Promise<ProjectListResult> {
     const items = Array.isArray(json.items)
       ? json.items.map(normalizeProjectSummary).filter((i): i is ProjectSummary => Boolean(i))
       : []
-    return {
+    const fromApi: ProjectList = {
       items,
       total: typeof json.total === 'number' ? json.total : items.length,
       page: typeof json.page === 'number' ? json.page : 1,
       pageSize: typeof json.page_size === 'number' ? json.page_size : 50,
-      origin: 'api',
     }
+    // Plexon → AUDION provisioning upserts the fixture store; always surface those rows.
+    return { ...mergeProjectLists(fromApi, fixtures), origin: 'api' }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { ...storeProjectList(), origin: 'fixtures' }
+    return { ...fixtures, origin: 'fixtures' }
   }
 }
 
 export async function fetchProjectDetail(id: string): Promise<ProjectDetailResult> {
+  const fixture = storeProjectDetail(id)
   if (shouldUsePersonaFixturesOnly()) {
-    return { project: storeProjectDetail(id), origin: 'fixtures' }
+    return { project: fixture, origin: 'fixtures' }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
     const response = await fetchJson(`${base}/projects/${id}`)
-    if (response.status === 404) return { project: null, origin: 'api' }
+    if (response.status === 404) {
+      return { project: fixture, origin: fixture ? 'fixtures' : 'api' }
+    }
     if (!response.ok) throw new Error(`Project detail failed: ${response.status}`)
     return { project: normalizeProjectDetail(await response.json()), origin: 'api' }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { project: storeProjectDetail(id), origin: 'fixtures' }
+    return { project: fixture, origin: 'fixtures' }
   }
 }

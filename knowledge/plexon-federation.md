@@ -14,6 +14,8 @@
 | Personas, TGs, journeys, studies, chat fixtures | **AUDION fixtures** | Local stores only |
 | Product Postgres | — | **Deferred** |
 
+**Important (Wave 1):** Inbound project provisioning (`PUT …/platform/provisioning/projects/{id}`) writes the **in-memory fixture store**, not a durable DB. The [Projects](https://audion-v3.projects-a.plygrnd.tech/projects) UI lists that store (merged with FastAPI when `NEXT_PERSONA_DATA_SOURCE=auto`). **Redeploy / multi-replica wipes memory** — Plexon bindings stay `in_sync`, but Audion no longer has the row until you sync again.
+
 ## Write rules
 
 1. Never create users in AUDION — login via `POST {PLEXON_AUTH_URL}/api/auth/validate-credentials`.

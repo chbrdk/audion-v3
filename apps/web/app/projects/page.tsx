@@ -17,7 +17,11 @@ export default async function ProjectsPage({
     return (
       <AppShell
         title="Projects"
-        description={demo ? 'Demo fixtures — API offline.' : undefined}
+        description={
+          demo
+            ? 'In-memory fixtures (Wave 1). Plexon-synced projects appear after sync and reset on redeploy until Postgres.'
+            : undefined
+        }
         status={
           <TopStatus
             level="ok"
