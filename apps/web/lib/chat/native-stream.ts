@@ -9,10 +9,18 @@ import {
   storeChatBeginUserTurn,
 } from '../fixtures/chat-store'
 import { maybeProposeInspectWebsite } from '../fixtures/chat-share'
+import { extractUrlFromMessage } from './share'
 import { resolvePersonaSystemPrompt } from '../fixtures/persona-prompts-store'
 
-async function systemPromptForPersona(personaId: string): Promise<string> {
-  return resolvePersonaSystemPrompt(personaId)
+async function systemPromptForPersona(personaId: string, message: string): Promise<string> {
+  const base = await resolvePersonaSystemPrompt(personaId)
+  const url = extractUrlFromMessage(message)
+  if (!url) return base
+  return `${base}
+
+AUDION TOOLING:
+The user mentioned ${url}. A real browser inspect tool (inspect_website) will be offered after your reply.
+Do not say you cannot open or fetch websites. Keep your answer short: acknowledge the URL and that they can Approve the inspect card to walk the site as you.`
 }
 
 /** Async generator of NDJSON chat events for native OpenAI streaming. */
@@ -41,7 +49,7 @@ export async function* nativeChatStreamEvents(
       model: getAiOpenAiModel(),
       stream: true,
       messages: [
-        { role: 'system', content: await systemPromptForPersona(payload.personaId) },
+        { role: 'system', content: await systemPromptForPersona(payload.personaId, message) },
         { role: 'user', content: message },
       ],
       temperature: 0.7,

@@ -13,8 +13,13 @@ import {
   uxJourneyAgentStart,
   type UxJourneyAgentJobStatus,
 } from '../ux-journey-agent-client'
+import { bffVideoUrlForJob, toChatUxJourneySteps } from './ux-journey-steps'
 
 function stepMessage(status: UxJourneyAgentJobStatus): string {
+  if (status.status === 'error') {
+    const detail = (status.error || '').trim()
+    return detail ? `Agent failed: ${detail}` : 'Agent failed (no error detail from service)'
+  }
   const steps = status.result?.steps ?? []
   const last = steps[steps.length - 1]
   if (!last) return `Agent running… (${status.status})`
@@ -24,6 +29,19 @@ function stepMessage(status: UxJourneyAgentJobStatus): string {
     last.target,
   ].filter(Boolean)
   return bits.join(' · ') || `Progress (${steps.length} steps)`
+}
+
+function stepsFingerprint(status: UxJourneyAgentJobStatus): string {
+  const steps = status.result?.steps ?? []
+  const last = steps[steps.length - 1]
+  return [
+    status.status,
+    steps.length,
+    last?.step,
+    last?.action,
+    last?.screenshotUrl ?? '',
+    (last?.reasoning || '').slice(0, 80),
+  ].join('|')
 }
 
 export async function* runLiveInspectWebsiteStream(input: {
@@ -82,26 +100,34 @@ export async function* runLiveInspectWebsiteStream(input: {
     tool: 'inspect_website',
     message: `Job ${jobId} started`,
     jobId,
+    status: 'running',
+    steps: [],
+    stepCount: 0,
   }
 
-  const intervalMs = 2000
+  const intervalMs = 1500
   const maxMs = 15 * 60 * 1000
   const started = Date.now()
-  let lastSteps = -1
+  let lastFp = ''
 
   try {
     for (;;) {
       const status = await uxJourneyAgentGet(jobId)
       const steps = status.result?.steps ?? []
-      if (steps.length !== lastSteps) {
-        lastSteps = steps.length
+      const chatSteps = toChatUxJourneySteps(steps)
+      const fp = stepsFingerprint(status)
+      if (fp !== lastFp) {
+        lastFp = fp
         yield {
           type: 'tool_progress',
           callId: input.callId,
           tool: 'inspect_website',
           message: stepMessage(status),
           jobId,
-          stepCount: steps.length,
+          status: status.status,
+          stepCount: chatSteps.length,
+          stepsTotal: chatSteps.length,
+          steps: chatSteps,
         }
       }
 
@@ -125,6 +151,14 @@ export async function* runLiveInspectWebsiteStream(input: {
           projectId: input.projectId ?? null,
         })
 
+        if (!success) {
+          yield {
+            type: 'error',
+            message: `UX journey agent failed: ${summary}`,
+          }
+          return
+        }
+
         yield {
           type: 'tool_complete',
           callId: input.callId,
@@ -138,7 +172,9 @@ export async function* runLiveInspectWebsiteStream(input: {
             source: 'chat_inspect',
           },
           jobId,
-          videoUrl: status.result?.videoUrl ?? null,
+          videoUrl: bffVideoUrlForJob(jobId, status.result?.videoUrl),
+          steps: chatSteps,
+          stepsTotal: chatSteps.length,
         }
         return
       }

@@ -2547,22 +2547,112 @@ main { min-height: 100vh; }
 }
 
 .audion-ux-live {
-  margin: 0.5rem 0 0.75rem;
-  max-width: 42rem;
-  border: 1px solid var(--line);
+  margin: 0.75rem 0;
   border-radius: 0.45rem;
+  border: 1px solid var(--line);
   overflow: hidden;
   background: color-mix(in srgb, var(--ink) 4%, transparent);
-  min-height: 7.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .audion-ux-live-frame {
-  width: 100%;
   display: block;
+  width: 100%;
+  max-height: 280px;
   object-fit: contain;
+  background: #0b0b0b;
+}
+
+.audion-ux-steps {
+  margin: 0.65rem 0 0.85rem;
+}
+
+.audion-ux-steps-heading {
+  margin: 0 0 0.4rem;
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-ux-steps-empty {
+  margin: 0.35rem 0;
+}
+
+.audion-ux-steps-scroller {
+  display: flex;
+  gap: 0.65rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  scroll-snap-type: x mandatory;
+}
+
+.audion-ux-step-card {
+  flex: 0 0 auto;
+  width: min(340px, 85vw);
+  scroll-snap-align: start;
+  padding: 0.7rem 0.75rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.audion-ux-step-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  font-size: var(--type-sm, 0.75rem);
+}
+
+.audion-ux-step-action {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.audion-ux-step-action.is-navigate {
+  color: #2563eb;
+  border-color: color-mix(in srgb, #2563eb 35%, var(--line));
+  background: color-mix(in srgb, #2563eb 12%, transparent);
+}
+
+.audion-ux-step-action.is-click {
+  color: #0284c7;
+  border-color: color-mix(in srgb, #0284c7 35%, var(--line));
+  background: color-mix(in srgb, #0284c7 12%, transparent);
+}
+
+.audion-ux-step-action.is-done {
+  color: #15803d;
+  border-color: color-mix(in srgb, #15803d 35%, var(--line));
+  background: color-mix(in srgb, #15803d 12%, transparent);
+}
+
+.audion-ux-step-shot {
+  display: block;
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 0.35rem;
+  border: 1px solid var(--line);
+  margin-bottom: 0.45rem;
+  background: #111;
+}
+
+.audion-ux-step-target,
+.audion-ux-step-reasoning {
+  margin: 0.3rem 0 0;
+  font-size: var(--type-sm, 0.8125rem);
+  line-height: 1.35;
+}
+
+.audion-ux-step-target span {
+  margin-right: 0.35rem;
 }
 
 .audion-chat-composer-actions {

@@ -90,7 +90,8 @@ Archetype: \${archetype}
 Interests: \${interests}
 Values: \${values}
 Answer in first person as this persona. Be concrete, magazine-brief, and evidence-minded.
-Use short markdown (## headings, lists) when helpful.`,
+Use short markdown (## headings, lists) when helpful.
+When the user shares a website URL, do **not** claim you cannot visit the web. AUDION can launch a real browser inspect tool after your reply — briefly acknowledge the URL and invite them to Approve the inspect card.`,
   },
   'project.suggest_target_groups': {
     id: 'project.suggest_target_groups',

@@ -9,6 +9,7 @@ Central place for public origins — reference from Coolify env / docs; do not h
 | Key | URL |
 |-----|-----|
 | `URL_AUDION_V3` | `https://audion-v3.projects-a.plygrnd.tech` |
+| `URL_AUDION_V3_UX_AGENT` | `https://uxagent.projects-a.plygrnd.tech` |
 | `URL_PLEXON_V3` | `https://plexon-v3.projects-a.plygrnd.tech` |
 | `URL_PLEXON_V3_REGISTER` | `https://plexon-v3.projects-a.plygrnd.tech/register` |
 
@@ -33,8 +34,10 @@ NEXT_PUBLIC_PLEXON_REGISTER_URL=https://plexon-v3.projects-a.plygrnd.tech/regist
 NEXT_PERSONA_DATA_SOURCE=fixtures
 NEXT_AI_RUNTIME=auto
 OPENAI_API_KEY=<secret>
-# UX Journey Agent (browser website exploration) — Coolify service audion-v3-ux-journey-agent
+# UX Journey Agent — prefer Coolify *internal* URL (same network); public only as fallback
 UX_JOURNEY_AGENT_URL=http://audion-v3-ux-journey-agent:8320
+# fallback if internal DNS fails:
+# UX_JOURNEY_AGENT_URL=https://uxagent.projects-a.plygrnd.tech
 UX_JOURNEY_AGENT_SECRET=<shared-with-agent-service>
 # optional:
 # AI_OPENAI_MODEL=gpt-5.4-mini
@@ -50,6 +53,8 @@ PORT=3000
 | Base directory | `services/ux-journey-agent` |
 | Dockerfile | `Dockerfile` |
 | Port | `8320` |
+| Domain | `uxagent.projects-a.plygrnd.tech` |
+| Health | `GET /health` |
 | Volume | e.g. `/data/journey-videos` → `UX_JOURNEY_VIDEO_DIR` |
 
 ```bash
@@ -59,6 +64,7 @@ OPENAI_API_KEY=<secret>
 # and/or ANTHROPIC_API_KEY=
 ```
 
+**Smoke:** `GET https://uxagent.projects-a.plygrnd.tech/health` should report `openaiKey`/`anthropicKey` true after deploy. Chat inspect failing immediately as `Agent running… (error)` almost always means missing LLM keys on **this** service (not on web).
 ### Postgres (Coolify)
 
 1. Add Postgres resource `audion-v3-postgres` in the same environment (own volume; never V2).

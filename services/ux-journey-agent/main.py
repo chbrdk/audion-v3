@@ -4737,8 +4737,15 @@ app = FastAPI(title="UX Journey Agent", description="AUDION browser agent: run t
 app.add_middleware(AgentAuthMiddleware)
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, Any]:
+    """Liveness + coarse readiness (no secrets)."""
+    provider = _resolve_llm_provider()
+    return {
+        "status": "ok",
+        "llmProvider": provider,
+        "openaiKey": bool((os.environ.get("OPENAI_API_KEY") or "").strip()),
+        "anthropicKey": bool((os.environ.get("ANTHROPIC_API_KEY") or "").strip()),
+    }
 
 @app.post("/run", response_model=RunResponse)
 async def start_run(body: RunRequest) -> RunResponse:
@@ -4746,6 +4753,11 @@ async def start_run(body: RunRequest) -> RunResponse:
     task = (body.task or "").strip()
     if not task:
         raise HTTPException(status_code=400, detail="url and task are required")
+    if _resolve_llm_provider() == "unknown":
+        raise HTTPException(
+            status_code=503,
+            detail="Agent LLM not configured: set OPENAI_API_KEY and/or ANTHROPIC_API_KEY on the ux-journey-agent service",
+        )
 
     job_id = str(uuid.uuid4())
     now_iso = datetime.now(timezone.utc).isoformat()

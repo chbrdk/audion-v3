@@ -9,6 +9,7 @@ import type {
   ChatStreamEvent,
   ChatToolCompleteEvent,
   ChatToolProposedEvent,
+  ChatUxJourneyStep,
   PersonaSummary,
 } from '@audion-v3/contracts'
 import {
@@ -24,6 +25,7 @@ import { postChatStream } from '../lib/chat/stream-client'
 import { paths } from '../lib/paths'
 import { IconSend } from './nav-icons'
 import { UxJourneyLivePoll } from './ux-journey-live-poll'
+import { UxJourneyStepsStrip } from './ux-journey-steps-strip'
 
 type Props = {
   personas: PersonaSummary[]
@@ -59,6 +61,7 @@ export function AudionChatPanel({
   const [pendingTool, setPendingTool] = useState<ChatToolProposedEvent | null>(null)
   const [toolBusy, setToolBusy] = useState(false)
   const [toolProgress, setToolProgress] = useState<string[]>([])
+  const [inspectSteps, setInspectSteps] = useState<ChatUxJourneyStep[]>([])
   const [toolComplete, setToolComplete] = useState<ChatToolCompleteEvent | null>(null)
   const [inspectJobId, setInspectJobId] = useState<string | null>(null)
   const [convertBusy, setConvertBusy] = useState(false)
@@ -87,6 +90,7 @@ export function AudionChatPanel({
     setComposerError(null)
     setPendingTool(null)
     setToolProgress([])
+    setInspectSteps([])
     setToolComplete(null)
     setInspectJobId(null)
     setConvertedJourneyId(null)
@@ -98,7 +102,7 @@ export function AudionChatPanel({
     const el = listRef.current
     if (!el || typeof el.scrollTo !== 'function') return
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [turns, busy, pendingTool, toolProgress, toolComplete])
+  }, [turns, busy, pendingTool, toolProgress, toolComplete, inspectSteps])
 
   useEffect(() => {
     return () => abortRef.current?.abort()
@@ -150,15 +154,20 @@ export function AudionChatPanel({
       setPendingTool(event)
       setToolComplete(null)
       setToolProgress([])
+      setInspectSteps([])
       setInspectJobId(null)
       setConvertedJourneyId(null)
     } else if (event.type === 'tool_started' || event.type === 'tool_progress') {
       setToolProgress((prev) => [...prev, event.message])
       if ('jobId' in event && event.jobId) setInspectJobId(event.jobId)
+      if (event.type === 'tool_progress' && Array.isArray(event.steps)) {
+        setInspectSteps(event.steps)
+      }
     } else if (event.type === 'tool_complete') {
       setPendingTool(null)
       setToolComplete(event)
       if (event.jobId) setInspectJobId(event.jobId)
+      if (Array.isArray(event.steps)) setInspectSteps(event.steps)
     } else if (event.type === 'tool_denied') {
       setPendingTool(null)
       setToolProgress((prev) => [...prev, event.message])
@@ -183,6 +192,7 @@ export function AudionChatPanel({
     setToolComplete(null)
     setInspectJobId(null)
     setToolProgress([])
+    setInspectSteps([])
     setConvertedJourneyId(null)
 
     const userTurn: ChatMessage = {
@@ -376,13 +386,21 @@ export function AudionChatPanel({
 
         {toolProgress.length ? (
           <ul className="audion-chat-tool-progress">
-            {toolProgress.map((line, i) => (
+            {toolProgress.slice(-6).map((line, i) => (
               <li key={`${i}-${line}`}>{line}</li>
             ))}
           </ul>
         ) : null}
 
         {inspectJobId && !toolComplete ? <UxJourneyLivePoll jobId={inspectJobId} /> : null}
+
+        {inspectSteps.length || (inspectJobId && !toolComplete) ? (
+          <UxJourneyStepsStrip
+            steps={inspectSteps}
+            stepsTotal={toolComplete?.stepsTotal ?? inspectSteps.length}
+            running={Boolean(inspectJobId && !toolComplete)}
+          />
+        ) : null}
 
         {toolComplete ? (
           <div className="audion-chat-tool-complete">

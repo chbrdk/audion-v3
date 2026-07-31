@@ -63,6 +63,20 @@ export type ChatSharePersona = {
 
 export type ChatToolName = 'inspect_website'
 
+/** One browser-agent step surfaced in chat (live + completed). */
+export type ChatUxJourneyStep = {
+  step?: number
+  action?: string
+  target?: string
+  result?: string
+  reasoning?: string
+  /** data: URL or absolute/relative path */
+  screenshot?: string | null
+  /** Agent-relative `/run/{jobId}/step/{n}/screenshot` or BFF path */
+  screenshotUrl?: string | null
+  timestamp?: string
+}
+
 export type ChatToolProposedEvent = {
   type: 'tool_proposed'
   callId: string
@@ -77,6 +91,7 @@ export type ChatToolStartedEvent = {
   callId: string
   tool: ChatToolName
   message: string
+  jobId?: string | null
 }
 
 export type ChatToolProgressEvent = {
@@ -86,6 +101,9 @@ export type ChatToolProgressEvent = {
   message: string
   jobId?: string | null
   stepCount?: number | null
+  stepsTotal?: number | null
+  status?: 'running' | 'complete' | 'error' | string
+  steps?: ChatUxJourneyStep[]
 }
 
 export type ChatToolCompleteEvent = {
@@ -103,6 +121,8 @@ export type ChatToolCompleteEvent = {
   } | null
   jobId?: string | null
   videoUrl?: string | null
+  steps?: ChatUxJourneyStep[]
+  stepsTotal?: number | null
 }
 
 export type ChatToolDeniedEvent = {

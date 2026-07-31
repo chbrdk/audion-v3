@@ -10,6 +10,7 @@ export type UxJourneyAgentStep = {
   result?: string
   reasoning?: string
   observations?: unknown
+  screenshot?: string | null
   screenshotUrl?: string | null
   timestamp?: string
 }

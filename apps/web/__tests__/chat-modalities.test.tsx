@@ -84,6 +84,12 @@ describe('chat share helpers', () => {
       'https://example.com/path',
     )
     expect(extractUrlFromMessage('no link here')).toBeNull()
+    expect(extractUrlFromMessage('schau dir msqdx.com an')).toBe('https://msqdx.com')
+    expect(extractUrlFromMessage('www.msqdx.com/de')).toBe('https://www.msqdx.com/de')
+    expect(extractUrlFromMessage('mail me at hello@msqdx.com please')).toBeNull()
+    expect(maybeProposeInspectWebsite('msqdx.com', 'persona-alex-morgan', null, null)?.url).toBe(
+      'https://msqdx.com',
+    )
   })
 })
 

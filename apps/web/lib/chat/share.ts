@@ -28,9 +28,19 @@ export function buildChatConversationHref(params: ChatConversationHrefParams): s
   return `/chat?${qs.toString()}`
 }
 
-const URL_RE = /https?:\/\/[^\s<>"')]+/i
+const URL_WITH_SCHEME_RE = /https?:\/\/[^\s<>"')]+/i
+/** Bare host like msqdx.com or www.msqdx.com/path (no scheme). */
+const BARE_HOST_RE =
+  /(?:^|[\s("'[(])(((?:www\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,})(?::\d{2,5})?(?:\/[^\s<>"']*)?)/i
 
 export function extractUrlFromMessage(message: string): string | null {
-  const match = message.match(URL_RE)
-  return match?.[0]?.replace(/[.,;:!?)]+$/, '') ?? null
+  const withScheme = message.match(URL_WITH_SCHEME_RE)?.[0]
+  if (withScheme) {
+    return withScheme.replace(/[.,;:!?)]+$/, '')
+  }
+  const bare = message.match(BARE_HOST_RE)?.[1]
+  if (!bare) return null
+  const cleaned = bare.replace(/[.,;:!?)]+$/, '')
+  if (!cleaned.includes('.')) return null
+  return `https://${cleaned}`
 }
