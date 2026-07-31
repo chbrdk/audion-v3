@@ -8,10 +8,14 @@ import {
 } from 'drizzle-orm/pg-core'
 import type {
   DocumentSource,
+  JourneyPhase,
   KnowledgeEntry,
   ProjectKnowledgeChapter,
   ProjectMember,
   TargetGroupLinkedPersona,
+  UxHypothesisTemplate,
+  UxWaveEvaluation,
+  UxWaveRunItem,
 } from '@audion-v3/contracts'
 
 /** AUDION-v3 product projects (Wave: Projects Postgres MVP). */
@@ -85,3 +89,56 @@ export const targetGroups = pgTable('target_groups', {
 
 export type TargetGroupRow = typeof targetGroups.$inferSelect
 export type TargetGroupInsert = typeof targetGroups.$inferInsert
+
+export const journeys = pgTable('journeys', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  journeyType: text('journey_type').notNull().default('journey'),
+  status: text('status').notNull().default('draft'),
+  phaseCount: integer('phase_count').notNull().default(0),
+  targetGroupId: text('target_group_id'),
+  targetGroupName: text('target_group_name'),
+  projectId: text('project_id'),
+  description: text('description'),
+  phases: jsonb('phases').$type<JourneyPhase[]>().notNull().default([]),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type JourneyRow = typeof journeys.$inferSelect
+export type JourneyInsert = typeof journeys.$inferInsert
+
+export const uxStudies = pgTable('ux_studies', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  status: text('status').notNull().default('draft'),
+  projectId: text('project_id'),
+  sourceGuide: text('source_guide'),
+  targetUrlKey: text('target_url_key'),
+  description: text('description'),
+  hypothesisTemplates: jsonb('hypothesis_templates')
+    .$type<UxHypothesisTemplate[]>()
+    .notNull()
+    .default([]),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type UxStudyRow = typeof uxStudies.$inferSelect
+export type UxStudyInsert = typeof uxStudies.$inferInsert
+
+export const uxWaves = pgTable('ux_waves', {
+  id: text('id').primaryKey(),
+  studyId: text('study_id').notNull(),
+  waveKey: text('wave_key').notNull(),
+  status: text('status').notNull().default('draft'),
+  runs: jsonb('runs').$type<UxWaveRunItem[]>().notNull().default([]),
+  evaluation: jsonb('evaluation').$type<UxWaveEvaluation | null>(),
+  reportMarkdown: text('report_markdown'),
+  reportUpdatedAt: timestamp('report_updated_at', { withTimezone: true }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type UxWaveRow = typeof uxWaves.$inferSelect
+export type UxWaveInsert = typeof uxWaves.$inferInsert

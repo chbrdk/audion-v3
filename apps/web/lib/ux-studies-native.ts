@@ -29,9 +29,9 @@ export async function syncUxWaveNativeOrFixture(
     return storeSyncUxWave(studyId, waveId)
   }
 
-  const wave = storeUxWaveDetail(studyId, waveId)
+  const wave = await storeUxWaveDetail(studyId, waveId)
   if (!wave) return null
-  const study = storeUxStudyDetail(studyId)
+  const study = await storeUxStudyDetail(studyId)
 
   const pending = wave.runs.filter((r) => r.agentStatus !== 'complete')
   if (!pending.length) {
@@ -40,7 +40,7 @@ export async function syncUxWaveNativeOrFixture(
 
   // Ensure running
   if (wave.status !== 'running') {
-    storeStartUxWave(studyId, waveId)
+    await storeStartUxWave(studyId, waveId)
   }
 
   const updated: UxWaveRunItem[] = []

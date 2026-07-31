@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   if (shouldProxyUxStudiesToApi()) {
     return proxyUxStudiesRequest(request)
   }
-  return NextResponse.json(storeUxStudyList())
+  return NextResponse.json(await storeUxStudyList())
 }
 
 export async function POST(request: Request) {
@@ -18,6 +18,6 @@ export async function POST(request: Request) {
   if (!body?.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
-  const study = storeCreateUxStudy(body)
+  const study = await storeCreateUxStudy(body)
   return NextResponse.json(study, { status: 201 })
 }

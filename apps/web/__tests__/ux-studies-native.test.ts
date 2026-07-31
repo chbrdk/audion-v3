@@ -32,7 +32,7 @@ describe('ux-studies-native sync', () => {
       },
     })
     const waveId = 'wave-phase2-plan-draft'
-    const wave = storeUxWaveDetail('study-ebm-produktkombinationen', waveId)
+    const wave = await storeUxWaveDetail('study-ebm-produktkombinationen', waveId)
     expect(wave).toBeTruthy()
     const synced = await syncUxWaveNativeOrFixture('study-ebm-produktkombinationen', waveId)
     expect(synced?.status).toBe('complete')

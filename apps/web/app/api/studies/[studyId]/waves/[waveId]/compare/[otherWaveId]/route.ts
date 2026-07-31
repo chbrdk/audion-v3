@@ -10,7 +10,7 @@ export async function GET(
     return proxyUxStudiesRequest(request)
   }
   const { studyId, waveId, otherWaveId } = await context.params
-  const delta = storeCompareUxWaves(studyId, waveId, otherWaveId)
+  const delta = await storeCompareUxWaves(studyId, waveId, otherWaveId)
   if (!delta) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(delta)
 }

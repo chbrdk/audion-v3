@@ -110,7 +110,7 @@ export async function runStubConvertUxRunToJourney(
   if (!studyId || !waveId || !runKey) {
     return { error: 'studyId, waveId, and runKey are required in fixture mode', status: 400 }
   }
-  const wave = storeUxWaveDetail(studyId, waveId)
+  const wave = await storeUxWaveDetail(studyId, waveId)
   if (!wave) return { error: 'Wave not found', status: 404 }
   const run = wave.runs.find((r) => r.runKey === runKey)
   if (!run) return { error: 'Run not found', status: 404 }
@@ -152,10 +152,10 @@ export async function runStubConvertUxRunToJourney(
     status: 'draft',
     description: `Converted from study wave run ${run.runKey} (${wave.waveKey}). Task: ${run.task}`,
     targetGroupId: body.targetGroupId ?? null,
-    projectId: body.projectId ?? storeUxStudyDetail(studyId)?.projectId ?? null,
+    projectId: body.projectId ?? (await storeUxStudyDetail(studyId))?.projectId ?? null,
     phases: phasesFromRun(run.runKey, run.task, run.url),
   })
-  storeMarkRunDerivedJourney(studyId, waveId, runKey, journey.id)
+  await storeMarkRunDerivedJourney(studyId, waveId, runKey, journey.id)
 
   return {
     stubbed: true,
@@ -187,7 +187,7 @@ export async function runLiveConvertUxRunToJourney(
   }
   // Live API needs jobId + organizationId; map fixture job from run when present
   if (!upstreamBody.jobId && body.studyId && body.waveId && body.runKey) {
-    const wave = storeUxWaveDetail(body.studyId, body.waveId)
+    const wave = await storeUxWaveDetail(body.studyId, body.waveId)
     const run = wave?.runs.find((r) => r.runKey === body.runKey)
     if (run?.jobId) upstreamBody.jobId = run.jobId
     if (!upstreamBody.personaId && run?.personaId) upstreamBody.personaId = run.personaId
@@ -212,7 +212,7 @@ export async function runLiveConvertUxRunToJourney(
   const mode = modeRaw === 'deterministic' ? 'deterministic' : 'ai'
 
   if (body.studyId && body.waveId && body.runKey) {
-    storeMarkRunDerivedJourney(body.studyId, body.waveId, body.runKey, String(journeyRec.id))
+    await storeMarkRunDerivedJourney(body.studyId, body.waveId, body.runKey, String(journeyRec.id))
   }
 
   return {

@@ -17,7 +17,7 @@ export async function GET(
     return proxyUxStudiesRequest(request)
   }
   const { studyId, waveId } = await context.params
-  const wave = storeUxWaveDetail(studyId, waveId)
+  const wave = await storeUxWaveDetail(studyId, waveId)
   if (!wave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(wave)
 }
@@ -31,7 +31,7 @@ export async function PATCH(
   }
   const { studyId, waveId } = await context.params
   const body = (await request.json()) as UxWaveWritePayload
-  const wave = storePatchUxWave(studyId, waveId, body)
+  const wave = await storePatchUxWave(studyId, waveId, body)
   if (!wave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(wave)
 }

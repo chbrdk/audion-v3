@@ -10,7 +10,7 @@ export async function POST(
     return proxyUxStudiesRequest(request)
   }
   const { studyId, waveId } = await context.params
-  const wave = storeEvaluateUxWave(studyId, waveId)
+  const wave = await storeEvaluateUxWave(studyId, waveId)
   if (!wave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(wave)
 }

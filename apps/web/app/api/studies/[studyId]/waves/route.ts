@@ -11,7 +11,7 @@ export async function GET(
     return proxyUxStudiesRequest(request)
   }
   const { studyId } = await context.params
-  const study = storeUxStudyDetail(studyId)
+  const study = await storeUxStudyDetail(studyId)
   if (!study) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ items: study.waves, total: study.waves.length })
 }
@@ -28,7 +28,7 @@ export async function POST(
   if (!body?.waveKey?.trim()) {
     return NextResponse.json({ error: 'waveKey is required' }, { status: 400 })
   }
-  const wave = storeCreateUxWave(studyId, body)
+  const wave = await storeCreateUxWave(studyId, body)
   if (!wave) return NextResponse.json({ error: 'Study not found' }, { status: 404 })
   return NextResponse.json(wave, { status: 201 })
 }

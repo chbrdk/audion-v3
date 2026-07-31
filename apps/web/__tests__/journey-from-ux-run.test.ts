@@ -29,7 +29,7 @@ describe('journey from UX run (stub)', () => {
     expect(result.journey.phaseCount).toBe(3)
     expect((await storeJourneyDetail(result.journey.id))?.phases).toHaveLength(3)
 
-    const updated = storeUxWaveDetail(study.id, wave.id)
+    const updated = await storeUxWaveDetail(study.id, wave.id)
     const marked = updated?.runs.find((r) => r.runKey === run.runKey)
     expect(marked?.derivedJourneyId).toBe(result.journey.id)
 

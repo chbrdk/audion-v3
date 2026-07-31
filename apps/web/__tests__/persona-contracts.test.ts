@@ -353,8 +353,8 @@ describe('journey contracts', () => {
     expect(withPhase?.phaseCount).toBe(1)
     expect(withPhase?.phases[0]?.name).toBe('First stop')
 
-    expect(storeDeleteJourney(created.id)).toBe(true)
+    expect(await storeDeleteJourney(created.id)).toBe(true)
     expect(await storeJourneyDetail(created.id)).toBeNull()
-    expect(storeDeleteJourney(created.id)).toBe(false)
+    expect(await storeDeleteJourney(created.id)).toBe(false)
   })
 })

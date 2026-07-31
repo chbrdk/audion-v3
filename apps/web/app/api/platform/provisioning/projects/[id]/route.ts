@@ -78,7 +78,7 @@ export async function GET(
       targetGroupName: j.targetGroupName ?? null,
     }))
 
-  const studies = storeUxStudyList()
+  const studies = (await storeUxStudyList())
     .items.filter((s) => s.projectId === project.id)
     .map((s) => ({
       id: s.id,

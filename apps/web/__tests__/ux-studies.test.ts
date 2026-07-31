@@ -23,13 +23,13 @@ afterEach(() => {
 })
 
 describe('ux study fixtures', () => {
-  it('seeds EBM study with audion-2026-07-30-mcp wave', () => {
-    const list = storeUxStudyList()
+  it('seeds EBM study with audion-2026-07-30-mcp wave', async () => {
+    const list = await storeUxStudyList()
     expect(list.total).toBeGreaterThanOrEqual(1)
-    const study = storeUxStudyDetail('study-ebm-produktkombinationen')
+    const study = await storeUxStudyDetail('study-ebm-produktkombinationen')
     expect(study?.name).toContain('Produktkombinationen')
     expect(study?.hypothesisTemplates).toHaveLength(5)
-    const wave = storeUxWaveDetail(
+    const wave = await storeUxWaveDetail(
       'study-ebm-produktkombinationen',
       'wave-audion-2026-07-30-mcp',
     )
@@ -39,10 +39,10 @@ describe('ux study fixtures', () => {
     expect(wave?.reportMarkdown).toBeTruthy()
   })
 
-  it('self-compare yields zero aggregate deltas', () => {
+  it('self-compare yields zero aggregate deltas', async () => {
     const id = 'study-ebm-produktkombinationen'
     const wid = 'wave-audion-2026-07-30-mcp'
-    const delta = storeCompareUxWaves(id, wid, wid)
+    const delta = await storeCompareUxWaves(id, wid, wid)
     expect(delta).not.toBeNull()
     for (const row of Object.values(delta!.aggregateDelta)) {
       if (typeof row.baseline === 'number' && typeof row.current === 'number') {
@@ -51,8 +51,8 @@ describe('ux study fixtures', () => {
     }
   })
 
-  it('evaluate recomputes aggregate from validEvidence', () => {
-    const wave = storeEvaluateUxWave(
+  it('evaluate recomputes aggregate from validEvidence', async () => {
+    const wave = await storeEvaluateUxWave(
       'study-ebm-produktkombinationen',
       'wave-audion-2026-07-30-mcp',
     )
@@ -60,15 +60,15 @@ describe('ux study fixtures', () => {
     expect(wave?.evaluation?.aggregate.meanFrictionValidOnly).toBe(9)
   })
 
-  it('creates studies and filters list', () => {
-    storeCreateUxStudy({ name: 'Alpha Soft-Q Pilot', status: 'draft' })
-    const list = filterUxStudyList(storeUxStudyList(), 'alpha')
+  it('creates studies and filters list', async () => {
+    await storeCreateUxStudy({ name: 'Alpha Soft-Q Pilot', status: 'draft' })
+    const list = filterUxStudyList(await storeUxStudyList(), 'alpha')
     expect(list.items.some((i) => i.name.includes('Alpha'))).toBe(true)
   })
 
-  it('creates wave with seed run', () => {
-    const study = storeCreateUxStudy({ name: 'Wave Create Pilot', status: 'draft' })
-    const wave = storeCreateUxWave(study.id, {
+  it('creates wave with seed run', async () => {
+    const study = await storeCreateUxStudy({ name: 'Wave Create Pilot', status: 'draft' })
+    const wave = await storeCreateUxWave(study.id, {
       waveKey: 'pilot-seed',
       runs: [
         {
@@ -81,25 +81,25 @@ describe('ux study fixtures', () => {
     })
     expect(wave?.waveKey).toBe('pilot-seed')
     expect(wave?.runs).toHaveLength(1)
-    expect(storeUxStudyDetail(study.id)?.waveCount).toBe(1)
+    expect((await storeUxStudyDetail(study.id))?.waveCount).toBe(1)
   })
 
-  it('start then sync advances runs to complete', () => {
+  it('start then sync advances runs to complete', async () => {
     const studyId = 'study-ebm-produktkombinationen'
     const waveId = 'wave-phase2-plan-draft'
-    const started = storeStartUxWave(studyId, waveId)
+    const started = await storeStartUxWave(studyId, waveId)
     expect(started?.status).toBe('running')
     expect(started?.runs.some((r) => r.agentStatus === 'running')).toBe(true)
-    const synced = storeSyncUxWave(studyId, waveId)
+    const synced = await storeSyncUxWave(studyId, waveId)
     expect(synced?.status).toBe('complete')
     expect(synced?.runs.every((r) => r.agentStatus === 'complete')).toBe(true)
     expect(synced?.validEvidenceCount).toBeGreaterThan(0)
   })
 
-  it('patches reportMarkdown and export includes body', () => {
+  it('patches reportMarkdown and export includes body', async () => {
     const studyId = 'study-ebm-produktkombinationen'
     const waveId = 'wave-audion-2026-07-30-mcp'
-    const patched = storePatchUxWave(studyId, waveId, {
+    const patched = await storePatchUxWave(studyId, waveId, {
       waveKey: 'audion-2026-07-30-mcp',
       reportMarkdown: '<p>Phase-3 narrative body</p>',
     })
@@ -110,12 +110,12 @@ describe('ux study fixtures', () => {
     expect(md).toContain('## Aggregate')
   })
 
-  it('patches Soft-Q value and confidence', () => {
+  it('patches Soft-Q value and confidence', async () => {
     const studyId = 'study-ebm-produktkombinationen'
     const waveId = 'wave-audion-2026-07-30-mcp'
-    const wave = storeUxWaveDetail(studyId, waveId)!
+    const wave = (await storeUxWaveDetail(studyId, waveId))!
     const current = wave.evaluation!.softScores.Q1_nuetzlichkeit!
-    const patched = storePatchUxWave(studyId, waveId, {
+    const patched = await storePatchUxWave(studyId, waveId, {
       waveKey: wave.waveKey,
       evaluation: {
         softScores: {
@@ -129,8 +129,8 @@ describe('ux study fixtures', () => {
     expect(next?.confidence).toBe(0.8)
   })
 
-  it('phase2 draft wave includes Nav and segment matrix runs', () => {
-    const wave = storeUxWaveDetail(
+  it('phase2 draft wave includes Nav and segment matrix runs', async () => {
+    const wave = await storeUxWaveDetail(
       'study-ebm-produktkombinationen',
       'wave-phase2-plan-draft',
     )

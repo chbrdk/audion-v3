@@ -32,7 +32,7 @@ export async function DELETE(
   context: { params: Promise<{ journeyId: string }> },
 ) {
   const { journeyId } = await context.params
-  const ok = storeDeleteJourney(journeyId)
+  const ok = await storeDeleteJourney(journeyId)
   if (!ok) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ ok: true })
 }

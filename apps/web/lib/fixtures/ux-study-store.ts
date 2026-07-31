@@ -1,3 +1,8 @@
+/**
+ * UX study / wave persistence facade.
+ * - With DATABASE_URL: Postgres (drizzle)
+ * - Without: in-memory fixtures (local/dev/tests)
+ */
 import type {
   SoftScoreEntry,
   SoftScoreKey,
@@ -13,7 +18,12 @@ import type {
   UxWaveSummary,
   UxWaveWritePayload,
 } from '@audion-v3/contracts'
+import { isProjectsDatabaseConfigured } from '../db/config'
 import { DEMO_UX_STUDIES, DEMO_UX_WAVES } from './ux-studies'
+
+async function dbApi() {
+  return import('../db/ux-studies')
+}
 
 let studies: UxStudyDetail[] = DEMO_UX_STUDIES.map((s) => structuredClone(s))
 let waves: UxWaveDetail[] = DEMO_UX_WAVES.map((w) => structuredClone(w))
@@ -44,7 +54,7 @@ function withStudyWaves(study: UxStudyDetail): UxStudyDetail {
   }
 }
 
-export function storeUxStudyList(): UxStudyList {
+function memoryUxStudyList(): UxStudyList {
   const items = studies.map((s) => {
     const detail = withStudyWaves(s)
     const { description: _d, hypothesisTemplates: _h, waves: _w, ...summary } = detail
@@ -53,12 +63,12 @@ export function storeUxStudyList(): UxStudyList {
   return { items, total: items.length, page: 1, pageSize: 50 }
 }
 
-export function storeUxStudyDetail(id: string): UxStudyDetail | null {
+function memoryUxStudyDetail(id: string): UxStudyDetail | null {
   const found = studies.find((s) => s.id === id)
   return found ? withStudyWaves(found) : null
 }
 
-export function storeUxWaveDetail(studyId: string, waveId: string): UxWaveDetail | null {
+function memoryUxWaveDetail(studyId: string, waveId: string): UxWaveDetail | null {
   const found = waves.find((w) => w.id === waveId && w.studyId === studyId)
   if (!found) return null
   return {
@@ -71,7 +81,7 @@ export function storeUxWaveDetail(studyId: string, waveId: string): UxWaveDetail
   }
 }
 
-export function storeCreateUxStudy(payload: UxStudyWritePayload): UxStudyDetail {
+function memoryCreateUxStudy(payload: UxStudyWritePayload): UxStudyDetail {
   const id = `study-${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'new'}-${Date.now().toString(36)}`
   const created: UxStudyDetail = {
     id,
@@ -90,7 +100,7 @@ export function storeCreateUxStudy(payload: UxStudyWritePayload): UxStudyDetail 
   return withStudyWaves(created)
 }
 
-export function storePatchUxStudy(
+function memoryPatchUxStudy(
   id: string,
   payload: Partial<UxStudyWritePayload>,
 ): UxStudyDetail | null {
@@ -145,7 +155,10 @@ function normalizeRun(
   }
 }
 
-export function storeCreateUxWave(studyId: string, payload: UxWaveWritePayload): UxWaveDetail | null {
+function memoryCreateUxWave(
+  studyId: string,
+  payload: UxWaveWritePayload,
+): UxWaveDetail | null {
   if (!studies.some((s) => s.id === studyId)) return null
   const id = `wave-${payload.waveKey.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString(36)}`
   const runs = (payload.runs ?? []).map((r, i) => normalizeRun(r, i))
@@ -229,7 +242,7 @@ export function evaluateUxWaveFromRuns(
   }
 }
 
-export function storePatchUxWave(
+function memoryPatchUxWave(
   studyId: string,
   waveId: string,
   payload: UxWaveWritePayload,
@@ -243,7 +256,11 @@ export function storePatchUxWave(
     for (const partial of payload.runs) {
       const existing = byKey.get(partial.runKey)
       if (existing) {
-        byKey.set(partial.runKey, { ...existing, ...partial, categories: partial.categories ?? existing.categories })
+        byKey.set(partial.runKey, {
+          ...existing,
+          ...partial,
+          categories: partial.categories ?? existing.categories,
+        })
       } else {
         byKey.set(partial.runKey, normalizeRun(partial, byKey.size))
       }
@@ -304,7 +321,7 @@ export function storePatchUxWave(
   return summarized
 }
 
-export function storeStartUxWave(studyId: string, waveId: string): UxWaveDetail | null {
+function memoryStartUxWave(studyId: string, waveId: string): UxWaveDetail | null {
   const index = waves.findIndex((w) => w.id === waveId && w.studyId === studyId)
   if (index < 0) return null
   const current = waves[index]!
@@ -324,7 +341,7 @@ export function storeStartUxWave(studyId: string, waveId: string): UxWaveDetail 
   return next
 }
 
-export function storeSyncUxWave(studyId: string, waveId: string): UxWaveDetail | null {
+function memorySyncUxWave(studyId: string, waveId: string): UxWaveDetail | null {
   const index = waves.findIndex((w) => w.id === waveId && w.studyId === studyId)
   if (index < 0) return null
   const current = waves[index]!
@@ -361,8 +378,7 @@ export function storeSyncUxWave(studyId: string, waveId: string): UxWaveDetail |
   return next
 }
 
-/** Replace wave runs (native agent) and derive status. */
-export function storePatchUxWaveRuns(
+function memoryPatchUxWaveRuns(
   studyId: string,
   waveId: string,
   runs: UxWaveRunItem[],
@@ -383,8 +399,7 @@ export function storePatchUxWaveRuns(
   return next
 }
 
-/** Mark a wave run as converted to a magazine journey (idempotent convert). */
-export function storeMarkRunDerivedJourney(
+function memoryMarkRunDerivedJourney(
   studyId: string,
   waveId: string,
   runKey: string,
@@ -406,7 +421,7 @@ export function storeMarkRunDerivedJourney(
   return next
 }
 
-export function storeEvaluateUxWave(studyId: string, waveId: string): UxWaveDetail | null {
+function memoryEvaluateUxWave(studyId: string, waveId: string): UxWaveDetail | null {
   const index = waves.findIndex((w) => w.id === waveId && w.studyId === studyId)
   if (index < 0) return null
   const current = waves[index]!
@@ -449,13 +464,13 @@ function deltaRow(baseline: number | null, current: number | null): UxCompareAgg
   }
 }
 
-export function storeCompareUxWaves(
+function memoryCompareUxWaves(
   studyId: string,
   waveId: string,
   otherWaveId: string,
 ): UxWaveCompareDelta | null {
-  const baseline = storeUxWaveDetail(studyId, otherWaveId)
-  const current = storeUxWaveDetail(studyId, waveId)
+  const baseline = memoryUxWaveDetail(studyId, otherWaveId)
+  const current = memoryUxWaveDetail(studyId, waveId)
   if (!baseline || !current) return null
   const ba = baseline.evaluation?.aggregate
   const ca = current.evaluation?.aggregate
@@ -616,4 +631,143 @@ export function buildWaveReportMarkdown(wave: UxWaveDetail, studyName: string): 
     )
   }
   return lines.join('\n')
+}
+
+export async function storeUxStudyList(): Promise<UxStudyList> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbUxStudyList()
+  }
+  return memoryUxStudyList()
+}
+
+export async function storeUxStudyDetail(id: string): Promise<UxStudyDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbUxStudyDetail(id)
+  }
+  return memoryUxStudyDetail(id)
+}
+
+export async function storeUxWaveDetail(
+  studyId: string,
+  waveId: string,
+): Promise<UxWaveDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbUxWaveDetail(studyId, waveId)
+  }
+  return memoryUxWaveDetail(studyId, waveId)
+}
+
+export async function storeCreateUxStudy(payload: UxStudyWritePayload): Promise<UxStudyDetail> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbCreateUxStudy(payload)
+  }
+  return memoryCreateUxStudy(payload)
+}
+
+export async function storePatchUxStudy(
+  id: string,
+  payload: Partial<UxStudyWritePayload>,
+): Promise<UxStudyDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbPatchUxStudy(id, payload)
+  }
+  return memoryPatchUxStudy(id, payload)
+}
+
+export async function storeCreateUxWave(
+  studyId: string,
+  payload: UxWaveWritePayload,
+): Promise<UxWaveDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbCreateUxWave(studyId, payload)
+  }
+  return memoryCreateUxWave(studyId, payload)
+}
+
+export async function storePatchUxWave(
+  studyId: string,
+  waveId: string,
+  payload: UxWaveWritePayload,
+): Promise<UxWaveDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbPatchUxWave(studyId, waveId, payload)
+  }
+  return memoryPatchUxWave(studyId, waveId, payload)
+}
+
+export async function storeStartUxWave(
+  studyId: string,
+  waveId: string,
+): Promise<UxWaveDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbStartUxWave(studyId, waveId)
+  }
+  return memoryStartUxWave(studyId, waveId)
+}
+
+export async function storeSyncUxWave(
+  studyId: string,
+  waveId: string,
+): Promise<UxWaveDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbSyncUxWave(studyId, waveId)
+  }
+  return memorySyncUxWave(studyId, waveId)
+}
+
+export async function storePatchUxWaveRuns(
+  studyId: string,
+  waveId: string,
+  runs: UxWaveRunItem[],
+): Promise<UxWaveDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbPatchUxWaveRuns(studyId, waveId, runs)
+  }
+  return memoryPatchUxWaveRuns(studyId, waveId, runs)
+}
+
+export async function storeMarkRunDerivedJourney(
+  studyId: string,
+  waveId: string,
+  runKey: string,
+  journeyId: string,
+): Promise<UxWaveDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbMarkRunDerivedJourney(studyId, waveId, runKey, journeyId)
+  }
+  return memoryMarkRunDerivedJourney(studyId, waveId, runKey, journeyId)
+}
+
+export async function storeEvaluateUxWave(
+  studyId: string,
+  waveId: string,
+): Promise<UxWaveDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbEvaluateUxWave(studyId, waveId)
+  }
+  return memoryEvaluateUxWave(studyId, waveId)
+}
+
+export async function storeCompareUxWaves(
+  studyId: string,
+  waveId: string,
+  otherWaveId: string,
+): Promise<UxWaveCompareDelta | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbCompareUxWaves(studyId, waveId, otherWaveId)
+  }
+  return memoryCompareUxWaves(studyId, waveId, otherWaveId)
 }

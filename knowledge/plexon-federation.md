@@ -11,14 +11,16 @@
 | Users, passwords, companies, entitlements | **Plexon** | Validate + profile only |
 | Platform projects + product bindings | **Plexon** | Origin call on project create |
 | Usage ledger | **Plexon** | Thin `reportUsage` from chat stream |
-| Personas, TGs, journeys, studies, chat fixtures | **AUDION fixtures** | Local stores only |
+| Personas, TGs, journeys, studies, chat fixtures | **AUDION fixtures** | Local stores when no `DATABASE_URL` |
 | Projects (list / create / Plexon provisioning) | **AUDION Postgres** | `projects` table when `DATABASE_URL` set; else in-memory fixtures |
 | Personas + target groups | **AUDION Postgres** | `personas` / `target_groups` tables when `DATABASE_URL` set; else fixtures |
-| Product Postgres (journeys+) | — | **Deferred** |
+| Journeys + UX studies / waves | **AUDION Postgres** | `journeys` / `ux_studies` / `ux_waves` when `DATABASE_URL` set; else fixtures |
 
 **Projects persistence:** With `DATABASE_URL`, inbound `PUT …/platform/provisioning/projects/{id}` and UI create/list write Postgres. Redeploy keeps rows. Without `DATABASE_URL` (local), memory fixtures remain (wiped on process restart).
 
 **Personas / target groups:** Same `DATABASE_URL` gate. Tables `personas` (scalar list cols + jsonb `payload`) and `target_groups` (linked persona ids + knowledge jsonb). Catalog GET and CRUD use Postgres when configured; otherwise DEMO fixtures.
+
+**Journeys / UX studies:** Same `DATABASE_URL` gate. Tables `journeys` (phases jsonb), `ux_studies` (hypothesis templates jsonb), and `ux_waves` (runs / evaluation / report jsonb). Fixture stores remain the API surface and fall back to memory when unset.
 
 ## Write rules
 

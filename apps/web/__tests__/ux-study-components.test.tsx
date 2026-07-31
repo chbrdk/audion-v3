@@ -32,8 +32,8 @@ afterEach(() => {
 })
 
 describe('UX study UI (magazine + DS)', () => {
-  it('renders study list cards with create affordance', () => {
-    const study = storeUxStudyDetail('study-ebm-produktkombinationen')!
+  it('renders study list cards with create affordance', async () => {
+    const study = (await storeUxStudyDetail('study-ebm-produktkombinationen'))!
     const { container } = render(
       <StudyListPanel
         list={{
@@ -63,8 +63,8 @@ describe('UX study UI (magazine + DS)', () => {
     )
   })
 
-  it('renders study detail magazine chrome with hypotheses and waves', () => {
-    const study = storeUxStudyDetail('study-ebm-produktkombinationen')!
+  it('renders study detail magazine chrome with hypotheses and waves', async () => {
+    const study = (await storeUxStudyDetail('study-ebm-produktkombinationen'))!
     const { container } = render(<StudyDetailPanel study={study} />)
     expect(container.querySelector('.audion-magazine--study')).toBeTruthy()
     expect(container.querySelector('.audion-magazine-hero--split')).toBeTruthy()
@@ -79,9 +79,9 @@ describe('UX study UI (magazine + DS)', () => {
     )
   })
 
-  it('renders wave detail with DS lede, start/compare, report, and F-Fragen chat', () => {
-    const study = storeUxStudyDetail('study-ebm-produktkombinationen')!
-    const wave = storeUxWaveDetail(study.id, 'wave-audion-2026-07-30-mcp')!
+  it('renders wave detail with DS lede, start/compare, report, and F-Fragen chat', async () => {
+    const study = (await storeUxStudyDetail('study-ebm-produktkombinationen'))!
+    const wave = (await storeUxWaveDetail(study.id, 'wave-audion-2026-07-30-mcp'))!
     const { container } = render(
       <WaveDetailPanel study={study} wave={wave} selfCompare={null} />,
     )

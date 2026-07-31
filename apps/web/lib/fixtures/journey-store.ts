@@ -1,6 +1,16 @@
+/**
+ * Journey persistence facade.
+ * - With DATABASE_URL: Postgres (drizzle)
+ * - Without: in-memory fixtures (local/dev/tests)
+ */
 import type { JourneyDetail, JourneyList, JourneyPhase, JourneyWritePayload } from '@audion-v3/contracts'
+import { isProjectsDatabaseConfigured } from '../db/config'
 import { DEMO_JOURNEYS } from './journeys'
 import { storeTargetGroupDetail } from './target-group-store'
+
+async function dbApi() {
+  return import('../db/journeys')
+}
 
 let journeys: JourneyDetail[] = DEMO_JOURNEYS.map((j) => structuredClone(j))
 
@@ -32,7 +42,7 @@ async function withCounts(journey: JourneyDetail): Promise<JourneyDetail> {
   }
 }
 
-export async function storeJourneyList(): Promise<JourneyList> {
+async function memoryJourneyList(): Promise<JourneyList> {
   const items = await Promise.all(
     journeys.map(async (j) => {
       const detail = await withCounts(j)
@@ -43,12 +53,12 @@ export async function storeJourneyList(): Promise<JourneyList> {
   return { items, total: items.length, page: 1, pageSize: 50 }
 }
 
-export async function storeJourneyDetail(id: string): Promise<JourneyDetail | null> {
+async function memoryJourneyDetail(id: string): Promise<JourneyDetail | null> {
   const found = journeys.find((j) => j.id === id)
   return found ? await withCounts(found) : null
 }
 
-export async function storeCreateJourney(payload: JourneyWritePayload): Promise<JourneyDetail> {
+async function memoryCreateJourney(payload: JourneyWritePayload): Promise<JourneyDetail> {
   const id = `journey-${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'new'}-${Date.now().toString(36)}`
   const phases = sortPhases(payload.phases ?? [])
   let targetGroupName: string | null = null
@@ -72,7 +82,7 @@ export async function storeCreateJourney(payload: JourneyWritePayload): Promise<
   return created
 }
 
-export async function storePatchJourney(
+async function memoryPatchJourney(
   id: string,
   payload: Partial<JourneyWritePayload>,
 ): Promise<JourneyDetail | null> {
@@ -105,9 +115,52 @@ export async function storePatchJourney(
   return next
 }
 
-export function storeDeleteJourney(id: string): boolean {
+function memoryDeleteJourney(id: string): boolean {
   const index = journeys.findIndex((j) => j.id === id)
   if (index < 0) return false
   journeys = [...journeys.slice(0, index), ...journeys.slice(index + 1)]
   return true
+}
+
+export async function storeJourneyList(): Promise<JourneyList> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbJourneyList()
+  }
+  return memoryJourneyList()
+}
+
+export async function storeJourneyDetail(id: string): Promise<JourneyDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbJourneyDetail(id)
+  }
+  return memoryJourneyDetail(id)
+}
+
+export async function storeCreateJourney(payload: JourneyWritePayload): Promise<JourneyDetail> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbCreateJourney(payload)
+  }
+  return memoryCreateJourney(payload)
+}
+
+export async function storePatchJourney(
+  id: string,
+  payload: Partial<JourneyWritePayload>,
+): Promise<JourneyDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbPatchJourney(id, payload)
+  }
+  return memoryPatchJourney(id, payload)
+}
+
+export async function storeDeleteJourney(id: string): Promise<boolean> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbDeleteJourney(id)
+  }
+  return memoryDeleteJourney(id)
 }

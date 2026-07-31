@@ -11,7 +11,7 @@ export async function GET(
     return proxyUxStudiesRequest(request)
   }
   const { studyId } = await context.params
-  const study = storeUxStudyDetail(studyId)
+  const study = await storeUxStudyDetail(studyId)
   if (!study) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(study)
 }
@@ -25,7 +25,7 @@ export async function PATCH(
   }
   const { studyId } = await context.params
   const body = (await request.json()) as Partial<UxStudyWritePayload>
-  const study = storePatchUxStudy(studyId, body)
+  const study = await storePatchUxStudy(studyId, body)
   if (!study) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(study)
 }

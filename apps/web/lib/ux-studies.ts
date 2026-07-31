@@ -90,7 +90,7 @@ async function fetchJson(url: string): Promise<Response> {
 
 export async function fetchUxStudyList(): Promise<UxStudyListResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { ...storeUxStudyList(), origin: 'fixtures' }
+    return { ...(await storeUxStudyList()), origin: 'fixtures' }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
@@ -114,7 +114,7 @@ export async function fetchUxStudyList(): Promise<UxStudyListResult> {
     }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { ...storeUxStudyList(), origin: 'fixtures' }
+    return { ...(await storeUxStudyList()), origin: 'fixtures' }
   }
 }
 
@@ -122,14 +122,14 @@ export async function fetchUxStudyDetail(
   id: string,
 ): Promise<{ study: UxStudyDetail | null; origin: UxStudyDataOrigin }> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { study: storeUxStudyDetail(id), origin: 'fixtures' }
+    return { study: await storeUxStudyDetail(id), origin: 'fixtures' }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
     const response = await fetchJson(`${base}/ux-studies/${id}`)
     if (response.status === 404) return { study: null, origin: 'api' }
     if (!response.ok) throw new Error(`UX study detail failed: ${response.status}`)
-    const study = storeUxStudyDetail(id)
+    const study = await storeUxStudyDetail(id)
     // When API returns, prefer live JSON shape via store fallback only if needed
     const json = await response.json()
     return {
@@ -138,7 +138,7 @@ export async function fetchUxStudyDetail(
     }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { study: storeUxStudyDetail(id), origin: 'fixtures' }
+    return { study: await storeUxStudyDetail(id), origin: 'fixtures' }
   }
 }
 
@@ -147,7 +147,7 @@ export async function fetchUxWaveDetail(
   waveId: string,
 ): Promise<{ wave: UxWaveDetail | null; origin: UxStudyDataOrigin }> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { wave: storeUxWaveDetail(studyId, waveId), origin: 'fixtures' }
+    return { wave: await storeUxWaveDetail(studyId, waveId), origin: 'fixtures' }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
@@ -157,7 +157,7 @@ export async function fetchUxWaveDetail(
     return { wave: (await response.json()) as UxWaveDetail, origin: 'api' }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { wave: storeUxWaveDetail(studyId, waveId), origin: 'fixtures' }
+    return { wave: await storeUxWaveDetail(studyId, waveId), origin: 'fixtures' }
   }
 }
 
@@ -168,7 +168,7 @@ export async function fetchUxWaveCompare(
 ): Promise<{ delta: UxWaveCompareDelta | null; origin: UxStudyDataOrigin }> {
   if (shouldUsePersonaFixturesOnly()) {
     return {
-      delta: storeCompareUxWaves(studyId, waveId, otherWaveId),
+      delta: await storeCompareUxWaves(studyId, waveId, otherWaveId),
       origin: 'fixtures',
     }
   }
@@ -182,7 +182,7 @@ export async function fetchUxWaveCompare(
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
     return {
-      delta: storeCompareUxWaves(studyId, waveId, otherWaveId),
+      delta: await storeCompareUxWaves(studyId, waveId, otherWaveId),
       origin: 'fixtures',
     }
   }
