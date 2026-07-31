@@ -126,7 +126,7 @@ describe('provisioning routes', () => {
     expect((await storeProjectDetail(body.projectId))?.platformProjectId).toBe('plat-1')
   })
 
-  it('GET returns target group and persona catalog for bound project', async () => {
+  it('GET returns target group, persona, journey and study catalog for bound project', async () => {
     await storeApplyPlatformBinding('proj-audion-core', {
       platformProjectId: 'plat-catalog',
       platformCompanyId: 'co-1',
@@ -149,14 +149,22 @@ describe('provisioning routes', () => {
       externalProjectId: string
       personaCount: number
       targetGroupCount: number
+      journeyCount: number
+      studyCount: number
       targetGroups: Array<{ id: string; name: string; segment: string; personaCount: number; status: string }>
       personas: Array<{ id: string; name: string; role: string; status: string; targetGroupId: string | null }>
+      journeys: Array<{ id: string; name: string; status: string; journeyType: string; phaseCount: number }>
+      studies: Array<{ id: string; name: string; status: string; waveCount: number }>
     }
     expect(body.externalProjectId).toBe('proj-audion-core')
     expect(body.targetGroupCount).toBeGreaterThan(0)
     expect(body.personaCount).toBeGreaterThan(0)
+    expect(body.journeyCount).toBeGreaterThan(0)
+    expect(body.studyCount).toBeGreaterThan(0)
     expect(body.targetGroups).toHaveLength(body.targetGroupCount)
     expect(body.personas).toHaveLength(body.personaCount)
+    expect(body.journeys).toHaveLength(body.journeyCount)
+    expect(body.studies).toHaveLength(body.studyCount)
     expect(body.targetGroups[0]).toMatchObject({
       id: expect.any(String),
       name: expect.any(String),
@@ -169,6 +177,19 @@ describe('provisioning routes', () => {
       name: expect.any(String),
       role: expect.any(String),
       status: expect.any(String),
+    })
+    expect(body.journeys[0]).toMatchObject({
+      id: expect.any(String),
+      name: expect.any(String),
+      status: expect.any(String),
+      journeyType: expect.any(String),
+      phaseCount: expect.any(Number),
+    })
+    expect(body.studies[0]).toMatchObject({
+      id: expect.any(String),
+      name: expect.any(String),
+      status: expect.any(String),
+      waveCount: expect.any(Number),
     })
   })
 })

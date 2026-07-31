@@ -55,10 +55,14 @@ Resolved by `platformProjectId` (Plexon Collection id). Response includes:
 | `platformProjectId` | string | Echo of request id |
 | `personaCount` | number | Personas with `projectId === externalProjectId` |
 | `targetGroupCount` | number | Target groups for that project |
+| `journeyCount` | number | Journeys for that project |
+| `studyCount` | number | UX studies for that project |
 | `targetGroups` | `{ id, name, segment, personaCount, status }[]` | Catalog for Plexon UI |
 | `personas` | `{ id, name, role, status, targetGroupId? }[]` | Catalog; `targetGroupId` from linked TG when present |
+| `journeys` | `{ id, name, status, journeyType, phaseCount, targetGroupName? }[]` | Catalog |
+| `studies` | `{ id, name, status, waveCount, targetUrlKey? }[]` | Catalog |
 
-Deep-links (Audion app origin, not `/admin`): `/target-groups/{id}`, `/personas/{id}`, `/chat?personaId=…&projectId=…`.
+Deep-links (Audion app origin, not `/admin`): `/target-groups/{id}`, `/personas/{id}`, `/chat?personaId=…&projectId=…`, `/journeys/{id}`, `/studies/{id}`.
 
 ## Paths helper
 

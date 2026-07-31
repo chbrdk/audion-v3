@@ -14,6 +14,8 @@ import {
   storeTargetGroupForPersona,
   storeTargetGroupList,
 } from '../../../../../../lib/fixtures/target-group-store'
+import { storeJourneyList } from '../../../../../../lib/fixtures/journey-store'
+import { storeUxStudyList } from '../../../../../../lib/fixtures/ux-study-store'
 
 function jsonWithContract(body: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers)
@@ -63,12 +65,37 @@ export async function GET(
       targetGroupId: storeTargetGroupForPersona(p.id)?.id ?? null,
     }))
 
+  const journeys = storeJourneyList()
+    .items.filter((j) => j.projectId === project.id)
+    .map((j) => ({
+      id: j.id,
+      name: j.name,
+      status: j.status,
+      journeyType: j.journeyType,
+      phaseCount: j.phaseCount,
+      targetGroupName: j.targetGroupName ?? null,
+    }))
+
+  const studies = storeUxStudyList()
+    .items.filter((s) => s.projectId === project.id)
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      status: s.status,
+      waveCount: s.waveCount,
+      targetUrlKey: s.targetUrlKey ?? null,
+    }))
+
   return jsonWithContract({
     externalProjectId: project.id,
     personaCount: personas.length,
     targetGroupCount: targetGroups.length,
+    journeyCount: journeys.length,
+    studyCount: studies.length,
     targetGroups,
     personas,
+    journeys,
+    studies,
     platformProjectId: platformProjectId.trim(),
   })
 }

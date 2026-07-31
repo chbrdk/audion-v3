@@ -309,7 +309,7 @@ export const DEMO_UX_STUDIES: UxStudyDetail[] = [
     id: 'study-ebm-produktkombinationen',
     name: 'EBM Produktkombinationen UX-Test',
     status: 'active',
-    projectId: '28ece310-66c3-46d0-b5c7-e3acfc3a7567',
+    projectId: 'proj-audion-core',
     sourceGuide: 'EBM-Testleitfaden Produktkombinationen-Tool v1.3 (Testbirds)',
     targetUrlKey: 'bosch.ebike.produktkombinationen',
     waveCount: DEMO_UX_WAVES.length,
