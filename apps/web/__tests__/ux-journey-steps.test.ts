@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   bffVideoUrlForJob,
+  chatUxJourneyStepLabel,
   chatUxJourneyStepShotSrc,
+  composeMessageWithUxStepContext,
   rewriteAgentMediaUrl,
   toChatUxJourneySteps,
 } from '../lib/chat/ux-journey-steps'
@@ -39,5 +41,25 @@ describe('ux journey step media helpers', () => {
     expect(bffVideoUrlForJob('job-1', '/run/job-1/video')).toBe(
       '/api/ux-journey-agent/run/job-1/video',
     )
+  })
+
+  it('composes follow-up chat with selected step context', () => {
+    const composed = composeMessageWithUxStepContext(
+      'Was the CTA clear?',
+      {
+        step: 2,
+        action: 'click',
+        target: 'Start free',
+        reasoning: 'I want to try the product.',
+        reasoningMeta: { memory: 'CTA above fold', next_goal: 'Open pricing' },
+      },
+      1,
+    )
+    expect(composed.display).toContain('About Step 02 · Click')
+    expect(composed.display).toContain('Was the CTA clear?')
+    expect(composed.api).toContain('User question: Was the CTA clear?')
+    expect(composed.api).toContain('Denken: I want to try the product.')
+    expect(composed.api).toContain('Wissen: CTA above fold')
+    expect(chatUxJourneyStepLabel({ step: 2, action: 'click' })).toBe('Step 02 · Click')
   })
 })

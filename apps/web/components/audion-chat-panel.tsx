@@ -22,6 +22,10 @@ import {
 } from '@msqdx/ui'
 import { ChatAnswer } from '../lib/chat/chat-answer'
 import { postChatStream } from '../lib/chat/stream-client'
+import {
+  chatUxJourneyStepLabel,
+  composeMessageWithUxStepContext,
+} from '../lib/chat/ux-journey-steps'
 import { paths } from '../lib/paths'
 import { IconSend } from './nav-icons'
 import { UxJourneyLivePoll } from './ux-journey-live-poll'
@@ -62,6 +66,7 @@ export function AudionChatPanel({
   const [toolBusy, setToolBusy] = useState(false)
   const [toolProgress, setToolProgress] = useState<string[]>([])
   const [inspectSteps, setInspectSteps] = useState<ChatUxJourneyStep[]>([])
+  const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null)
   const [toolComplete, setToolComplete] = useState<ChatToolCompleteEvent | null>(null)
   const [inspectJobId, setInspectJobId] = useState<string | null>(null)
   const [convertBusy, setConvertBusy] = useState(false)
@@ -91,6 +96,7 @@ export function AudionChatPanel({
     setPendingTool(null)
     setToolProgress([])
     setInspectSteps([])
+    setSelectedStepIndex(null)
     setToolComplete(null)
     setInspectJobId(null)
     setConvertedJourneyId(null)
@@ -155,6 +161,7 @@ export function AudionChatPanel({
       setToolComplete(null)
       setToolProgress([])
       setInspectSteps([])
+      setSelectedStepIndex(null)
       setInspectJobId(null)
       setConvertedJourneyId(null)
     } else if (event.type === 'tool_started' || event.type === 'tool_progress') {
@@ -174,6 +181,15 @@ export function AudionChatPanel({
     }
   }
 
+  function selectStepForChat(index: number | null) {
+    setSelectedStepIndex(index)
+    if (index != null) {
+      requestAnimationFrame(() => {
+        document.getElementById('chat-composer')?.focus()
+      })
+    }
+  }
+
   async function sendMessage(raw: string) {
     const message = raw.trim()
     if (!message) {
@@ -184,21 +200,26 @@ export function AudionChatPanel({
       setErr('Pick a persona before chatting.')
       return
     }
+
+    const selected =
+      selectedStepIndex != null && selectedStepIndex >= 0 && selectedStepIndex < inspectSteps.length
+        ? inspectSteps[selectedStepIndex]
+        : null
+    const composed = selected
+      ? composeMessageWithUxStepContext(message, selected, selectedStepIndex ?? 0)
+      : { display: message, api: message }
+
     setComposerError(null)
     setErr(null)
     setDraft('')
     setBusy(true)
     setPendingTool(null)
-    setToolComplete(null)
-    setInspectJobId(null)
-    setToolProgress([])
-    setInspectSteps([])
-    setConvertedJourneyId(null)
+    // Keep inspect steps / selection so follow-up chat about a step stays possible.
 
     const userTurn: ChatMessage = {
       id: `local-user-${Date.now()}`,
       role: 'user',
-      content: message,
+      content: composed.display,
       createdAt: new Date().toISOString(),
       status: 'complete',
     }
@@ -223,7 +244,7 @@ export function AudionChatPanel({
       await postChatStream(
         {
           personaId,
-          message,
+          message: composed.api,
           conversationId,
           projectId: shareProjectId ?? persona?.projectId ?? null,
         },
@@ -399,6 +420,8 @@ export function AudionChatPanel({
             steps={inspectSteps}
             stepsTotal={toolComplete?.stepsTotal ?? inspectSteps.length}
             running={Boolean(inspectJobId && !toolComplete)}
+            selectedIndex={selectedStepIndex}
+            onSelectStep={selectStepForChat}
           />
         ) : null}
 
@@ -447,9 +470,28 @@ export function AudionChatPanel({
       {err ? <Alert tone="error">{err}</Alert> : null}
 
       <form
-        className={['chat-form', draft.trim() ? 'is-expanded' : undefined].filter(Boolean).join(' ')}
+        className={['chat-form', draft.trim() || selectedStepIndex != null ? 'is-expanded' : undefined]
+          .filter(Boolean)
+          .join(' ')}
         onSubmit={onSubmit}
       >
+        {selectedStepIndex != null && inspectSteps[selectedStepIndex] ? (
+          <div className="audion-chat-step-context" role="status">
+            <span className="audion-chat-step-context-label">
+              Chatting about{' '}
+              <strong>{chatUxJourneyStepLabel(inspectSteps[selectedStepIndex]!, selectedStepIndex)}</strong>
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="audion-chat-step-context-clear"
+              onClick={() => selectStepForChat(null)}
+            >
+              Clear
+            </Button>
+          </div>
+        ) : null}
         {composerLeading}
         <Field label="Message" error={composerError ?? undefined} htmlFor="chat-composer">
           <Textarea
@@ -464,7 +506,11 @@ export function AudionChatPanel({
               if (composerError) setComposerError(null)
             }}
             onKeyDown={onComposerKeyDown}
-            placeholder="Ask about goals, channels, or paste a URL to inspect…"
+            placeholder={
+              selectedStepIndex != null
+                ? 'Ask the persona about this step…'
+                : 'Ask about goals, channels, or paste a URL to inspect…'
+            }
             disabled={busy || toolBusy}
             autoComplete="off"
             aria-label="Chat message"

@@ -2595,6 +2595,45 @@ main { min-height: 100vh; }
   max-width: none;
 }
 
+.audion-ux-steps-hint {
+  margin: 0.15rem 0 0.45rem;
+  font-size: var(--type-sm, 0.8125rem);
+  line-height: 1.4;
+}
+
+.audion-ux-step-slide.audion-ux-step-slide--selected .audion-journey-slide-panel {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.audion-chat-step-context {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.35rem;
+  padding: 0.45rem 0.15rem 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.audion-chat-step-context-label {
+  min-width: 0;
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.audion-chat-step-context-label strong {
+  color: var(--accent);
+  font-weight: var(--weight-medium, 500);
+}
+
+.audion-chat-panel.chat-panel-open .chat-form {
+  flex-wrap: wrap;
+}
+
 .audion-ux-steps-empty {
   margin: 0.35rem 0;
 }
@@ -2677,8 +2716,18 @@ main { min-height: 100vh; }
   background: #0b0b0b;
 }
 
+.audion-ux-step-slide--expanded .audion-journey-slide-title {
+  font-size: clamp(1.85rem, 3.2vw, 2.45rem);
+}
+
+.audion-ux-step-slide--expanded .audion-journey-slide-section-label {
+  font-size: var(--type-sm, 0.875rem);
+}
+
 .audion-ux-step-slide--expanded .audion-journey-slide-summary {
   max-width: none;
+  font-size: clamp(1.05rem, 1.55vw, 1.2rem);
+  line-height: 1.55;
 }
 
 .audion-ux-step-section.audion-journey-slide-section {

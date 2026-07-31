@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import type { ChatUxJourneyStep } from '@audion-v3/contracts'
 import { Panel, SectionChrome, Text } from '@msqdx/ui'
-import { chatUxJourneyStepShotSrc } from '../lib/chat/ux-journey-steps'
+import {
+  chatUxJourneyStepLabel,
+  chatUxJourneyStepShotSrc,
+} from '../lib/chat/ux-journey-steps'
 
 function actionLabel(action?: string): string {
   const a = (action || '').toLowerCase()
@@ -49,16 +52,20 @@ function StepSection({
 
 /**
  * Live / finished UX journey steps — phase-card chrome + V2 think-aloud sections.
- * Click a card to expand screenshot / copy; click again (or Esc) to collapse.
+ * Click a card to select it for follow-up chat (and expand); Esc collapses expand.
  */
 export function UxJourneyStepsStrip({
   steps,
   stepsTotal,
   running = false,
+  selectedIndex = null,
+  onSelectStep,
 }: {
   steps: ChatUxJourneyStep[]
   stepsTotal?: number | null
   running?: boolean
+  selectedIndex?: number | null
+  onSelectStep?: (index: number | null) => void
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
@@ -66,13 +73,13 @@ export function UxJourneyStepsStrip({
   useEffect(() => {
     const el = scrollerRef.current
     if (!el) return
-    const targetIdx = expandedIdx ?? (running ? steps.length - 1 : -1)
+    const targetIdx = expandedIdx ?? selectedIndex ?? (running ? steps.length - 1 : -1)
     if (targetIdx < 0) return
     const card = el.querySelector<HTMLElement>(`[data-step-index="${targetIdx}"]`)
     if (!card) return
     const left = card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2
     el.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
-  }, [steps.length, expandedIdx, running])
+  }, [steps.length, expandedIdx, selectedIndex, running])
 
   useEffect(() => {
     if (expandedIdx == null) return
@@ -82,6 +89,13 @@ export function UxJourneyStepsStrip({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [expandedIdx])
+
+  useEffect(() => {
+    if (selectedIndex == null) return
+    if (selectedIndex < 0 || selectedIndex >= steps.length) {
+      onSelectStep?.(null)
+    }
+  }, [selectedIndex, steps.length, onSelectStep])
 
   if (!steps.length) {
     return running ? (
@@ -93,27 +107,30 @@ export function UxJourneyStepsStrip({
   const activeIdx = running ? steps.length - 1 : -1
   const meta = total ? `${steps.length} / ${total}` : `${steps.length}`
 
-  function toggleExpand(idx: number) {
+  function activateCard(idx: number) {
+    onSelectStep?.(idx)
     setExpandedIdx((prev) => (prev === idx ? null : idx))
   }
 
   function onCardKeyDown(e: KeyboardEvent<HTMLElement>, idx: number) {
     if (e.key !== 'Enter' && e.key !== ' ') return
     e.preventDefault()
-    toggleExpand(idx)
+    activateCard(idx)
   }
 
   function onCardClick(e: MouseEvent<HTMLElement>, idx: number) {
-    // Ignore text selection drags
     if (typeof window !== 'undefined' && window.getSelection()?.toString()) return
     const target = e.target as HTMLElement | null
     if (target?.closest('a, button, summary, details')) return
-    toggleExpand(idx)
+    activateCard(idx)
   }
 
   return (
     <section className="audion-ux-steps" aria-label="Journey steps">
       <SectionChrome quiet title="Steps" meta={meta} metaTone="accent" as="h3" />
+      <p className="audion-ux-steps-hint audion-muted">
+        Select a step to keep chatting about that moment with the persona.
+      </p>
       <div
         className="audion-journey-timeline-viewport audion-ux-steps-scroller"
         ref={scrollerRef}
@@ -132,6 +149,7 @@ export function UxJourneyStepsStrip({
           const title = actionLabel(s.action)
           const active = idx === activeIdx
           const expanded = expandedIdx === idx
+          const selected = selectedIndex === idx
           const hasThinkAloud = Boolean(denken || gesehenes || wissen || nextStep || result)
           const text = (value: string, compactMax: number) =>
             expanded ? value : truncate(value, compactMax)
@@ -143,13 +161,15 @@ export function UxJourneyStepsStrip({
                 'audion-ux-step-slide',
                 active ? 'audion-journey-slide--active' : '',
                 expanded ? 'audion-ux-step-slide--expanded' : '',
+                selected ? 'audion-ux-step-slide--selected' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
               data-step-index={idx}
-              aria-current={active ? 'step' : undefined}
+              aria-current={selected ? 'true' : active ? 'step' : undefined}
               aria-expanded={expanded}
-              aria-label={`Step ${n}: ${title}${expanded ? ' (expanded)' : ''}`}
+              aria-pressed={selected}
+              aria-label={`${chatUxJourneyStepLabel(s, idx)}${selected ? ' (selected for chat)' : ''}${expanded ? ' (expanded)' : ''}`}
               tabIndex={0}
               onClick={(e) => onCardClick(e, idx)}
               onKeyDown={(e) => onCardKeyDown(e, idx)}
@@ -164,7 +184,11 @@ export function UxJourneyStepsStrip({
                       Step
                       {total ? ` · ${n} of ${total}` : ''}
                       <span className="audion-ux-step-expand-hint">
-                        {expanded ? ' · click to collapse' : ' · click to expand'}
+                        {selected
+                          ? ' · selected for chat'
+                          : expanded
+                            ? ' · click to collapse'
+                            : ' · click to select & expand'}
                       </span>
                     </Text>
                     <Text role="headline" as="h4" className="audion-journey-slide-title">

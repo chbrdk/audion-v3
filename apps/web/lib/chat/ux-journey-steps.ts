@@ -61,3 +61,59 @@ export function bffVideoUrlForJob(jobId: string, agentVideoUrl?: string | null):
   if (rewritten) return rewritten
   return paths.routes.apiUxJourneyAgentVideo(jobId)
 }
+
+function actionLabel(action?: string): string {
+  const a = (action || '').toLowerCase()
+  if (a === 'navigate') return 'Navigate'
+  if (a === 'click') return 'Click'
+  if (a === 'scroll') return 'Scroll'
+  if (a === 'input' || a === 'type' || a === 'send_keys') return 'Type'
+  if (a === 'done') return 'Done'
+  if (a) return a.charAt(0).toUpperCase() + a.slice(1)
+  return 'Step'
+}
+
+/** Short chip / bubble label for a selected inspect step. */
+export function chatUxJourneyStepLabel(step: ChatUxJourneyStep, index = 0): string {
+  const n = step.step ?? index + 1
+  return `Step ${String(n).padStart(2, '0')} · ${actionLabel(step.action)}`
+}
+
+/**
+ * Enrich a user chat message with the selected inspect step so the persona
+ * can answer in context of that moment.
+ */
+export function composeMessageWithUxStepContext(
+  userMessage: string,
+  step: ChatUxJourneyStep,
+  index = 0,
+): { display: string; api: string } {
+  const message = userMessage.trim()
+  const label = chatUxJourneyStepLabel(step, index)
+  const n = step.step ?? index + 1
+  const lines = [
+    `The user is asking about UX journey step ${n} (${actionLabel(step.action)}).`,
+    'Answer in first person as the persona who just took this step. Ground your reply in the step evidence below.',
+    '',
+    `Step: ${n}`,
+    `Action: ${actionLabel(step.action)}`,
+  ]
+  if (step.target?.trim()) lines.push(`Target: ${step.target.trim()}`)
+  if (step.reasoning?.trim()) lines.push(`Denken: ${step.reasoning.trim()}`)
+  if (step.reasoningMeta?.evaluation_previous_goal?.trim()) {
+    lines.push(`Gesehenes: ${step.reasoningMeta.evaluation_previous_goal.trim()}`)
+  }
+  if (step.reasoningMeta?.memory?.trim()) {
+    lines.push(`Wissen: ${step.reasoningMeta.memory.trim()}`)
+  }
+  if (step.reasoningMeta?.next_goal?.trim()) {
+    lines.push(`Nächster Schritt: ${step.reasoningMeta.next_goal.trim()}`)
+  }
+  if (step.result?.trim()) lines.push(`Ergebnis: ${step.result.trim()}`)
+  lines.push('', `User question: ${message}`)
+
+  return {
+    display: `About ${label}\n${message}`,
+    api: lines.join('\n'),
+  }
+}
