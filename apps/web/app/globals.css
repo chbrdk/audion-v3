@@ -2401,6 +2401,32 @@ main { min-height: 100vh; }
 
 .audion-chat-panel.chat-panel-open {
   --chat-panel-open-min-height: calc(100vh - 10.5rem);
+  /* Full stage width (rail stays); uncapped from DS 56rem editorial column */
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.audion-chat-panel.chat-panel-open .chat-turns {
+  max-width: none;
+  margin-inline: 0;
+}
+
+/* Keep message bubbles readable; tool / step chrome can use the full stage */
+.audion-chat-panel.chat-panel-open .chat-turn {
+  max-width: min(42rem, 92%);
+}
+
+.audion-chat-panel.chat-panel-open .chat-form {
+  --chat-composer-collapsed: min(36rem, 100%);
+  --chat-composer-expanded: 100%;
+  max-width: min(48rem, 100%);
+}
+
+.audion-chat-panel.chat-panel-open .chat-form:hover,
+.audion-chat-panel.chat-panel-open .chat-form:focus-within,
+.audion-chat-panel.chat-panel-open .chat-form.is-expanded {
+  max-width: min(72rem, 100%);
 }
 
 /* Flyout shell chrome lives in @msqdx/ui (.ds-flyout / .ds-flyover). Product content variants: */
@@ -2565,13 +2591,15 @@ main { min-height: 100vh; }
 .audion-ux-steps {
   margin: 0.65rem 0 0.85rem;
   min-width: 0;
+  width: 100%;
+  max-width: none;
 }
 
 .audion-ux-steps-empty {
   margin: 0.35rem 0;
 }
 
-/* Chat steps reuse journey phase cards in a compact horizontal strip */
+/* Chat steps reuse journey phase cards in a horizontal strip */
 .audion-ux-steps-scroller.audion-journey-timeline-viewport {
   gap: clamp(0.85rem, 1.8vw, 1.35rem);
   padding: 0.25rem 0.15rem 0.85rem;
@@ -2579,32 +2607,78 @@ main { min-height: 100vh; }
 }
 
 .audion-ux-step-slide.audion-journey-slide {
-  flex: 0 0 min(20rem, calc(100% - 1.5rem));
-  width: min(20rem, calc(100% - 1.5rem));
-  max-width: min(20rem, calc(100% - 1.5rem));
+  /* Match journey phase card scale once the chat stage is uncapped */
+  flex: 0 0 min(28rem, calc(100% - 2rem));
+  width: min(28rem, calc(100% - 2rem));
+  max-width: min(28rem, calc(100% - 2rem));
   min-height: 0;
   scroll-snap-align: center;
+  cursor: pointer;
+  transition:
+    flex-basis 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    max-width 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.audion-ux-step-slide.audion-ux-step-slide--expanded {
+  flex: 0 0 min(46rem, calc(100% - 1rem));
+  width: min(46rem, calc(100% - 1rem));
+  max-width: min(46rem, calc(100% - 1rem));
+  z-index: 1;
+}
+
+.audion-ux-step-slide.audion-ux-step-slide--expanded.audion-journey-slide--active .audion-journey-slide-panel,
+.audion-ux-step-slide.audion-ux-step-slide--expanded .audion-journey-slide-panel {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.audion-ux-step-slide:focus-visible {
+  outline: none;
+}
+
+.audion-ux-step-slide:focus-visible .audion-journey-slide-panel {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.audion-ux-step-expand-hint {
+  color: var(--muted);
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
 }
 
 .audion-ux-step-slide .audion-journey-slide-panel.ds-panel.module-panel {
   min-height: 0;
-  padding: clamp(1.1rem, 2vw, 1.5rem);
-  gap: clamp(0.75rem, 1.5vw, 1.1rem);
+  padding: clamp(1.25rem, 2.4vw, 1.85rem);
+  gap: clamp(0.85rem, 1.6vw, 1.25rem);
 }
 
 .audion-ux-step-slide .audion-journey-slide-title {
   max-width: none;
-  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
+  font-size: clamp(1.45rem, 2.6vw, 2rem);
 }
 
 .audion-ux-step-shot {
   display: block;
   width: 100%;
-  max-height: 140px;
+  max-height: 200px;
   object-fit: cover;
   border-radius: var(--radius-md);
   border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
   background: #111;
+  transition: max-height 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.audion-ux-step-slide--expanded .audion-ux-step-shot {
+  max-height: min(55vh, 32rem);
+  object-fit: contain;
+  background: #0b0b0b;
+}
+
+.audion-ux-step-slide--expanded .audion-journey-slide-summary {
+  max-width: none;
 }
 
 .audion-ux-step-section.audion-journey-slide-section {

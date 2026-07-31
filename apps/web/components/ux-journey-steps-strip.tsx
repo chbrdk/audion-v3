@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import type { ChatUxJourneyStep } from '@audion-v3/contracts'
 import { Panel, SectionChrome, Text } from '@msqdx/ui'
 import { chatUxJourneyStepShotSrc } from '../lib/chat/ux-journey-steps'
@@ -32,7 +32,11 @@ function StepSection({
   open?: boolean
 }) {
   return (
-    <details className="audion-journey-slide-section audion-ux-step-section" open={open}>
+    <details
+      className="audion-journey-slide-section audion-ux-step-section"
+      open={open}
+      onClick={(e) => e.stopPropagation()}
+    >
       <summary className="audion-ux-step-section-summary">
         <Text role="label" className="audion-journey-slide-section-label">
           {label}
@@ -45,6 +49,7 @@ function StepSection({
 
 /**
  * Live / finished UX journey steps — phase-card chrome + V2 think-aloud sections.
+ * Click a card to expand screenshot / copy; click again (or Esc) to collapse.
  */
 export function UxJourneyStepsStrip({
   steps,
@@ -56,16 +61,27 @@ export function UxJourneyStepsStrip({
   running?: boolean
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
 
   useEffect(() => {
     const el = scrollerRef.current
     if (!el) return
-    const cards = el.querySelectorAll<HTMLElement>('[data-step-index]')
-    const last = cards[cards.length - 1]
-    if (!last) return
-    const left = last.offsetLeft - (el.clientWidth - last.offsetWidth) / 2
+    const targetIdx = expandedIdx ?? (running ? steps.length - 1 : -1)
+    if (targetIdx < 0) return
+    const card = el.querySelector<HTMLElement>(`[data-step-index="${targetIdx}"]`)
+    if (!card) return
+    const left = card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2
     el.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
-  }, [steps.length])
+  }, [steps.length, expandedIdx, running])
+
+  useEffect(() => {
+    if (expandedIdx == null) return
+    function onKey(e: globalThis.KeyboardEvent) {
+      if (e.key === 'Escape') setExpandedIdx(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [expandedIdx])
 
   if (!steps.length) {
     return running ? (
@@ -76,6 +92,24 @@ export function UxJourneyStepsStrip({
   const total = stepsTotal && stepsTotal > 0 ? stepsTotal : undefined
   const activeIdx = running ? steps.length - 1 : -1
   const meta = total ? `${steps.length} / ${total}` : `${steps.length}`
+
+  function toggleExpand(idx: number) {
+    setExpandedIdx((prev) => (prev === idx ? null : idx))
+  }
+
+  function onCardKeyDown(e: KeyboardEvent<HTMLElement>, idx: number) {
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    e.preventDefault()
+    toggleExpand(idx)
+  }
+
+  function onCardClick(e: MouseEvent<HTMLElement>, idx: number) {
+    // Ignore text selection drags
+    if (typeof window !== 'undefined' && window.getSelection()?.toString()) return
+    const target = e.target as HTMLElement | null
+    if (target?.closest('a, button, summary, details')) return
+    toggleExpand(idx)
+  }
 
   return (
     <section className="audion-ux-steps" aria-label="Journey steps">
@@ -97,14 +131,28 @@ export function UxJourneyStepsStrip({
           const target = s.target?.trim() || ''
           const title = actionLabel(s.action)
           const active = idx === activeIdx
+          const expanded = expandedIdx === idx
           const hasThinkAloud = Boolean(denken || gesehenes || wissen || nextStep || result)
+          const text = (value: string, compactMax: number) =>
+            expanded ? value : truncate(value, compactMax)
           return (
             <article
               key={`${n}-${idx}`}
-              className={`audion-journey-slide audion-ux-step-slide${active ? ' audion-journey-slide--active' : ''}`}
+              className={[
+                'audion-journey-slide',
+                'audion-ux-step-slide',
+                active ? 'audion-journey-slide--active' : '',
+                expanded ? 'audion-ux-step-slide--expanded' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               data-step-index={idx}
               aria-current={active ? 'step' : undefined}
-              aria-label={`Step ${n}: ${title}`}
+              aria-expanded={expanded}
+              aria-label={`Step ${n}: ${title}${expanded ? ' (expanded)' : ''}`}
+              tabIndex={0}
+              onClick={(e) => onCardClick(e, idx)}
+              onKeyDown={(e) => onCardKeyDown(e, idx)}
             >
               <Panel as="div" className="audion-journey-slide-panel">
                 <header className="audion-journey-slide-head">
@@ -115,6 +163,9 @@ export function UxJourneyStepsStrip({
                     <Text role="label" className="audion-journey-slide-eyebrow">
                       Step
                       {total ? ` · ${n} of ${total}` : ''}
+                      <span className="audion-ux-step-expand-hint">
+                        {expanded ? ' · click to collapse' : ' · click to expand'}
+                      </span>
                     </Text>
                     <Text role="headline" as="h4" className="audion-journey-slide-title">
                       {title}
@@ -123,7 +174,7 @@ export function UxJourneyStepsStrip({
                 </header>
 
                 {shot ? (
-                  <div className="audion-journey-slide-section">
+                  <div className="audion-journey-slide-section audion-ux-step-shot-section">
                     <Text role="label" className="audion-journey-slide-section-label">
                       Screenshot
                     </Text>
@@ -141,37 +192,37 @@ export function UxJourneyStepsStrip({
                     <Text role="label" className="audion-journey-slide-section-label">
                       Target
                     </Text>
-                    <p className="audion-journey-slide-summary">{truncate(target, 200)}</p>
+                    <p className="audion-journey-slide-summary">{text(target, 200)}</p>
                   </div>
                 ) : null}
 
                 {denken ? (
                   <StepSection label="Denken">
-                    <p className="audion-journey-slide-summary">{truncate(denken, 1200)}</p>
+                    <p className="audion-journey-slide-summary">{text(denken, 420)}</p>
                   </StepSection>
                 ) : null}
 
                 {gesehenes ? (
                   <StepSection label="Gesehenes">
-                    <p className="audion-journey-slide-summary">{truncate(gesehenes, 800)}</p>
+                    <p className="audion-journey-slide-summary">{text(gesehenes, 320)}</p>
                   </StepSection>
                 ) : null}
 
                 {wissen ? (
                   <StepSection label="Wissen">
-                    <p className="audion-journey-slide-summary">{truncate(wissen, 1000)}</p>
+                    <p className="audion-journey-slide-summary">{text(wissen, 360)}</p>
                   </StepSection>
                 ) : null}
 
                 {nextStep ? (
                   <StepSection label="Nächster Schritt">
-                    <p className="audion-journey-slide-summary">{truncate(nextStep, 600)}</p>
+                    <p className="audion-journey-slide-summary">{text(nextStep, 280)}</p>
                   </StepSection>
                 ) : null}
 
                 {result ? (
                   <StepSection label="Ergebnis">
-                    <p className="audion-journey-slide-summary">{truncate(result, 1200)}</p>
+                    <p className="audion-journey-slide-summary">{text(result, 420)}</p>
                   </StepSection>
                 ) : null}
 
