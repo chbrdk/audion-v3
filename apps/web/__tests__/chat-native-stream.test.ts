@@ -50,4 +50,38 @@ describe('native chat stream', () => {
       expect(done.conversationId).toBeTruthy()
     }
   })
+
+  it('includes prior conversation turns in the OpenAI payload', async () => {
+    const first = []
+    for await (const event of nativeChatStreamEvents({
+      personaId: DEMO_PERSONAS[0]!.id,
+      message: 'First question',
+    })) {
+      first.push(event)
+    }
+    const done = first.find((e) => e.type === 'done')
+    expect(done?.type).toBe('done')
+    if (done?.type !== 'done') return
+    createMock.mockClear()
+    createMock.mockResolvedValue(fakeChunks())
+
+    for await (const _event of nativeChatStreamEvents({
+      personaId: DEMO_PERSONAS[0]!.id,
+      conversationId: done.conversationId,
+      message: 'Follow-up about the CTA',
+    })) {
+      /* drain */
+    }
+
+    expect(createMock).toHaveBeenCalled()
+    const payload = createMock.mock.calls[0]?.[0] as {
+      messages: Array<{ role: string; content: string }>
+    }
+    const roles = payload.messages.map((m) => m.role)
+    expect(roles[0]).toBe('system')
+    expect(roles).toContain('assistant')
+    expect(payload.messages.some((m) => m.content.includes('First question'))).toBe(true)
+    expect(payload.messages.at(-1)?.role).toBe('user')
+    expect(payload.messages.at(-1)?.content).toContain('Follow-up about the CTA')
+  })
 })

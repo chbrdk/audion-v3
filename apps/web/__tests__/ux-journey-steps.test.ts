@@ -4,6 +4,7 @@ import {
   chatUxJourneyStepLabel,
   chatUxJourneyStepShotSrc,
   composeMessageWithUxStepContext,
+  parseUxStepFollowUpDisplay,
   rewriteAgentMediaUrl,
   toChatUxJourneySteps,
 } from '../lib/chat/ux-journey-steps'
@@ -61,5 +62,8 @@ describe('ux journey step media helpers', () => {
     expect(composed.api).toContain('Denken: I want to try the product.')
     expect(composed.api).toContain('Wissen: CTA above fold')
     expect(chatUxJourneyStepLabel({ step: 2, action: 'click' })).toBe('Step 02 · Click')
+    const parsed = parseUxStepFollowUpDisplay(composed.display)
+    expect(parsed.meta).toBe('Step 02 · Click')
+    expect(parsed.body).toBe('Was the CTA clear?')
   })
 })

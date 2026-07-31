@@ -5,6 +5,12 @@ import { AudionChatPanel } from '../components/audion-chat-panel'
 import { AudionChatWorkspace } from '../components/audion-chat-workspace'
 import { paths } from '../lib/paths'
 
+const postChatStreamMock = vi.fn()
+
+vi.mock('../lib/chat/stream-client', () => ({
+  postChatStream: (...args: unknown[]) => postChatStreamMock(...args),
+}))
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
   usePathname: () => '/chat',
@@ -41,6 +47,7 @@ afterEach(() => {
 })
 
 beforeEach(() => {
+  postChatStreamMock.mockReset()
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({
@@ -224,5 +231,144 @@ describe('audion chat panel', () => {
     expect(container.querySelector('.chat-turn-assistant .chat-answer')).toBeTruthy()
     expect(container.querySelector('.chat-turn-user')).toBeTruthy()
     expect(container.querySelector('.chat-turn-assistant')).toBeTruthy()
+  })
+
+  it('renders step follow-up bubbles with quiet meta + docks inspect outside turns', async () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    Element.prototype.scrollTo = vi.fn() as never
+    postChatStreamMock.mockImplementation(async (_payload, onEvent) => {
+      onEvent({ type: 'delta', text: 'Noted.' })
+      onEvent({
+        type: 'tool_complete',
+        callId: 'call-1',
+        tool: 'inspect_website',
+        summary: 'Inspection finished.',
+        convert: null,
+        jobId: 'job-1',
+        steps: [{ step: 1, action: 'navigate', reasoning: 'Opening home' }],
+        stepsTotal: 1,
+      })
+      onEvent({ type: 'done', conversationId: 'conv-inspect', messageId: 'm-asst-1' })
+    })
+
+    const { container } = render(
+      <AudionChatPanel
+        personas={personas}
+        personaId="persona-alex-morgan"
+        initialConversation={{
+          id: 'conv-1',
+          personaId: 'persona-alex-morgan',
+          personaName: 'Alex Morgan',
+          title: 'Brief',
+          updatedAt: '2026-07-29T00:00:00.000Z',
+          preview: 'hi',
+          projectId: null,
+          messages: [
+            {
+              id: 'm-step',
+              role: 'user',
+              content: 'About Step 03 · Click\nWas the CTA clear?',
+              createdAt: '2026-07-29T00:00:00.000Z',
+              status: 'complete',
+            },
+          ],
+        }}
+      />,
+    )
+
+    expect(container.querySelector('.audion-chat-user-step-meta')?.textContent).toContain(
+      'About Step 03 · Click',
+    )
+    expect(container.querySelector('.chat-turn-user .chat-text')?.textContent).toBe(
+      'Was the CTA clear?',
+    )
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'inspect bosch' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    await screen.findByLabelText('UX journey inspect')
+    const turns = container.querySelector('.chat-turns')
+    const dock = container.querySelector('.audion-chat-inspect-dock')
+    expect(dock).toBeTruthy()
+    expect(turns?.contains(dock)).toBe(false)
+    expect(dock?.querySelector('.audion-ux-steps')).toBeTruthy()
+    expect(screen.getByText('Inspection finished.')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByLabelText(/Step 01 · Navigate/i))
+    expect(screen.getByRole('status')).toHaveTextContent(/Chatting about/)
+    expect(screen.getByRole('status')).toHaveTextContent('Step 01 · Navigate')
+
+    postChatStreamMock.mockImplementation(async (_payload, onEvent) => {
+      onEvent({ type: 'delta', text: 'The CTA felt rushed.' })
+      onEvent({ type: 'done', conversationId: 'conv-inspect', messageId: 'm-asst-2' })
+    })
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'How did that feel?' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await screen.findByText('The CTA felt rushed.')
+    expect(container.querySelector('.audion-chat-inspect-dock .audion-ux-steps')).toBeTruthy()
+    expect(screen.getByRole('status')).toHaveTextContent(/Chatting about/)
+  })
+
+  it('restores inspect dock from conversation.inspect and renders step markdown', () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    Element.prototype.scrollTo = vi.fn() as never
+    const { container } = render(
+      <AudionChatPanel
+        personas={personas}
+        personaId="persona-alex-morgan"
+        initialConversation={{
+          id: 'conv-restore',
+          personaId: 'persona-alex-morgan',
+          personaName: 'Alex Morgan',
+          title: 'Inspect restore',
+          updatedAt: '2026-07-29T00:00:00.000Z',
+          preview: 'done',
+          projectId: null,
+          messages: [
+            {
+              id: 'm1',
+              role: 'user',
+              content: 'https://example.com',
+              createdAt: '2026-07-29T00:00:00.000Z',
+              status: 'complete',
+            },
+          ],
+          inspect: {
+            jobId: 'job-restore',
+            summary: 'Restored inspection finished.',
+            videoUrl: null,
+            steps: [
+              {
+                step: 1,
+                action: 'navigate',
+                reasoning: 'Opening **home** for friction.',
+                reasoningMeta: {
+                  memory: 'Remember *CTA* placement.',
+                  next_goal: 'Click primary action',
+                },
+              },
+            ],
+            stepsTotal: 1,
+            convert: {
+              jobId: 'job-restore',
+              personaId: 'persona-alex-morgan',
+              url: 'https://example.com',
+              task: 'Inspect',
+              source: 'chat_inspect',
+            },
+            completedAt: '2026-07-29T00:05:00.000Z',
+          },
+        }}
+      />,
+    )
+
+    expect(screen.getByLabelText('UX journey inspect')).toBeTruthy()
+    expect(screen.getByText('Restored inspection finished.')).toBeInTheDocument()
+    expect(container.querySelector('.audion-ux-step-md .chat-answer strong')?.textContent).toBe(
+      'home',
+    )
+    expect(container.querySelector('.audion-ux-step-md .chat-answer em')?.textContent).toBe('CTA')
   })
 })

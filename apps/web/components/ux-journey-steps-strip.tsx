@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import type { ChatUxJourneyStep } from '@audion-v3/contracts'
 import { Panel, SectionChrome, Text } from '@msqdx/ui'
+import { ChatAnswer } from '../lib/chat/chat-answer'
 import {
   chatUxJourneyStepLabel,
   chatUxJourneyStepShotSrc,
@@ -17,12 +18,6 @@ function actionLabel(action?: string): string {
   if (a === 'done') return 'Done'
   if (a) return a.charAt(0).toUpperCase() + a.slice(1)
   return 'Step'
-}
-
-function truncate(text: string, max: number): string {
-  const t = text.trim()
-  if (t.length <= max) return t
-  return `${t.slice(0, max - 1)}…`
 }
 
 function StepSection({
@@ -47,6 +42,20 @@ function StepSection({
       </summary>
       <div className="audion-ux-step-section-body">{children}</div>
     </details>
+  )
+}
+
+function StepMarkdown({ text, compact }: { text: string; compact: boolean }) {
+  return (
+    <div
+      className={
+        compact
+          ? 'audion-ux-step-md audion-ux-step-md--compact'
+          : 'audion-ux-step-md'
+      }
+    >
+      <ChatAnswer answer={text} />
+    </div>
   )
 }
 
@@ -78,7 +87,9 @@ export function UxJourneyStepsStrip({
     const card = el.querySelector<HTMLElement>(`[data-step-index="${targetIdx}"]`)
     if (!card) return
     const left = card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2
-    el.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+    if (typeof el.scrollTo === 'function') {
+      el.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+    }
   }, [steps.length, expandedIdx, selectedIndex, running])
 
   useEffect(() => {
@@ -151,8 +162,6 @@ export function UxJourneyStepsStrip({
           const expanded = expandedIdx === idx
           const selected = selectedIndex === idx
           const hasThinkAloud = Boolean(denken || gesehenes || wissen || nextStep || result)
-          const text = (value: string, compactMax: number) =>
-            expanded ? value : truncate(value, compactMax)
           return (
             <article
               key={`${n}-${idx}`}
@@ -216,37 +225,41 @@ export function UxJourneyStepsStrip({
                     <Text role="label" className="audion-journey-slide-section-label">
                       Target
                     </Text>
-                    <p className="audion-journey-slide-summary">{text(target, 200)}</p>
+                    <p className="audion-journey-slide-summary">
+                      {expanded || target.length <= 200
+                        ? target
+                        : `${target.slice(0, 199)}…`}
+                    </p>
                   </div>
                 ) : null}
 
                 {denken ? (
                   <StepSection label="Denken">
-                    <p className="audion-journey-slide-summary">{text(denken, 420)}</p>
+                    <StepMarkdown text={denken} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
                 {gesehenes ? (
                   <StepSection label="Gesehenes">
-                    <p className="audion-journey-slide-summary">{text(gesehenes, 320)}</p>
+                    <StepMarkdown text={gesehenes} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
                 {wissen ? (
                   <StepSection label="Wissen">
-                    <p className="audion-journey-slide-summary">{text(wissen, 360)}</p>
+                    <StepMarkdown text={wissen} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
                 {nextStep ? (
                   <StepSection label="Nächster Schritt">
-                    <p className="audion-journey-slide-summary">{text(nextStep, 280)}</p>
+                    <StepMarkdown text={nextStep} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
                 {result ? (
                   <StepSection label="Ergebnis">
-                    <p className="audion-journey-slide-summary">{text(result, 420)}</p>
+                    <StepMarkdown text={result} compact={!expanded} />
                   </StepSection>
                 ) : null}
 

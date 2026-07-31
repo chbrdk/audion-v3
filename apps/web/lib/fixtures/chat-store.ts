@@ -5,6 +5,7 @@
  */
 import type {
   ChatConversationDetail,
+  ChatConversationInspect,
   ChatConversationList,
   ChatConversationSummary,
   ChatMessage,
@@ -61,7 +62,7 @@ export function resetChatStore(): void {
 }
 
 function toSummary(c: StoredConversation): ChatConversationSummary {
-  const { messages: _m, ...summary } = c
+  const { messages: _m, inspect: _i, ...summary } = c
   return summary
 }
 
@@ -118,6 +119,7 @@ function memoryChatBeginUserTurn(
       updatedAt: now,
       preview: message.slice(0, 80),
       messages: [userMsg],
+      inspect: null,
     }
     conversations = [conversation, ...conversations]
   } else {
@@ -160,6 +162,20 @@ function memoryChatAppendAssistant(
   return { conversationId, messageId: assistantId }
 }
 
+function memoryChatSetInspect(
+  conversationId: string,
+  inspect: ChatConversationInspect | null,
+): void {
+  const conversation = conversations.find((c) => c.id === conversationId)
+  if (!conversation) return
+  const next: StoredConversation = {
+    ...conversation,
+    inspect,
+    updatedAt: new Date().toISOString(),
+  }
+  conversations = conversations.map((c) => (c.id === conversationId ? next : c))
+}
+
 export async function storeChatConversationList(): Promise<ChatConversationList> {
   if (isProjectsDatabaseConfigured()) {
     const db = await dbApi()
@@ -198,6 +214,18 @@ export async function storeChatAppendAssistant(
     return db.dbChatAppendAssistant(conversationId, content)
   }
   return memoryChatAppendAssistant(conversationId, content)
+}
+
+export async function storeChatSetInspect(
+  conversationId: string,
+  inspect: ChatConversationInspect | null,
+): Promise<void> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    await db.dbChatSetInspect(conversationId, inspect)
+    return
+  }
+  memoryChatSetInspect(conversationId, inspect)
 }
 
 /** Fake NDJSON stream for stub AI runtime. */

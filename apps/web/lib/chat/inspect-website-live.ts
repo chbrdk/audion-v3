@@ -5,6 +5,7 @@
 import type { ChatStreamEvent } from '@audion-v3/contracts'
 import { storePersonaDetail } from '../fixtures/persona-store'
 import { storeUpsertUxJourneyRun } from '../fixtures/ux-journey-run-store'
+import { inspectFromToolComplete } from './messages-column'
 import {
   isUxJourneyAgentConfigured,
   sleep,
@@ -53,6 +54,7 @@ export async function* runLiveInspectWebsiteStream(input: {
   url: string
   personaId: string
   projectId?: string | null
+  conversationId?: string | null
   task?: string | null
   maxSteps?: number | null
 }): AsyncGenerator<ChatStreamEvent> {
@@ -163,20 +165,37 @@ export async function* runLiveInspectWebsiteStream(input: {
           return
         }
 
+        const convert = {
+          jobId,
+          personaId: input.personaId,
+          url,
+          task,
+          source: 'chat_inspect' as const,
+        }
+        const videoUrl = bffVideoUrlForJob(jobId, status.result?.videoUrl)
+        if (input.conversationId) {
+          const { storeChatSetInspect } = await import('../fixtures/chat-store')
+          await storeChatSetInspect(
+            input.conversationId,
+            inspectFromToolComplete({
+              jobId,
+              summary,
+              videoUrl,
+              steps: chatSteps,
+              stepsTotal: chatSteps.length,
+              convert,
+            }),
+          )
+        }
+
         yield {
           type: 'tool_complete',
           callId: input.callId,
           tool: 'inspect_website',
           summary,
-          convert: {
-            jobId,
-            personaId: input.personaId,
-            url,
-            task,
-            source: 'chat_inspect',
-          },
+          convert,
           jobId,
-          videoUrl: bffVideoUrlForJob(jobId, status.result?.videoUrl),
+          videoUrl,
           steps: chatSteps,
           stepsTotal: chatSteps.length,
         }

@@ -26,6 +26,25 @@ export type ChatMessage = {
 
 export type ChatConversationDetail = ChatConversationSummary & {
   messages: ChatMessage[]
+  /** Latest completed website inspect for this conversation (session restore). */
+  inspect?: ChatConversationInspect | null
+}
+
+/** Persisted inspect dock snapshot (steps + convert meta). */
+export type ChatConversationInspect = {
+  jobId: string | null
+  summary: string | null
+  videoUrl: string | null
+  steps: ChatUxJourneyStep[]
+  stepsTotal: number | null
+  convert: {
+    jobId: string
+    personaId: string
+    url: string
+    task: string
+    source: 'chat_inspect'
+  } | null
+  completedAt: string | null
 }
 
 export type ChatSendPayload = {

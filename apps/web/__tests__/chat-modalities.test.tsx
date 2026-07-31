@@ -11,7 +11,7 @@ import {
   storeShareMoodboard,
   storeSharePersona,
 } from '../lib/fixtures/chat-share'
-import { resetChatStore, storeChatFakeStream } from '../lib/fixtures/chat-store'
+import { resetChatStore, storeChatBeginUserTurn, storeChatConversationDetail, storeChatFakeStream } from '../lib/fixtures/chat-store'
 import { runStubConvertUxRunToJourney } from '../lib/journey-from-ux-run'
 import { resetJourneyStore } from '../lib/fixtures/journey-store'
 import { paths } from '../lib/paths'
@@ -137,7 +137,12 @@ describe('inspect_website fixture stream + decision', () => {
       'chat-1',
     )
     expect(proposal).toBeTruthy()
-    const events = [...storeChatToolDecisionStream(proposal!.callId, { decision: 'approve' })]
+    const events = []
+    for await (const event of storeChatToolDecisionStream(proposal!.callId, {
+      decision: 'approve',
+    })) {
+      events.push(event)
+    }
     expect(events.some((e) => e.type === 'tool_started')).toBe(true)
     expect(events.some((e) => e.type === 'tool_complete')).toBe(true)
     const complete = events.find((e) => e.type === 'tool_complete')
@@ -153,10 +158,40 @@ describe('inspect_website fixture stream + decision', () => {
       null,
       null,
     )!
-    const events = [...storeChatToolDecisionStream(proposal.callId, { decision: 'deny' })]
+    const events = []
+    for await (const event of storeChatToolDecisionStream(proposal.callId, {
+      decision: 'deny',
+    })) {
+      events.push(event)
+    }
     expect(events).toEqual([
       expect.objectContaining({ type: 'tool_denied', callId: proposal.callId }),
     ])
+  })
+
+  it('approve persists inspect snapshot on the conversation', async () => {
+    const begin = await storeChatBeginUserTurn({
+      personaId: 'persona-alex-morgan',
+      message: 'Please inspect https://example.com/persist',
+      projectId: 'proj-audion-core',
+    })
+    expect('conversationId' in begin).toBe(true)
+    if ('error' in begin) throw new Error(begin.error)
+
+    const proposal = maybeProposeInspectWebsite(
+      'https://example.com/persist',
+      'persona-alex-morgan',
+      'proj-audion-core',
+      begin.conversationId,
+    )!
+    for await (const _ of storeChatToolDecisionStream(proposal.callId, { decision: 'approve' })) {
+      /* drain */
+    }
+
+    const detail = await storeChatConversationDetail(begin.conversationId)
+    expect(detail?.inspect?.steps?.length).toBeGreaterThan(0)
+    expect(detail?.inspect?.convert?.source).toBe('chat_inspect')
+    expect(detail?.inspect?.summary).toMatch(/Stub inspection/)
   })
 })
 

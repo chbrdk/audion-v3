@@ -82,6 +82,8 @@ export function chatUxJourneyStepLabel(step: ChatUxJourneyStep, index = 0): stri
 /**
  * Enrich a user chat message with the selected inspect step so the persona
  * can answer in context of that moment.
+ *
+ * `display` keeps a parseable first line (`About Step NN · Action`) for the bubble meta.
  */
 export function composeMessageWithUxStepContext(
   userMessage: string,
@@ -116,4 +118,15 @@ export function composeMessageWithUxStepContext(
     display: `About ${label}\n${message}`,
     api: lines.join('\n'),
   }
+}
+
+/** Split step-follow-up display content into meta label + question body. */
+export function parseUxStepFollowUpDisplay(content: string): {
+  meta: string | null
+  body: string
+} {
+  const trimmed = content.trim()
+  const match = trimmed.match(/^About (Step \d{2} · [^\n]+)\n([\s\S]*)$/)
+  if (!match) return { meta: null, body: content }
+  return { meta: match[1]!.trim(), body: match[2]!.trim() }
 }

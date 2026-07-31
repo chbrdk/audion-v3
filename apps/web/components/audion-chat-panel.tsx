@@ -21,10 +21,12 @@ import {
   Textarea,
 } from '@msqdx/ui'
 import { ChatAnswer } from '../lib/chat/chat-answer'
+import { toolCompleteFromInspect } from '../lib/chat/messages-column'
 import { postChatStream } from '../lib/chat/stream-client'
 import {
   chatUxJourneyStepLabel,
   composeMessageWithUxStepContext,
+  parseUxStepFollowUpDisplay,
 } from '../lib/chat/ux-journey-steps'
 import { paths } from '../lib/paths'
 import { IconSend } from './nav-icons'
@@ -41,6 +43,19 @@ type Props = {
   allowConvert?: boolean
   /** Icon toolbar left of the composer (modality / share / history). */
   composerLeading?: React.ReactNode
+}
+
+function UserTurnBody({ content }: { content: string }) {
+  const parsed = parseUxStepFollowUpDisplay(content)
+  if (!parsed.meta) {
+    return <p className="chat-text">{content}</p>
+  }
+  return (
+    <div className="audion-chat-user-step-followup">
+      <p className="audion-chat-user-step-meta">About {parsed.meta}</p>
+      <p className="chat-text">{parsed.body}</p>
+    </div>
+  )
 }
 
 export function AudionChatPanel({
@@ -65,10 +80,19 @@ export function AudionChatPanel({
   const [pendingTool, setPendingTool] = useState<ChatToolProposedEvent | null>(null)
   const [toolBusy, setToolBusy] = useState(false)
   const [toolProgress, setToolProgress] = useState<string[]>([])
-  const [inspectSteps, setInspectSteps] = useState<ChatUxJourneyStep[]>([])
+  const [inspectSteps, setInspectSteps] = useState<ChatUxJourneyStep[]>(
+    () => initialConversation?.inspect?.steps ?? [],
+  )
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null)
-  const [toolComplete, setToolComplete] = useState<ChatToolCompleteEvent | null>(null)
-  const [inspectJobId, setInspectJobId] = useState<string | null>(null)
+  const [toolComplete, setToolComplete] = useState<ChatToolCompleteEvent | null>(() => {
+    const inspect = initialConversation?.inspect
+    if (!inspect) return null
+    if (!inspect.steps?.length && !inspect.summary) return null
+    return toolCompleteFromInspect(inspect)
+  })
+  const [inspectJobId, setInspectJobId] = useState<string | null>(
+    () => initialConversation?.inspect?.jobId ?? null,
+  )
   const [convertBusy, setConvertBusy] = useState(false)
   const [convertedJourneyId, setConvertedJourneyId] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -78,6 +102,10 @@ export function AudionChatPanel({
   const persona = useMemo(
     () => personas.find((p) => p.id === personaId) ?? null,
     [personas, personaId],
+  )
+
+  const showInspectDock = Boolean(
+    inspectSteps.length || toolComplete || (inspectJobId && !toolComplete),
   )
 
   useEffect(() => {
@@ -105,10 +133,23 @@ export function AudionChatPanel({
   }, [personaId])
 
   useEffect(() => {
+    if (selectedStepIndex == null) return
+    if (selectedStepIndex < 0 || selectedStepIndex >= inspectSteps.length) {
+      setSelectedStepIndex(null)
+    }
+  }, [selectedStepIndex, inspectSteps.length])
+
+  // Scroll message list on turns / tool chrome — not on every live step tick.
+  useEffect(() => {
     const el = listRef.current
     if (!el || typeof el.scrollTo !== 'function') return
+    const lastTurn = el.querySelector<HTMLElement>('.chat-turn:last-of-type')
+    if (lastTurn) {
+      lastTurn.scrollIntoView({ block: 'end', behavior: 'smooth' })
+      return
+    }
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [turns, busy, pendingTool, toolProgress, toolComplete, inspectSteps])
+  }, [turns, busy, pendingTool, toolProgress])
 
   useEffect(() => {
     return () => abortRef.current?.abort()
@@ -177,7 +218,11 @@ export function AudionChatPanel({
       if (Array.isArray(event.steps)) setInspectSteps(event.steps)
     } else if (event.type === 'tool_denied') {
       setPendingTool(null)
-      setToolProgress((prev) => [...prev, event.message])
+      setToolProgress([])
+      setInspectJobId(null)
+      setInspectSteps([])
+      setSelectedStepIndex(null)
+      setToolComplete(null)
     }
   }
 
@@ -214,7 +259,8 @@ export function AudionChatPanel({
     setDraft('')
     setBusy(true)
     setPendingTool(null)
-    // Keep inspect steps / selection so follow-up chat about a step stays possible.
+    // Keep inspect dock / selection so follow-up chat about a step stays possible.
+    // Inspect UI is session-only (not restored from conversation history).
 
     const userTurn: ChatMessage = {
       id: `local-user-${Date.now()}`,
@@ -369,7 +415,7 @@ export function AudionChatPanel({
                 <LoadingText>Thinking…</LoadingText>
               )
             ) : (
-              <p className="chat-text">{turn.content}</p>
+              <UserTurnBody content={turn.content} />
             )}
           </article>
         ))}
@@ -415,57 +461,61 @@ export function AudionChatPanel({
 
         {inspectJobId && !toolComplete ? <UxJourneyLivePoll jobId={inspectJobId} /> : null}
 
-        {inspectSteps.length || (inspectJobId && !toolComplete) ? (
-          <UxJourneyStepsStrip
-            steps={inspectSteps}
-            stepsTotal={toolComplete?.stepsTotal ?? inspectSteps.length}
-            running={Boolean(inspectJobId && !toolComplete)}
-            selectedIndex={selectedStepIndex}
-            onSelectStep={selectStepForChat}
-          />
-        ) : null}
-
-        {toolComplete ? (
-          <div className="audion-chat-tool-complete">
-            <p className="audion-edit-lede">{toolComplete.summary}</p>
-            {toolComplete.videoUrl || toolComplete.jobId ? (
-              <p className="audion-edit-lede">
-                <a
-                  className="audion-link"
-                  href={
-                    toolComplete.videoUrl ||
-                    paths.routes.apiUxJourneyAgentVideo(toolComplete.jobId || inspectJobId || '')
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open recording
-                </a>
-              </p>
-            ) : null}
-            {allowConvert && toolComplete.convert && !convertedJourneyId ? (
-              <Button
-                type="button"
-                size="sm"
-                disabled={convertBusy}
-                onClick={() => void convertFromInspect()}
-              >
-                {convertBusy ? 'Converting…' : 'Convert to journey'}
-              </Button>
-            ) : null}
-            {convertedJourneyId ? (
-              <p className="audion-edit-lede">
-                Journey created —{' '}
-                <Link className="audion-link" href={paths.routes.journeyDetail(convertedJourneyId)}>
-                  Open journey
-                </Link>
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-
         {busy ? <LoadingText>Streaming…</LoadingText> : null}
       </div>
+
+      {showInspectDock ? (
+        <div className="audion-chat-inspect-dock" aria-label="UX journey inspect">
+          {inspectSteps.length || (inspectJobId && !toolComplete) ? (
+            <UxJourneyStepsStrip
+              steps={inspectSteps}
+              stepsTotal={toolComplete?.stepsTotal ?? inspectSteps.length}
+              running={Boolean(inspectJobId && !toolComplete)}
+              selectedIndex={selectedStepIndex}
+              onSelectStep={selectStepForChat}
+            />
+          ) : null}
+
+          {toolComplete ? (
+            <div className="audion-chat-tool-complete">
+              <p className="audion-edit-lede">{toolComplete.summary}</p>
+              {toolComplete.videoUrl || toolComplete.jobId ? (
+                <p className="audion-edit-lede">
+                  <a
+                    className="audion-link"
+                    href={
+                      toolComplete.videoUrl ||
+                      paths.routes.apiUxJourneyAgentVideo(toolComplete.jobId || inspectJobId || '')
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open recording
+                  </a>
+                </p>
+              ) : null}
+              {allowConvert && toolComplete.convert && !convertedJourneyId ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={convertBusy}
+                  onClick={() => void convertFromInspect()}
+                >
+                  {convertBusy ? 'Converting…' : 'Convert to journey'}
+                </Button>
+              ) : null}
+              {convertedJourneyId ? (
+                <p className="audion-edit-lede">
+                  Journey created —{' '}
+                  <Link className="audion-link" href={paths.routes.journeyDetail(convertedJourneyId)}>
+                    Open journey
+                  </Link>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {err ? <Alert tone="error">{err}</Alert> : null}
 

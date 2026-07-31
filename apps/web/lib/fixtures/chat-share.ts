@@ -9,9 +9,11 @@ import type {
   ChatStreamEvent,
   ChatToolDecisionPayload,
   ChatToolProposedEvent,
+  ChatUxJourneyStep,
 } from '@audion-v3/contracts'
 import { DEMO_PERSONAS } from './personas'
 import { extractUrlFromMessage } from '../chat/share'
+import { inspectFromToolComplete } from '../chat/messages-column'
 
 type PendingTool = ChatToolProposedEvent & {
   personaId: string
@@ -84,10 +86,10 @@ export function storeConsumeToolProposal(callId: string): PendingTool | null {
   return tool
 }
 
-export function* storeChatToolDecisionStream(
+export async function* storeChatToolDecisionStream(
   callId: string,
   payload: ChatToolDecisionPayload,
-): Generator<ChatStreamEvent> {
+): AsyncGenerator<ChatStreamEvent> {
   const tool = pending.get(callId)
   if (!tool) {
     yield { type: 'error', message: 'Unknown tool call' }
@@ -118,18 +120,64 @@ export function* storeChatToolDecisionStream(
     tool: tool.tool,
     message: 'Capturing structure and key journeys…',
   }
+
+  const stubSteps: ChatUxJourneyStep[] = [
+    {
+      step: 1,
+      action: 'navigate',
+      target: url,
+      reasoning: `Opening **${url}** to scan the first screen.`,
+      reasoningMeta: {
+        evaluation_previous_goal: null,
+        memory: 'Stub inspect — no live browser.',
+        next_goal: 'Note primary CTA and navigation.',
+      },
+      result: 'Homepage loaded (stub).',
+    },
+    {
+      step: 2,
+      action: 'click',
+      target: 'Primary CTA',
+      reasoning: 'Following the **main call to action** for journey friction.',
+      reasoningMeta: {
+        evaluation_previous_goal: 'Landed on home.',
+        memory: 'CTA above the fold looks dominant.',
+        next_goal: 'Summarize inspect for convert.',
+      },
+      result: 'CTA interaction recorded (stub).',
+    },
+  ]
+  const summary = `Stub inspection of ${url} finished. Ready to convert into a journey.`
+  const convert = {
+    jobId: `chat-inspect-${callId}`,
+    personaId: tool.personaId,
+    url,
+    task: `Inspect ${url}`,
+    source: 'chat_inspect' as const,
+  }
+  if (tool.conversationId) {
+    const { storeChatSetInspect } = await import('./chat-store')
+    await storeChatSetInspect(
+      tool.conversationId,
+      inspectFromToolComplete({
+        jobId: convert.jobId,
+        summary,
+        videoUrl: null,
+        steps: stubSteps,
+        stepsTotal: stubSteps.length,
+        convert,
+      }),
+    )
+  }
   yield {
     type: 'tool_complete',
     callId,
     tool: tool.tool,
-    summary: `Stub inspection of ${url} finished. Ready to convert into a journey.`,
-    convert: {
-      jobId: `chat-inspect-${callId}`,
-      personaId: tool.personaId,
-      url,
-      task: `Inspect ${url}`,
-      source: 'chat_inspect',
-    },
+    summary,
+    convert,
+    jobId: convert.jobId,
+    steps: stubSteps,
+    stepsTotal: stubSteps.length,
   }
 }
 

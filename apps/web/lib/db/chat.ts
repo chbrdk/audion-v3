@@ -1,16 +1,23 @@
 import { desc, eq } from 'drizzle-orm'
 import type {
   ChatConversationDetail,
+  ChatConversationInspect,
   ChatConversationList,
   ChatConversationSummary,
   ChatMessage,
   ChatSendPayload,
 } from '@audion-v3/contracts'
+import {
+  parseChatMessagesColumn,
+  serializeChatMessagesColumn,
+  type ChatMessagesColumn,
+} from '../chat/messages-column'
 import { getDb } from './client'
 import { chatConversations, type ChatConversationRow } from './schema'
 import { dbPersonaDetail } from './personas'
 
 function rowToDetail(row: ChatConversationRow): ChatConversationDetail {
+  const parsed = parseChatMessagesColumn(row.messages)
   return {
     id: row.id,
     personaId: row.personaId,
@@ -19,13 +26,18 @@ function rowToDetail(row: ChatConversationRow): ChatConversationDetail {
     title: row.title ?? null,
     updatedAt: row.updatedAt?.toISOString() ?? null,
     preview: row.preview ?? null,
-    messages: Array.isArray(row.messages) ? row.messages : [],
+    messages: parsed.messages,
+    inspect: parsed.inspect,
   }
 }
 
 function toSummary(c: ChatConversationDetail): ChatConversationSummary {
-  const { messages: _m, ...summary } = c
+  const { messages: _m, inspect: _i, ...summary } = c
   return summary
+}
+
+function columnFor(conversation: ChatConversationDetail): ChatMessagesColumn {
+  return serializeChatMessagesColumn(conversation.messages, conversation.inspect ?? null)
 }
 
 async function resolvePersonaName(personaId: string): Promise<string | null> {
@@ -90,6 +102,7 @@ export async function dbChatBeginUserTurn(
       updatedAt: nowIso,
       preview: message.slice(0, 80),
       messages: [userMsg],
+      inspect: null,
     }
     await db.insert(chatConversations).values({
       id: conversation.id,
@@ -98,7 +111,7 @@ export async function dbChatBeginUserTurn(
       projectId: conversation.projectId,
       title: conversation.title,
       preview: conversation.preview,
-      messages: conversation.messages,
+      messages: columnFor(conversation),
       updatedAt: now,
       createdAt: now,
     })
@@ -113,7 +126,7 @@ export async function dbChatBeginUserTurn(
     await db
       .update(chatConversations)
       .set({
-        messages: conversation.messages,
+        messages: columnFor(conversation),
         updatedAt: now,
         preview: conversation.preview,
         title: conversation.title,
@@ -141,15 +154,41 @@ export async function dbChatAppendAssistant(
     createdAt: now.toISOString(),
     status: 'complete',
   }
-  const messages = [...conversation.messages, assistantMsg]
+  const next: ChatConversationDetail = {
+    ...conversation,
+    messages: [...conversation.messages, assistantMsg],
+    updatedAt: now.toISOString(),
+    preview: content.slice(0, 80),
+  }
   const db = getDb()
   await db
     .update(chatConversations)
     .set({
-      messages,
+      messages: columnFor(next),
       updatedAt: now,
-      preview: content.slice(0, 80),
+      preview: next.preview,
     })
     .where(eq(chatConversations.id, conversationId))
   return { conversationId, messageId: assistantId }
+}
+
+export async function dbChatSetInspect(
+  conversationId: string,
+  inspect: ChatConversationInspect | null,
+): Promise<void> {
+  const conversation = await dbChatConversationDetail(conversationId)
+  if (!conversation) return
+  const next: ChatConversationDetail = {
+    ...conversation,
+    inspect,
+    updatedAt: new Date().toISOString(),
+  }
+  const db = getDb()
+  await db
+    .update(chatConversations)
+    .set({
+      messages: columnFor(next),
+      updatedAt: new Date(),
+    })
+    .where(eq(chatConversations.id, conversationId))
 }

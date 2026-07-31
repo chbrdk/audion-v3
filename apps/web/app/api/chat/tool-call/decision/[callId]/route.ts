@@ -10,11 +10,14 @@ import {
 
 type Params = { params: Promise<{ callId: string }> }
 
-function fixtureDecisionStream(callId: string, body: ChatToolDecisionPayload): Response {
+async function fixtureDecisionStream(
+  callId: string,
+  body: ChatToolDecisionPayload,
+): Promise<Response> {
   const stream = new ReadableStream({
-    start(controller) {
+    async start(controller) {
       const encoder = new TextEncoder()
-      for (const event of storeChatToolDecisionStream(callId, body)) {
+      for await (const event of storeChatToolDecisionStream(callId, body)) {
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
       }
       controller.close()
@@ -50,6 +53,7 @@ export async function POST(request: Request, { params }: Params) {
               url: pending.url!,
               personaId,
               projectId,
+              conversationId: pending.conversationId,
               task: pending.detail || `Inspect ${pending.url}`,
             })) {
               controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))

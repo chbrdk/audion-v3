@@ -7,7 +7,6 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import type {
-  ChatMessage,
   DocumentSource,
   JourneyPhase,
   KnowledgeEntry,
@@ -18,6 +17,7 @@ import type {
   UxWaveEvaluation,
   UxWaveRunItem,
 } from '@audion-v3/contracts'
+import type { ChatMessagesColumn } from '../chat/messages-column'
 
 /** AUDION-v3 product projects (Wave: Projects Postgres MVP). */
 export const projects = pgTable(
@@ -152,7 +152,7 @@ export const chatConversations = pgTable('chat_conversations', {
   projectId: text('project_id'),
   title: text('title'),
   preview: text('preview'),
-  messages: jsonb('messages').$type<ChatMessage[]>().notNull().default([]),
+  messages: jsonb('messages').$type<ChatMessagesColumn>().notNull().default([]),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
