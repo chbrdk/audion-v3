@@ -30,7 +30,7 @@ import {
   Textarea,
 } from '@msqdx/ui'
 import { ConfirmDialog, Dialog, Select } from '../lib/msqdx-ui-client'
-import { buildWaveReportMarkdown } from '../lib/fixtures/ux-study-store'
+import { buildWaveReportMarkdown } from '../lib/ux-wave-report'
 import { paths } from '../lib/paths'
 import {
   confidenceToPercent,
