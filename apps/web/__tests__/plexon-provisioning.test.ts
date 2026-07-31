@@ -125,6 +125,52 @@ describe('provisioning routes', () => {
     expect(body.externalProjectId).toBe(body.projectId)
     expect((await storeProjectDetail(body.projectId))?.platformProjectId).toBe('plat-1')
   })
+
+  it('GET returns target group and persona catalog for bound project', async () => {
+    await storeApplyPlatformBinding('proj-audion-core', {
+      platformProjectId: 'plat-catalog',
+      platformCompanyId: 'co-1',
+      ownerPlexonUserId: 'plex-user-1',
+    })
+    const { GET } = await import('../app/api/platform/provisioning/projects/[id]/route')
+    const res = await GET(
+      new Request('http://localhost/api/platform/provisioning/projects/plat-catalog', {
+        method: 'GET',
+        headers: {
+          [PLEXON_SERVICE_SECRET_HEADER]: 'shared-secret',
+          [PLEXON_CONTRACT_VERSION_HEADER]: PLEXON_FEDERATION_CONTRACT_VERSION,
+          'X-Plexon-User-Id': 'u1',
+        },
+      }),
+      { params: Promise.resolve({ id: 'plat-catalog' }) },
+    )
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as {
+      externalProjectId: string
+      personaCount: number
+      targetGroupCount: number
+      targetGroups: Array<{ id: string; name: string; segment: string; personaCount: number; status: string }>
+      personas: Array<{ id: string; name: string; role: string; status: string; targetGroupId: string | null }>
+    }
+    expect(body.externalProjectId).toBe('proj-audion-core')
+    expect(body.targetGroupCount).toBeGreaterThan(0)
+    expect(body.personaCount).toBeGreaterThan(0)
+    expect(body.targetGroups).toHaveLength(body.targetGroupCount)
+    expect(body.personas).toHaveLength(body.personaCount)
+    expect(body.targetGroups[0]).toMatchObject({
+      id: expect.any(String),
+      name: expect.any(String),
+      segment: expect.any(String),
+      personaCount: expect.any(Number),
+      status: expect.any(String),
+    })
+    expect(body.personas[0]).toMatchObject({
+      id: expect.any(String),
+      name: expect.any(String),
+      role: expect.any(String),
+      status: expect.any(String),
+    })
+  })
 })
 
 describe('registerAudionProjectOnPlexon', () => {

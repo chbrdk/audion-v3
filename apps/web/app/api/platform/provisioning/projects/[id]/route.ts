@@ -9,6 +9,11 @@ import {
   storeGetByPlatformProjectId,
   storeUpsertByPlatformProjectId,
 } from '../../../../../../lib/fixtures/project-store'
+import { storePersonaList } from '../../../../../../lib/fixtures/persona-store'
+import {
+  storeTargetGroupForPersona,
+  storeTargetGroupList,
+} from '../../../../../../lib/fixtures/target-group-store'
 
 function jsonWithContract(body: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers)
@@ -16,7 +21,7 @@ function jsonWithContract(body: unknown, init?: ResponseInit) {
   return NextResponse.json(body, { ...init, headers })
 }
 
-/** Dashboard BFF: persona summary for a mirrored platform project. */
+/** Dashboard BFF: catalog summary for a mirrored platform project. */
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> },
@@ -37,9 +42,33 @@ export async function GET(
   if (!project) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
+
+  const targetGroups = storeTargetGroupList()
+    .items.filter((g) => g.projectId === project.id)
+    .map((g) => ({
+      id: g.id,
+      name: g.name,
+      segment: g.segment,
+      personaCount: g.personaCount,
+      status: g.status,
+    }))
+
+  const personas = storePersonaList()
+    .items.filter((p) => p.projectId === project.id)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      role: p.role,
+      status: p.status,
+      targetGroupId: storeTargetGroupForPersona(p.id)?.id ?? null,
+    }))
+
   return jsonWithContract({
     externalProjectId: project.id,
-    personaCount: project.personaCount ?? 0,
+    personaCount: personas.length,
+    targetGroupCount: targetGroups.length,
+    targetGroups,
+    personas,
     platformProjectId: platformProjectId.trim(),
   })
 }

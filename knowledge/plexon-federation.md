@@ -43,6 +43,22 @@ When `PLEXON_AUTH_URL` + `PLEXON_SERVICE_SECRET` are **unset**, middleware does 
 - Settings Account band — profile + logout
 - `PUT /api/platform/provisioning/users/[id]`
 - `PUT /api/platform/provisioning/projects/[id]`
+- `GET /api/platform/provisioning/projects/[id]` — Plexon Collection dashboard summary (service secret + `X-Plexon-User-Id`)
+
+### Project summary contract (`GET …/projects/[id]`)
+
+Resolved by `platformProjectId` (Plexon Collection id). Response includes:
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `externalProjectId` | string | Audion project id |
+| `platformProjectId` | string | Echo of request id |
+| `personaCount` | number | Personas with `projectId === externalProjectId` |
+| `targetGroupCount` | number | Target groups for that project |
+| `targetGroups` | `{ id, name, segment, personaCount, status }[]` | Catalog for Plexon UI |
+| `personas` | `{ id, name, role, status, targetGroupId? }[]` | Catalog; `targetGroupId` from linked TG when present |
+
+Deep-links (Audion app origin, not `/admin`): `/target-groups/{id}`, `/personas/{id}`, `/chat?personaId=…&projectId=…`.
 
 ## Paths helper
 
