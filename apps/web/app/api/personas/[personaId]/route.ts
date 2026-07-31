@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   const { personaId } = await context.params
   const body = (await request.json()) as Partial<PersonaWritePayload>
-  const persona = storePatchPersona(personaId, body)
+  const persona = await storePatchPersona(personaId, body)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(persona)
 }

@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   if (!body?.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
-  const journey = storeCreateJourney({
+  const journey = await storeCreateJourney({
     ...body,
     journeyType: body.journeyType?.trim() || 'journey',
   })

@@ -13,9 +13,12 @@
 | Usage ledger | **Plexon** | Thin `reportUsage` from chat stream |
 | Personas, TGs, journeys, studies, chat fixtures | **AUDION fixtures** | Local stores only |
 | Projects (list / create / Plexon provisioning) | **AUDION Postgres** | `projects` table when `DATABASE_URL` set; else in-memory fixtures |
-| Product Postgres (personas+) | — | **Deferred** |
+| Personas + target groups | **AUDION Postgres** | `personas` / `target_groups` tables when `DATABASE_URL` set; else fixtures |
+| Product Postgres (journeys+) | — | **Deferred** |
 
 **Projects persistence:** With `DATABASE_URL`, inbound `PUT …/platform/provisioning/projects/{id}` and UI create/list write Postgres. Redeploy keeps rows. Without `DATABASE_URL` (local), memory fixtures remain (wiped on process restart).
+
+**Personas / target groups:** Same `DATABASE_URL` gate. Tables `personas` (scalar list cols + jsonb `payload`) and `target_groups` (linked persona ids + knowledge jsonb). Catalog GET and CRUD use Postgres when configured; otherwise DEMO fixtures.
 
 ## Write rules
 
@@ -70,7 +73,7 @@ Deep-links (Audion app origin, not `/admin`): `/target-groups/{id}`, `/personas/
 
 ## Later waves
 
-- Personas / TGs / journeys / chat on Product Postgres
+- Journeys / studies / chat on Product Postgres
 - Full usage coverage (AI actions)
 - Echon / Brandion federation
 - Coolify v3 island: `PLEXON/knowledge/coolify-v3-staging-runbook.md`

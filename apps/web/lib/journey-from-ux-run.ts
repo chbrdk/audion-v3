@@ -59,9 +59,9 @@ function phasesFromRun(runKey: string, task: string, url: string): JourneyPhase[
   ]
 }
 
-export function runStubConvertUxRunToJourney(
+export async function runStubConvertUxRunToJourney(
   body: JourneyFromUxRunRequest,
-): JourneyFromUxRunResponse | { error: string; status: number } {
+): Promise<JourneyFromUxRunResponse | { error: string; status: number }> {
   if (body.source === 'chat_inspect' || body.jobId?.startsWith('chat-inspect-')) {
     const url = body.url?.trim() || 'https://example.com'
     const task = body.task?.trim() || `Inspect ${url}`
@@ -75,7 +75,7 @@ export function runStubConvertUxRunToJourney(
       }
     })()
     const name = body.journeyName?.trim() || `Chat inspect · ${hostname}`
-    const journey = storeCreateJourney({
+    const journey = await storeCreateJourney({
       name,
       journeyType: body.journeyType?.trim() || 'ux_audit',
       status: 'draft',
@@ -126,7 +126,7 @@ export function runStubConvertUxRunToJourney(
   }
 
   if (run.derivedJourneyId) {
-    const existing = storeJourneyDetail(run.derivedJourneyId)
+    const existing = await storeJourneyDetail(run.derivedJourneyId)
     if (existing) {
       return {
         stubbed: true,
@@ -146,7 +146,7 @@ export function runStubConvertUxRunToJourney(
   const name =
     body.journeyName?.trim() ||
     `${run.personaName || run.runKey} · ${wave.waveKey}`
-  const journey = storeCreateJourney({
+  const journey = await storeCreateJourney({
     name,
     journeyType: body.journeyType?.trim() || 'ux_audit',
     status: 'draft',
@@ -247,7 +247,7 @@ export async function convertUxRunToJourney(
     }
   }
 
-  const stub = runStubConvertUxRunToJourney(body)
+  const stub = await runStubConvertUxRunToJourney(body)
   if ('error' in stub) return { ok: false, error: stub.error, status: stub.status }
   return { ok: true, data: stub }
 }

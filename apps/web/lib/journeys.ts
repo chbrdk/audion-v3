@@ -163,7 +163,7 @@ async function fetchJson(url: string): Promise<Response> {
 
 export async function fetchJourneyList(): Promise<JourneyListResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { ...storeJourneyList(), origin: 'fixtures' }
+    return { ...(await storeJourneyList()), origin: 'fixtures' }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
@@ -187,13 +187,13 @@ export async function fetchJourneyList(): Promise<JourneyListResult> {
     }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { ...storeJourneyList(), origin: 'fixtures' }
+    return { ...(await storeJourneyList()), origin: 'fixtures' }
   }
 }
 
 export async function fetchJourneyDetail(id: string): Promise<JourneyDetailResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { journey: storeJourneyDetail(id), origin: 'fixtures' }
+    return { journey: await storeJourneyDetail(id), origin: 'fixtures' }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
@@ -203,6 +203,6 @@ export async function fetchJourneyDetail(id: string): Promise<JourneyDetailResul
     return { journey: normalizeJourneyDetail(await response.json()), origin: 'api' }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { journey: storeJourneyDetail(id), origin: 'fixtures' }
+    return { journey: await storeJourneyDetail(id), origin: 'fixtures' }
   }
 }

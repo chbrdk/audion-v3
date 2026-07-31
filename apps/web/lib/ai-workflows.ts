@@ -103,11 +103,11 @@ function nextStubAvatarUrl(current: string | null): string {
   return pool[(idx + 1) % pool.length]!
 }
 
-export function runStubGeneratePersonaAvatar(
+export async function runStubGeneratePersonaAvatar(
   personaId: string,
   body: GeneratePersonaAvatarRequest = {},
-): GeneratePersonaAvatarResponse | { error: string; status: number } {
-  const persona = storePersonaDetail(personaId)
+): Promise<GeneratePersonaAvatarResponse | { error: string; status: number }> {
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
 
   const upstreamBody = {
@@ -115,7 +115,7 @@ export function runStubGeneratePersonaAvatar(
   }
   const meta = stubMeta('generatePersonaAvatar', { personaId }, upstreamBody)
   const avatarUrl = nextStubAvatarUrl(persona.avatarUrl)
-  const patched = storePatchPersona(personaId, { avatarUrl })
+  const patched = await storePatchPersona(personaId, { avatarUrl })
   if (!patched) return { error: 'Persona not found', status: 404 }
 
   return { ...meta, avatarUrl: patched.avatarUrl! }
@@ -179,11 +179,11 @@ const STUB_FIELD_SEEDS: Record<PersonaSuggestField, string[]> = {
   ],
 }
 
-export function runStubSuggestPersonaField(
+export async function runStubSuggestPersonaField(
   personaId: string,
   body: SuggestPersonaFieldRequest,
-): SuggestPersonaFieldResponse | { error: string; status: number } {
-  const persona = storePersonaDetail(personaId)
+): Promise<SuggestPersonaFieldResponse | { error: string; status: number }> {
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
 
   const field = body.field
@@ -248,11 +248,11 @@ export function runStubSuggestPersonaField(
   }
 }
 
-export function runStubGeneratePersonas(
+export async function runStubGeneratePersonas(
   tgId: string,
   body: GeneratePersonasRequest,
-): GeneratePersonasResponse | { error: string; status: number } {
-  const tg = storeTargetGroupDetail(tgId)
+): Promise<GeneratePersonasResponse | { error: string; status: number }> {
+  const tg = await storeTargetGroupDetail(tgId)
   if (!tg) return { error: 'Target group not found', status: 404 }
 
   const count = Math.min(Math.max(body.count ?? 2, 1), 5)
@@ -265,20 +265,22 @@ export function runStubGeneratePersonas(
   }
   const meta = stubMeta('generatePersonas', { tgId }, upstreamBody)
 
-  const created = STUB_PERSONA_NAMES.slice(0, count).map((seed, i) =>
-    storeCreatePersona({
-      name: `${seed.name} (${segment})`,
-      role: seed.role,
-      status: 'draft',
-      archetype: segment,
-      bio: `Stub persona from AI generate — will call ${meta.target.path}`,
-      projectId: tg.projectId,
-      interests: [segment],
-    }),
+  const created = await Promise.all(
+    STUB_PERSONA_NAMES.slice(0, count).map((seed) =>
+      storeCreatePersona({
+        name: `${seed.name} (${segment})`,
+        role: seed.role,
+        status: 'draft',
+        archetype: segment,
+        bio: `Stub persona from AI generate — will call ${meta.target.path}`,
+        projectId: tg.projectId,
+        interests: [segment],
+      }),
+    ),
   )
 
   const linkedIds = [...tg.linkedPersonas.map((p) => p.id), ...created.map((p) => p.id)]
-  storePatchTargetGroup(tgId, { linkedPersonaIds: linkedIds })
+  await storePatchTargetGroup(tgId, { linkedPersonaIds: linkedIds })
 
   return {
     ...meta,
@@ -343,7 +345,7 @@ export async function runStubSuggestPersonas(
 ): Promise<SuggestPersonasResponse | { error: string; status: number }> {
   if (!(await storeProjectDetail(projectId))) return { error: 'Project not found', status: 404 }
   const tgId = body.target_group_id
-  const tg = storeTargetGroupDetail(tgId)
+  const tg = await storeTargetGroupDetail(tgId)
   if (!tg) return { error: 'Target group not found', status: 404 }
 
   const max = Math.min(Math.max(body.max_suggestions ?? 5, 1), 8)
@@ -426,7 +428,7 @@ export async function runStubGenerateJourney(
 
   const journeyType = body.journey_type?.trim() || 'customer'
   const tgId = body.target_group_id ?? null
-  const tg = tgId ? storeTargetGroupDetail(tgId) : null
+  const tg = tgId ? await storeTargetGroupDetail(tgId) : null
   const name = tg
     ? `${tg.name} journey (AI stub)`
     : `Generated ${journeyType} journey (AI stub)`
@@ -445,7 +447,7 @@ export async function runStubGenerateJourney(
   }
   const meta = stubMeta(workflowId, pathParams, upstreamBody)
   const prefix = `ai-${Date.now().toString(36)}`
-  const journey = storeCreateJourney({
+  const journey = await storeCreateJourney({
     name,
     journeyType,
     status: 'draft',
@@ -476,11 +478,11 @@ function uniqStrings(items: string[], max: number): string[] {
   return out
 }
 
-export function runStubEnrichPersona(
+export async function runStubEnrichPersona(
   personaId: string,
   body: EnrichPersonaRequest = {},
-): EnrichPersonaResponse | { error: string; status: number } {
-  const persona = storePersonaDetail(personaId)
+): Promise<EnrichPersonaResponse | { error: string; status: number }> {
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
 
   const locale = body.output_locale ?? 'en'
@@ -513,7 +515,7 @@ export function runStubEnrichPersona(
     Empathetic: persona.traits.Empathetic ?? 0.7,
   }
 
-  const patched = storePatchPersona(personaId, {
+  const patched = await storePatchPersona(personaId, {
     bio: body.profile_overlay?.bio?.trim() || persona.bio,
     age: body.profile_overlay?.age?.trim() || persona.age,
     location: body.profile_overlay?.location?.trim() || persona.location,
@@ -538,11 +540,11 @@ export function runStubEnrichPersona(
   }
 }
 
-export function runStubGenerateMoodboard(
+export async function runStubGenerateMoodboard(
   personaId: string,
   body: GenerateMoodboardRequest = {},
-): GenerateMoodboardResponse | { error: string; status: number } {
-  const persona = storePersonaDetail(personaId)
+): Promise<GenerateMoodboardResponse | { error: string; status: number }> {
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
 
   const upstreamBody = { title: body.title?.trim() || `${persona.name} moodboard` }
@@ -578,7 +580,7 @@ export function runStubGenerateMoodboard(
 
   const tiles = mergeMoodboardTiles(persona.visuals?.tiles ?? [], candidates)
   const visuals = { styleKeywords, tiles }
-  const patched = storePatchPersona(personaId, { visuals })
+  const patched = await storePatchPersona(personaId, { visuals })
   if (!patched) return { error: 'Persona not found', status: 404 }
 
   return {
@@ -602,11 +604,11 @@ function newMomentId(): string {
   return `el-ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 }
 
-export function runStubGenerateJourneyPhaseMoments(
+export async function runStubGenerateJourneyPhaseMoments(
   journeyId: string,
   body: GenerateJourneyPhaseMomentsRequest,
-): GenerateJourneyPhaseMomentsResponse | { error: string; status: number } {
-  const journey = storeJourneyDetail(journeyId)
+): Promise<GenerateJourneyPhaseMomentsResponse | { error: string; status: number }> {
+  const journey = await storeJourneyDetail(journeyId)
   if (!journey) return { error: 'Journey not found', status: 404 }
   const phase = journey.phases.find((p) => p.id === body.phase_id)
   if (!phase) return { error: 'Phase not found', status: 404 }
@@ -645,7 +647,7 @@ export function runStubGenerateJourneyPhaseMoments(
   const phases = journey.phases.map((p) =>
     p.id === phase.id ? { ...p, elements: moments } : p,
   )
-  const patched = storePatchJourney(journeyId, {
+  const patched = await storePatchJourney(journeyId, {
     name: journey.name,
     journeyType: journey.journeyType,
     status: journey.status,
@@ -672,10 +674,10 @@ function fitStatus(score: number): 'good' | 'warning' | 'critical' {
   return 'critical'
 }
 
-export function scoreValidateJourney(
+export async function scoreValidateJourney(
   journeyId: string,
   body: ValidateJourneyRequest,
-):
+): Promise<
   | {
       journeyId: string
       mode: NonNullable<ValidateJourneyRequest['mode']>
@@ -685,13 +687,14 @@ export function scoreValidateJourney(
       phases: ValidateJourneyResponse['phases']
       upstreamBody: Record<string, unknown>
     }
-  | { error: string; status: number } {
-  const journey = storeJourneyDetail(journeyId)
+  | { error: string; status: number }
+> {
+  const journey = await storeJourneyDetail(journeyId)
   if (!journey) return { error: 'Journey not found', status: 404 }
   const personaIds = body.persona_ids?.filter(Boolean) ?? []
   if (!personaIds.length) return { error: 'At least one persona_id required', status: 400 }
   const personaId = personaIds[0]!
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
 
   const mode = body.mode ?? 'automated'
@@ -795,11 +798,11 @@ export function scoreValidateJourney(
   }
 }
 
-export function runStubValidateJourney(
+export async function runStubValidateJourney(
   journeyId: string,
   body: ValidateJourneyRequest,
-): ValidateJourneyResponse | { error: string; status: number } {
-  const scored = scoreValidateJourney(journeyId, body)
+): Promise<ValidateJourneyResponse | { error: string; status: number }> {
+  const scored = await scoreValidateJourney(journeyId, body)
   if ('error' in scored) return scored
   const meta = stubMeta('validateJourney', { journeyId }, scored.upstreamBody)
   return storeAppendValidationReport({

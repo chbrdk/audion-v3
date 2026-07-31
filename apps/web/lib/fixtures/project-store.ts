@@ -48,14 +48,27 @@ export function storeGetProvisionedUser(plexonUserId: string) {
   return provisionedUsers.get(plexonUserId) ?? null
 }
 
-function countsFor(projectId: string): { personaCount: number; targetGroupCount: number } {
-  const personas = storePersonaList().items.filter((p) => p.projectId === projectId).length
-  const groups = storeTargetGroupList().items.filter((g) => g.projectId === projectId).length
-  return { personaCount: personas, targetGroupCount: groups }
+async function countsFor(projectId: string): Promise<{ personaCount: number; targetGroupCount: number }> {
+  if (isProjectsDatabaseConfigured()) {
+    const [personaDb, tgDb] = await Promise.all([
+      import('../db/personas'),
+      import('../db/target-groups'),
+    ])
+    const [personaCount, targetGroupCount] = await Promise.all([
+      personaDb.dbCountPersonasByProjectId(projectId),
+      tgDb.dbCountTargetGroupsByProjectId(projectId),
+    ])
+    return { personaCount, targetGroupCount }
+  }
+  const [personas, groups] = await Promise.all([storePersonaList(), storeTargetGroupList()])
+  return {
+    personaCount: personas.items.filter((p) => p.projectId === projectId).length,
+    targetGroupCount: groups.items.filter((g) => g.projectId === projectId).length,
+  }
 }
 
-function withDerived(project: ProjectDetail): ProjectDetail {
-  const counts = countsFor(project.id)
+async function withDerived(project: ProjectDetail): Promise<ProjectDetail> {
+  const counts = await countsFor(project.id)
   const knowledgeChapters = resolveKnowledgeChapters(
     project.knowledgeChapters,
     project.companyContext,
@@ -69,8 +82,8 @@ function withDerived(project: ProjectDetail): ProjectDetail {
   }
 }
 
-function toSummary(project: ProjectDetail) {
-  const detail = withDerived(project)
+async function toSummary(project: ProjectDetail) {
+  const detail = await withDerived(project)
   const { members: _m, knowledgeChapters: _k, ...summary } = detail
   return summary
 }
@@ -105,25 +118,25 @@ function chaptersFromWrite(
     : []
 }
 
-function memoryGetByPlatformProjectId(platformProjectId: string): ProjectDetail | null {
+async function memoryGetByPlatformProjectId(platformProjectId: string): Promise<ProjectDetail | null> {
   const existing = projects.find((p) => p.platformProjectId === platformProjectId)
   return existing ? withDerived(existing) : null
 }
 
-function memoryProjectList(): ProjectList {
-  const items = projects.map(toSummary)
+async function memoryProjectList(): Promise<ProjectList> {
+  const items = await Promise.all(projects.map((p) => toSummary(p)))
   return { items, total: items.length, page: 1, pageSize: 50 }
 }
 
-function memoryProjectDetail(id: string): ProjectDetail | null {
+async function memoryProjectDetail(id: string): Promise<ProjectDetail | null> {
   const found = projects.find((p) => p.id === id)
   return found ? withDerived(found) : null
 }
 
-function memoryCreateProject(
+async function memoryCreateProject(
   payload: ProjectWritePayload,
   options?: ProjectCreateOptions,
-): ProjectDetail {
+): Promise<ProjectDetail> {
   const slug =
     payload.name
       .toLowerCase()
@@ -132,7 +145,7 @@ function memoryCreateProject(
   const id = `proj-${slug}-${Date.now().toString(36)}`
   const knowledgeChapters = chaptersFromWrite(payload)
   const ownerEmail = options?.ownerEmail?.trim() || 'you@local.example'
-  const created: ProjectDetail = withDerived({
+  const created: ProjectDetail = await withDerived({
     id,
     name: payload.name.trim(),
     nameDe: payload.nameDe ?? null,
@@ -160,15 +173,15 @@ function memoryCreateProject(
   return created
 }
 
-function memoryPatchProject(
+async function memoryPatchProject(
   id: string,
   payload: Partial<ProjectWritePayload>,
-): ProjectDetail | null {
+): Promise<ProjectDetail | null> {
   const index = projects.findIndex((p) => p.id === id)
   if (index < 0) return null
   const current = projects[index]!
   const knowledgeChapters = chaptersFromWrite(payload, current)
-  const next = withDerived({
+  const next = await withDerived({
     ...current,
     name: payload.name?.trim() ?? current.name,
     nameDe: payload.nameDe !== undefined ? payload.nameDe : current.nameDe,
@@ -195,18 +208,18 @@ function memoryPatchProject(
   return next
 }
 
-function memoryApplyPlatformBinding(
+async function memoryApplyPlatformBinding(
   id: string,
   binding: {
     platformProjectId: string
     platformCompanyId?: string | null
     ownerPlexonUserId?: string | null
   },
-): ProjectDetail | null {
+): Promise<ProjectDetail | null> {
   const index = projects.findIndex((p) => p.id === id)
   if (index < 0) return null
   const current = projects[index]!
-  const next = withDerived({
+  const next = await withDerived({
     ...current,
     platformProjectId: binding.platformProjectId,
     platformCompanyId: binding.platformCompanyId ?? current.platformCompanyId ?? null,
@@ -217,7 +230,7 @@ function memoryApplyPlatformBinding(
   return next
 }
 
-function memoryUpsertByPlatformProjectId(
+async function memoryUpsertByPlatformProjectId(
   platformProjectId: string,
   data: {
     name: string
@@ -225,16 +238,16 @@ function memoryUpsertByPlatformProjectId(
     ownerUserId: string
     status: 'active' | 'archived'
   },
-): ProjectDetail {
+): Promise<ProjectDetail> {
   const existing = projects.find((p) => p.platformProjectId === platformProjectId)
   if (existing) {
     return (
-      memoryPatchProject(existing.id, {
+      (await memoryPatchProject(existing.id, {
         name: data.name,
         platformCompanyId: data.platformCompanyId,
         ownerPlexonUserId: data.ownerUserId,
         status: data.status === 'archived' ? 'archived' : existing.status,
-      }) ?? existing
+      })) ?? existing
     )
   }
   return memoryCreateProject(

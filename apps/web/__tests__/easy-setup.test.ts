@@ -55,7 +55,7 @@ vi.mock('../lib/plexon-project-origin', () => ({
 }))
 
 describe('easy-setup-url SSRF guard', () => {
-  it('blocks localhost and private IPs', () => {
+  it('blocks localhost and private IPs', async () => {
     expect(hostBlockedForSsrf('localhost')).toBe(true)
     expect(hostBlockedForSsrf('127.0.0.1')).toBe(true)
     expect(hostBlockedForSsrf('10.0.0.1')).toBe(true)
@@ -64,7 +64,7 @@ describe('easy-setup-url SSRF guard', () => {
     expect(hostBlockedForSsrf('example.com')).toBe(false)
   })
 
-  it('rejects non-http schemes and credentialed URLs', () => {
+  it('rejects non-http schemes and credentialed URLs', async () => {
     expect(normalizePublicHttpUrl('ftp://example.com')).toEqual({
       error: 'Only http and https URLs are allowed.',
     })
@@ -113,8 +113,8 @@ describe('runEasySetup', () => {
     const project = await storeProjectDetail(result.project.id)
     expect(project?.personaCount).toBe(1)
     expect(project?.targetGroupCount).toBe(1)
-    expect(storeTargetGroupDetail(result.targetGroup.id)?.personaCount).toBe(1)
-    expect(storePersonaDetail(result.persona.id)?.name).toContain('Acme Bikes')
+    expect((await storeTargetGroupDetail(result.targetGroup.id))?.personaCount).toBe(1)
+    expect((await storePersonaDetail(result.persona.id))?.name).toContain('Acme Bikes')
   })
 
   it('uses native assist when AI runtime prefers native', async () => {

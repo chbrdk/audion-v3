@@ -199,7 +199,7 @@ export async function runEasySetup(
   )
   const stubbed = tgStubbed || personaStubbed
 
-  let targetGroup = storeCreateTargetGroup({
+  let targetGroup = await storeCreateTargetGroup({
     name: tgSeed.name,
     segment: tgSeed.segment,
     description: tgSeed.description,
@@ -207,7 +207,7 @@ export async function runEasySetup(
     projectId: project.id,
   })
 
-  const persona = storeCreatePersona({
+  const persona = await storeCreatePersona({
     name: personaSeed.name,
     role: personaSeed.role,
     status: 'draft',
@@ -218,12 +218,12 @@ export async function runEasySetup(
   })
 
   targetGroup =
-    storePatchTargetGroup(targetGroup.id, {
+    (await storePatchTargetGroup(targetGroup.id, {
       linkedPersonaIds: [persona.id],
-    }) ?? targetGroup
+    })) ?? targetGroup
 
   const refreshedProject = (await storeProjectDetail(project.id)) ?? project
-  const refreshedTg = storeTargetGroupDetail(targetGroup.id) ?? targetGroup
+  const refreshedTg = (await storeTargetGroupDetail(targetGroup.id)) ?? targetGroup
 
   return {
     stubbed,

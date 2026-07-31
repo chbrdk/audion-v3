@@ -78,13 +78,16 @@ export function storeDeletePersonaPrompt(personaId: string): boolean {
   return store().byPersonaId.delete(personaId)
 }
 
-export function storeListPersonaPromptSummaries(): Array<{
-  personaId: string
-  name: string
-  hasCustom: boolean
-  updatedAt: string | null
-}> {
-  return storePersonaList().items.map((p) => {
+export async function storeListPersonaPromptSummaries(): Promise<
+  Array<{
+    personaId: string
+    name: string
+    hasCustom: boolean
+    updatedAt: string | null
+  }>
+> {
+  const list = await storePersonaList()
+  return list.items.map((p) => {
     const custom = store().byPersonaId.get(p.id)
     return {
       personaId: p.id,
@@ -95,10 +98,10 @@ export function storeListPersonaPromptSummaries(): Array<{
   })
 }
 
-export function resolvePersonaSystemPrompt(personaId: string): string {
+export async function resolvePersonaSystemPrompt(personaId: string): Promise<string> {
   const custom = store().byPersonaId.get(personaId)
   if (custom?.systemPrompt.trim()) return custom.systemPrompt
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) {
     return 'You are a helpful audience research assistant speaking as a persona.'
   }

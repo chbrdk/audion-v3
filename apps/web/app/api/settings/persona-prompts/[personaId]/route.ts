@@ -9,7 +9,7 @@ type Ctx = { params: Promise<{ personaId: string }> }
 
 export async function GET(_req: Request, ctx: Ctx) {
   const { personaId } = await ctx.params
-  const result = getPersonaPromptDetail(decodeURIComponent(personaId))
+  const result = await getPersonaPromptDetail(decodeURIComponent(personaId))
   if ('error' in result) {
     return NextResponse.json({ error: result.error }, { status: result.status })
   }
@@ -23,7 +23,7 @@ export async function PUT(req: Request, ctx: Ctx) {
     systemPromptDe?: string | null
     templateVersion?: string | null
   } | null
-  const result = updatePersonaPrompt(decodeURIComponent(personaId), {
+  const result = await updatePersonaPrompt(decodeURIComponent(personaId), {
     systemPrompt: body?.systemPrompt ?? '',
     systemPromptDe: body?.systemPromptDe,
     templateVersion: body?.templateVersion,
@@ -36,7 +36,7 @@ export async function PUT(req: Request, ctx: Ctx) {
 
 export async function DELETE(_req: Request, ctx: Ctx) {
   const { personaId } = await ctx.params
-  const result = resetPersonaPrompt(decodeURIComponent(personaId))
+  const result = await resetPersonaPrompt(decodeURIComponent(personaId))
   if ('error' in result) {
     return NextResponse.json({ error: result.error }, { status: result.status })
   }

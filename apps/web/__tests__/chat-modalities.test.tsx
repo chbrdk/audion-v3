@@ -69,7 +69,7 @@ describe('chat modality API route import depths', () => {
 })
 
 describe('chat share helpers', () => {
-  it('builds share URL from persona + project', () => {
+  it('builds share URL from persona + project', async () => {
     expect(
       buildChatShareHref({
         personaId: 'persona-alex-morgan',
@@ -79,7 +79,7 @@ describe('chat share helpers', () => {
     expect(paths.routes.chatShare({ personaId: 'a', projectId: 'p' })).toContain('projectId=p')
   })
 
-  it('extracts URLs from messages', () => {
+  it('extracts URLs from messages', async () => {
     expect(extractUrlFromMessage('Look at https://example.com/path.')).toBe(
       'https://example.com/path',
     )
@@ -88,7 +88,7 @@ describe('chat share helpers', () => {
 })
 
 describe('chat share fixtures', () => {
-  it('returns public persona and moodboard for matching project', () => {
+  it('returns public persona and moodboard for matching project', async () => {
     const persona = storeSharePersona('persona-alex-morgan', 'proj-audion-core')
     expect('error' in persona).toBe(false)
     if ('error' in persona) return
@@ -100,7 +100,7 @@ describe('chat share fixtures', () => {
     expect(board.tiles.length).toBeGreaterThan(0)
   })
 
-  it('rejects mismatched share token', () => {
+  it('rejects mismatched share token', async () => {
     expect(storeSharePersona('persona-alex-morgan', 'proj-other')).toMatchObject({
       status: 403,
     })
@@ -108,7 +108,7 @@ describe('chat share fixtures', () => {
 })
 
 describe('inspect_website fixture stream + decision', () => {
-  it('proposes inspect_website when message contains a URL', () => {
+  it('proposes inspect_website when message contains a URL', async () => {
     const events = [
       ...storeChatFakeStream({
         personaId: 'persona-alex-morgan',
@@ -122,7 +122,7 @@ describe('inspect_website fixture stream + decision', () => {
     expect(proposed && proposed.type === 'tool_proposed' && proposed.tool).toBe('inspect_website')
   })
 
-  it('approve decision yields progress and convert payload', () => {
+  it('approve decision yields progress and convert payload', async () => {
     const proposal = maybeProposeInspectWebsite(
       'https://example.com',
       'persona-alex-morgan',
@@ -139,7 +139,7 @@ describe('inspect_website fixture stream + decision', () => {
     )
   })
 
-  it('deny decision yields tool_denied', () => {
+  it('deny decision yields tool_denied', async () => {
     const proposal = maybeProposeInspectWebsite(
       'https://example.com',
       'persona-alex-morgan',
@@ -154,8 +154,8 @@ describe('inspect_website fixture stream + decision', () => {
 })
 
 describe('chat_inspect convert stub', () => {
-  it('creates a journey without study wave context', () => {
-    const result = runStubConvertUxRunToJourney({
+  it('creates a journey without study wave context', async () => {
+    const result = await runStubConvertUxRunToJourney({
       source: 'chat_inspect',
       jobId: 'chat-inspect-abc',
       personaId: 'persona-alex-morgan',
@@ -172,7 +172,7 @@ describe('chat_inspect convert stub', () => {
 })
 
 describe('chat share + history flyouts', () => {
-  it('builds conversation resume URLs', () => {
+  it('builds conversation resume URLs', async () => {
     expect(
       paths.routes.chatConversation({
         conversationId: 'chat-alex-intro',
@@ -183,7 +183,7 @@ describe('chat share + history flyouts', () => {
 })
 
 describe('chat moodboard strip', () => {
-  it('hides tiles behind a flyover trigger', () => {
+  it('hides tiles behind a flyover trigger', async () => {
     render(
       <ChatMoodboardStrip
         personaId="persona-alex-morgan"

@@ -11,7 +11,7 @@ export async function GET(
   context: { params: Promise<{ journeyId: string }> },
 ) {
   const { journeyId } = await context.params
-  const journey = storeJourneyDetail(journeyId)
+  const journey = await storeJourneyDetail(journeyId)
   if (!journey) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(journey)
 }
@@ -22,7 +22,7 @@ export async function PATCH(
 ) {
   const { journeyId } = await context.params
   const body = (await request.json()) as Partial<JourneyWritePayload>
-  const journey = storePatchJourney(journeyId, body)
+  const journey = await storePatchJourney(journeyId, body)
   if (!journey) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(journey)
 }

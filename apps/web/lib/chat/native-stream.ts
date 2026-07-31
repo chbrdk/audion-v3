@@ -11,7 +11,7 @@ import {
 import { maybeProposeInspectWebsite } from '../fixtures/chat-share'
 import { resolvePersonaSystemPrompt } from '../fixtures/persona-prompts-store'
 
-function systemPromptForPersona(personaId: string): string {
+async function systemPromptForPersona(personaId: string): Promise<string> {
   return resolvePersonaSystemPrompt(personaId)
 }
 
@@ -41,7 +41,7 @@ export async function* nativeChatStreamEvents(
       model: getAiOpenAiModel(),
       stream: true,
       messages: [
-        { role: 'system', content: systemPromptForPersona(payload.personaId) },
+        { role: 'system', content: await systemPromptForPersona(payload.personaId) },
         { role: 'user', content: message },
       ],
       temperature: 0.7,

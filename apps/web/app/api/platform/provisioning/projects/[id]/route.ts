@@ -45,8 +45,8 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const targetGroups = storeTargetGroupList()
-    .items.filter((g) => g.projectId === project.id)
+  const targetGroups = (await storeTargetGroupList()).items
+    .filter((g) => g.projectId === project.id)
     .map((g) => ({
       id: g.id,
       name: g.name,
@@ -55,18 +55,20 @@ export async function GET(
       status: g.status,
     }))
 
-  const personas = storePersonaList()
-    .items.filter((p) => p.projectId === project.id)
-    .map((p) => ({
+  const personas = (await storePersonaList()).items
+    .filter((p) => p.projectId === project.id)
+    .map(async (p) => ({
       id: p.id,
       name: p.name,
       role: p.role,
       status: p.status,
-      targetGroupId: storeTargetGroupForPersona(p.id)?.id ?? null,
+      targetGroupId: (await storeTargetGroupForPersona(p.id))?.id ?? null,
     }))
 
-  const journeys = storeJourneyList()
-    .items.filter((j) => j.projectId === project.id)
+  const personaCatalog = await Promise.all(personas)
+
+  const journeys = (await storeJourneyList()).items
+    .filter((j) => j.projectId === project.id)
     .map((j) => ({
       id: j.id,
       name: j.name,
@@ -88,12 +90,12 @@ export async function GET(
 
   return jsonWithContract({
     externalProjectId: project.id,
-    personaCount: personas.length,
+    personaCount: personaCatalog.length,
     targetGroupCount: targetGroups.length,
     journeyCount: journeys.length,
     studyCount: studies.length,
     targetGroups,
-    personas,
+    personas: personaCatalog,
     journeys,
     studies,
     platformProjectId: platformProjectId.trim(),

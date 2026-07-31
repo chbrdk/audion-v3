@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   if (!body?.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
-  const targetGroup = storeCreateTargetGroup({
+  const targetGroup = await storeCreateTargetGroup({
     ...body,
     segment: body.segment?.trim() || 'Segment',
   })

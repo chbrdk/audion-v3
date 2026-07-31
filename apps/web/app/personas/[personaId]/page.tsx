@@ -14,7 +14,7 @@ export default async function PersonaDetailPage({
   try {
     const detailResult = await fetchPersonaDetail(personaId)
     const demo = detailResult.origin === 'fixtures'
-    const targetGroup = storeTargetGroupForPersona(personaId)
+    const targetGroup = await storeTargetGroupForPersona(personaId)
     const title = targetGroup?.name ?? 'Personas'
     return (
       <AppShell

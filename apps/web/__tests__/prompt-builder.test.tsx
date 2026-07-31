@@ -18,22 +18,22 @@ describe('persona prompts store', () => {
     resetPersonaPromptsStore()
   })
 
-  it('updates and resolves custom system prompt', () => {
+  it('updates and resolves custom system prompt', async () => {
     const personaId = 'persona-alex-morgan'
-    const before = resolvePersonaSystemPrompt(personaId)
+    const before = await resolvePersonaSystemPrompt(personaId)
     expect(before.length).toBeGreaterThan(10)
 
-    const updated = updatePersonaPrompt(personaId, {
+    const updated = await updatePersonaPrompt(personaId, {
       systemPrompt: 'CUSTOM PROMPT FOR ALEX',
     })
     expect('error' in updated).toBe(false)
     if ('error' in updated) return
     expect(updated.hasCustom).toBe(true)
-    expect(resolvePersonaSystemPrompt(personaId)).toBe('CUSTOM PROMPT FOR ALEX')
+    expect(await resolvePersonaSystemPrompt(personaId)).toBe('CUSTOM PROMPT FOR ALEX')
 
-    resetPersonaPrompt(personaId)
-    expect(resolvePersonaSystemPrompt(personaId)).not.toBe('CUSTOM PROMPT FOR ALEX')
-    expect(getPersonaPromptDetail(personaId)).toMatchObject({ hasCustom: false })
+    await resetPersonaPrompt(personaId)
+    expect(await resolvePersonaSystemPrompt(personaId)).not.toBe('CUSTOM PROMPT FOR ALEX')
+    expect(await getPersonaPromptDetail(personaId)).toMatchObject({ hasCustom: false })
   })
 })
 

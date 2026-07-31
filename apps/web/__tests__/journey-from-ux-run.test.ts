@@ -10,12 +10,12 @@ afterEach(() => {
 })
 
 describe('journey from UX run (stub)', () => {
-  it('creates a journey from a study wave run and marks derivedJourneyId', () => {
+  it('creates a journey from a study wave run and marks derivedJourneyId', async () => {
     const study = DEMO_UX_STUDIES[0]!
     const wave = DEMO_UX_WAVES.find((w) => w.studyId === study.id)!
     const run = wave.runs.find((r) => r.jobId) ?? wave.runs[0]!
 
-    const result = runStubConvertUxRunToJourney({
+    const result = await runStubConvertUxRunToJourney({
       studyId: study.id,
       waveId: wave.id,
       runKey: run.runKey,
@@ -27,13 +27,13 @@ describe('journey from UX run (stub)', () => {
     expect(result.stubbed).toBe(true)
     expect(result.alreadyConverted).toBe(false)
     expect(result.journey.phaseCount).toBe(3)
-    expect(storeJourneyDetail(result.journey.id)?.phases).toHaveLength(3)
+    expect((await storeJourneyDetail(result.journey.id))?.phases).toHaveLength(3)
 
     const updated = storeUxWaveDetail(study.id, wave.id)
     const marked = updated?.runs.find((r) => r.runKey === run.runKey)
     expect(marked?.derivedJourneyId).toBe(result.journey.id)
 
-    const again = runStubConvertUxRunToJourney({
+    const again = await runStubConvertUxRunToJourney({
       studyId: study.id,
       waveId: wave.id,
       runKey: run.runKey,
@@ -44,8 +44,8 @@ describe('journey from UX run (stub)', () => {
     expect(again.journey.id).toBe(result.journey.id)
   })
 
-  it('requires study/wave/run in fixture mode', () => {
-    expect(runStubConvertUxRunToJourney({ jobId: 'x' })).toMatchObject({
+  it('requires study/wave/run in fixture mode', async () => {
+    expect(await runStubConvertUxRunToJourney({ jobId: 'x' })).toMatchObject({
       error: expect.stringContaining('required'),
       status: 400,
     })

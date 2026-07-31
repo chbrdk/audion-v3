@@ -49,7 +49,7 @@ export async function syncUxWaveNativeOrFixture(
       updated.push(run)
       continue
     }
-    const persona = run.personaId ? storePersonaDetail(run.personaId) : null
+    const persona = run.personaId ? await storePersonaDetail(run.personaId) : null
     const assist = await runAssistJson<{
       outcome?: string
       summary?: string

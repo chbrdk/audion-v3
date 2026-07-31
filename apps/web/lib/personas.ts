@@ -244,7 +244,7 @@ async function fetchJson(url: string): Promise<Response> {
 
 export async function fetchPersonaList(): Promise<PersonaListResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { ...storePersonaList(), origin: 'fixtures' }
+    return { ...(await storePersonaList()), origin: 'fixtures' }
   }
 
   try {
@@ -269,13 +269,13 @@ export async function fetchPersonaList(): Promise<PersonaListResult> {
     }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { ...storePersonaList(), origin: 'fixtures' }
+    return { ...(await storePersonaList()), origin: 'fixtures' }
   }
 }
 
 export async function fetchPersonaDetail(personaId: string): Promise<PersonaDetailResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { persona: storePersonaDetail(personaId), origin: 'fixtures' }
+    return { persona: await storePersonaDetail(personaId), origin: 'fixtures' }
   }
 
   try {
@@ -286,6 +286,6 @@ export async function fetchPersonaDetail(personaId: string): Promise<PersonaDeta
     return { persona: normalizePersonaDetail(await response.json()), origin: 'api' }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { persona: storePersonaDetail(personaId), origin: 'fixtures' }
+    return { persona: await storePersonaDetail(personaId), origin: 'fixtures' }
   }
 }

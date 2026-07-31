@@ -30,7 +30,7 @@ afterEach(() => {
 })
 
 describe('research run fixture progression', () => {
-  it('moves queued → running → succeeded and exposes latest summary', () => {
+  it('moves queued → running → succeeded and exposes latest summary', async () => {
     const runId = storeCreateResearchRun(
       'proj-audion-core',
       'https://example.com',
@@ -49,7 +49,7 @@ describe('research run fixture progression', () => {
     expect(latest.summaryEn?.[0]?.claims[0]?.text).toContain('example.com')
   })
 
-  it('emits SSE progress chunks then done', () => {
+  it('emits SSE progress chunks then done', async () => {
     const runId = storeCreateResearchRun(
       'proj-audion-core',
       'https://seed.test',
@@ -63,16 +63,16 @@ describe('research run fixture progression', () => {
 })
 
 describe('knowledge entry helpers + stores', () => {
-  it('creates and updates knowledge entries on a target group', () => {
-    const tg = storeTargetGroupDetail('tg-digital-product-leads')
+  it('creates and updates knowledge entries on a target group', async () => {
+    const tg = await storeTargetGroupDetail('tg-digital-product-leads')
     expect(tg?.knowledgeEntries.length).toBeGreaterThan(0)
     const created = createKnowledgeEntry({ title: 'New', content: '<p>Body</p>' })
-    storePatchTargetGroup('tg-digital-product-leads', {
+    await storePatchTargetGroup('tg-digital-product-leads', {
       name: tg!.name,
       segment: tg!.segment,
       knowledgeEntries: [...tg!.knowledgeEntries, created],
     })
-    const after = storeTargetGroupDetail('tg-digital-product-leads')
+    const after = await storeTargetGroupDetail('tg-digital-product-leads')
     expect(after?.knowledgeEntries.some((e) => e.id === created.id)).toBe(true)
     expect(after?.documents[0]?.status).toBe('ready')
 
@@ -81,27 +81,27 @@ describe('knowledge entry helpers + stores', () => {
     expect(updated.updatedAt).toBeTruthy()
   })
 
-  it('patches persona knowledge and profileDe', () => {
-    const persona = storePersonaDetail('persona-alex-morgan')
+  it('patches persona knowledge and profileDe', async () => {
+    const persona = await storePersonaDetail('persona-alex-morgan')
     expect(persona?.profileDe?.bio).toBeTruthy()
     expect(persona?.knowledgeEntries.length).toBeGreaterThan(0)
 
     const entry = createKnowledgeEntry({ title: 'Extra', content: '<p>Note</p>' })
-    storePatchPersona('persona-alex-morgan', {
+    await storePatchPersona('persona-alex-morgan', {
       name: persona!.name,
       role: persona!.role,
       knowledgeEntries: [...persona!.knowledgeEntries, entry],
       headlineDe: 'Product Lead · DE',
     })
-    const next = storePersonaDetail('persona-alex-morgan')
+    const next = await storePersonaDetail('persona-alex-morgan')
     expect(next?.knowledgeEntries.some((e) => e.title === 'Extra')).toBe(true)
     expect(next?.headlineDe).toBe('Product Lead · DE')
   })
 })
 
 describe('persona profile_de locale helpers', () => {
-  it('prefers DE headline/bio when locale is German', () => {
-    const persona = storePersonaDetail('persona-alex-morgan')!
+  it('prefers DE headline/bio when locale is German', async () => {
+    const persona = (await storePersonaDetail('persona-alex-morgan'))!
     expect(resolvePersonaHeadline(persona, 'de')).toContain('Evidenz')
     expect(resolvePersonaBio(persona, 'de')).toContain('Product Lead')
     expect(resolvePersonaHeadline(persona, 'en')).toBe(persona.role)

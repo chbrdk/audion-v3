@@ -5,7 +5,7 @@ import { storeTargetGroupList } from '../../../../lib/fixtures/target-group-stor
 /** Lightweight picker options for AI dialogs (fixture-backed Wave 1). */
 export async function GET() {
   const projects = await storeProjectList()
-  const targetGroups = storeTargetGroupList()
+  const targetGroups = await storeTargetGroupList()
   return NextResponse.json({
     projects: projects.items.map((p) => ({ id: p.id, name: p.name })),
     targetGroups: targetGroups.items.map((g) => ({

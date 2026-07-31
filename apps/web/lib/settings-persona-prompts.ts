@@ -21,14 +21,14 @@ import {
 
 export type PersonaPromptsError = { error: string; status: number }
 
-export function listPersonaPrompts(): SettingsPersonaPromptListResponse {
-  return { items: storeListPersonaPromptSummaries() }
+export async function listPersonaPrompts(): Promise<SettingsPersonaPromptListResponse> {
+  return { items: await storeListPersonaPromptSummaries() }
 }
 
-export function getPersonaPromptDetail(
+export async function getPersonaPromptDetail(
   personaId: string,
-): SettingsPersonaPromptDetail | PersonaPromptsError {
-  const persona = storePersonaDetail(personaId)
+): Promise<SettingsPersonaPromptDetail | PersonaPromptsError> {
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
   const custom = storeGetPersonaPromptRecord(personaId)
   return {
@@ -42,11 +42,11 @@ export function getPersonaPromptDetail(
   }
 }
 
-export function updatePersonaPrompt(
+export async function updatePersonaPrompt(
   personaId: string,
   body: SettingsPersonaPromptUpdateRequest,
-): SettingsPersonaPromptDetail | PersonaPromptsError {
-  const persona = storePersonaDetail(personaId)
+): Promise<SettingsPersonaPromptDetail | PersonaPromptsError> {
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
   const systemPrompt = body.systemPrompt?.trim() || ''
   if (!systemPrompt) {
@@ -57,16 +57,16 @@ export function updatePersonaPrompt(
     systemPromptDe: body.systemPromptDe,
     templateVersion: body.templateVersion,
   })
-  return getPersonaPromptDetail(personaId) as SettingsPersonaPromptDetail
+  return (await getPersonaPromptDetail(personaId)) as SettingsPersonaPromptDetail
 }
 
-export function resetPersonaPrompt(
+export async function resetPersonaPrompt(
   personaId: string,
-): SettingsPersonaPromptDetail | PersonaPromptsError {
-  const persona = storePersonaDetail(personaId)
+): Promise<SettingsPersonaPromptDetail | PersonaPromptsError> {
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
   storeDeletePersonaPrompt(personaId)
-  return getPersonaPromptDetail(personaId) as SettingsPersonaPromptDetail
+  return (await getPersonaPromptDetail(personaId)) as SettingsPersonaPromptDetail
 }
 
 export { resolvePersonaSystemPrompt }

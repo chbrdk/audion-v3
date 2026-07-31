@@ -32,7 +32,7 @@ afterEach(() => {
 })
 
 describe('AI workflow stubs', () => {
-  it('buildTargetCall fills path params', () => {
+  it('buildTargetCall fills path params', async () => {
     const call = buildTargetCall(
       'generatePersonas',
       { tgId: 'tg-digital-product-leads' },
@@ -43,7 +43,7 @@ describe('AI workflow stubs', () => {
     expect(call.body.segment).toBe('Leads')
   })
 
-  it('registry documents V2 upstream paths', () => {
+  it('registry documents V2 upstream paths', async () => {
     expect(AI_WORKFLOW_TARGETS.generatePersonas.upstreamPath).toContain(
       '/personas/generate',
     )
@@ -62,9 +62,9 @@ describe('AI workflow stubs', () => {
     expect(AI_WORKFLOW_TARGETS.validateJourney.upstreamPath).toContain('/validate')
   })
 
-  it('generatePersonas creates fixture personas and returns stubbed target', () => {
-    const before = storePersonaList().total
-    const result = runStubGeneratePersonas('tg-digital-product-leads', {
+  it('generatePersonas creates fixture personas and returns stubbed target', async () => {
+    const before = (await storePersonaList()).total
+    const result = await runStubGeneratePersonas('tg-digital-product-leads', {
       segment: 'Digital leads',
       count: 2,
     })
@@ -74,8 +74,8 @@ describe('AI workflow stubs', () => {
     expect(result.workflowId).toBe('generatePersonas')
     expect(result.target.path).toContain('tg-digital-product-leads/personas/generate')
     expect(result.personas).toHaveLength(2)
-    expect(storePersonaList().total).toBe(before + 2)
-    const tg = storeTargetGroupDetail('tg-digital-product-leads')
+    expect((await storePersonaList()).total).toBe(before + 2)
+    const tg = await storeTargetGroupDetail('tg-digital-product-leads')
     expect(tg?.linkedPersonas.some((p) => p.id === result.personas[0]!.id)).toBe(true)
   })
 
@@ -129,14 +129,14 @@ describe('AI workflow stubs', () => {
     expect(result.stubbed).toBe(true)
     expect(result.workflowId).toBe('generateJourneyFromProject')
     expect(result.journey.phaseCount).toBe(3)
-    const journey = storeJourneyDetail(result.journey.id)
+    const journey = await storeJourneyDetail(result.journey.id)
     expect(journey?.phases).toHaveLength(3)
   })
 
-  it('generatePersonaAvatar cycles fixture portrait and returns stubbed target', () => {
-    const before = storePersonaDetail('persona-alex-morgan')
+  it('generatePersonaAvatar cycles fixture portrait and returns stubbed target', async () => {
+    const before = await storePersonaDetail('persona-alex-morgan')
     expect(before?.avatarUrl).toBeTruthy()
-    const result = runStubGeneratePersonaAvatar('persona-alex-morgan', {})
+    const result = await runStubGeneratePersonaAvatar('persona-alex-morgan', {})
     expect('error' in result).toBe(false)
     if ('error' in result) return
     expect(result.stubbed).toBe(true)
@@ -144,16 +144,16 @@ describe('AI workflow stubs', () => {
     expect(result.target.path).toBe('/personas/persona-alex-morgan/generate-image')
     expect(result.avatarUrl).toBeTruthy()
     expect(result.avatarUrl).not.toBe(before?.avatarUrl)
-    expect(storePersonaDetail('persona-alex-morgan')?.avatarUrl).toBe(result.avatarUrl)
+    expect((await storePersonaDetail('persona-alex-morgan'))?.avatarUrl).toBe(result.avatarUrl)
 
-    const missing = runStubGeneratePersonaAvatar('missing-persona', {})
+    const missing = await runStubGeneratePersonaAvatar('missing-persona', {})
     expect(missing).toMatchObject({ error: 'Persona not found', status: 404 })
   })
 
-  it('suggestPersonaField returns stub suggestions without patching', () => {
-    const before = storePersonaDetail('persona-alex-morgan')
+  it('suggestPersonaField returns stub suggestions without patching', async () => {
+    const before = await storePersonaDetail('persona-alex-morgan')
     const interests = before?.interests ?? []
-    const result = runStubSuggestPersonaField('persona-alex-morgan', {
+    const result = await runStubSuggestPersonaField('persona-alex-morgan', {
       field: 'interests',
       max_suggestions: 3,
     })
@@ -164,25 +164,25 @@ describe('AI workflow stubs', () => {
     expect(result.field).toBe('interests')
     expect(result.suggestions.length).toBeGreaterThan(0)
     expect(result.target.path).toContain('/ai/interests')
-    expect(storePersonaDetail('persona-alex-morgan')?.interests).toEqual(interests)
+    expect((await storePersonaDetail('persona-alex-morgan'))?.interests).toEqual(interests)
 
-    const vocab = runStubSuggestPersonaField('persona-alex-morgan', { field: 'vocabulary' })
+    const vocab = await runStubSuggestPersonaField('persona-alex-morgan', { field: 'vocabulary' })
     expect('error' in vocab).toBe(false)
     if ('error' in vocab) return
     expect(vocab.target.path).toBe('/ai-assist')
     expect(vocab.target.body.template_id).toBe('persona.vocabulary')
 
-    expect(runStubSuggestPersonaField('missing', { field: 'values' })).toMatchObject({
+    expect(await runStubSuggestPersonaField('missing', { field: 'values' })).toMatchObject({
       error: 'Persona not found',
       status: 404,
     })
   })
 
-  it('enrichPersona merges facets into the fixture store', () => {
-    const before = storePersonaDetail('persona-alex-morgan')
+  it('enrichPersona merges facets into the fixture store', async () => {
+    const before = await storePersonaDetail('persona-alex-morgan')
     expect(before).toBeTruthy()
     const interestCount = before!.interests.length
-    const result = runStubEnrichPersona('persona-alex-morgan', { output_locale: 'en' })
+    const result = await runStubEnrichPersona('persona-alex-morgan', { output_locale: 'en' })
     expect('error' in result).toBe(false)
     if ('error' in result) return
     expect(result.stubbed).toBe(true)
@@ -190,16 +190,16 @@ describe('AI workflow stubs', () => {
     expect(result.target.path).toBe('/personas/persona-alex-morgan/enrich')
     expect(result.facetsUpdated).toContain('interests')
     expect(result.interests.length).toBeGreaterThan(interestCount)
-    expect(storePersonaDetail('persona-alex-morgan')?.interests).toEqual(result.interests)
+    expect((await storePersonaDetail('persona-alex-morgan'))?.interests).toEqual(result.interests)
 
-    expect(runStubEnrichPersona('missing', {})).toMatchObject({
+    expect(await runStubEnrichPersona('missing', {})).toMatchObject({
       error: 'Persona not found',
       status: 404,
     })
   })
 
-  it('generateMoodboard writes style keywords and tiles', () => {
-    const result = runStubGenerateMoodboard('persona-alex-morgan', {})
+  it('generateMoodboard writes style keywords and tiles', async () => {
+    const result = await runStubGenerateMoodboard('persona-alex-morgan', {})
     expect('error' in result).toBe(false)
     if ('error' in result) return
     expect(result.stubbed).toBe(true)
@@ -208,17 +208,17 @@ describe('AI workflow stubs', () => {
     expect(result.visuals.styleKeywords.length).toBeGreaterThan(0)
     expect(result.visuals.tiles.length).toBe(4)
     expect(result.visuals.tiles[0]?.imageUrl).toContain('/fixtures/personas/visuals/')
-    expect(storePersonaDetail('persona-alex-morgan')?.visuals?.tiles).toHaveLength(4)
+    expect((await storePersonaDetail('persona-alex-morgan'))?.visuals?.tiles).toHaveLength(4)
 
-    expect(runStubGenerateMoodboard('missing', {})).toMatchObject({
+    expect(await runStubGenerateMoodboard('missing', {})).toMatchObject({
       error: 'Persona not found',
       status: 404,
     })
   })
 
-  it('generateMoodboard preserves locked tiles across rebuild', () => {
+  it('generateMoodboard preserves locked tiles across rebuild', async () => {
     resetPersonaStore()
-    const first = runStubGenerateMoodboard('persona-alex-morgan', {})
+    const first = await runStubGenerateMoodboard('persona-alex-morgan', {})
     expect('error' in first).toBe(false)
     if ('error' in first) return
 
@@ -230,7 +230,7 @@ describe('AI workflow stubs', () => {
       caption: 'Locked atmosphere',
       locked: true,
     }
-    storePatchPersona('persona-alex-morgan', {
+    await storePatchPersona('persona-alex-morgan', {
       visuals: {
         styleKeywords: first.visuals.styleKeywords,
         tiles: [
@@ -240,7 +240,7 @@ describe('AI workflow stubs', () => {
       },
     })
 
-    const second = runStubGenerateMoodboard('persona-alex-morgan', {})
+    const second = await runStubGenerateMoodboard('persona-alex-morgan', {})
     expect('error' in second).toBe(false)
     if ('error' in second) return
 
@@ -254,11 +254,11 @@ describe('AI workflow stubs', () => {
     expect(second.visuals.tiles.some((t) => t.category === 'material' && !t.locked)).toBe(true)
   })
 
-  it('generateJourneyPhaseMoments merges moments into a phase', () => {
-    const before = storeJourneyDetail('journey-product-discovery')
+  it('generateJourneyPhaseMoments merges moments into a phase', async () => {
+    const before = await storeJourneyDetail('journey-product-discovery')
     const phase = before!.phases[0]!
     const count = phase.elements.length
-    const result = runStubGenerateJourneyPhaseMoments('journey-product-discovery', {
+    const result = await runStubGenerateJourneyPhaseMoments('journey-product-discovery', {
       phase_id: phase.id,
       max_suggestions: 3,
     })
@@ -270,16 +270,16 @@ describe('AI workflow stubs', () => {
     expect(result.moments.length).toBeGreaterThan(count)
     expect(result.target.body.template_id).toBe('journey.moments')
     expect(
-      storeJourneyDetail('journey-product-discovery')?.phases[0]?.elements.length,
+      (await storeJourneyDetail('journey-product-discovery'))?.phases[0]?.elements.length,
     ).toBeGreaterThan(count)
 
     expect(
-      runStubGenerateJourneyPhaseMoments('journey-product-discovery', { phase_id: 'missing' }),
+      await runStubGenerateJourneyPhaseMoments('journey-product-discovery', { phase_id: 'missing' }),
     ).toMatchObject({ error: 'Phase not found', status: 404 })
   })
 
-  it('validateJourney returns a fit report against a persona', () => {
-    const result = runStubValidateJourney('journey-product-discovery', {
+  it('validateJourney returns a fit report against a persona', async () => {
+    const result = await runStubValidateJourney('journey-product-discovery', {
       persona_ids: ['persona-alex-morgan'],
     })
     expect('error' in result).toBe(false)
@@ -293,20 +293,20 @@ describe('AI workflow stubs', () => {
     expect(result.phases[0]?.status).toMatch(/good|warning|critical/)
     expect(storeListValidationReports('journey-product-discovery').total).toBe(1)
 
-    expect(runStubValidateJourney('journey-product-discovery', { persona_ids: [] })).toMatchObject({
+    expect(await runStubValidateJourney('journey-product-discovery', { persona_ids: [] })).toMatchObject({
       error: 'At least one persona_id required',
       status: 400,
     })
   })
 
-  it('validateJourney chat mode adds persona quotes and appends history', () => {
-    const first = runStubValidateJourney('journey-product-discovery', {
+  it('validateJourney chat mode adds persona quotes and appends history', async () => {
+    const first = await runStubValidateJourney('journey-product-discovery', {
       persona_ids: ['persona-alex-morgan'],
       mode: 'automated',
     })
     expect('error' in first).toBe(false)
 
-    const chat = runStubValidateJourney('journey-product-discovery', {
+    const chat = await runStubValidateJourney('journey-product-discovery', {
       persona_ids: ['persona-alex-morgan'],
       mode: 'chat',
     })

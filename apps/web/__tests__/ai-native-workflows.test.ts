@@ -60,7 +60,7 @@ describe('native AI workflows (mocked assist)', () => {
     expect('error' in result).toBe(false)
     if ('error' in result) return
     expect(result.stubbed).toBe(false)
-    const patched = storePersonaDetail(personaId)
+    const patched = await storePersonaDetail(personaId)
     expect(patched?.interests).toContain('Native evidence loops')
   })
 })

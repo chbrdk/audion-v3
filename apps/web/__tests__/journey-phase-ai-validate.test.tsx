@@ -19,7 +19,7 @@ afterEach(() => {
 
 describe('journey phase AI + validate UI', () => {
   it('Generate moments posts to phase generate route', async () => {
-    const journey = storeJourneyDetail('journey-product-discovery')!
+    const journey = (await storeJourneyDetail('journey-product-discovery'))!
     const phase = journey.phases[0]!
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -45,7 +45,7 @@ describe('journey phase AI + validate UI', () => {
   })
 
   it('Validate opens dialog, loads TG personas, and posts validate', async () => {
-    const journey = storeJourneyDetail('journey-product-discovery')!
+    const journey = (await storeJourneyDetail('journey-product-discovery'))!
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       if (String(url).includes('/validation-reports') && !String(url).match(/validation-reports\/[^/]+$/)) {
         return {
@@ -127,7 +127,7 @@ describe('journey phase AI + validate UI', () => {
   })
 
   it('Validate can reopen a report from history', async () => {
-    const journey = storeJourneyDetail('journey-product-discovery')!
+    const journey = (await storeJourneyDetail('journey-product-discovery'))!
     const historyItem = {
       id: 'val-report-hist',
       journeyId: journey.id,

@@ -10,7 +10,7 @@ export async function GET(
   context: { params: Promise<{ targetGroupId: string }> },
 ) {
   const { targetGroupId } = await context.params
-  const targetGroup = storeTargetGroupDetail(targetGroupId)
+  const targetGroup = await storeTargetGroupDetail(targetGroupId)
   if (!targetGroup) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(targetGroup)
 }
@@ -21,7 +21,7 @@ export async function PATCH(
 ) {
   const { targetGroupId } = await context.params
   const body = (await request.json()) as Partial<TargetGroupWritePayload>
-  const targetGroup = storePatchTargetGroup(targetGroupId, body)
+  const targetGroup = await storePatchTargetGroup(targetGroupId, body)
   if (!targetGroup) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(targetGroup)
 }

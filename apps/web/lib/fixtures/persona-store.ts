@@ -1,3 +1,8 @@
+/**
+ * Persona persistence facade.
+ * - With DATABASE_URL: Postgres (drizzle)
+ * - Without: in-memory fixtures (local/dev/tests)
+ */
 import type {
   PersonaDetail,
   PersonaList,
@@ -5,9 +10,13 @@ import type {
 } from '@audion-v3/contracts'
 import { coerceFrustrations, coerceGoals } from '../persona-coerce'
 import { normalizePersonaSections } from '../persona-notes'
+import { isProjectsDatabaseConfigured } from '../db/config'
 import { DEMO_PERSONAS } from './personas'
 
-/** Mutable fixture store — specs/api/personas.md */
+async function dbApi() {
+  return import('../db/personas')
+}
+
 let personas: PersonaDetail[] = DEMO_PERSONAS.map((p) => structuredClone(p))
 
 const DETAIL_ONLY_KEYS = [
@@ -76,7 +85,7 @@ export function resetPersonaStore(): void {
   personas = DEMO_PERSONAS.map((p) => structuredClone(p))
 }
 
-export function storePersonaList(): PersonaList {
+function memoryPersonaList(): PersonaList {
   return {
     items: personas.map(toSummary),
     total: personas.length,
@@ -85,7 +94,7 @@ export function storePersonaList(): PersonaList {
   }
 }
 
-export function storePersonaDetail(id: string): PersonaDetail | null {
+function memoryPersonaDetail(id: string): PersonaDetail | null {
   const found = personas.find((p) => p.id === id)
   if (!found) return null
   return {
@@ -97,7 +106,7 @@ export function storePersonaDetail(id: string): PersonaDetail | null {
   }
 }
 
-export function storeCreatePersona(payload: PersonaWritePayload): PersonaDetail {
+function memoryCreatePersona(payload: PersonaWritePayload): PersonaDetail {
   const id = `persona-${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'new'}-${Date.now().toString(36)}`
   const created: PersonaDetail = {
     id,
@@ -136,7 +145,7 @@ export function storeCreatePersona(payload: PersonaWritePayload): PersonaDetail 
   return created
 }
 
-export function storePatchPersona(id: string, payload: Partial<PersonaWritePayload>): PersonaDetail | null {
+function memoryPatchPersona(id: string, payload: Partial<PersonaWritePayload>): PersonaDetail | null {
   const index = personas.findIndex((p) => p.id === id)
   if (index < 0) return null
   const current = personas[index]!
@@ -189,4 +198,39 @@ export function storePatchPersona(id: string, payload: Partial<PersonaWritePaylo
   }
   personas = [...personas.slice(0, index), next, ...personas.slice(index + 1)]
   return next
+}
+
+export async function storePersonaList(): Promise<PersonaList> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbPersonaList()
+  }
+  return memoryPersonaList()
+}
+
+export async function storePersonaDetail(id: string): Promise<PersonaDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbPersonaDetail(id)
+  }
+  return memoryPersonaDetail(id)
+}
+
+export async function storeCreatePersona(payload: PersonaWritePayload): Promise<PersonaDetail> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbCreatePersona(payload)
+  }
+  return memoryCreatePersona(payload)
+}
+
+export async function storePatchPersona(
+  id: string,
+  payload: Partial<PersonaWritePayload>,
+): Promise<PersonaDetail | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbPatchPersona(id, payload)
+  }
+  return memoryPatchPersona(id, payload)
 }

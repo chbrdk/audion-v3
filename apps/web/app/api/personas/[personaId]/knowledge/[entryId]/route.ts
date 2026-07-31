@@ -7,7 +7,7 @@ type Params = { params: Promise<{ personaId: string; entryId: string }> }
 
 export async function PUT(request: Request, { params }: Params) {
   const { personaId, entryId } = await params
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const current = persona.knowledgeEntries.find((e) => e.id === entryId)
   if (!current) return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
@@ -16,7 +16,7 @@ export async function PUT(request: Request, { params }: Params) {
     title: body.title ?? current.title,
     content: body.content ?? current.content,
   })
-  storePatchPersona(personaId, {
+  await storePatchPersona(personaId, {
     name: persona.name,
     role: persona.role,
     knowledgeEntries: persona.knowledgeEntries.map((e) => (e.id === entryId ? entry : e)),
@@ -26,12 +26,12 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   const { personaId, entryId } = await params
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (!persona.knowledgeEntries.some((e) => e.id === entryId)) {
     return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
   }
-  storePatchPersona(personaId, {
+  await storePatchPersona(personaId, {
     name: persona.name,
     role: persona.role,
     knowledgeEntries: persona.knowledgeEntries.filter((e) => e.id !== entryId),

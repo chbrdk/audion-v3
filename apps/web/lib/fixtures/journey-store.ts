@@ -17,11 +17,11 @@ function sortPhases(phases: JourneyPhase[]): JourneyPhase[] {
     }))
 }
 
-function withCounts(journey: JourneyDetail): JourneyDetail {
+async function withCounts(journey: JourneyDetail): Promise<JourneyDetail> {
   const phases = sortPhases(journey.phases)
   let targetGroupName = journey.targetGroupName
   if (journey.targetGroupId) {
-    const tg = storeTargetGroupDetail(journey.targetGroupId)
+    const tg = await storeTargetGroupDetail(journey.targetGroupId)
     targetGroupName = tg?.name ?? journey.targetGroupName
   }
   return {
@@ -32,28 +32,30 @@ function withCounts(journey: JourneyDetail): JourneyDetail {
   }
 }
 
-export function storeJourneyList(): JourneyList {
-  const items = journeys.map((j) => {
-    const detail = withCounts(j)
-    const { description: _d, phases: _p, ...summary } = detail
-    return summary
-  })
+export async function storeJourneyList(): Promise<JourneyList> {
+  const items = await Promise.all(
+    journeys.map(async (j) => {
+      const detail = await withCounts(j)
+      const { description: _d, phases: _p, ...summary } = detail
+      return summary
+    }),
+  )
   return { items, total: items.length, page: 1, pageSize: 50 }
 }
 
-export function storeJourneyDetail(id: string): JourneyDetail | null {
+export async function storeJourneyDetail(id: string): Promise<JourneyDetail | null> {
   const found = journeys.find((j) => j.id === id)
-  return found ? withCounts(found) : null
+  return found ? await withCounts(found) : null
 }
 
-export function storeCreateJourney(payload: JourneyWritePayload): JourneyDetail {
+export async function storeCreateJourney(payload: JourneyWritePayload): Promise<JourneyDetail> {
   const id = `journey-${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'new'}-${Date.now().toString(36)}`
   const phases = sortPhases(payload.phases ?? [])
   let targetGroupName: string | null = null
   if (payload.targetGroupId) {
-    targetGroupName = storeTargetGroupDetail(payload.targetGroupId)?.name ?? null
+    targetGroupName = (await storeTargetGroupDetail(payload.targetGroupId))?.name ?? null
   }
-  const created = withCounts({
+  const created = await withCounts({
     id,
     name: payload.name.trim(),
     journeyType: payload.journeyType.trim() || 'journey',
@@ -70,10 +72,10 @@ export function storeCreateJourney(payload: JourneyWritePayload): JourneyDetail 
   return created
 }
 
-export function storePatchJourney(
+export async function storePatchJourney(
   id: string,
   payload: Partial<JourneyWritePayload>,
-): JourneyDetail | null {
+): Promise<JourneyDetail | null> {
   const index = journeys.findIndex((j) => j.id === id)
   if (index < 0) return null
   const current = journeys[index]!
@@ -84,10 +86,10 @@ export function storePatchJourney(
   let targetGroupName = current.targetGroupName
   if (payload.targetGroupId !== undefined) {
     targetGroupName = targetGroupId
-      ? storeTargetGroupDetail(targetGroupId)?.name ?? null
+      ? (await storeTargetGroupDetail(targetGroupId))?.name ?? null
       : null
   }
-  const next = withCounts({
+  const next = await withCounts({
     ...current,
     name: payload.name?.trim() ?? current.name,
     journeyType: payload.journeyType?.trim() ?? current.journeyType,

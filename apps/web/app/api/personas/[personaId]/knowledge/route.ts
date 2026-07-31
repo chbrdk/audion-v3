@@ -7,7 +7,7 @@ type Params = { params: Promise<{ personaId: string }> }
 
 export async function GET(_request: Request, { params }: Params) {
   const { personaId } = await params
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({
     items: persona.knowledgeEntries,
@@ -17,14 +17,14 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const { personaId } = await params
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const body = (await request.json()) as KnowledgeEntryWrite
   const entry = createKnowledgeEntry({
     title: body.title ?? '',
     content: body.content ?? '',
   })
-  storePatchPersona(personaId, {
+  await storePatchPersona(personaId, {
     name: persona.name,
     role: persona.role,
     knowledgeEntries: [...persona.knowledgeEntries, entry],

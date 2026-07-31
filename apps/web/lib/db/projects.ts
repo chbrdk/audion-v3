@@ -9,18 +9,22 @@ import type {
 } from '@audion-v3/contracts'
 import { getDb } from './client'
 import { projects, type ProjectRow } from './schema'
-import { storePersonaList } from '../fixtures/persona-store'
-import { storeTargetGroupList } from '../fixtures/target-group-store'
+import { dbCountPersonasByProjectId } from './personas'
+import { dbCountTargetGroupsByProjectId } from './target-groups'
 import {
   joinCompanyContext,
   newKnowledgeChapterId,
   resolveKnowledgeChapters,
 } from '../project-knowledge'
 
-function countsFor(projectId: string): { personaCount: number; targetGroupCount: number } {
-  const personas = storePersonaList().items.filter((p) => p.projectId === projectId).length
-  const groups = storeTargetGroupList().items.filter((g) => g.projectId === projectId).length
-  return { personaCount: personas, targetGroupCount: groups }
+async function countsFor(
+  projectId: string,
+): Promise<{ personaCount: number; targetGroupCount: number }> {
+  const [personaCount, targetGroupCount] = await Promise.all([
+    dbCountPersonasByProjectId(projectId),
+    dbCountTargetGroupsByProjectId(projectId),
+  ])
+  return { personaCount, targetGroupCount }
 }
 
 function normalizeStatus(value: string | null | undefined): ProjectStatus {
@@ -28,13 +32,13 @@ function normalizeStatus(value: string | null | undefined): ProjectStatus {
   return 'draft'
 }
 
-function rowToDetail(row: ProjectRow): ProjectDetail {
+async function rowToDetail(row: ProjectRow): Promise<ProjectDetail> {
   const knowledgeChapters = resolveKnowledgeChapters(
     row.knowledgeChapters ?? [],
     row.companyContext,
   )
   const members = Array.isArray(row.members) ? row.members : []
-  const counts = countsFor(row.id)
+  const counts = await countsFor(row.id)
   return {
     id: row.id,
     name: row.name,
@@ -92,7 +96,7 @@ function chaptersFromWrite(
 export async function dbProjectList(): Promise<ProjectList> {
   const db = getDb()
   const rows = await db.select().from(projects).orderBy(desc(projects.updatedAt))
-  const items = rows.map((row) => toSummary(rowToDetail(row)))
+  const items = await Promise.all(rows.map(async (row) => toSummary(await rowToDetail(row))))
   return { items, total: items.length, page: 1, pageSize: Math.max(50, items.length) }
 }
 

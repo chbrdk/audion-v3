@@ -42,7 +42,7 @@ afterEach(() => {
 })
 
 describe('persona contracts', () => {
-  it('normalizes summary payloads from legacy backend fields', () => {
+  it('normalizes summary payloads from legacy backend fields', async () => {
     expect(
       normalizePersonaSummary({
         persona_id: 'persona-1',
@@ -62,7 +62,7 @@ describe('persona contracts', () => {
     })
   })
 
-  it('normalizes detail payloads and filters list by query', () => {
+  it('normalizes detail payloads and filters list by query', async () => {
     const detail = normalizePersonaDetail({
       id: 'persona-1',
       name: 'Alex Morgan',
@@ -96,7 +96,7 @@ describe('persona contracts', () => {
     expect(filtered.items).toHaveLength(1)
   })
 
-  it('normalizes nested v2 profile payloads with rich fields', () => {
+  it('normalizes nested v2 profile payloads with rich fields', async () => {
     const detail = normalizePersonaDetail({
       id: 'persona-v2',
       name: 'Markus Sommer',
@@ -137,7 +137,7 @@ describe('persona contracts', () => {
     expect(detail?.visuals?.tiles[0]?.imageUrl).toBe('/fixtures/personas/visuals/tone-warm.svg')
   })
 
-  it('provides local demo fixtures with list and detail lookup', () => {
+  it('provides local demo fixtures with list and detail lookup', async () => {
     const list = demoPersonaList()
     expect(list.items.length).toBeGreaterThanOrEqual(3)
     expect(demoPersonaDetail(list.items[0]!.id)?.name).toBe(list.items[0]!.name)
@@ -145,21 +145,21 @@ describe('persona contracts', () => {
     expect(demoPersonaDetail('missing-id')).toBeNull()
   })
 
-  it('creates and patches personas in the fixture store', () => {
-    const before = storePersonaList().total
-    const created = storeCreatePersona({
+  it('creates and patches personas in the fixture store', async () => {
+    const before = (await storePersonaList()).total
+    const created = await storeCreatePersona({
       name: 'Taylor Reed',
       role: 'Analyst',
       goals: [{ label: 'Ship briefs', priority: 0 }],
     })
-    expect(storePersonaList().total).toBe(before + 1)
-    expect(storePersonaDetail(created.id)?.goals).toEqual([{ label: 'Ship briefs', priority: 0 }])
-    const patched = storePatchPersona(created.id, { bio: 'Updated bio' })
+    expect((await storePersonaList()).total).toBe(before + 1)
+    expect((await storePersonaDetail(created.id))?.goals).toEqual([{ label: 'Ship briefs', priority: 0 }])
+    const patched = await storePatchPersona(created.id, { bio: 'Updated bio' })
     expect(patched?.bio).toBe('Updated bio')
   })
 
-  it('replaces goals frustrations and channels via partial patch', () => {
-    const created = storeCreatePersona({
+  it('replaces goals frustrations and channels via partial patch', async () => {
+    const created = await storeCreatePersona({
       name: 'List Editor',
       role: 'PM',
       goals: [
@@ -169,19 +169,19 @@ describe('persona contracts', () => {
       frustrations: [{ label: 'X', evidenceCount: 0 }],
       channels: ['Slack'],
     })
-    const goalsOnly = storePatchPersona(created.id, { goals: [{ label: 'C', priority: 0 }] })
+    const goalsOnly = await storePatchPersona(created.id, { goals: [{ label: 'C', priority: 0 }] })
     expect(goalsOnly?.goals).toEqual([{ label: 'C', priority: 0 }])
     expect(goalsOnly?.frustrations).toEqual([{ label: 'X', evidenceCount: 0 }])
     expect(goalsOnly?.channels).toEqual(['Slack'])
 
-    const cleared = storePatchPersona(created.id, { frustrations: [], channels: ['Email', 'Zoom'] })
+    const cleared = await storePatchPersona(created.id, { frustrations: [], channels: ['Email', 'Zoom'] })
     expect(cleared?.frustrations).toEqual([])
     expect(cleared?.channels).toEqual(['Email', 'Zoom'])
     expect(cleared?.goals).toEqual([{ label: 'C', priority: 0 }])
   })
 
-  it('coerces string goal arrays from legacy write payloads', () => {
-    const created = storeCreatePersona({
+  it('coerces string goal arrays from legacy write payloads', async () => {
+    const created = await storeCreatePersona({
       name: 'Legacy Writer',
       role: 'PM',
       // @ts-expect-error legacy string array still accepted via coerce
@@ -193,19 +193,19 @@ describe('persona contracts', () => {
     ])
   })
 
-  it('patches traits via store', () => {
-    const created = storeCreatePersona({
+  it('patches traits via store', async () => {
+    const created = await storeCreatePersona({
       name: 'Trait Editor',
       role: 'PM',
       traits: { Focus: 0.5 },
     })
-    const patched = storePatchPersona(created.id, { traits: { Focus: 0.8, Empathy: 0.4 } })
+    const patched = await storePatchPersona(created.id, { traits: { Focus: 0.8, Empathy: 0.4 } })
     expect(patched?.traits).toEqual({ Focus: 0.8, Empathy: 0.4 })
   })
 
-  it('patches magazine notes sections like project knowledge chapters', () => {
-    const created = storeCreatePersona({ name: 'Notes Persona', role: 'Lead' })
-    const patched = storePatchPersona(created.id, {
+  it('patches magazine notes sections like project knowledge chapters', async () => {
+    const created = await storeCreatePersona({ name: 'Notes Persona', role: 'Lead' })
+    const patched = await storePatchPersona(created.id, {
       sections: [
         { id: 'note-mindset', title: 'Mindset', body: '<p>Short loops</p>' },
         { title: 'Context', body: 'Works across teams' },
@@ -217,24 +217,24 @@ describe('persona contracts', () => {
     ])
   })
 
-  it('patches and clears avatarUrl on write', () => {
-    const created = storeCreatePersona({
+  it('patches and clears avatarUrl on write', async () => {
+    const created = await storeCreatePersona({
       name: 'Portrait Persona',
       role: 'Lead',
       avatarUrl: '/fixtures/personas/persona-alex-morgan.svg',
     })
     expect(created.avatarUrl).toBe('/fixtures/personas/persona-alex-morgan.svg')
-    const patched = storePatchPersona(created.id, {
+    const patched = await storePatchPersona(created.id, {
       avatarUrl: '/fixtures/personas/persona-samira-khan.svg',
     })
     expect(patched?.avatarUrl).toBe('/fixtures/personas/persona-samira-khan.svg')
-    const cleared = storePatchPersona(created.id, { avatarUrl: null })
+    const cleared = await storePatchPersona(created.id, { avatarUrl: null })
     expect(cleared?.avatarUrl).toBeNull()
   })
 })
 
 describe('target group contracts', () => {
-  it('normalizes summary and detail with linked personas', () => {
+  it('normalizes summary and detail with linked personas', async () => {
     expect(
       normalizeTargetGroupSummary({
         id: 'tg-1',
@@ -260,31 +260,31 @@ describe('target group contracts', () => {
     expect(detail?.linkedPersonas[0]?.role).toBe('PM')
   })
 
-  it('filters target groups and mutates fixture store', () => {
-    const list = storeTargetGroupList()
+  it('filters target groups and mutates fixture store', async () => {
+    const list = await storeTargetGroupList()
     expect(list.items.length).toBeGreaterThanOrEqual(2)
     expect(filterTargetGroupList(list, 'digital').items.length).toBeGreaterThanOrEqual(1)
 
-    const created = storeCreateTargetGroup({
+    const created = await storeCreateTargetGroup({
       name: 'New Segment',
       segment: 'Test',
       linkedPersonaIds: ['persona-alex-morgan'],
     })
     expect(created.linkedPersonas[0]?.id).toBe('persona-alex-morgan')
-    const patched = storePatchTargetGroup(created.id, { description: 'Hello' })
+    const patched = await storePatchTargetGroup(created.id, { description: 'Hello' })
     expect(patched?.description).toBe('Hello')
-    expect(storeTargetGroupDetail(created.id)?.description).toBe('Hello')
+    expect((await storeTargetGroupDetail(created.id))?.description).toBe('Hello')
   })
 
-  it('resolves target group for a linked persona', () => {
-    expect(storeTargetGroupForPersona('persona-alex-morgan')?.name).toBe('Digital Product Leads')
-    expect(storeTargetGroupForPersona('persona-jonas-richter')?.name).toBe('Brand Narrative Owners')
-    expect(storeTargetGroupForPersona('missing-persona')).toBeNull()
+  it('resolves target group for a linked persona', async () => {
+    expect((await storeTargetGroupForPersona('persona-alex-morgan'))?.name).toBe('Digital Product Leads')
+    expect((await storeTargetGroupForPersona('persona-jonas-richter'))?.name).toBe('Brand Narrative Owners')
+    expect(await storeTargetGroupForPersona('missing-persona')).toBeNull()
   })
 })
 
 describe('journey contracts', () => {
-  it('normalizes summary and detail phases from snake_case', () => {
+  it('normalizes summary and detail phases from snake_case', async () => {
     expect(
       normalizeJourneySummary({
         id: 'j1',
@@ -322,23 +322,23 @@ describe('journey contracts', () => {
     expect(detail?.phaseCount).toBe(1)
   })
 
-  it('filters journeys and mutates fixture store', () => {
-    const list = storeJourneyList()
+  it('filters journeys and mutates fixture store', async () => {
+    const list = await storeJourneyList()
     expect(list.items.length).toBeGreaterThanOrEqual(2)
     expect(filterJourneyList(list, 'discovery').items.length).toBeGreaterThanOrEqual(1)
 
-    const created = storeCreateJourney({
+    const created = await storeCreateJourney({
       name: 'New Map',
       journeyType: 'purchase',
       targetGroupId: 'tg-digital-product-leads',
     })
     expect(created.targetGroupName).toBe('Digital Product Leads')
     expect(created.phases).toEqual([])
-    const patched = storePatchJourney(created.id, { description: 'Hello journey' })
+    const patched = await storePatchJourney(created.id, { description: 'Hello journey' })
     expect(patched?.description).toBe('Hello journey')
-    expect(storeJourneyDetail(created.id)?.description).toBe('Hello journey')
+    expect((await storeJourneyDetail(created.id))?.description).toBe('Hello journey')
 
-    const withPhase = storePatchJourney(created.id, {
+    const withPhase = await storePatchJourney(created.id, {
       phases: [
         {
           id: 'ph-new',
@@ -354,7 +354,7 @@ describe('journey contracts', () => {
     expect(withPhase?.phases[0]?.name).toBe('First stop')
 
     expect(storeDeleteJourney(created.id)).toBe(true)
-    expect(storeJourneyDetail(created.id)).toBeNull()
+    expect(await storeJourneyDetail(created.id)).toBeNull()
     expect(storeDeleteJourney(created.id)).toBe(false)
   })
 })

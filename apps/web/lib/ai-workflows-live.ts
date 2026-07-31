@@ -259,7 +259,7 @@ export async function runLiveGeneratePersonaAvatar(
   if (!avatarUrl) return { error: 'No image_url in avatar response', status: 502 }
 
   // Keep fixture magazine in sync when demo personas are used locally.
-  storePatchPersona(personaId, { avatarUrl })
+  await storePatchPersona(personaId, { avatarUrl })
 
   const meta = liveMeta('generatePersonaAvatar', { personaId }, upstreamBody)
   return { ...meta, avatarUrl }
@@ -357,7 +357,7 @@ export async function runLiveEnrichPersona(
   }
 
   // Keep magazine fixtures in sync when the id exists locally.
-  storePatchPersona(personaId, {
+  await storePatchPersona(personaId, {
     interests: interests.length ? interests : undefined,
     values: values.length ? values : undefined,
     goals: goals.length ? goals : undefined,
@@ -420,7 +420,7 @@ export async function runLiveGenerateMoodboard(
     tiles,
   }
   if (visuals.styleKeywords.length || visuals.tiles.length) {
-    storePatchPersona(personaId, { visuals })
+    await storePatchPersona(personaId, { visuals })
   }
 
   const statusRaw = String(moodboard?.status ?? 'building')
@@ -463,7 +463,7 @@ export async function runLiveGenerateJourneyPhaseMoments(
 ): Promise<GenerateJourneyPhaseMomentsResponse | LiveError> {
   if (!body.phase_id) return { error: 'phase_id is required', status: 400 }
 
-  const local = storeJourneyDetail(journeyId)
+  const local = await storeJourneyDetail(journeyId)
   const phase = local?.phases.find((p) => p.id === body.phase_id)
 
   const upstreamBody: Record<string, unknown> = {
@@ -512,7 +512,7 @@ export async function runLiveGenerateJourneyPhaseMoments(
     const phases = local.phases.map((p) =>
       p.id === phase.id ? { ...p, elements: merged } : p,
     )
-    const patched = storePatchJourney(journeyId, {
+    const patched = await storePatchJourney(journeyId, {
       name: local.name,
       journeyType: local.journeyType,
       status: local.status,

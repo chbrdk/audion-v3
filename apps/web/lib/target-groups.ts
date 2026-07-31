@@ -120,7 +120,7 @@ async function fetchJson(url: string): Promise<Response> {
 
 export async function fetchTargetGroupList(): Promise<TargetGroupListResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { ...storeTargetGroupList(), origin: 'fixtures' }
+    return { ...(await storeTargetGroupList()), origin: 'fixtures' }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
@@ -139,13 +139,13 @@ export async function fetchTargetGroupList(): Promise<TargetGroupListResult> {
     }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { ...storeTargetGroupList(), origin: 'fixtures' }
+    return { ...(await storeTargetGroupList()), origin: 'fixtures' }
   }
 }
 
 export async function fetchTargetGroupDetail(id: string): Promise<TargetGroupDetailResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { targetGroup: storeTargetGroupDetail(id), origin: 'fixtures' }
+    return { targetGroup: await storeTargetGroupDetail(id), origin: 'fixtures' }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
@@ -155,6 +155,6 @@ export async function fetchTargetGroupDetail(id: string): Promise<TargetGroupDet
     return { targetGroup: normalizeTargetGroupDetail(await response.json()), origin: 'api' }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { targetGroup: storeTargetGroupDetail(id), origin: 'fixtures' }
+    return { targetGroup: await storeTargetGroupDetail(id), origin: 'fixtures' }
   }
 }

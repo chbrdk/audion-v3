@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   if (!body?.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
-  const persona = storeCreatePersona({
+  const persona = await storeCreatePersona({
     ...body,
     role: body.role?.trim() || 'Persona',
   })

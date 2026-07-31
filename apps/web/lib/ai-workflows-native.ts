@@ -127,7 +127,7 @@ export async function runNativeSuggestPersonaField(
   body: SuggestPersonaFieldRequest,
   _authorization?: string | null,
 ): Promise<SuggestPersonaFieldResponse | NativeError> {
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
   const field = body.field
   if (!field || !(field in FIELD_UPSTREAM)) {
@@ -173,7 +173,7 @@ export async function runNativeEnrichPersona(
   body: EnrichPersonaRequest = {},
   _authorization?: string | null,
 ): Promise<EnrichPersonaResponse | NativeError> {
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
   const locale = body.output_locale ?? 'en'
   const upstreamBody: Record<string, unknown> = {
@@ -216,7 +216,7 @@ export async function runNativeEnrichPersona(
     ...frLabels.filter(Boolean).map((label) => ({ label, evidenceCount: 1 })),
   ].slice(0, 6)
   const traits = { ...persona.traits, ...(data.traits ?? {}) }
-  const patched = storePatchPersona(personaId, {
+  const patched = await storePatchPersona(personaId, {
     bio: body.profile_overlay?.bio?.trim() || persona.bio,
     age: body.profile_overlay?.age?.trim() || persona.age,
     location: body.profile_overlay?.location?.trim() || persona.location,
@@ -245,7 +245,7 @@ export async function runNativeGeneratePersonas(
   body: GeneratePersonasRequest,
   _authorization?: string | null,
 ): Promise<GeneratePersonasResponse | NativeError> {
-  const tg = storeTargetGroupDetail(tgId)
+  const tg = await storeTargetGroupDetail(tgId)
   if (!tg) return { error: 'Target group not found', status: 404 }
   const count = Math.min(Math.max(body.count ?? 2, 1), 5)
   const segment = body.segment?.trim() || tg.segment
@@ -275,19 +275,21 @@ export async function runNativeGeneratePersonas(
   if (!drafts.length) {
     return { error: 'Native generate returned no personas', status: 502 }
   }
-  const created = drafts.map((seed) =>
-    storeCreatePersona({
-      name: seed.name?.trim() || `Persona (${segment})`,
-      role: seed.role?.trim() || 'Audience member',
-      status: 'draft',
-      archetype: seed.archetype?.trim() || segment,
-      bio: seed.bio?.trim() || `Generated for ${tg.name}`,
-      projectId: tg.projectId,
-      interests: seed.interests?.length ? seed.interests : [segment],
-    }),
+  const created = await Promise.all(
+    drafts.map((seed) =>
+      storeCreatePersona({
+        name: seed.name?.trim() || `Persona (${segment})`,
+        role: seed.role?.trim() || 'Audience member',
+        status: 'draft',
+        archetype: seed.archetype?.trim() || segment,
+        bio: seed.bio?.trim() || `Generated for ${tg.name}`,
+        projectId: tg.projectId,
+        interests: seed.interests?.length ? seed.interests : [segment],
+      }),
+    ),
   )
   const linkedIds = [...tg.linkedPersonas.map((p) => p.id), ...created.map((p) => p.id)]
-  storePatchTargetGroup(tgId, { linkedPersonaIds: linkedIds })
+  await storePatchTargetGroup(tgId, { linkedPersonaIds: linkedIds })
   return {
     ...meta,
     personas: created.map((p) => ({ id: p.id, name: p.name, role: p.role })),
@@ -325,7 +327,7 @@ export async function runNativeSuggestPersonas(
 ): Promise<SuggestPersonasResponse | NativeError> {
   if (!(await storeProjectDetail(projectId))) return { error: 'Project not found', status: 404 }
   const tgId = body.target_group_id
-  const tg = storeTargetGroupDetail(tgId)
+  const tg = await storeTargetGroupDetail(tgId)
   if (!tg) return { error: 'Target group not found', status: 404 }
   const max = Math.min(Math.max(body.max_suggestions ?? 5, 1), 8)
   const locale = body.output_locale ?? 'en'
@@ -351,7 +353,7 @@ export async function runNativeGenerateJourney(
   }
   const journeyType = body.journey_type?.trim() || 'customer'
   const tgId = body.target_group_id ?? null
-  const tg = tgId ? storeTargetGroupDetail(tgId) : null
+  const tg = tgId ? await storeTargetGroupDetail(tgId) : null
   const workflowId = fromProjectId ? 'generateJourneyFromProject' : 'generateJourney'
   const pathParams: Record<string, string> = fromProjectId ? { projectId: fromProjectId } : {}
   const upstreamBody = {
@@ -402,7 +404,7 @@ export async function runNativeGenerateJourney(
   const name =
     assist.data.name?.trim() ||
     (tg ? `${tg.name} journey` : `Generated ${journeyType} journey`)
-  const journey = storeCreateJourney({
+  const journey = await storeCreateJourney({
     name,
     journeyType,
     status: 'draft',
@@ -422,7 +424,7 @@ export async function runNativeGenerateJourneyPhaseMoments(
   body: GenerateJourneyPhaseMomentsRequest,
   _authorization?: string | null,
 ): Promise<GenerateJourneyPhaseMomentsResponse | NativeError> {
-  const journey = storeJourneyDetail(journeyId)
+  const journey = await storeJourneyDetail(journeyId)
   if (!journey) return { error: 'Journey not found', status: 404 }
   const phase = journey.phases.find((p) => p.id === body.phase_id)
   if (!phase) return { error: 'Phase not found', status: 404 }
@@ -466,7 +468,7 @@ export async function runNativeGenerateJourneyPhaseMoments(
   const phases = journey.phases.map((p) =>
     p.id === phase.id ? { ...p, elements: moments } : p,
   )
-  const patched = storePatchJourney(journeyId, { phases })
+  const patched = await storePatchJourney(journeyId, { phases })
   if (!patched) return { error: 'Journey not found', status: 404 }
   return {
     ...meta,
@@ -482,14 +484,14 @@ export async function runNativeValidateJourney(
   body: ValidateJourneyRequest,
   _authorization?: string | null,
 ): Promise<ValidateJourneyResponse | NativeError> {
-  const scored = scoreValidateJourney(journeyId, body)
+  const scored = await scoreValidateJourney(journeyId, body)
   if ('error' in scored) return scored
 
   let phases = scored.phases
   const chatMode = scored.mode === 'chat' || scored.mode === 'both'
   if (chatMode) {
-    const persona = storePersonaDetail(scored.personaId)
-    const journey = storeJourneyDetail(journeyId)
+    const persona = await storePersonaDetail(scored.personaId)
+    const journey = await storeJourneyDetail(journeyId)
     if (persona && journey) {
       const context = journey.phases
         .map(
@@ -552,7 +554,7 @@ export async function runNativeGeneratePersonaAvatar(
   body: GeneratePersonaAvatarRequest = {},
   _authorization?: string | null,
 ): Promise<GeneratePersonaAvatarResponse | NativeError> {
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
   const upstreamBody = { style: body.style?.trim() || undefined }
   const meta = nativeMeta('generatePersonaAvatar', { personaId }, upstreamBody)
@@ -577,7 +579,7 @@ export async function runNativeGeneratePersonaAvatar(
     const avatarUrl = b64
       ? `data:image/png;base64,${b64}`
       : url || persona.avatarUrl || personaVisualPath('tone-warm')
-    const patched = storePatchPersona(personaId, { avatarUrl })
+    const patched = await storePatchPersona(personaId, { avatarUrl })
     if (!patched) return { error: 'Persona not found', status: 404 }
     return { ...meta, avatarUrl: patched.avatarUrl! }
   } catch (error) {
@@ -590,7 +592,7 @@ export async function runNativeGenerateMoodboard(
   body: GenerateMoodboardRequest = {},
   _authorization?: string | null,
 ): Promise<GenerateMoodboardResponse | NativeError> {
-  const persona = storePersonaDetail(personaId)
+  const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
   const title = body.title?.trim() || `${persona.name} moodboard`
   const meta = nativeMeta('generateMoodboard', { personaId }, { title })
@@ -648,7 +650,7 @@ export async function runNativeGenerateMoodboard(
   }
   const tiles = mergeMoodboardTiles(persona.visuals?.tiles ?? [], candidates)
   const visuals = { styleKeywords, tiles }
-  const patched = storePatchPersona(personaId, { visuals })
+  const patched = await storePatchPersona(personaId, { visuals })
   if (!patched) return { error: 'Persona not found', status: 404 }
   return {
     ...meta,
