@@ -14,7 +14,7 @@ import {
 } from './fixtures/ux-study-store'
 import { storeUpsertUxJourneyRun } from './fixtures/ux-journey-run-store'
 import { storePersonaDetail } from './fixtures/persona-store'
-import { resolveAgentPersonaContext } from './chat/persona-agent-context'
+import { resolveAgentPersonaContext } from './chat/resolve-agent-persona-context'
 import {
   isUxJourneyAgentConfigured,
   uxJourneyAgentGet,

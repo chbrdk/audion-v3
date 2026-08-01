@@ -5,7 +5,7 @@
 import type { ChatStreamEvent } from '@audion-v3/contracts'
 import { storeUpsertUxJourneyRun } from '../fixtures/ux-journey-run-store'
 import { inspectFromToolComplete } from './messages-column'
-import { resolveAgentPersonaContext } from './persona-agent-context'
+import { resolveAgentPersonaContext } from './resolve-agent-persona-context'
 import {
   isUxJourneyAgentConfigured,
   sleep,

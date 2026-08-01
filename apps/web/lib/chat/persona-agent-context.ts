@@ -1,5 +1,6 @@
 /**
- * Map product PersonaDetail → nested Agent PersonaContext for UX Journey runs.
+ * Pure helpers: product PersonaDetail → Agent PersonaContext (+ policy dock line).
+ * Keep this module free of persona-store / pg so client components can import it.
  */
 
 import type {
@@ -7,9 +8,6 @@ import type {
   PersonaJourneyDimensions,
   PersonaSection,
 } from '@audion-v3/contracts'
-import { generateDefaultPersonaSystemPrompt } from '../fixtures/persona-prompts-store'
-import { storePersonaDetail } from '../fixtures/persona-store'
-import { resolvePersonaSystemPrompt } from '../fixtures/persona-prompts-store'
 
 export type AgentPersonaContext = {
   id: string
@@ -126,27 +124,6 @@ export function toAgentPersonaContext(
   if (donts.length) out.donts = donts
   if (extraInstructions) out.extraInstructions = extraInstructions
   return out
-}
-
-/** Load persona + chat system prompt and map to Agent PersonaContext. */
-export async function resolveAgentPersonaContext(
-  personaId: string,
-  opts?: { locale?: string },
-): Promise<AgentPersonaContext | { id: string } | null> {
-  const id = personaId.trim()
-  if (!id) return null
-  const persona = await storePersonaDetail(id)
-  if (!persona) return { id }
-  let systemPrompt: string
-  try {
-    systemPrompt = await resolvePersonaSystemPrompt(id)
-  } catch {
-    systemPrompt = generateDefaultPersonaSystemPrompt(persona)
-  }
-  return toAgentPersonaContext(persona, {
-    locale: opts?.locale ?? 'de',
-    systemPrompt,
-  })
 }
 
 export type PersonaPolicySnapshot = {
