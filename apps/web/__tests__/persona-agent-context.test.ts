@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatPersonaPolicySummary,
+  parsePersonaPolicyMeta,
   toAgentPersonaContext,
 } from '../lib/chat/persona-agent-context'
 import { DEMO_PERSONAS } from '../lib/fixtures/personas'
@@ -45,5 +46,15 @@ describe('toAgentPersonaContext', () => {
         heuristics: ['a', 'b', 'c', 'd'],
       }),
     ).toBe('Policy: detail↑ trust↑ · 4 heuristics')
+    expect(
+      parsePersonaPolicyMeta({
+        dimensions: {
+          detail_orientation: 0.88,
+          trust_skepticism: 0.78,
+          exploration: 0.45,
+        },
+        heuristics: ['a', 'b', 'c', 'd'],
+      })?.dims.map((d) => d.label),
+    ).toEqual(['Detail', 'Trust'])
   })
 })

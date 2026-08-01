@@ -5,6 +5,7 @@ import {
   chatUxJourneyStepShotSrc,
   composeMessageWithUxStepContext,
   formatScorecardSummary,
+  parseScorecardMeta,
   parseUxStepFollowUpDisplay,
   rewriteAgentMediaUrl,
   synthesizeThinkAloudFallback,
@@ -134,6 +135,19 @@ describe('ux journey step media helpers', () => {
         topWeaknesses: ['Dense hero'],
       }),
     ).toBe('Friction 4/10 · Persona fit 8/10 · + Clear nav · − Dense hero')
+    expect(
+      parseScorecardMeta({
+        frictionScore: 4,
+        personaFitScore: 8,
+        topStrengths: ['Clear nav'],
+        topWeaknesses: ['Dense hero'],
+      }),
+    ).toEqual({
+      friction: 4,
+      fit: 8,
+      strength: 'Clear nav',
+      weakness: 'Dense hero',
+    })
     expect(formatScorecardSummary(null)).toBeNull()
   })
 

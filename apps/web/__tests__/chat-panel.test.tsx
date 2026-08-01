@@ -364,6 +364,12 @@ describe('audion chat panel', () => {
               source: 'chat_inspect',
             },
             completedAt: '2026-07-29T00:05:00.000Z',
+            scorecard: {
+              frictionScore: 3,
+              personaFitScore: 6,
+              topStrengths: ['Clear nav'],
+              topWeaknesses: ['Dense hero'],
+            },
             personaPolicy: {
               dimensions: {
                 detail_orientation: 0.88,
@@ -382,6 +388,12 @@ describe('audion chat panel', () => {
       'home',
     )
     expect(container.querySelector('.audion-ux-step-md .chat-answer em')?.textContent).toBe('CTA')
-    expect(container.querySelector('.audion-chat-persona-policy')?.textContent).toMatch(/Policy:/)
+    expect(container.querySelector('.audion-chat-persona-policy')?.textContent).toMatch(/Policy/)
+    expect(screen.getByLabelText('Persona policy')).toBeInTheDocument()
+    expect(screen.getByText('Detail')).toBeInTheDocument()
+    expect(screen.getByText('Trust')).toBeInTheDocument()
+    expect(container.querySelector('.audion-chat-inspect-scores')).toBeTruthy()
+    expect(screen.getByLabelText('Friction 3 of 10')).toBeInTheDocument()
+    expect(screen.getByLabelText('Persona fit 6 of 10')).toBeInTheDocument()
   })
 })

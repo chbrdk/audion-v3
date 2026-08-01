@@ -679,17 +679,127 @@ main { min-height: 100vh; }
   border-bottom: 1px solid var(--line);
 }
 
-.audion-chat-persona-policy,
-.audion-chat-scorecard {
-  margin: 0.35rem 0 0.15rem;
-  font-size: var(--type-sm, 0.875rem);
+.audion-chat-inspect-meta {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.15rem 0 0.1rem;
+  max-width: min(36rem, 100%);
 }
 
-.ds-event-footer .audion-chat-persona-policy,
-.ds-event-footer .audion-chat-scorecard {
+.audion-chat-inspect-scores {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.audion-chat-inspect-score {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.audion-chat-inspect-score-label {
+  font-family: var(--font-body);
+  font-size: var(--type-xs, 0.75rem);
+  letter-spacing: var(--track-label, 0.04em);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-chat-inspect-score-track {
+  display: block;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 85%, transparent);
+  overflow: hidden;
+}
+
+.audion-chat-inspect-score-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--accent) 70%, var(--ink) 30%);
+}
+
+.audion-chat-inspect-score[data-tone='good'] .audion-chat-inspect-score-fill {
+  background: color-mix(in srgb, var(--ok, #2f7d4a) 75%, var(--accent) 25%);
+}
+
+.audion-chat-inspect-score[data-tone='bad'] .audion-chat-inspect-score-fill {
+  background: color-mix(in srgb, var(--danger, #b42318) 70%, var(--ink) 30%);
+}
+
+.audion-chat-inspect-score[data-tone='mid'] .audion-chat-inspect-score-fill {
+  background: color-mix(in srgb, var(--accent) 55%, var(--ink) 45%);
+}
+
+.audion-chat-inspect-score-value {
+  font-family: var(--font-display);
+  font-size: var(--type-sm, 0.875rem);
+  font-weight: var(--weight-medium, 500);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  min-width: 2.4rem;
+  text-align: right;
+}
+
+.audion-chat-inspect-score-value span {
+  color: var(--muted);
+  font-weight: var(--weight-regular, 400);
+  font-size: 0.85em;
+}
+
+.audion-chat-inspect-highlights,
+.audion-chat-inspect-policy-chips {
+  list-style: none;
   margin: 0;
-  font-size: var(--type-sm, 0.75rem);
-  line-height: 1.35;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.audion-chat-inspect-policy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.audion-chat-inspect-policy-kicker {
+  font-family: var(--font-body);
+  font-size: var(--type-xs, 0.75rem);
+  letter-spacing: var(--track-label, 0.04em);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-chat-inspect-chip.ds-chip {
+  gap: 0.25rem;
+}
+
+.audion-chat-inspect-chip.is-pos {
+  color: color-mix(in srgb, var(--ok, #2f7d4a) 80%, var(--ink));
+}
+
+.audion-chat-inspect-chip.is-neg {
+  color: color-mix(in srgb, var(--danger, #b42318) 75%, var(--ink));
+}
+
+.audion-chat-inspect-chip.is-up {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.audion-chat-inspect-chip.is-down {
+  border-color: color-mix(in srgb, var(--muted) 40%, var(--line));
+  color: var(--muted);
+}
+
+.audion-chat-inspect-chip.is-count {
+  color: var(--muted);
+}
+
+.audion-chat-inspect-chip-dir {
+  font-size: 0.95em;
+  line-height: 1;
 }
 
 /* Quiet numbered lists — dense enough for long entries */

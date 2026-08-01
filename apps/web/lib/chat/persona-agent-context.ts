@@ -189,32 +189,56 @@ export type PersonaPolicySnapshot = {
   heuristics?: string[] | null
 }
 
+export type PersonaPolicyDimChip = {
+  key: string
+  label: string
+  direction: 'up' | 'down'
+  value: number
+}
+
+export type PersonaPolicyMeta = {
+  dims: PersonaPolicyDimChip[]
+  heuristicCount: number
+}
+
+const POLICY_DIM_LABELS: Record<string, string> = {
+  risk_aversion: 'Risk',
+  time_pressure: 'Time',
+  exploration: 'Explore',
+  detail_orientation: 'Detail',
+  trust_skepticism: 'Trust',
+  accessibility_need: 'A11y',
+}
+
+/** Structured policy chips for the inspect dock. */
+export function parsePersonaPolicyMeta(
+  policy: PersonaPolicySnapshot | null | undefined,
+): PersonaPolicyMeta | null {
+  if (!policy) return null
+  const dimsRaw = policy.dimensions && typeof policy.dimensions === 'object' ? policy.dimensions : null
+  const heuristics = Array.isArray(policy.heuristics) ? policy.heuristics : []
+  const dims: PersonaPolicyDimChip[] = []
+  if (dimsRaw) {
+    for (const [key, label] of Object.entries(POLICY_DIM_LABELS)) {
+      const v = dimsRaw[key]
+      if (typeof v !== 'number' || !Number.isFinite(v)) continue
+      if (v >= 0.66) dims.push({ key, label, direction: 'up', value: v })
+      else if (v <= 0.34) dims.push({ key, label, direction: 'down', value: v })
+    }
+  }
+  const heuristicCount = heuristics.length
+  if (!dims.length && !heuristicCount) return null
+  return { dims, heuristicCount }
+}
+
 /** Quiet dock line, e.g. "Policy: detail↑ trust↑ · 4 heuristics". */
 export function formatPersonaPolicySummary(
   policy: PersonaPolicySnapshot | null | undefined,
 ): string | null {
-  if (!policy) return null
-  const dims = policy.dimensions && typeof policy.dimensions === 'object' ? policy.dimensions : null
-  const heuristics = Array.isArray(policy.heuristics) ? policy.heuristics : []
-  const short: Record<string, string> = {
-    risk_aversion: 'risk',
-    time_pressure: 'time',
-    exploration: 'explore',
-    detail_orientation: 'detail',
-    trust_skepticism: 'trust',
-    accessibility_need: 'a11y',
-  }
-  const arrows: string[] = []
-  if (dims) {
-    for (const [key, label] of Object.entries(short)) {
-      const v = dims[key]
-      if (typeof v !== 'number' || !Number.isFinite(v)) continue
-      if (v >= 0.66) arrows.push(`${label}↑`)
-      else if (v <= 0.34) arrows.push(`${label}↓`)
-    }
-  }
-  const h = heuristics.length
-  if (!arrows.length && !h) return null
+  const meta = parsePersonaPolicyMeta(policy)
+  if (!meta) return null
+  const arrows = meta.dims.map((d) => `${d.label.toLowerCase()}${d.direction === 'up' ? '↑' : '↓'}`)
   const left = arrows.length ? arrows.join(' ') : 'neutral'
+  const h = meta.heuristicCount
   return h ? `Policy: ${left} · ${h} heuristic${h === 1 ? '' : 's'}` : `Policy: ${left}`
 }

@@ -23,16 +23,15 @@ import {
   Textarea,
 } from '@msqdx/ui'
 import { ChatAnswer } from '../lib/chat/chat-answer'
-import { formatPersonaPolicySummary } from '../lib/chat/persona-agent-context'
 import { toolCompleteFromInspect } from '../lib/chat/messages-column'
 import { postChatStream } from '../lib/chat/stream-client'
 import {
   chatUxJourneyStepLabel,
   composeMessageWithUxStepContext,
-  formatScorecardSummary,
   parseUxStepFollowUpDisplay,
 } from '../lib/chat/ux-journey-steps'
 import { paths } from '../lib/paths'
+import { ChatInspectResultMeta } from './chat-inspect-result-meta'
 import { IconSend } from './nav-icons'
 import { UxJourneyLivePoll } from './ux-journey-live-poll'
 import { UxJourneyStepsStrip } from './ux-journey-steps-strip'
@@ -550,16 +549,10 @@ export function AudionChatPanel({
                   </>
                 }
               >
-                {formatPersonaPolicySummary(toolComplete.personaPolicy) ? (
-                  <p className="audion-muted audion-chat-persona-policy ds-event-footer-meta">
-                    {formatPersonaPolicySummary(toolComplete.personaPolicy)}
-                  </p>
-                ) : null}
-                {formatScorecardSummary(toolComplete.scorecard) ? (
-                  <p className="audion-muted audion-chat-scorecard ds-event-footer-meta">
-                    {formatScorecardSummary(toolComplete.scorecard)}
-                  </p>
-                ) : null}
+                <ChatInspectResultMeta
+                  scorecard={toolComplete.scorecard}
+                  personaPolicy={toolComplete.personaPolicy}
+                />
               </EventFooter>
             ) : null}
           </InspectDock>

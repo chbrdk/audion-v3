@@ -278,10 +278,17 @@ export function composeMessageWithUxStepContext(
   }
 }
 
-/** Compact scorecard line for the inspect dock. */
-export function formatScorecardSummary(
+/** Structured scorecard for the inspect dock. */
+export type ScorecardMeta = {
+  friction: number | null
+  fit: number | null
+  strength: string | null
+  weakness: string | null
+}
+
+export function parseScorecardMeta(
   scorecard: Record<string, unknown> | null | undefined,
-): string | null {
+): ScorecardMeta | null {
   if (!scorecard || typeof scorecard !== 'object') return null
   const friction =
     typeof scorecard.frictionScore === 'number' ? scorecard.frictionScore : null
@@ -293,11 +300,26 @@ export function formatScorecardSummary(
   const weaknesses = Array.isArray(scorecard.topWeaknesses)
     ? scorecard.topWeaknesses.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
     : []
+  if (friction == null && fit == null && !strengths[0] && !weaknesses[0]) return null
+  return {
+    friction,
+    fit,
+    strength: strengths[0] ?? null,
+    weakness: weaknesses[0] ?? null,
+  }
+}
+
+/** Compact scorecard line for the inspect dock. */
+export function formatScorecardSummary(
+  scorecard: Record<string, unknown> | null | undefined,
+): string | null {
+  const meta = parseScorecardMeta(scorecard)
+  if (!meta) return null
   const parts: string[] = []
-  if (friction != null) parts.push(`Friction ${friction}/10`)
-  if (fit != null) parts.push(`Persona fit ${fit}/10`)
-  if (strengths[0]) parts.push(`+ ${strengths[0]}`)
-  if (weaknesses[0]) parts.push(`− ${weaknesses[0]}`)
+  if (meta.friction != null) parts.push(`Friction ${meta.friction}/10`)
+  if (meta.fit != null) parts.push(`Persona fit ${meta.fit}/10`)
+  if (meta.strength) parts.push(`+ ${meta.strength}`)
+  if (meta.weakness) parts.push(`− ${meta.weakness}`)
   return parts.length ? parts.join(' · ') : null
 }
 
