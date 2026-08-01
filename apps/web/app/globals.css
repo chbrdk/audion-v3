@@ -711,6 +711,13 @@ main { min-height: 100vh; }
   font-size: var(--type-sm, 0.875rem);
 }
 
+.audion-chat-tool-complete .audion-chat-persona-policy,
+.audion-chat-tool-complete .audion-chat-scorecard {
+  margin: 0;
+  font-size: var(--type-sm, 0.75rem);
+  line-height: 1.35;
+}
+
 /* Quiet numbered lists — dense enough for long entries */
 .audion-magazine-list {
   list-style: none;
@@ -2172,7 +2179,6 @@ main { min-height: 100vh; }
   max-width: 100%;
   min-width: 0;
   padding-bottom: 0.35rem;
-  scrollbar-width: thin;
 }
 
 .audion-journey-timeline-step {
@@ -2236,7 +2242,6 @@ main { min-height: 100vh; }
   scroll-padding-inline: 1.5rem;
   padding: 0.35rem 0.5rem 1.25rem;
   margin-inline: 0;
-  scrollbar-width: thin;
 }
 
 .audion-journey-timeline-viewport:focus-visible {
@@ -2487,7 +2492,6 @@ main { min-height: 100vh; }
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
 }
 
 /* Keep message bubbles readable; tool chrome can use the stage */
@@ -2693,13 +2697,51 @@ main { min-height: 100vh; }
   color: var(--muted);
 }
 
-.audion-chat-tool-card,
-.audion-chat-tool-complete {
+.audion-chat-tool-card {
   margin: 0.75rem 0;
   padding: 0.75rem 0.85rem;
   border-radius: 0.45rem;
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+/* Compact status under the step strip — content-width, no card chrome */
+.audion-chat-tool-complete {
+  width: fit-content;
+  max-width: min(36rem, 100%);
+  margin: 0.55rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.audion-chat-tool-complete-summary {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.8125rem);
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.audion-chat-tool-complete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.75rem;
+}
+
+.audion-chat-tool-complete-actions .audion-link {
+  font-size: var(--type-sm, 0.8125rem);
+}
+
+.audion-chat-tool-complete-actions .ds-btn {
+  min-height: 0;
+  padding: 0.15rem 0;
+}
+
+.audion-chat-tool-complete-done {
+  font-size: var(--type-sm, 0.8125rem);
+  color: var(--muted);
 }
 
 .audion-chat-tool-title {

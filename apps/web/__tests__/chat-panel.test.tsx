@@ -306,9 +306,14 @@ describe('audion chat panel', () => {
       target: { value: 'How did that feel?' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
-    await screen.findByText('The CTA felt rushed.')
+    const answer = await screen.findByText('The CTA felt rushed.')
     expect(container.querySelector('.audion-chat-inspect-dock .audion-ux-steps')).toBeTruthy()
     expect(screen.getByRole('status')).toHaveTextContent(/Chatting about/)
+    const dockAfter = container.querySelector('.audion-chat-inspect-dock')
+    expect(dockAfter).toBeTruthy()
+    expect(
+      dockAfter!.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('restores inspect dock from conversation.inspect and renders step markdown', () => {

@@ -60,6 +60,33 @@ function UserTurnBody({ content }: { content: string }) {
   )
 }
 
+/** Where the inspect dock sits in the transcript: before the first step follow-up, else after all turns. */
+function inspectDockSplitIndex(messages: ChatMessage[]): number {
+  const idx = messages.findIndex(
+    (m) => m.role === 'user' && Boolean(parseUxStepFollowUpDisplay(m.content).meta),
+  )
+  return idx >= 0 ? idx : messages.length
+}
+
+function ChatTurnArticle({ turn }: { turn: ChatMessage }) {
+  return (
+    <article
+      className={turn.role === 'user' ? 'chat-turn chat-turn-user' : 'chat-turn chat-turn-assistant'}
+    >
+      <span className="chat-role">{turn.role === 'user' ? 'You' : 'Persona'}</span>
+      {turn.role === 'assistant' ? (
+        turn.content ? (
+          <ChatAnswer answer={turn.content} />
+        ) : (
+          <LoadingText>Thinking…</LoadingText>
+        )
+      ) : (
+        <UserTurnBody content={turn.content} />
+      )}
+    </article>
+  )
+}
+
 export function AudionChatPanel({
   personas,
   personaId,
@@ -95,11 +122,19 @@ export function AudionChatPanel({
   const [inspectJobId, setInspectJobId] = useState<string | null>(
     () => initialConversation?.inspect?.jobId ?? null,
   )
+  const [inspectDockAt, setInspectDockAt] = useState<number | null>(() => {
+    const inspect = initialConversation?.inspect
+    if (!inspect) return null
+    if (!inspect.steps?.length && !inspect.summary) return null
+    return inspectDockSplitIndex(initialConversation?.messages ?? [])
+  })
   const [convertBusy, setConvertBusy] = useState(false)
   const [convertedJourneyId, setConvertedJourneyId] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const personaIdRef = useRef(personaId)
+  const turnsRef = useRef(turns)
+  turnsRef.current = turns
 
   const persona = useMemo(
     () => personas.find((p) => p.id === personaId) ?? null,
@@ -129,6 +164,7 @@ export function AudionChatPanel({
     setSelectedStepIndex(null)
     setToolComplete(null)
     setInspectJobId(null)
+    setInspectDockAt(null)
     setConvertedJourneyId(null)
     syncUrl({ personaId, conversationId: null })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- syncUrl closes over latest ids
@@ -206,6 +242,7 @@ export function AudionChatPanel({
       setInspectSteps([])
       setSelectedStepIndex(null)
       setInspectJobId(null)
+      setInspectDockAt(null)
       setConvertedJourneyId(null)
     } else if (event.type === 'tool_started' || event.type === 'tool_progress') {
       setToolProgress((prev) => [...prev, event.message])
@@ -213,11 +250,13 @@ export function AudionChatPanel({
       if (event.type === 'tool_progress' && Array.isArray(event.steps)) {
         setInspectSteps(event.steps)
       }
+      setInspectDockAt((prev) => prev ?? turnsRef.current.length)
     } else if (event.type === 'tool_complete') {
       setPendingTool(null)
       setToolComplete(event)
       if (event.jobId) setInspectJobId(event.jobId)
       if (Array.isArray(event.steps)) setInspectSteps(event.steps)
+      setInspectDockAt((prev) => prev ?? turnsRef.current.length)
     } else if (event.type === 'tool_denied') {
       setPendingTool(null)
       setToolProgress([])
@@ -225,6 +264,7 @@ export function AudionChatPanel({
       setInspectSteps([])
       setSelectedStepIndex(null)
       setToolComplete(null)
+      setInspectDockAt(null)
     }
   }
 
@@ -272,17 +312,22 @@ export function AudionChatPanel({
       status: 'complete',
     }
     const streamingId = `local-asst-${Date.now()}`
-    setTurns((prev) => [
-      ...prev,
-      userTurn,
-      {
-        id: streamingId,
-        role: 'assistant',
-        content: '',
-        createdAt: null,
-        status: 'streaming',
-      },
-    ])
+    setTurns((prev) => {
+      const next: ChatMessage[] = [
+        ...prev,
+        userTurn,
+        {
+          id: streamingId,
+          role: 'assistant',
+          content: '',
+          createdAt: null,
+          status: 'streaming',
+        },
+      ]
+      // Keep ref in sync for tool events that may fire before the next render.
+      turnsRef.current = next
+      return next
+    })
 
     abortRef.current?.abort()
     const controller = new AbortController()
@@ -394,6 +439,10 @@ export function AudionChatPanel({
     setBusy(false)
   }
 
+  const dockSplit = inspectDockAt ?? turns.length
+  const turnsBeforeDock = turns.slice(0, dockSplit)
+  const turnsAfterDock = turns.slice(dockSplit)
+
   return (
     <section className="chat-panel chat-panel-open audion-chat-panel" aria-label="Persona chat">
       <div className="chat-turns" ref={listRef}>
@@ -402,24 +451,8 @@ export function AudionChatPanel({
             Ask {persona?.name || 'the persona'} something grounded in their magazine brief.
           </EmptyState>
         ) : null}
-        {turns.map((turn) => (
-          <article
-            key={turn.id}
-            className={
-              turn.role === 'user' ? 'chat-turn chat-turn-user' : 'chat-turn chat-turn-assistant'
-            }
-          >
-            <span className="chat-role">{turn.role === 'user' ? 'You' : 'Persona'}</span>
-            {turn.role === 'assistant' ? (
-              turn.content ? (
-                <ChatAnswer answer={turn.content} />
-              ) : (
-                <LoadingText>Thinking…</LoadingText>
-              )
-            ) : (
-              <UserTurnBody content={turn.content} />
-            )}
-          </article>
+        {turnsBeforeDock.map((turn) => (
+          <ChatTurnArticle key={turn.id} turn={turn} />
         ))}
 
         {pendingTool ? (
@@ -463,8 +496,6 @@ export function AudionChatPanel({
 
         {inspectJobId && !toolComplete ? <UxJourneyLivePoll jobId={inspectJobId} /> : null}
 
-        {busy ? <LoadingText>Streaming…</LoadingText> : null}
-
         {showInspectDock ? (
           <div className="audion-chat-inspect-dock" aria-label="UX journey inspect">
             {inspectSteps.length || (inspectJobId && !toolComplete) ? (
@@ -479,7 +510,7 @@ export function AudionChatPanel({
 
             {toolComplete ? (
               <div className="audion-chat-tool-complete">
-                <p className="audion-edit-lede">{toolComplete.summary}</p>
+                <p className="audion-chat-tool-complete-summary">{toolComplete.summary}</p>
                 {formatPersonaPolicySummary(toolComplete.personaPolicy) ? (
                   <p className="audion-muted audion-chat-persona-policy">
                     {formatPersonaPolicySummary(toolComplete.personaPolicy)}
@@ -490,8 +521,8 @@ export function AudionChatPanel({
                     {formatScorecardSummary(toolComplete.scorecard)}
                   </p>
                 ) : null}
-                {toolComplete.videoUrl || toolComplete.jobId ? (
-                  <p className="audion-edit-lede">
+                <div className="audion-chat-tool-complete-actions">
+                  {toolComplete.videoUrl || toolComplete.jobId ? (
                     <a
                       className="audion-link"
                       href={
@@ -503,30 +534,37 @@ export function AudionChatPanel({
                     >
                       Open recording
                     </a>
-                  </p>
-                ) : null}
-                {allowConvert && toolComplete.convert && !convertedJourneyId ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={convertBusy}
-                    onClick={() => void convertFromInspect()}
-                  >
-                    {convertBusy ? 'Converting…' : 'Convert to journey'}
-                  </Button>
-                ) : null}
-                {convertedJourneyId ? (
-                  <p className="audion-edit-lede">
-                    Journey created —{' '}
-                    <Link className="audion-link" href={paths.routes.journeyDetail(convertedJourneyId)}>
-                      Open journey
-                    </Link>
-                  </p>
-                ) : null}
+                  ) : null}
+                  {allowConvert && toolComplete.convert && !convertedJourneyId ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={convertBusy}
+                      onClick={() => void convertFromInspect()}
+                    >
+                      {convertBusy ? 'Converting…' : 'Convert to journey'}
+                    </Button>
+                  ) : null}
+                  {convertedJourneyId ? (
+                    <span className="audion-chat-tool-complete-done">
+                      Journey created —{' '}
+                      <Link className="audion-link" href={paths.routes.journeyDetail(convertedJourneyId)}>
+                        Open journey
+                      </Link>
+                    </span>
+                  ) : null}
+                </div>
               </div>
             ) : null}
           </div>
         ) : null}
+
+        {turnsAfterDock.map((turn) => (
+          <ChatTurnArticle key={turn.id} turn={turn} />
+        ))}
+
+        {busy ? <LoadingText>Streaming…</LoadingText> : null}
       </div>
 
       {err ? <Alert tone="error">{err}</Alert> : null}
