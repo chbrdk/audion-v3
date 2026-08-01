@@ -14,6 +14,7 @@ export type UxJourneyAgentStep = {
     memory?: string | null
     next_goal?: string | null
   } | null
+  thinkAloud?: Record<string, unknown> | null
   observations?: unknown
   screenshot?: string | null
   screenshotUrl?: string | null

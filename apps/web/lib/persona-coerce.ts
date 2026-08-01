@@ -3,6 +3,7 @@ import type {
   PersonaGoal,
   PersonaJourneyBehavior,
   PersonaJourneyDimensions,
+  PersonaMotivation,
 } from '@audion-v3/contracts'
 
 function clamp01(n: number): number {
@@ -48,6 +49,25 @@ export function coerceFrustrations(value: unknown): PersonaFrustration[] {
     .filter((f): f is PersonaFrustration => Boolean(f))
 }
 
+export function coerceMotivations(value: unknown): PersonaMotivation[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((entry): PersonaMotivation | null => {
+      if (typeof entry === 'string' && entry.trim()) {
+        return { label: entry.trim(), type: null }
+      }
+      if (!entry || typeof entry !== 'object') return null
+      const row = entry as Record<string, unknown>
+      const label = typeof row.label === 'string' ? row.label.trim() : ''
+      if (!label) return null
+      const typeRaw = row.type
+      const type =
+        typeRaw === 'intrinsic' || typeRaw === 'extrinsic' ? typeRaw : null
+      return { label, type }
+    })
+    .filter((m): m is PersonaMotivation => Boolean(m))
+}
+
 export function coerceJourneyBehavior(raw: unknown): PersonaJourneyBehavior | null {
   if (!raw || typeof raw !== 'object') return null
   const row = raw as Record<string, unknown>
@@ -73,19 +93,27 @@ export function coerceJourneyBehavior(raw: unknown): PersonaJourneyBehavior | nu
     Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.trim().length > 0) : []
   const dos = asList(row.dos)
   const donts = asList(row.donts)
+  const heuristics = asList(row.heuristics)
   const extraInstructions =
     typeof row.extraInstructions === 'string'
       ? row.extraInstructions
       : typeof row.extra_instructions === 'string'
         ? row.extra_instructions
         : null
-  if (!dimensionOverrides && !dos.length && !donts.length && !extraInstructions?.trim()) {
+  if (
+    !dimensionOverrides &&
+    !dos.length &&
+    !donts.length &&
+    !heuristics.length &&
+    !extraInstructions?.trim()
+  ) {
     return null
   }
   return {
     dimensionOverrides,
     dos,
     donts,
+    heuristics,
     extraInstructions: extraInstructions?.trim() || null,
   }
 }

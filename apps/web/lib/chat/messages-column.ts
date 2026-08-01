@@ -47,6 +47,7 @@ export function inspectFromToolComplete(input: {
   stepsTotal?: number | null
   convert: ChatConversationInspect['convert']
   personaPolicy?: ChatConversationInspect['personaPolicy']
+  scorecard?: ChatConversationInspect['scorecard']
 }): ChatConversationInspect {
   const steps = Array.isArray(input.steps) ? input.steps : []
   return {
@@ -58,6 +59,7 @@ export function inspectFromToolComplete(input: {
     convert: input.convert,
     completedAt: new Date().toISOString(),
     personaPolicy: input.personaPolicy ?? null,
+    scorecard: input.scorecard ?? null,
   }
 }
 
@@ -74,6 +76,7 @@ export function toolCompleteFromInspect(inspect: ChatConversationInspect): ChatT
     steps: inspect.steps,
     stepsTotal: inspect.stepsTotal,
     personaPolicy: inspect.personaPolicy ?? null,
+    scorecard: inspect.scorecard ?? null,
   }
 }
 
@@ -96,6 +99,10 @@ function normalizeInspect(raw: unknown): ChatConversationInspect | null {
     personaPolicy:
       rec.personaPolicy && typeof rec.personaPolicy === 'object'
         ? (rec.personaPolicy as ChatConversationInspect['personaPolicy'])
+        : null,
+    scorecard:
+      rec.scorecard && typeof rec.scorecard === 'object'
+        ? (rec.scorecard as ChatConversationInspect['scorecard'])
         : null,
   }
 }

@@ -36,6 +36,17 @@ export type ChatPersonaPolicySnapshot = {
   heuristics?: string[] | null
 }
 
+/** Compact journey scorecard surfaced in chat inspect (agent aggregate). */
+export type ChatUxJourneyScorecard = {
+  frictionScore?: number | null
+  personaFitScore?: number | null
+  topStrengths?: string[] | null
+  topWeaknesses?: string[] | null
+  totalObservations?: number | null
+  quotes?: string[] | null
+  [key: string]: unknown
+}
+
 export type ChatConversationInspect = {
   jobId: string | null
   summary: string | null
@@ -52,6 +63,8 @@ export type ChatConversationInspect = {
   completedAt: string | null
   /** Soft persona policy derived during the inspect run. */
   personaPolicy?: ChatPersonaPolicySnapshot | null
+  /** Journey-level UX scorecard when the agent produced one. */
+  scorecard?: ChatUxJourneyScorecard | null
 }
 
 export type ChatSendPayload = {
@@ -89,11 +102,37 @@ export type ChatSharePersona = {
 
 export type ChatToolName = 'inspect_website'
 
-/** Structured think-aloud bookkeeping from browser-use (V2 reasoningMeta). */
+/** Structured think-aloud bookkeeping from browser-use (internal only). */
 export type ChatUxJourneyStepReasoningMeta = {
   evaluation_previous_goal?: string | null
   memory?: string | null
   next_goal?: string | null
+}
+
+/** Per-step affect (product think-aloud). */
+export type ChatUxJourneyFeel = {
+  label: string
+  valence: -2 | -1 | 0 | 1 | 2
+}
+
+/** Product source of truth for classical think-aloud channels. */
+export type ChatUxJourneyThinkAloud = {
+  seen?: string | null
+  think?: string | null
+  priorKnow?: string | null
+  learned?: string | null
+  next?: string | null
+  why?: string | null
+  feel?: ChatUxJourneyFeel | null
+}
+
+/** UX research observation flag (max 2 per step from agent). */
+export type ChatUxJourneyObservation = {
+  category: string
+  polarity: number
+  severity: 'low' | 'medium' | 'high'
+  note: string
+  fix?: string | null
 }
 
 /** One browser-agent step surfaced in chat (live + completed). */
@@ -102,9 +141,14 @@ export type ChatUxJourneyStep = {
   action?: string
   target?: string
   result?: string
-  /** Think-aloud / Denken */
+  /** Cleaned voice-over (blocks stripped) */
   reasoning?: string
+  /** Browser-use bookkeeping — not primary UI labels */
   reasoningMeta?: ChatUxJourneyStepReasoningMeta | null
+  /** Product think-aloud channels (spec: ux-journey-think-aloud) */
+  thinkAloud?: ChatUxJourneyThinkAloud | null
+  /** Research flags for expanded step UI + scorecard */
+  observations?: ChatUxJourneyObservation[] | null
   /** data: URL or absolute/relative path */
   screenshot?: string | null
   /** Agent-relative `/run/{jobId}/step/{n}/screenshot` or BFF path */
@@ -160,6 +204,8 @@ export type ChatToolCompleteEvent = {
   stepsTotal?: number | null
   /** Soft persona policy from the agent run (dims + heuristics). */
   personaPolicy?: ChatPersonaPolicySnapshot | null
+  /** Journey-level UX scorecard when present. */
+  scorecard?: ChatUxJourneyScorecard | null
 }
 
 export type ChatToolDeniedEvent = {

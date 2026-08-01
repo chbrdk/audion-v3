@@ -1,7 +1,8 @@
 # Chat Fields / Contracts
 
-**Status:** Accepted — 2026-07-29 · Implemented MVP 2026-07-29  
-**Contracts:** `ChatMessage` · `ChatConversationSummary` · `ChatSendPayload` · stream events  
+**Status:** Accepted — 2026-07-29 · Implemented MVP 2026-07-29 · Think-aloud 2026-08-01  
+**Contracts:** `ChatMessage` · `ChatConversationSummary` · `ChatSendPayload` · stream events · `ChatUxJourneyStep`  
+**Think-aloud:** `specs/domain/ux-journey-think-aloud.md`  
 **Migration:** `knowledge/chat-migration-map.md`  
 **Legacy:** AUDION-v2 chat-api + Next `/api/chat/*`
 
@@ -37,6 +38,28 @@
 | `projectId` | optional nullable |
 | `journeyId` | optional — deferred context |
 
+## UX journey step (`ChatUxJourneyStep`)
+
+| Field | Notes |
+|-------|--------|
+| `step`, `action`, `target`, `result` | action outcome |
+| `reasoning` | cleaned VO text (blocks stripped) |
+| `reasoningMeta` | browser-use bookkeeping only (`evaluation_previous_goal`, `memory`, `next_goal`) |
+| `thinkAloud` | **product SoT** — see `ux-journey-think-aloud.md` |
+| `observations[]` | research flags (expanded step UI) |
+| `screenshot` / `screenshotUrl` | step frame |
+| `timestamp` | ISO |
+
+## Inspect snapshot (`ChatConversationInspect`)
+
+| Field | Notes |
+|-------|--------|
+| `jobId`, `summary`, `videoUrl`, `steps`, `stepsTotal`, `convert`, `completedAt` | restore dock |
+| `personaPolicy` | soft dims + heuristics |
+| `scorecard` | journey aggregate (`frictionScore`, `personaFitScore`, strengths/weaknesses, …) |
+
+`ChatToolCompleteEvent` mirrors `steps`, `personaPolicy`, `scorecard`.
+
 ## Stream events (normalize)
 
 Client should accept a small event union (names may alias snake_case from chat-api):
@@ -47,7 +70,7 @@ Client should accept a small event union (names may alias snake_case from chat-a
 | `done` | finalize turn; may include `conversationId` |
 | `error` | `{ message }` → Alert |
 
-Exact wire format follows chat-api; adapter lives in `apps/web/lib/chat/` (to add).
+Exact wire format follows chat-api; adapter lives in `apps/web/lib/chat/`.
 
 ## Validation
 

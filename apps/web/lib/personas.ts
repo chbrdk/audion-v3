@@ -6,7 +6,7 @@ import type {
   PersonaSummary,
   PersonaVisuals,
 } from '@audion-v3/contracts'
-import { coerceFrustrations, coerceGoals, coerceJourneyBehavior } from './persona-coerce'
+import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from './persona-coerce'
 import { normalizePersonaSections } from './persona-notes'
 import { storePersonaDetail, storePersonaList } from './fixtures/persona-store'
 import {
@@ -15,7 +15,7 @@ import {
   shouldUsePersonaFixturesOnly,
 } from './runtime-config'
 
-export { coerceFrustrations, coerceGoals, coerceJourneyBehavior } from './persona-coerce'
+export { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from './persona-coerce'
 
 export type PersonaDataOrigin = 'api' | 'fixtures'
 
@@ -188,6 +188,15 @@ export function normalizePersonaDetail(raw: unknown): PersonaDetail | null {
     colorPalette: asStringList(item.colorPalette ?? item.color_palette),
     mediaAffinity: asNumber(item.mediaAffinity ?? item.media_affinity),
     confidence: asNumber(item.confidence),
+    techLiteracy: asNumber(item.techLiteracy ?? item.tech_literacy),
+    emotionalBaseline:
+      typeof item.emotionalBaseline === 'string'
+        ? item.emotionalBaseline
+        : typeof item.emotional_baseline === 'string'
+          ? item.emotional_baseline
+          : null,
+    stressTriggers: asStringList(item.stressTriggers ?? item.stress_triggers),
+    motivations: coerceMotivations(item.motivations),
     traits: asTraits(item.traits),
     interests: asStringList(item.interests),
     values: asStringList(item.values),

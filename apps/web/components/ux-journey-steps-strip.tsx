@@ -7,6 +7,7 @@ import { ChatAnswer } from '../lib/chat/chat-answer'
 import {
   chatUxJourneyStepLabel,
   chatUxJourneyStepShotSrc,
+  synthesizeThinkAloudFallback,
 } from '../lib/chat/ux-journey-steps'
 
 function actionLabel(action?: string): string {
@@ -60,7 +61,7 @@ function StepMarkdown({ text, compact }: { text: string; compact: boolean }) {
 }
 
 /**
- * Live / finished UX journey steps — phase-card chrome + V2 think-aloud sections.
+ * Live / finished UX journey steps — product think-aloud channels.
  * Click a card to select it for follow-up chat (and expand); Esc collapses expand.
  */
 export function UxJourneyStepsStrip({
@@ -151,17 +152,24 @@ export function UxJourneyStepsStrip({
         {steps.map((s, idx) => {
           const n = s.step ?? idx + 1
           const shot = chatUxJourneyStepShotSrc(s)
-          const denken = s.reasoning?.trim() || ''
-          const gesehenes = s.reasoningMeta?.evaluation_previous_goal?.trim() || ''
-          const wissen = s.reasoningMeta?.memory?.trim() || ''
-          const nextStep = s.reasoningMeta?.next_goal?.trim() || ''
+          const ta = s.thinkAloud ?? synthesizeThinkAloudFallback(s)
+          const gesehenes = ta.seen?.trim() || ''
+          const denken = ta.think?.trim() || s.reasoning?.trim() || ''
+          const priorKnow = ta.priorKnow?.trim() || ''
+          const learned = ta.learned?.trim() || ''
+          const nextStep = ta.next?.trim() || ''
+          const why = ta.why?.trim() || ''
+          const feel = ta.feel
           const result = s.result?.trim() || ''
           const target = s.target?.trim() || ''
+          const observations = expandedIdx === idx ? s.observations ?? [] : []
           const title = actionLabel(s.action)
           const active = idx === activeIdx
           const expanded = expandedIdx === idx
           const selected = selectedIndex === idx
-          const hasThinkAloud = Boolean(denken || gesehenes || wissen || nextStep || result)
+          const hasThinkAloud = Boolean(
+            gesehenes || denken || priorKnow || learned || nextStep || why || feel || result,
+          )
           return (
             <article
               key={`${n}-${idx}`}
@@ -192,6 +200,23 @@ export function UxJourneyStepsStrip({
                     <Text role="label" className="audion-journey-slide-eyebrow">
                       Step
                       {total ? ` · ${n} of ${total}` : ''}
+                      {feel?.label ? (
+                        <span
+                          className={[
+                            'audion-ux-step-feel-pill',
+                            feel.valence < 0
+                              ? 'is-negative'
+                              : feel.valence > 0
+                                ? 'is-positive'
+                                : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                        >
+                          {' '}
+                          · {feel.label}
+                        </span>
+                      ) : null}
                       <span className="audion-ux-step-expand-hint">
                         {selected
                           ? ' · selected for chat'
@@ -233,21 +258,27 @@ export function UxJourneyStepsStrip({
                   </div>
                 ) : null}
 
-                {denken ? (
-                  <StepSection label="Denken" open>
-                    <StepMarkdown text={denken} compact={!expanded} />
-                  </StepSection>
-                ) : null}
-
                 {gesehenes ? (
                   <StepSection label="Gesehenes" open={expanded}>
                     <StepMarkdown text={gesehenes} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
-                {wissen ? (
-                  <StepSection label="Wissen" open={expanded}>
-                    <StepMarkdown text={wissen} compact={!expanded} />
+                {denken ? (
+                  <StepSection label="Denken" open>
+                    <StepMarkdown text={denken} compact={!expanded} />
+                  </StepSection>
+                ) : null}
+
+                {priorKnow ? (
+                  <StepSection label="Schon gewusst" open={expanded}>
+                    <StepMarkdown text={priorKnow} compact={!expanded} />
+                  </StepSection>
+                ) : null}
+
+                {learned ? (
+                  <StepSection label="Neu gelernt" open={expanded}>
+                    <StepMarkdown text={learned} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
@@ -257,10 +288,49 @@ export function UxJourneyStepsStrip({
                   </StepSection>
                 ) : null}
 
+                {why ? (
+                  <StepSection label="Warum" open={expanded}>
+                    <StepMarkdown text={why} compact={!expanded} />
+                  </StepSection>
+                ) : null}
+
+                {feel?.label && expanded ? (
+                  <StepSection label="Gefühl" open>
+                    <p className="audion-journey-slide-summary">
+                      {feel.label}
+                      {typeof feel.valence === 'number' ? ` · valence ${feel.valence}` : ''}
+                    </p>
+                  </StepSection>
+                ) : null}
+
                 {result ? (
                   <StepSection label="Ergebnis" open={expanded}>
                     <StepMarkdown text={result} compact={!expanded} />
                   </StepSection>
+                ) : null}
+
+                {observations.length ? (
+                  <div className="audion-journey-slide-section audion-ux-step-obs">
+                    <Text role="label" className="audion-journey-slide-section-label">
+                      Observations
+                    </Text>
+                    <ul className="audion-ux-step-obs-list">
+                      {observations.map((o, oi) => (
+                        <li
+                          key={`${o.category}-${oi}`}
+                          className={[
+                            'audion-ux-step-obs-chip',
+                            o.polarity < 0 ? 'is-negative' : o.polarity > 0 ? 'is-positive' : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                        >
+                          <span className="audion-ux-step-obs-cat">{o.category}</span>
+                          <span>{o.note}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ) : null}
 
                 {!shot && !target && !hasThinkAloud ? (

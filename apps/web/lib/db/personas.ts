@@ -5,7 +5,7 @@ import type {
   PersonaStatus,
   PersonaWritePayload,
 } from '@audion-v3/contracts'
-import { coerceFrustrations, coerceGoals, coerceJourneyBehavior } from '../persona-coerce'
+import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from '../persona-coerce'
 import { normalizePersonaSections } from '../persona-notes'
 import { getDb } from './client'
 import { personas, type PersonaRow } from './schema'
@@ -19,6 +19,10 @@ const DETAIL_ONLY_KEYS = [
   'colorPalette',
   'mediaAffinity',
   'confidence',
+  'techLiteracy',
+  'emotionalBaseline',
+  'stressTriggers',
+  'motivations',
   'traits',
   'interests',
   'values',
@@ -43,6 +47,10 @@ function emptyDefaults(): Pick<
   | 'colorPalette'
   | 'mediaAffinity'
   | 'confidence'
+  | 'techLiteracy'
+  | 'emotionalBaseline'
+  | 'stressTriggers'
+  | 'motivations'
   | 'traits'
   | 'interests'
   | 'values'
@@ -56,6 +64,10 @@ function emptyDefaults(): Pick<
     colorPalette: [],
     mediaAffinity: null,
     confidence: null,
+    techLiteracy: null,
+    emotionalBaseline: null,
+    stressTriggers: [],
+    motivations: [],
     traits: {},
     interests: [],
     values: [],
@@ -98,6 +110,10 @@ function rowToDetail(row: PersonaRow): PersonaDetail {
     colorPalette: payload.colorPalette ?? [],
     mediaAffinity: payload.mediaAffinity ?? null,
     confidence: payload.confidence ?? null,
+    techLiteracy: payload.techLiteracy ?? null,
+    emotionalBaseline: payload.emotionalBaseline ?? null,
+    stressTriggers: payload.stressTriggers ?? [],
+    motivations: coerceMotivations(payload.motivations),
     traits: payload.traits ?? {},
     interests: payload.interests ?? [],
     values: payload.values ?? [],
@@ -166,6 +182,12 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
     colorPalette: payload.colorPalette !== undefined ? payload.colorPalette : base.colorPalette,
     mediaAffinity: payload.mediaAffinity !== undefined ? payload.mediaAffinity : base.mediaAffinity,
     confidence: payload.confidence !== undefined ? payload.confidence : base.confidence,
+    techLiteracy: payload.techLiteracy !== undefined ? payload.techLiteracy : base.techLiteracy,
+    emotionalBaseline:
+      payload.emotionalBaseline !== undefined ? payload.emotionalBaseline : base.emotionalBaseline,
+    stressTriggers: payload.stressTriggers !== undefined ? payload.stressTriggers : base.stressTriggers,
+    motivations:
+      payload.motivations !== undefined ? coerceMotivations(payload.motivations) : base.motivations,
     traits: payload.traits !== undefined ? payload.traits : base.traits,
     interests: payload.interests !== undefined ? payload.interests : base.interests,
     values: payload.values !== undefined ? payload.values : base.values,

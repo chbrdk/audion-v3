@@ -2,7 +2,7 @@
  * Orchestrate chat inspect_website against the V3 UX Journey Agent.
  */
 
-import type { ChatStreamEvent } from '@audion-v3/contracts'
+import type { ChatConversationInspect, ChatStreamEvent } from '@audion-v3/contracts'
 import { storeUpsertUxJourneyRun } from '../fixtures/ux-journey-run-store'
 import { inspectFromToolComplete } from './messages-column'
 import { resolveAgentPersonaContext } from './resolve-agent-persona-context'
@@ -165,6 +165,8 @@ export async function* runLiveInspectWebsiteStream(input: {
         }
         const videoUrl = bffVideoUrlForJob(jobId, status.result?.videoUrl)
         const personaPolicy = status.result?.personaPolicy ?? null
+        const scorecard =
+          (status.result?.scorecard as ChatConversationInspect['scorecard']) ?? null
         if (input.conversationId) {
           const { storeChatSetInspect } = await import('../fixtures/chat-store')
           await storeChatSetInspect(
@@ -177,6 +179,7 @@ export async function* runLiveInspectWebsiteStream(input: {
               stepsTotal: chatSteps.length,
               convert,
               personaPolicy,
+              scorecard,
             }),
           )
         }
@@ -192,6 +195,7 @@ export async function* runLiveInspectWebsiteStream(input: {
           steps: chatSteps,
           stepsTotal: chatSteps.length,
           personaPolicy,
+          scorecard,
         }
         return
       }

@@ -528,6 +528,76 @@ def _extract_observations(thinking_text: str) -> tuple[list[dict[str, Any]], int
     return (obs[:_OBSERVATIONS_PER_STEP_CAP], invalid)
 
 
+# ---------------------------------------------------------------------------
+# Per-step think-aloud channels (product SoT — see specs/domain/ux-journey-think-aloud.md)
+# ---------------------------------------------------------------------------
+_THINK_ALOUD_BLOCK_RE = re.compile(
+    r"<<THINK_ALOUD>>\s*(?P<json>.*?)\s*<<\/THINK_ALOUD>>",
+    flags=re.DOTALL,
+)
+_THINK_ALOUD_FEEL_VALENCES: tuple[int, ...] = (-2, -1, 0, 1, 2)
+_THINK_ALOUD_FIELD_LIMIT = 420
+
+
+def _strip_think_aloud_block(text: str) -> str:
+    if not text or "<<THINK_ALOUD>>" not in text:
+        return text
+    cleaned = _THINK_ALOUD_BLOCK_RE.sub("", text)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
+
+
+def _coerce_think_aloud_feel(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict):
+        return None
+    label = str(raw.get("label") or "").strip()
+    if not label:
+        return None
+    try:
+        valence = int(raw.get("valence")) if raw.get("valence") is not None else None
+    except (TypeError, ValueError):
+        valence = None
+    if valence not in _THINK_ALOUD_FEEL_VALENCES:
+        return None
+    return {"label": _smart_trim(label, limit=80), "valence": valence}
+
+
+def _coerce_think_aloud(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict):
+        return None
+    out: dict[str, Any] = {}
+    for key in ("seen", "think", "priorKnow", "learned", "next", "why"):
+        val = raw.get(key)
+        if isinstance(val, str) and val.strip():
+            out[key] = _smart_trim(val.strip(), limit=_THINK_ALOUD_FIELD_LIMIT)
+    feel = _coerce_think_aloud_feel(raw.get("feel"))
+    if feel:
+        out["feel"] = feel
+    return out or None
+
+
+def _extract_think_aloud(thinking_text: str) -> dict[str, Any] | None:
+    if not thinking_text or "<<THINK_ALOUD>>" not in thinking_text:
+        return None
+    for match in _THINK_ALOUD_BLOCK_RE.finditer(thinking_text):
+        payload = (match.group("json") or "").strip()
+        if not payload:
+            continue
+        try:
+            decoded = json.loads(payload)
+        except json.JSONDecodeError:
+            continue
+        coerced = _coerce_think_aloud(decoded)
+        if coerced:
+            return coerced
+    return None
+
+
+def _strip_thinking_blocks(text: str) -> str:
+    """Strip both THINK_ALOUD and OBSERVATIONS delimited blocks from VO text."""
+    return _strip_observations_block(_strip_think_aloud_block(text))
+
+
 def _extract_structured_model_output(text: str) -> dict[str, str] | None:
     """
     Try to extract structured fields from browser-use flattened outputs.
@@ -802,19 +872,18 @@ def _history_to_steps(history: Any) -> list[dict[str, Any]]:
             if i < len(thoughts):
                 thinking = str(thoughts[i].get("thinking") or "").strip()
                 if thinking:
-                    # Pull out the optional <<OBSERVATIONS>> block BEFORE we
-                    # cap or persist `thinking` — otherwise the cap would
-                    # truncate a half-block and the parser would silently
-                    # drop everything. The cleaned thinking (without the
-                    # block) becomes user-facing `reasoning`.
+                    # Extract product think-aloud + observations BEFORE trim.
+                    think_aloud = _extract_think_aloud(thinking)
                     observations, invalid_obs = _extract_observations(thinking)
-                    cleaned_thinking = _strip_observations_block(thinking)
+                    cleaned_thinking = _strip_thinking_blocks(thinking)
+                    if think_aloud:
+                        step_entry["thinkAloud"] = think_aloud
                     if observations:
                         step_entry["observations"] = observations
-                    if observations or invalid_obs:
+                    if observations or invalid_obs or think_aloud:
                         print(
-                            f"ux-journey: step {step_num} observations parsed={len(observations)} "
-                            f"invalid={invalid_obs}",
+                            f"ux-journey: step {step_num} thinkAloud={'yes' if think_aloud else 'no'} "
+                            f"observations parsed={len(observations)} invalid={invalid_obs}",
                             flush=True,
                         )
                     # Server-side safety net for `thinking`. Generous so we only
@@ -2560,62 +2629,31 @@ async def run_agent(
         # `Agent(persona=persona_dict)` — see audion-agent CHANGELOG Phase 2.
         audion_brevity_extension = (
             "AUDION_THINK_ALOUD_UND_INTERNES:\n"
-            # The `thinking` field is **the** user-facing artefact: it lands as
-            # voice-over (TTS) and lower-third subtitle on the polished review
-            # video, AND as the prominent reasoning text in the step card. The
-            # other three structured fields are *internal* bookkeeping that the
-            # browser-use schema requires; we keep them short so they don't
-            # double-bill output tokens or drown the card UI.
-            "ROLLENBILD: Du bist die Persona, die in einem moderierten UX-Research-Interview "
-            "vor einem Bildschirm sitzt und 'laut denkt' (Think-Aloud). Du erklärst, was du auf "
-            "der Seite GERADE SIEHST, was du als Nächstes anklicken/lesen/scrollen willst und WARUM "
-            "— aus deiner Perspektive, nicht aus der eines Browsing-Bots.\n"
+            "ROLLENBILD: Du bist die Persona in einem moderierten UX-Research-Interview "
+            "(Think-Aloud). Du erklärst, was du GERADE SIEHST, was du denkst, was du schon weißt, "
+            "was du dazulerntest, was als Nächstes kommt und WARUM — plus wie du dich fühlst.\n"
             "WICHTIG für 'thinking' (= Voice-Over + Untertitel im Review-Video): \n"
-            "- 1–3 vollständige Sätze, ERSTE PERSON, PRÄSENS, sprich, als säßest du im Usability-Test.\n"
-            "- BENENNE die Aktion, die du gerade ausführst, EXPLIZIT mit aktivem Verb: "
-            "'Ich klicke …', 'Ich scrolle …', 'Ich tippe … ein', 'Ich wähle … aus', 'Ich öffne …', "
-            "'Ich gehe zurück …'. NICHT 'Ich werde …' / 'Ich möchte …' / 'Als Nächstes …' — "
-            "sondern Präsens-Aktion, die das Video gerade zeigt.\n"
-            "- Struktur: <was ich sehe> → <was ich tue (mit aktivem Verb)> → <warum>. "
-            "'Warum' ist die Begründung aus deiner Sicht (Bedürfnis, Hypothese, Zweifel).\n"
-            "- Beispiele für gewünschten Ton (genau dieser Stil):\n"
-            "    'Ganz oben fällt mir das Menü Leistungen auf — ich klicke da drauf, weil ich "
-            "konkret wissen will, was die anbieten.'\n"
-            "    'Die Startseite ist mir zu vage mit Buzzwords wie Transformation; ich scrolle weiter "
-            "nach unten, um konkrete Cases oder Branchen zu finden.'\n"
-            "    'Im Header sehe ich keinen Karriere-Eintrag, also klicke ich auf das Burger-Menü "
-            "rechts oben, weil dort meistens die Sub-Navigation versteckt ist.'\n"
-            "    'Ich tippe in die Suche Werkstudent ein und drücke Enter, um zu prüfen, ob "
-            "es überhaupt solche Stellen gibt.'\n"
-            "- KEINE Bot-Sprache wie 'Ich navigiere zur URL', 'Ich klicke Index 12', 'Element-Selektor', "
-            "'Aktion ausführen', 'das DOM-Element …'. Das Index/Selektor-Detail gehört in 'next_goal' "
-            "(siehe unten), nicht ins Voice-Over.\n"
-            "- Persona-Bezug einfließen lassen, wo er die Entscheidung wirklich treibt "
-            "(z. B. 'Als IT-Leitung achte ich darauf, ob DSGVO/On-Prem erwähnt wird…'). Sonst weglassen — "
-            "kein Floskel-Anfang wie 'Als <Rolle> mit <Branche>…' bei jedem Schritt.\n"
-            "INTERNE FELDER (so kurz wie möglich, NICHT user-facing — landen NICHT im Video, nur im Card-UI als optionales Detail):\n"
-            "- 'evaluation_previous_goal': 1 Satz, neutrale Bewertung des letzten Schritts. "
-            "Bsp: 'Klick auf Services hat funktioniert; Übersicht ist sichtbar.' / 'Suche liefert 0 Treffer.' "
-            "Keine Wiederholung der Aktion. Beim ersten Schritt darf das leer/'-' sein.\n"
-            "- 'memory': NUR konkrete, später wieder nutzbare Fakten (Zahlen, Maße, IDs, URLs, "
-            "Branchen-Listen, Preise). Stichpunktartig, max. 2 kurze Sätze. KEINE Reflexion, KEINE Persona-Sprache, "
-            "KEIN Aufzählen aller bisherigen Schritte. Wenn nichts Neues anfällt: leer lassen.\n"
-            "- 'next_goal': 1 Satz im Bot-Stil — konkretes Element + Index/Selektor + erwarteter Effekt, "
-            "z. B. 'Auf Service-Tab klicken (Index 12), um Leistungen zu sehen'. Diese Zeile ist die "
-            "*Hand-Off*-Anweisung für deine eigene nächste Aktion, NICHT der Persona-Text.\n"
-            "WICHTIG für 'done.text' (Final-Reflexion am Ende der Journey): "
-            "Erste Person, Persona-Stimme, max. 4 kurze Sätze oder 6 Bulletpoints. "
-            "'Was nehme ich aus diesem Besuch mit?' Faktenfokussiert: Was hat überzeugt, was war unklar, "
-            "was hätte ich gebraucht. KEINE Zusammenfassung der Schrittreihenfolge.\n"
-            # Anti-cliffhanger rule. Without this, the LLM tends to use „neben…",
-            # „und mehr…", „etc." as a brevity hack — leaving the user with
-            # half-formed thoughts. We require complete sentences within the
-            # budget instead, with concrete examples when listing things.
-            "WICHTIG: Schreibe in ALLEN Feldern vollständige, abgeschlossene Sätze. "
-            "Verwende NIEMALS '…', '...', 'etc.', 'usw.', 'u. a.', 'und mehr' oder ähnliche Auslassungs-Marker als Platzhalter "
-            "für unausgesprochene Inhalte. Wenn du Beispiele aufzählst, nenne 2–3 KONKRETE Beispiele "
-            "(z. B. 'Automotive, Manufacturing, FinServ') oder lass die Aufzählung weg. "
-            "Falls dir der Inhalt zu lang würde, kürze die Begründung — aber NIE die konkreten Fakten.\n"
+            "- 1–3 vollständige Sätze, ERSTE PERSON, PRÄSENS (see → do → why).\n"
+            "- BENENNE die Aktion EXPLIZIT mit aktivem Verb: 'Ich klicke …', 'Ich scrolle …', "
+            "'Ich tippe … ein'. NICHT 'Ich werde …' / 'Ich möchte …'.\n"
+            "- KEINE Bot-Sprache (Index/Selektor) — das gehört nur in 'next_goal' (intern).\n"
+            "PFLICHT: Hänge an 'thinking' einen strukturierten Produkt-Block an (wird aus dem VO entfernt):\n"
+            "<<THINK_ALOUD>>{\"seen\":\"…\",\"think\":\"…\",\"priorKnow\":\"…\",\"learned\":\"…\","
+            "\"next\":\"…\",\"why\":\"…\",\"feel\":{\"label\":\"…\",\"valence\":-1}}<</THINK_ALOUD>>\n"
+            "Kanal-Bedeutung:\n"
+            "- seen: was auf dem Screen wahrgenommen wird (Percept).\n"
+            "- think: Interpretation / Hypothese (VO-Kern).\n"
+            "- priorKnow: Persona-Vorwissen, das die Entscheidung treibt (sonst leer).\n"
+            "- learned: was du in DIESEM Schritt / Besuch neu gelernt hast (Delta).\n"
+            "- next: Persona-Intent für den nächsten Schritt (KEIN Selektor/Index).\n"
+            "- why: Begründung (Bedürfnis, Zweifel, Ziel).\n"
+            "- feel.label + feel.valence (-2..2): aktuelles Gefühl.\n"
+            "INTERNE FELDER (browser-use Bookkeeping — NICHT die UI-Labels Gesehenes/Wissen):\n"
+            "- 'evaluation_previous_goal': 1 Satz, neutrale Bewertung des letzten Schritts.\n"
+            "- 'memory': NUR wiederverwendbare Fakten (Zahlen, IDs, URLs); max. 2 kurze Sätze.\n"
+            "- 'next_goal': Bot-Stil mit Element + Index/Selektor (Hand-Off, nicht Persona-Text).\n"
+            "WICHTIG für 'done.text': Erste Person, max. 4 kurze Sätze — Was nehme ich mit?\n"
+            "WICHTIG: Schreibe in ALLEN Feldern vollständige Sätze. Keine '…'/'etc.' als Platzhalter.\n"
             "AUDION_COMPLETION:\n"
             "WICHTIG: Beende die Journey NICHT zu früh. Markiere erst dann als 'done'/'fertig', wenn du das Ziel wirklich erreicht hast "
             "UND es anhand sichtbarer UI-Indikatoren verifiziert hast (z.B. Bestätigungsseite, eindeutiger State, URL, Erfolgsmeldung). "

@@ -6,6 +6,8 @@
 1. **Chat** — `inspect_website` HITL → live agent → convert  
 2. **Studies → Wave → Start / Sync** — same agent for wave runs  
 
+Think-aloud product schema: `specs/domain/ux-journey-think-aloud.md`.
+
 ## Contract
 
 | Action | Where | Behavior |
@@ -37,6 +39,14 @@ Ideal payload shape (Agent `PersonaContext`):
     "traits": ["Analytical: 0.82"],
     "painPoints": ["…"],
     "goals": ["…"],
+    "channels": ["…"],
+    "attentionSpan": "…",
+    "confidence": 0.7,
+    "techLiteracy": 0.8,
+    "motivations": [{ "label": "…", "type": "intrinsic" }],
+    "emotionalBaseline": "cautious",
+    "stressTriggers": ["…"],
+    "priorKnowledge": [{ "title": "…", "content": "…" }],
     "communicationStyle": { "vocabulary": [], "sentenceStructure": null, "skepticismLevel": null }
   },
   "dimensionOverrides": {
@@ -49,13 +59,25 @@ Ideal payload shape (Agent `PersonaContext`):
   },
   "dos": ["Prefer official nav"],
   "donts": ["Do not accept marketing cookies"],
+  "heuristics": ["Prefer official nav over hero CTAs"],
   "extraInstructions": "…"
 }
 ```
 
-Product field `PersonaDetail.journeyBehavior` (edit on persona magazine) maps into `dimensionOverrides` / `dos` / `donts` / `extraInstructions`. Mindset / Working-with sections also feed `extraInstructions`.
+Product `PersonaDetail.journeyBehavior` maps into `dimensionOverrides` / `dos` / `donts` / `extraInstructions` / `heuristics`. All magazine `sections` plus knowledge feed `extraInstructions` / `priorKnowledge`.
 
-Policy is **soft** (system prompt + heuristics each step). No hard click filters. Run results include `personaPolicy` (dimensions + heuristics); Chat inspect dock shows a quiet summary line.
+Policy is **soft** (system prompt + heuristics each step). No hard click filters. Run results include `personaPolicy` (dimensions + heuristics); Chat inspect dock shows a quiet summary line plus compact scorecard when present.
+
+## Think-aloud wire format
+
+Each step’s `thinking` may include:
+
+```text
+<<THINK_ALOUD>>{"seen":"…","think":"…","priorKnow":"…","learned":"…","next":"…","why":"…","feel":{"label":"unsicher","valence":-1}}<</THINK_ALOUD>>
+<<OBSERVATIONS>>[…]<</OBSERVATIONS>>
+```
+
+Parsed onto `step.thinkAloud` and `step.observations`; stripped from VO (`reasoning`).
 
 ## Service
 

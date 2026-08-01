@@ -38,6 +38,7 @@ function emptyBehavior(): PersonaJourneyBehavior {
     },
     dos: [],
     donts: [],
+    heuristics: [],
     extraInstructions: null,
   }
 }
@@ -52,6 +53,7 @@ function normalize(behavior: PersonaJourneyBehavior | null): PersonaJourneyBehav
     },
     dos: [...(behavior.dos ?? [])],
     donts: [...(behavior.donts ?? [])],
+    heuristics: [...(behavior.heuristics ?? [])],
     extraInstructions: behavior.extraInstructions ?? null,
   }
 }
@@ -68,6 +70,7 @@ export function PersonaEditableJourneyBehavior({
   const [error, setError] = useState<string | null>(null)
   const [newDo, setNewDo] = useState('')
   const [newDont, setNewDont] = useState('')
+  const [newHeuristic, setNewHeuristic] = useState('')
 
   useEffect(() => {
     setDraft(normalize(journeyBehavior))
@@ -118,7 +121,7 @@ export function PersonaEditableJourneyBehavior({
     void persist(next)
   }
 
-  function addList(kind: 'dos' | 'donts', value: string) {
+  function addList(kind: 'dos' | 'donts' | 'heuristics', value: string) {
     const label = value.trim()
     if (!label) return
     const next: PersonaJourneyBehavior = {
@@ -128,10 +131,11 @@ export function PersonaEditableJourneyBehavior({
     setDraft(next)
     void persist(next)
     if (kind === 'dos') setNewDo('')
-    else setNewDont('')
+    else if (kind === 'donts') setNewDont('')
+    else setNewHeuristic('')
   }
 
-  function removeList(kind: 'dos' | 'donts', index: number) {
+  function removeList(kind: 'dos' | 'donts' | 'heuristics', index: number) {
     const next: PersonaJourneyBehavior = {
       ...draft,
       [kind]: (draft[kind] ?? []).filter((_, i) => i !== index),
@@ -253,6 +257,46 @@ export function PersonaEditableJourneyBehavior({
                 if (e.key === 'Enter') {
                   e.preventDefault()
                   addList('donts', newDont)
+                }
+              }}
+              disabled={saving}
+            />
+          </Field>
+        </div>
+      </div>
+
+      <div className="audion-persona-journey-lists">
+        <div>
+          <h4 className="audion-persona-journey-list-title">Heuristics</h4>
+          {(draft.heuristics ?? []).length ? (
+            <ul>
+              {(draft.heuristics ?? []).map((item, index) => (
+                <li key={`h-${index}`}>
+                  <span>{item}</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`Remove heuristic ${index + 1}`}
+                    disabled={saving}
+                    onClick={() => removeList('heuristics', index)}
+                  >
+                    <IconDelete />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState>No authored heuristics yet.</EmptyState>
+          )}
+          <Field label="Add heuristic">
+            <input
+              value={newHeuristic}
+              onChange={(e) => setNewHeuristic(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addList('heuristics', newHeuristic)
                 }
               }}
               disabled={saving}

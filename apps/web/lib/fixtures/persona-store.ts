@@ -8,7 +8,7 @@ import type {
   PersonaList,
   PersonaWritePayload,
 } from '@audion-v3/contracts'
-import { coerceFrustrations, coerceGoals, coerceJourneyBehavior } from '../persona-coerce'
+import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from '../persona-coerce'
 import { normalizePersonaSections } from '../persona-notes'
 import { isProjectsDatabaseConfigured } from '../db/config'
 import { DEMO_PERSONAS } from './personas'
@@ -28,6 +28,10 @@ const DETAIL_ONLY_KEYS = [
   'colorPalette',
   'mediaAffinity',
   'confidence',
+  'techLiteracy',
+  'emotionalBaseline',
+  'stressTriggers',
+  'motivations',
   'traits',
   'interests',
   'values',
@@ -60,6 +64,10 @@ function emptyDefaults(): Pick<
   | 'colorPalette'
   | 'mediaAffinity'
   | 'confidence'
+  | 'techLiteracy'
+  | 'emotionalBaseline'
+  | 'stressTriggers'
+  | 'motivations'
   | 'traits'
   | 'interests'
   | 'values'
@@ -73,6 +81,10 @@ function emptyDefaults(): Pick<
     colorPalette: [],
     mediaAffinity: null,
     confidence: null,
+    techLiteracy: null,
+    emotionalBaseline: null,
+    stressTriggers: [],
+    motivations: [],
     traits: {},
     interests: [],
     values: [],
@@ -128,6 +140,10 @@ function memoryCreatePersona(payload: PersonaWritePayload): PersonaDetail {
     colorPalette: payload.colorPalette ?? [],
     mediaAffinity: payload.mediaAffinity ?? null,
     confidence: payload.confidence ?? null,
+    techLiteracy: payload.techLiteracy ?? null,
+    emotionalBaseline: payload.emotionalBaseline ?? null,
+    stressTriggers: payload.stressTriggers ?? [],
+    motivations: coerceMotivations(payload.motivations),
     traits: payload.traits ?? {},
     interests: payload.interests ?? [],
     values: payload.values ?? [],
@@ -167,6 +183,13 @@ function memoryPatchPersona(id: string, payload: Partial<PersonaWritePayload>): 
     colorPalette: payload.colorPalette !== undefined ? payload.colorPalette : current.colorPalette,
     mediaAffinity: payload.mediaAffinity !== undefined ? payload.mediaAffinity : current.mediaAffinity,
     confidence: payload.confidence !== undefined ? payload.confidence : current.confidence,
+    techLiteracy: payload.techLiteracy !== undefined ? payload.techLiteracy : current.techLiteracy,
+    emotionalBaseline:
+      payload.emotionalBaseline !== undefined ? payload.emotionalBaseline : current.emotionalBaseline,
+    stressTriggers:
+      payload.stressTriggers !== undefined ? payload.stressTriggers : current.stressTriggers,
+    motivations:
+      payload.motivations !== undefined ? coerceMotivations(payload.motivations) : current.motivations,
     traits: payload.traits !== undefined ? payload.traits : current.traits,
     interests: payload.interests !== undefined ? payload.interests : current.interests,
     values: payload.values !== undefined ? payload.values : current.values,

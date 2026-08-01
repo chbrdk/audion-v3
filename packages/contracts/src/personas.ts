@@ -85,6 +85,13 @@ export type PersonaJourneyBehavior = {
   dos?: string[]
   donts?: string[]
   extraInstructions?: string | null
+  /** Editable soft heuristics (merged with runtime-derived). */
+  heuristics?: string[]
+}
+
+export type PersonaMotivation = {
+  label: string
+  type?: 'intrinsic' | 'extrinsic' | null
 }
 
 export type PersonaDetail = PersonaSummary & {
@@ -96,6 +103,12 @@ export type PersonaDetail = PersonaSummary & {
   colorPalette: string[]
   mediaAffinity: number | null
   confidence: number | null
+  /** Digital / navigation skill (0..1). */
+  techLiteracy: number | null
+  /** Default affect label (e.g. cautious, optimistic). */
+  emotionalBaseline: string | null
+  stressTriggers: string[]
+  motivations: PersonaMotivation[]
   traits: Record<string, number>
   interests: string[]
   values: string[]
@@ -129,6 +142,10 @@ export type PersonaWritePayload = {
   colorPalette?: string[]
   mediaAffinity?: number | null
   confidence?: number | null
+  techLiteracy?: number | null
+  emotionalBaseline?: string | null
+  stressTriggers?: string[]
+  motivations?: PersonaMotivation[]
   traits?: Record<string, number>
   interests?: string[]
   values?: string[]

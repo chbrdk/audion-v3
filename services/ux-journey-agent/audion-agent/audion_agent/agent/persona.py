@@ -86,6 +86,14 @@ class PersonaProfile(BaseModel):
 	traits: list[str] | str | None = None
 	pain_points: list[str] | str | None = Field(default=None, alias='painPoints')
 	goals: list[str] | str | None = None
+	channels: list[str] | str | None = None
+	attention_span: str | None = Field(default=None, alias='attentionSpan')
+	confidence: float | None = None
+	tech_literacy: float | None = Field(default=None, alias='techLiteracy')
+	motivations: list[Any] | str | None = None
+	emotional_baseline: str | None = Field(default=None, alias='emotionalBaseline')
+	stress_triggers: list[str] | str | None = Field(default=None, alias='stressTriggers')
+	prior_knowledge: list[Any] | str | None = Field(default=None, alias='priorKnowledge')
 	communication_style: list[str] | str | dict[str, Any] | None = Field(default=None, alias='communicationStyle')
 
 
@@ -131,6 +139,7 @@ class PersonaContext(BaseModel):
 	dimension_overrides: dict[str, Any] | None = Field(default=None, alias='dimensionOverrides')
 	dos: list[str] | None = None
 	donts: list[str] | None = None
+	heuristics: list[str] | None = None
 	extra_instructions: str | None = Field(default=None, alias='extraInstructions')
 
 	@classmethod
@@ -406,7 +415,19 @@ def derive_policy(persona: PersonaContext | None) -> PersonaPolicy:
 	if dims.accessibility_need >= 0.66:
 		heuristics.append('Prefer simple flows, high-contrast pages, and avoid complex interactions when alternatives exist.')
 
-	return PersonaPolicy(dimensions=dims, heuristics=heuristics[:12])
+	# Designer-authored heuristics win / prepend over keyword-derived ones.
+	authored = _clean_bullet_list(persona.heuristics)
+	merged_hs: list[str] = []
+	seen_h: set[str] = set()
+	for h in [*authored, *heuristics]:
+		if h in seen_h:
+			continue
+		seen_h.add(h)
+		merged_hs.append(h)
+		if len(merged_hs) >= 12:
+			break
+
+	return PersonaPolicy(dimensions=dims, heuristics=merged_hs)
 
 
 # ---------------------------------------------------------------------------

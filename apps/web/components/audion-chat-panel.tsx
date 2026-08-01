@@ -27,6 +27,7 @@ import { postChatStream } from '../lib/chat/stream-client'
 import {
   chatUxJourneyStepLabel,
   composeMessageWithUxStepContext,
+  formatScorecardSummary,
   parseUxStepFollowUpDisplay,
 } from '../lib/chat/ux-journey-steps'
 import { paths } from '../lib/paths'
@@ -482,6 +483,11 @@ export function AudionChatPanel({
                 {formatPersonaPolicySummary(toolComplete.personaPolicy) ? (
                   <p className="audion-muted audion-chat-persona-policy">
                     {formatPersonaPolicySummary(toolComplete.personaPolicy)}
+                  </p>
+                ) : null}
+                {formatScorecardSummary(toolComplete.scorecard) ? (
+                  <p className="audion-muted audion-chat-scorecard">
+                    {formatScorecardSummary(toolComplete.scorecard)}
                   </p>
                 ) : null}
                 {toolComplete.videoUrl || toolComplete.jobId ? (

@@ -7,6 +7,7 @@ import { PersonaDetailActions } from './persona-actions'
 import { PersonaChannelBubbles } from './persona-channel-bubbles'
 import { PersonaEditableCommunication } from './persona-editable-communication'
 import { PersonaEditableJourneyBehavior } from './persona-editable-journey-behavior'
+import { PersonaEditableResearchProfile } from './persona-editable-research-profile'
 import { PersonaEditableList } from './persona-editable-list'
 import { PersonaEditableNotes } from './persona-editable-notes'
 import { PersonaEditablePortrait } from './persona-editable-portrait'
@@ -114,6 +115,15 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
         <PersonaEditableCommunication
           personaId={persona.id}
           communicationStyle={persona.communicationStyle}
+        />
+
+        <PersonaEditableResearchProfile
+          personaId={persona.id}
+          techLiteracy={persona.techLiteracy}
+          emotionalBaseline={persona.emotionalBaseline}
+          stressTriggers={persona.stressTriggers}
+          motivations={persona.motivations}
+          className="detail-block ds-motion-reveal"
         />
 
         <PersonaEditableJourneyBehavior
