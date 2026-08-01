@@ -554,7 +554,7 @@ export function AudionChatPanel({
             id="chat-composer"
             size="md"
             block
-            rows={2}
+            rows={1}
             className="chat-composer"
             value={draft}
             onChange={(ev) => {
