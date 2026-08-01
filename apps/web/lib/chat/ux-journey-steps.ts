@@ -20,6 +20,48 @@ function trimMetaField(value: unknown): string | null {
   return t || null
 }
 
+/** Strip bot index markers so next_goal can backfill a weak thinkAloud.next. */
+export function cleanNextGoalForPersona(goal: string | null | undefined): string | null {
+  if (!goal?.trim()) return null
+  const cleaned = goal
+    .replace(/\s*\[\d+\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^[.\s]+|[.\s]+$/g, '')
+  return cleaned || null
+}
+
+/** Truncated / unfinished persona "next" stubs like "Auf…" or single tokens. */
+export function thinkAloudNextIsWeak(text: string | null | undefined): boolean {
+  if (!text?.trim()) return true
+  const s = text.trim()
+  if (s.length < 28) return true
+  if (s.endsWith('…') || s.endsWith('...')) return true
+  if (!/\s/.test(s)) return true
+  return false
+}
+
+function enrichThinkAloudNext(
+  thinkAloud: NonNullable<ChatUxJourneyStep['thinkAloud']>,
+  nextGoal: string | null,
+): NonNullable<ChatUxJourneyStep['thinkAloud']> {
+  const cleaned = cleanNextGoalForPersona(nextGoal)
+  if (!cleaned) return thinkAloud
+  const current = thinkAloud.next?.trim() || ''
+  const currentCore = current.replace(/[.…]+$/u, '').trim()
+  if (thinkAloudNextIsWeak(current)) {
+    return { ...thinkAloud, next: cleaned }
+  }
+  if (
+    currentCore &&
+    cleaned.length > currentCore.length + 8 &&
+    cleaned.toLowerCase().startsWith(currentCore.toLowerCase())
+  ) {
+    return { ...thinkAloud, next: cleaned }
+  }
+  return thinkAloud
+}
+
 function clampValence(n: number): -2 | -1 | 0 | 1 | 2 {
   if (n <= -2) return -2
   if (n === -1) return -1
@@ -106,7 +148,7 @@ export function synthesizeThinkAloudFallback(step: {
 }): NonNullable<ChatUxJourneyStep['thinkAloud']> {
   const think = trimMetaField(step.reasoning)
   const learned = trimMetaField(step.reasoningMeta?.memory)
-  const next = trimMetaField(step.reasoningMeta?.next_goal)
+  const next = cleanNextGoalForPersona(step.reasoningMeta?.next_goal ?? null)
   const feel = feelFromObservations(step.observations ?? null)
   return {
     seen: null,
@@ -142,6 +184,8 @@ export function toChatUxJourneySteps(steps: UxJourneyAgentStep[] | undefined | n
         reasoningMeta,
         observations,
       })
+    } else {
+      thinkAloud = enrichThinkAloudNext(thinkAloud, nextGoal)
     }
     return {
       step: s.step,

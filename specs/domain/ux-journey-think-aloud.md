@@ -25,7 +25,7 @@ The agent strips the block (and `<<OBSERVATIONS>>`) from voice-over text. Cleane
 | `think` | Denken | Interpretation / hypothesis (VO core) |
 | `priorKnow` | Schon gewusst | Persona prior knowledge driving the decision |
 | `learned` | Neu gelernt | Delta learned this step / visit |
-| `next` | Nächster Schritt | Persona intent (no bot selector / index) |
+| `next` | Nächster Schritt | Persona intent — **one complete first-person sentence** (no bot selector / index; never a stub like `Auf…`) |
 | `why` | Warum | Justification (need, doubt, goal) |
 | `feel` | Gefühl | `{ label: string, valence: -2 \| -1 \| 0 \| 1 \| 2 }` |
 
@@ -63,9 +63,11 @@ Chat inspect dock (v1, compact — not full magazine spider):
 |---------|--------|
 | `think` | `reasoning` |
 | `learned` | `reasoningMeta.memory` |
-| `next` | `reasoningMeta.next_goal` |
+| `next` | `reasoningMeta.next_goal` (index markers like `[12]` stripped) |
 | `seen`, `priorKnow`, `why` | `null` |
 | `feel` | optional map from first observation polarity |
+
+If `thinkAloud.next` is present but **weak** (under ~28 chars, trailing ellipsis, or a single token), web + agent backfill from cleaned `next_goal`.
 
 ## Out of scope
 

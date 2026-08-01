@@ -78,6 +78,29 @@ describe('ux journey step media helpers', () => {
     expect(steps[0]?.observations?.[0]?.category).toBe('copy')
   })
 
+  it('backfills a truncated thinkAloud.next from next_goal', () => {
+    const steps = toChatUxJourneySteps([
+      {
+        step: 3,
+        action: 'click',
+        reasoning: 'VO',
+        thinkAloud: {
+          seen: 'Nav',
+          think: 'Looking for products',
+          priorKnow: null,
+          learned: null,
+          next: 'Auf',
+          why: null,
+          feel: null,
+        },
+        reasoningMeta: {
+          next_goal: 'Click Produkte in the top nav [14]',
+        },
+      },
+    ])
+    expect(steps[0]?.thinkAloud?.next).toBe('Click Produkte in the top nav')
+  })
+
   it('composes follow-up chat with selected step context', () => {
     const composed = composeMessageWithUxStepContext(
       'Was the CTA clear?',

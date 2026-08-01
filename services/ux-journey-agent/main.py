@@ -537,6 +537,61 @@ _THINK_ALOUD_BLOCK_RE = re.compile(
 )
 _THINK_ALOUD_FEEL_VALENCES: tuple[int, ...] = (-2, -1, 0, 1, 2)
 _THINK_ALOUD_FIELD_LIMIT = 420
+_NEXT_GOAL_INDEX_RE = re.compile(r"\s*\[\d+\]")
+
+
+def _clean_next_goal_for_persona(goal: str) -> str:
+    """Strip bot index markers from next_goal so it can backfill thinkAloud.next."""
+    s = _NEXT_GOAL_INDEX_RE.sub("", (goal or "").strip())
+    s = re.sub(r"\s+", " ", s).strip(" .")
+    return s
+
+
+def _think_aloud_next_is_weak(text: str | None) -> bool:
+    """True when the persona 'next' channel looks truncated / unfinished."""
+    if not text or not str(text).strip():
+        return True
+    s = str(text).strip()
+    if len(s) < 28:
+        return True
+    if s.endswith(("…", "...")):
+        return True
+    if " " not in s:
+        return True
+    return False
+
+
+def _enrich_think_aloud_next(
+    think_aloud: dict[str, Any],
+    structured: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """
+    Models often rush the THINK_ALOUD JSON and leave `next` as a stub ("Auf…").
+    Prefer a cleaned `next_goal` when the persona channel is weak or a prefix.
+    """
+    next_goal = ""
+    if isinstance(structured, dict):
+        next_goal = str(structured.get("next_goal") or "").strip()
+    cleaned = _clean_next_goal_for_persona(next_goal)
+    if not cleaned:
+        return think_aloud
+    current = str(think_aloud.get("next") or "").strip()
+    current_core = current.rstrip(" .…")
+    if _think_aloud_next_is_weak(current):
+        return {
+            **think_aloud,
+            "next": _smart_trim(cleaned, limit=_THINK_ALOUD_FIELD_LIMIT),
+        }
+    if (
+        current_core
+        and len(cleaned) > len(current_core) + 8
+        and cleaned.lower().startswith(current_core.lower())
+    ):
+        return {
+            **think_aloud,
+            "next": _smart_trim(cleaned, limit=_THINK_ALOUD_FIELD_LIMIT),
+        }
+    return think_aloud
 
 
 def _strip_think_aloud_block(text: str) -> str:
@@ -871,12 +926,15 @@ def _history_to_steps(history: Any) -> list[dict[str, Any]]:
             }
             if i < len(thoughts):
                 thinking = str(thoughts[i].get("thinking") or "").strip()
+                structured = thoughts[i].get("structured")
+                structured_dict = structured if isinstance(structured, dict) else None
                 if thinking:
                     # Extract product think-aloud + observations BEFORE trim.
                     think_aloud = _extract_think_aloud(thinking)
                     observations, invalid_obs = _extract_observations(thinking)
                     cleaned_thinking = _strip_thinking_blocks(thinking)
                     if think_aloud:
+                        think_aloud = _enrich_think_aloud_next(think_aloud, structured_dict)
                         step_entry["thinkAloud"] = think_aloud
                     if observations:
                         step_entry["observations"] = observations
@@ -891,8 +949,7 @@ def _history_to_steps(history: Any) -> list[dict[str, Any]]:
                     # legitimate dense reasoning. The prompt does the actual
                     # brevity work; this is just a guardrail.
                     step_entry["reasoning"] = _smart_trim(cleaned_thinking, limit=600)
-                structured = thoughts[i].get("structured")
-                if isinstance(structured, dict) and any(str(v or "").strip() for v in structured.values()):
+                if structured_dict and any(str(v or "").strip() for v in structured_dict.values()):
                     # Caps for the structured sections. Earlier we used 140–180
                     # which was clipping legitimate fact-dense content (specs,
                     # dimensions, element IDs the LLM stored for re-use). New
@@ -902,17 +959,17 @@ def _history_to_steps(history: Any) -> list[dict[str, Any]]:
                     # opens on demand.
                     step_entry["reasoningMeta"] = {
                         "evaluation_previous_goal": _smart_trim(
-                            str(structured.get("evaluation_previous_goal") or ""), limit=420
+                            str(structured_dict.get("evaluation_previous_goal") or ""), limit=420
                         ) or None,
                         # Memory is the most info-dense field by design — it
                         # accumulates reusable facts across steps. We give it
                         # the most headroom so spec sheets / dimensions / IDs
                         # never get truncated mid-list.
                         "memory": _smart_trim(
-                            str(structured.get("memory") or ""), limit=720
+                            str(structured_dict.get("memory") or ""), limit=720
                         ) or None,
                         "next_goal": _smart_trim(
-                            str(structured.get("next_goal") or ""), limit=360
+                            str(structured_dict.get("next_goal") or ""), limit=360
                         ) or None,
                     }
             steps.append(step_entry)
@@ -2638,14 +2695,19 @@ async def run_agent(
             "'Ich tippe … ein'. NICHT 'Ich werde …' / 'Ich möchte …'.\n"
             "- KEINE Bot-Sprache (Index/Selektor) — das gehört nur in 'next_goal' (intern).\n"
             "PFLICHT: Hänge an 'thinking' einen strukturierten Produkt-Block an (wird aus dem VO entfernt):\n"
-            "<<THINK_ALOUD>>{\"seen\":\"…\",\"think\":\"…\",\"priorKnow\":\"…\",\"learned\":\"…\","
-            "\"next\":\"…\",\"why\":\"…\",\"feel\":{\"label\":\"…\",\"valence\":-1}}<</THINK_ALOUD>>\n"
+            "<<THINK_ALOUD>>{\"seen\":\"Hero mit großem CTA\",\"think\":\"Ich prüfe, ob der Einstieg klar ist.\","
+            "\"priorKnow\":\"\",\"learned\":\"Die Hauptnavigation sitzt oben links\","
+            "\"next\":\"Als Nächstes öffne ich Produkte, um die Angebotstiefe zu sehen.\","
+            "\"why\":\"Ich brauche konkrete Cases, nicht nur Claims.\","
+            "\"feel\":{\"label\":\"unsicher\",\"valence\":-1}}<</THINK_ALOUD>>\n"
             "Kanal-Bedeutung:\n"
             "- seen: was auf dem Screen wahrgenommen wird (Percept).\n"
             "- think: Interpretation / Hypothese (VO-Kern).\n"
             "- priorKnow: Persona-Vorwissen, das die Entscheidung treibt (sonst leer).\n"
             "- learned: was du in DIESEM Schritt / Besuch neu gelernt hast (Delta).\n"
-            "- next: Persona-Intent für den nächsten Schritt (KEIN Selektor/Index).\n"
+            "- next: EIN vollständiger Satz in Erster Person — was du als Nächstes tust "
+            "(z.B. 'Als Nächstes klicke ich auf Produkte, um die Angebotstiefe zu prüfen.'). "
+            "NIEMALS abbrechen; NIEMALS nur Satzanfänge wie 'Auf…'/'Ich…' oder reine Ellipsis.\n"
             "- why: Begründung (Bedürfnis, Zweifel, Ziel).\n"
             "- feel.label + feel.valence (-2..2): aktuelles Gefühl.\n"
             "INTERNE FELDER (browser-use Bookkeeping — NICHT die UI-Labels Gesehenes/Wissen):\n"
