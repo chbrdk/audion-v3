@@ -2,7 +2,7 @@
 
 import React, { useEffect, useId, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, EmptyState, Panel, SectionChrome } from '@msqdx/ui'
+import { Button, EmptyState, MeterList, Panel, SectionChrome, Slider } from '@msqdx/ui'
 import { Dialog } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { mergeTraitSuggestions } from '../lib/persona-field-suggest'
@@ -232,13 +232,13 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
       />
 
       {rows.length ? (
-        <ul className="audion-magazine-meters audion-editable-traits-list" aria-label="Persona traits">
+        <MeterList className="audion-editable-traits-list" aria-label="Persona traits">
           {rows.map((row, index) => {
             const pct = scoreToPct(row.score)
             const editingLabel = editingIndex === index
             return (
-              <li key={row.key} className="audion-magazine-meter audion-editable-traits-row">
-                <div className="audion-magazine-meter-head">
+              <li key={row.key} className="ds-meter audion-editable-traits-row">
+                <div className="ds-meter-head audion-editable-traits-row-head">
                   {editingLabel ? (
                     <input
                       ref={inputRef}
@@ -275,7 +275,7 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
                       {row.label || <span className="audion-editable-list-placeholder">Trait name…</span>}
                     </button>
                   )}
-                  <span className="audion-magazine-meter-value" aria-hidden>
+                  <span className="ds-meter-value" aria-hidden>
                     {pct}
                   </span>
                   {!editingLabel ? (
@@ -292,31 +292,17 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
                     />
                   ) : null}
                 </div>
-                <input
-                  type="range"
-                  className="audion-editable-traits-slider"
-                  min={0}
-                  max={100}
-                  step={1}
+                <Slider
                   value={pct}
                   disabled={saving || !row.label.trim()}
                   aria-label={`Score for ${row.label || `trait ${index + 1}`}`}
-                  style={{ ['--trait-pct' as string]: `${pct}%` }}
-                  onChange={(e) => onSliderInput(index, Number(e.target.value))}
-                  onMouseUp={(e) => void onSliderCommit(index, Number((e.target as HTMLInputElement).value))}
-                  onTouchEnd={(e) =>
-                    void onSliderCommit(index, Number((e.target as HTMLInputElement).value))
-                  }
-                  onKeyUp={(e) => {
-                    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
-                      void onSliderCommit(index, Number((e.target as HTMLInputElement).value))
-                    }
-                  }}
+                  onChange={(n) => onSliderInput(index, n)}
+                  onCommit={(n) => void onSliderCommit(index, n)}
                 />
               </li>
             )
           })}
-        </ul>
+        </MeterList>
       ) : (
         <EmptyState>
           No traits yet.{' '}

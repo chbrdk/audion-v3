@@ -44,6 +44,13 @@ export const AI_WORKFLOW_TARGETS: Record<AiWorkflowId, AiWorkflowTargetDef> = {
     method: 'POST',
     v2Source: 'persona admin Enrich — AiAssist facet batch',
   },
+  derivePersonaAgentProfile: {
+    id: 'derivePersonaAgentProfile',
+    label: 'Derive agent profile',
+    upstreamPath: '/personas/{personaId}/derive-agent-profile',
+    method: 'POST',
+    v2Source: 'AUDION magazine · research profile + journey behaviour from traits',
+  },
   generateMoodboard: {
     id: 'generateMoodboard',
     label: 'Generate moodboard',

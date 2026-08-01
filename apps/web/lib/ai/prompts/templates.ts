@@ -41,6 +41,7 @@ export type AssistTemplateId =
   | 'journey.validate_chat'
   | 'persona.generate_batch'
   | 'persona.enrich_facets'
+  | 'persona.derive_agent_profile'
   | 'moodboard.style_keywords'
   | 'research.synthesize'
   | 'ux_study.run_summary'
@@ -185,6 +186,49 @@ Enrich this persona (keep existing signal, add depth):
 
 FORMAT:
 {"interests":["..."],"values":["..."],"goals":[{"label":"..."}],"frustrations":[{"label":"..."}],"traits":{"TraitName":0.0}}`,
+  },
+  'persona.derive_agent_profile': {
+    id: 'persona.derive_agent_profile',
+    label: 'Derive UX agent profile',
+    description:
+      'Derive research profile + journey behaviour knobs from traits, goals, and frustrations.',
+    category: 'persona',
+    json: true,
+    system: AUDION_ASSIST_SYSTEM,
+    user: '',
+    prompt: `LANGUAGE: All user-visible strings must be in \${generated_text_locale_name}.
+
+Derive soft UX-agent controls from this magazine persona. Ground every field in traits, goals, values, and frustrations — do not invent a different person.
+
+PERSONA:
+\${persona_profile}
+
+EXISTING TRAITS (scores 0..1):
+\${existing_traits}
+
+Return JSON only:
+{
+  "techLiteracy": 0.0,
+  "emotionalBaseline": "short affect label",
+  "stressTriggers": ["..."],
+  "motivations": [{"label":"...","type":"intrinsic"}],
+  "journeyBehavior": {
+    "dimensionOverrides": {
+      "riskAversion": 0.0,
+      "timePressure": 0.0,
+      "exploration": 0.0,
+      "detailOrientation": 0.0,
+      "trustSkepticism": 0.0,
+      "accessibilityNeed": 0.0
+    },
+    "dos": ["..."],
+    "donts": ["..."],
+    "heuristics": ["..."],
+    "extraInstructions": "one short paragraph"
+  }
+}
+
+All dimension values must be between 0 and 1.`,
   },
   'moodboard.style_keywords': {
     id: 'moodboard.style_keywords',

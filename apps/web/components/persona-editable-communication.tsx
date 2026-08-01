@@ -3,7 +3,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PersonaCommunicationStyle } from '@audion-v3/contracts'
-import { Button, EmptyState, Panel, SectionChrome } from '@msqdx/ui'
+import { Button, EmptyState, Panel, SectionChrome, Slider } from '@msqdx/ui'
 import { Dialog } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { mergeStringSuggestions } from '../lib/persona-field-suggest'
@@ -290,24 +290,13 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
           <span>Open</span>
           <span>Skeptical</span>
         </div>
-        <input
-          type="range"
-          className="audion-editable-traits-slider audion-editable-comm-dial-slider"
-          min={0}
-          max={100}
-          step={1}
+        <Slider
+          className="audion-editable-comm-dial-slider"
           value={skepticismPct}
           disabled={saving}
           aria-label="Skepticism level"
-          style={{ ['--trait-pct' as string]: `${skepticismPct}%` }}
-          onChange={(e) => onSliderInput(Number(e.target.value))}
-          onMouseUp={(e) => void onSliderCommit(Number((e.target as HTMLInputElement).value))}
-          onTouchEnd={(e) => void onSliderCommit(Number((e.target as HTMLInputElement).value))}
-          onKeyUp={(e) => {
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
-              void onSliderCommit(Number((e.target as HTMLInputElement).value))
-            }
-          }}
+          onChange={onSliderInput}
+          onCommit={(n) => void onSliderCommit(n)}
         />
         <span className="audion-editable-comm-dial-value" aria-hidden>
           {skepticismPct}

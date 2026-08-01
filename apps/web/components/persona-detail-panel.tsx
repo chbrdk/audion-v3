@@ -117,20 +117,21 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
           communicationStyle={persona.communicationStyle}
         />
 
-        <PersonaEditableResearchProfile
-          personaId={persona.id}
-          techLiteracy={persona.techLiteracy}
-          emotionalBaseline={persona.emotionalBaseline}
-          stressTriggers={persona.stressTriggers}
-          motivations={persona.motivations}
-          className="detail-block ds-motion-reveal"
-        />
-
-        <PersonaEditableJourneyBehavior
-          personaId={persona.id}
-          journeyBehavior={persona.journeyBehavior}
-          className="detail-block ds-motion-reveal"
-        />
+        <div className="signal-stage audion-magazine-stage ds-motion-reveal">
+          <PersonaEditableResearchProfile
+            personaId={persona.id}
+            personaName={persona.name}
+            techLiteracy={persona.techLiteracy}
+            emotionalBaseline={persona.emotionalBaseline}
+            stressTriggers={persona.stressTriggers}
+            motivations={persona.motivations}
+          />
+          <PersonaEditableJourneyBehavior
+            personaId={persona.id}
+            personaName={persona.name}
+            journeyBehavior={persona.journeyBehavior}
+          />
+        </div>
 
         <div className="signal-stage audion-magazine-stage ds-motion-reveal">
           <PersonaEditableList

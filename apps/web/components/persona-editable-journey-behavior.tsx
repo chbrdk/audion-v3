@@ -3,12 +3,14 @@
 import React, { useEffect, useId, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PersonaJourneyBehavior, PersonaJourneyDimensions } from '@audion-v3/contracts'
-import { Button, EmptyState, Field, Panel, SectionChrome, Textarea } from '@msqdx/ui'
+import { Button, EmptyState, Field, Input, Meter, MeterList, Panel, SectionChrome, Text, Textarea } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { DerivePersonaAgentButton } from './derive-persona-agent-button'
 import { IconDelete } from './nav-icons'
 
 type Props = {
   personaId: string
+  personaName?: string
   journeyBehavior: PersonaJourneyBehavior | null
   className?: string
 }
@@ -60,6 +62,7 @@ function normalize(behavior: PersonaJourneyBehavior | null): PersonaJourneyBehav
 
 export function PersonaEditableJourneyBehavior({
   personaId,
+  personaName,
   journeyBehavior,
   className,
 }: Props) {
@@ -145,51 +148,57 @@ export function PersonaEditableJourneyBehavior({
   }
 
   return (
-    <Panel as="section" className={className}>
-      <SectionChrome quiet title="Journey behaviour" meta="UX agent" metaTone="accent" as="h3" />
-      <p className="audion-muted" style={{ marginTop: '0.35rem', marginBottom: '0.85rem' }}>
+    <Panel
+      as="section"
+      className={['stage-panel', 'audion-magazine-band', 'audion-persona-agent-panel', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <SectionChrome
+        quiet
+        title="Journey behaviour"
+        meta="UX agent"
+        metaTone="accent"
+        as="h3"
+        action={
+          <DerivePersonaAgentButton
+            personaId={personaId}
+            personaName={personaName}
+            facet="journeyBehavior"
+            disabled={saving}
+          />
+        }
+      />
+      <Text role="meta" as="p" className="audion-persona-agent-lede">
         Soft controls for website inspect and study waves — dimensions, dos and donts guide
         navigation without hard click filters.
-      </p>
+      </Text>
 
-      <ul className="audion-persona-journey-dims" aria-label="Journey dimensions">
+      <MeterList aria-label="Journey dimensions">
         {DIMENSIONS.map((dim) => {
           const value = draft.dimensionOverrides?.[dim.key] ?? 0.5
           const pct = Math.round(value * 100)
           return (
-            <li key={dim.key}>
-              <label htmlFor={`${baseId}-${dim.key}`}>
-                <span className="audion-persona-journey-dim-label">
-                  {dim.label}
-                  <span className="audion-muted"> · {pct}%</span>
-                </span>
-                <span className="audion-muted audion-persona-journey-dim-hint">{dim.hint}</span>
-              </label>
-              <input
-                id={`${baseId}-${dim.key}`}
-                type="range"
-                min={0}
-                max={100}
-                step={1}
-                value={pct}
-                disabled={saving}
-                onChange={(e) => setDim(dim.key, Number(e.target.value) / 100)}
-                onMouseUp={(e) =>
-                  commitDim(dim.key, Number((e.target as HTMLInputElement).value) / 100)
-                }
-                onTouchEnd={(e) =>
-                  commitDim(dim.key, Number((e.target as HTMLInputElement).value) / 100)
-                }
-                onBlur={(e) => commitDim(dim.key, Number(e.target.value) / 100)}
-              />
-            </li>
+            <Meter
+              key={dim.key}
+              id={`${baseId}-${dim.key}`}
+              label={dim.label}
+              hint={` · ${dim.hint}`}
+              valueLabel={`${pct}%`}
+              value={pct}
+              disabled={saving}
+              onChange={(n) => setDim(dim.key, n / 100)}
+              onCommit={(n) => commitDim(dim.key, n / 100)}
+            />
           )
         })}
-      </ul>
+      </MeterList>
 
-      <div className="audion-persona-journey-lists">
+      <div className="audion-persona-agent-lists">
         <div>
-          <h4 className="audion-persona-journey-list-title">Dos</h4>
+          <Text role="label" as="h4" className="audion-persona-agent-list-title">
+            Dos
+          </Text>
           {(draft.dos ?? []).length ? (
             <ul>
               {(draft.dos ?? []).map((item, index) => (
@@ -212,7 +221,8 @@ export function PersonaEditableJourneyBehavior({
             <EmptyState>No dos yet.</EmptyState>
           )}
           <Field label="Add do">
-            <input
+            <Input
+              block
               value={newDo}
               onChange={(e) => setNewDo(e.target.value)}
               onKeyDown={(e) => {
@@ -227,7 +237,9 @@ export function PersonaEditableJourneyBehavior({
         </div>
 
         <div>
-          <h4 className="audion-persona-journey-list-title">Donts</h4>
+          <Text role="label" as="h4" className="audion-persona-agent-list-title">
+            Donts
+          </Text>
           {(draft.donts ?? []).length ? (
             <ul>
               {(draft.donts ?? []).map((item, index) => (
@@ -250,7 +262,8 @@ export function PersonaEditableJourneyBehavior({
             <EmptyState>No donts yet.</EmptyState>
           )}
           <Field label="Add dont">
-            <input
+            <Input
+              block
               value={newDont}
               onChange={(e) => setNewDont(e.target.value)}
               onKeyDown={(e) => {
@@ -263,11 +276,11 @@ export function PersonaEditableJourneyBehavior({
             />
           </Field>
         </div>
-      </div>
 
-      <div className="audion-persona-journey-lists">
         <div>
-          <h4 className="audion-persona-journey-list-title">Heuristics</h4>
+          <Text role="label" as="h4" className="audion-persona-agent-list-title">
+            Heuristics
+          </Text>
           {(draft.heuristics ?? []).length ? (
             <ul>
               {(draft.heuristics ?? []).map((item, index) => (
@@ -290,7 +303,8 @@ export function PersonaEditableJourneyBehavior({
             <EmptyState>No authored heuristics yet.</EmptyState>
           )}
           <Field label="Add heuristic">
-            <input
+            <Input
+              block
               value={newHeuristic}
               onChange={(e) => setNewHeuristic(e.target.value)}
               onKeyDown={(e) => {
@@ -309,6 +323,7 @@ export function PersonaEditableJourneyBehavior({
         <Textarea
           value={draft.extraInstructions ?? ''}
           rows={3}
+          block
           disabled={saving}
           onChange={(e) =>
             setDraft({
@@ -320,8 +335,16 @@ export function PersonaEditableJourneyBehavior({
         />
       </Field>
 
-      {error ? <p className="audion-form-error">{error}</p> : null}
-      {saving ? <p className="audion-muted">Saving…</p> : null}
+      {error ? (
+        <p className="audion-form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {saving ? (
+        <Text role="meta" as="p">
+          Saving…
+        </Text>
+      ) : null}
     </Panel>
   )
 }

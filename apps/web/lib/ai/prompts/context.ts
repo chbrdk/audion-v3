@@ -22,11 +22,18 @@ function joinList(items: unknown, fallback = '(none)'): string {
 }
 
 export function personaProfileText(persona: PersonaDetail): string {
+  const traits =
+    persona.traits && typeof persona.traits === 'object'
+      ? Object.entries(persona.traits)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(', ')
+      : ''
   return [
     `Name: ${persona.name}`,
     persona.role ? `Role: ${persona.role}` : null,
     persona.archetype ? `Archetype: ${persona.archetype}` : null,
     persona.bio ? `Bio: ${persona.bio}` : null,
+    traits ? `Traits: ${traits}` : null,
     persona.interests?.length ? `Interests: ${persona.interests.join(', ')}` : null,
     persona.values?.length ? `Values: ${persona.values.join(', ')}` : null,
     persona.goals?.length ? `Goals: ${joinList(persona.goals)}` : null,

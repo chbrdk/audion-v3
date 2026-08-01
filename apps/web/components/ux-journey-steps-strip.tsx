@@ -1,8 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { ChatUxJourneyStep } from '@audion-v3/contracts'
-import { Panel, SectionChrome, Text } from '@msqdx/ui'
+import {
+  ChannelLane,
+  ChannelStack,
+  Panel,
+  SectionChrome,
+  StepStrip,
+  StepStripItem,
+  Text,
+} from '@msqdx/ui'
 import { ChatAnswer } from '../lib/chat/chat-answer'
 import {
   chatUxJourneyStepLabel,
@@ -21,31 +29,6 @@ function actionLabel(action?: string): string {
   return 'Step'
 }
 
-function StepSection({
-  label,
-  children,
-  open = true,
-}: {
-  label: string
-  children: ReactNode
-  open?: boolean
-}) {
-  return (
-    <details
-      className="audion-journey-slide-section audion-ux-step-section"
-      open={open}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <summary className="audion-ux-step-section-summary">
-        <Text role="label" className="audion-journey-slide-section-label">
-          {label}
-        </Text>
-      </summary>
-      <div className="audion-ux-step-section-body">{children}</div>
-    </details>
-  )
-}
-
 function StepMarkdown({ text, compact }: { text: string; compact: boolean }) {
   return (
     <div
@@ -61,7 +44,7 @@ function StepMarkdown({ text, compact }: { text: string; compact: boolean }) {
 }
 
 /**
- * Live / finished UX journey steps — product think-aloud channels.
+ * Live / finished UX journey steps — product think-aloud on DS StepStrip / ChannelStack.
  * Click a card to select it for follow-up chat (and expand); Esc collapses expand.
  */
 export function UxJourneyStepsStrip({
@@ -77,21 +60,7 @@ export function UxJourneyStepsStrip({
   selectedIndex?: number | null
   onSelectStep?: (index: number | null) => void
 }) {
-  const scrollerRef = useRef<HTMLDivElement>(null)
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
-
-  useEffect(() => {
-    const el = scrollerRef.current
-    if (!el) return
-    const targetIdx = expandedIdx ?? selectedIndex ?? (running ? steps.length - 1 : -1)
-    if (targetIdx < 0) return
-    const card = el.querySelector<HTMLElement>(`[data-step-index="${targetIdx}"]`)
-    if (!card) return
-    const left = card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2
-    if (typeof el.scrollTo === 'function') {
-      el.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
-    }
-  }, [steps.length, expandedIdx, selectedIndex, running])
 
   useEffect(() => {
     if (expandedIdx == null) return
@@ -111,241 +80,267 @@ export function UxJourneyStepsStrip({
 
   if (!steps.length) {
     return running ? (
-      <p className="audion-muted audion-ux-steps-empty">Waiting for first step…</p>
+      <StepStrip
+        className="audion-ux-steps"
+        aria-label="Journey steps"
+        empty={<span className="audion-muted">Waiting for first step…</span>}
+      />
     ) : null
   }
 
   const total = stepsTotal && stepsTotal > 0 ? stepsTotal : undefined
   const activeIdx = running ? steps.length - 1 : -1
   const meta = total ? `${steps.length} / ${total}` : `${steps.length}`
+  const scrollToIndex = expandedIdx ?? selectedIndex ?? (running ? steps.length - 1 : null)
 
   function activateCard(idx: number) {
     onSelectStep?.(idx)
     setExpandedIdx((prev) => (prev === idx ? null : idx))
   }
 
-  function onCardKeyDown(e: KeyboardEvent<HTMLElement>, idx: number) {
-    if (e.key !== 'Enter' && e.key !== ' ') return
-    e.preventDefault()
-    activateCard(idx)
-  }
-
-  function onCardClick(e: MouseEvent<HTMLElement>, idx: number) {
-    if (typeof window !== 'undefined' && window.getSelection()?.toString()) return
-    const target = e.target as HTMLElement | null
-    if (target?.closest('a, button, summary, details')) return
-    activateCard(idx)
-  }
-
   return (
-    <section className="audion-ux-steps" aria-label="Journey steps">
-      <SectionChrome quiet title="Steps" meta={meta} metaTone="accent" as="h3" />
-      <p className="audion-ux-steps-hint audion-muted">
-        Select a step to keep chatting about that moment with the persona.
-      </p>
-      <div
-        className="audion-journey-timeline-viewport audion-ux-steps-scroller"
-        ref={scrollerRef}
-        tabIndex={0}
-        aria-label="Step cards"
-      >
-        {steps.map((s, idx) => {
-          const n = s.step ?? idx + 1
-          const shot = chatUxJourneyStepShotSrc(s)
-          const ta = s.thinkAloud ?? synthesizeThinkAloudFallback(s)
-          const gesehenes = ta.seen?.trim() || ''
-          const denken = ta.think?.trim() || s.reasoning?.trim() || ''
-          const priorKnow = ta.priorKnow?.trim() || ''
-          const learned = ta.learned?.trim() || ''
-          const nextStep = ta.next?.trim() || ''
-          const why = ta.why?.trim() || ''
-          const feel = ta.feel
-          const result = s.result?.trim() || ''
-          const target = s.target?.trim() || ''
-          const observations = expandedIdx === idx ? s.observations ?? [] : []
-          const title = actionLabel(s.action)
-          const active = idx === activeIdx
-          const expanded = expandedIdx === idx
-          const selected = selectedIndex === idx
-          const hasThinkAloud = Boolean(
-            gesehenes || denken || priorKnow || learned || nextStep || why || feel || result,
-          )
-          return (
-            <article
-              key={`${n}-${idx}`}
-              className={[
-                'audion-journey-slide',
-                'audion-ux-step-slide',
-                active ? 'audion-journey-slide--active' : '',
-                expanded ? 'audion-ux-step-slide--expanded' : '',
-                selected ? 'audion-ux-step-slide--selected' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              data-step-index={idx}
-              aria-current={selected ? 'true' : active ? 'step' : undefined}
-              aria-expanded={expanded}
-              aria-pressed={selected}
-              aria-label={`${chatUxJourneyStepLabel(s, idx)}${selected ? ' (selected for chat)' : ''}${expanded ? ' (expanded)' : ''}`}
-              tabIndex={0}
-              onClick={(e) => onCardClick(e, idx)}
-              onKeyDown={(e) => onCardKeyDown(e, idx)}
-            >
-              <Panel as="div" className="audion-journey-slide-panel">
-                <header className="audion-journey-slide-head">
-                  <div className="audion-journey-slide-head-copy">
-                    <span className="audion-journey-slide-num" aria-hidden>
-                      {String(n).padStart(2, '0')}
-                    </span>
-                    <Text role="label" className="audion-journey-slide-eyebrow">
-                      Step
-                      {total ? ` · ${n} of ${total}` : ''}
-                      {feel?.label ? (
-                        <span
-                          className={[
-                            'audion-ux-step-feel-pill',
-                            feel.valence < 0
-                              ? 'is-negative'
-                              : feel.valence > 0
-                                ? 'is-positive'
-                                : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                        >
-                          {' '}
-                          · {feel.label}
-                        </span>
-                      ) : null}
-                      <span className="audion-ux-step-expand-hint">
-                        {selected
-                          ? ' · selected for chat'
-                          : expanded
-                            ? ' · click to collapse'
-                            : ' · click to select & expand'}
+    <StepStrip
+      className="audion-ux-steps"
+      aria-label="Journey steps"
+      scrollToIndex={scrollToIndex}
+      header={<SectionChrome quiet title="Steps" meta={meta} metaTone="accent" as="h3" />}
+      hint="Select a step to keep chatting about that moment with the persona."
+    >
+      {steps.map((s, idx) => {
+        const n = s.step ?? idx + 1
+        const shot = chatUxJourneyStepShotSrc(s)
+        const ta = s.thinkAloud ?? synthesizeThinkAloudFallback(s)
+        const gesehenes = ta.seen?.trim() || ''
+        const denken = ta.think?.trim() || s.reasoning?.trim() || ''
+        const priorKnow = ta.priorKnow?.trim() || ''
+        const learned = ta.learned?.trim() || ''
+        const nextStep = ta.next?.trim() || ''
+        const why = ta.why?.trim() || ''
+        const feel = ta.feel
+        const result = s.result?.trim() || ''
+        const target = s.target?.trim() || ''
+        const observations = expandedIdx === idx ? s.observations ?? [] : []
+        const title = actionLabel(s.action)
+        const active = idx === activeIdx
+        const expanded = expandedIdx === idx
+        const selected = selectedIndex === idx
+        const hasThinkAloud = Boolean(
+          gesehenes || denken || priorKnow || learned || nextStep || why || feel || result,
+        )
+
+        const lanes: Array<{ key: string; label: string; body: ReactNode; open: boolean }> = []
+        if (gesehenes) {
+          lanes.push({
+            key: 'seen',
+            label: 'Gesehenes',
+            open: expanded,
+            body: <StepMarkdown text={gesehenes} compact={!expanded} />,
+          })
+        }
+        if (denken) {
+          lanes.push({
+            key: 'think',
+            label: 'Denken',
+            open: true,
+            body: <StepMarkdown text={denken} compact={!expanded} />,
+          })
+        }
+        if (priorKnow) {
+          lanes.push({
+            key: 'prior',
+            label: 'Schon gewusst',
+            open: expanded,
+            body: <StepMarkdown text={priorKnow} compact={!expanded} />,
+          })
+        }
+        if (learned) {
+          lanes.push({
+            key: 'learned',
+            label: 'Neu gelernt',
+            open: expanded,
+            body: <StepMarkdown text={learned} compact={!expanded} />,
+          })
+        }
+        if (nextStep) {
+          lanes.push({
+            key: 'next',
+            label: 'Nächster Schritt',
+            open: expanded,
+            body: <StepMarkdown text={nextStep} compact={!expanded} />,
+          })
+        }
+        if (why) {
+          lanes.push({
+            key: 'why',
+            label: 'Warum',
+            open: expanded,
+            body: <StepMarkdown text={why} compact={!expanded} />,
+          })
+        }
+        if (feel?.label && expanded) {
+          lanes.push({
+            key: 'feel',
+            label: 'Gefühl',
+            open: true,
+            body: (
+              <p className="audion-journey-slide-summary">
+                {feel.label}
+                {typeof feel.valence === 'number' ? ` · valence ${feel.valence}` : ''}
+              </p>
+            ),
+          })
+        }
+        if (result) {
+          lanes.push({
+            key: 'result',
+            label: 'Ergebnis',
+            open: expanded,
+            body: <StepMarkdown text={result} compact={!expanded} />,
+          })
+        }
+
+        return (
+          <StepStripItem
+            key={`${n}-${idx}`}
+            index={idx}
+            className={[
+              'audion-journey-slide',
+              'audion-ux-step-slide',
+              active ? 'audion-journey-slide--active' : '',
+              expanded ? 'audion-ux-step-slide--expanded' : '',
+              selected ? 'audion-ux-step-slide--selected' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            selected={selected}
+            expanded={expanded}
+            active={active}
+            label={`${chatUxJourneyStepLabel(s, idx)}${selected ? ' (selected for chat)' : ''}${expanded ? ' (expanded)' : ''}`}
+            onActivate={() => activateCard(idx)}
+          >
+            <Panel as="div" className="audion-journey-slide-panel">
+              <header className="audion-journey-slide-head">
+                <div className="audion-journey-slide-head-copy">
+                  <span className="audion-journey-slide-num" aria-hidden>
+                    {String(n).padStart(2, '0')}
+                  </span>
+                  <Text role="label" className="audion-journey-slide-eyebrow">
+                    Step
+                    {total ? ` · ${n} of ${total}` : ''}
+                    {feel?.label ? (
+                      <span
+                        className={[
+                          'audion-ux-step-feel-pill',
+                          feel.valence < 0
+                            ? 'is-negative'
+                            : feel.valence > 0
+                              ? 'is-positive'
+                              : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                      >
+                        {' '}
+                        · {feel.label}
                       </span>
-                    </Text>
-                    <Text role="headline" as="h4" className="audion-journey-slide-title">
-                      {title}
-                    </Text>
-                  </div>
-                </header>
+                    ) : null}
+                    <span className="audion-ux-step-expand-hint">
+                      {selected
+                        ? ' · selected for chat'
+                        : expanded
+                          ? ' · click to collapse'
+                          : ' · click to select & expand'}
+                    </span>
+                  </Text>
+                  <Text role="headline" as="h4" className="audion-journey-slide-title">
+                    {title}
+                  </Text>
+                </div>
+              </header>
 
-                {shot ? (
-                  <div className="audion-journey-slide-section audion-ux-step-shot-section">
-                    <Text role="label" className="audion-journey-slide-section-label">
-                      Screenshot
-                    </Text>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={shot}
-                      alt={`Step ${n} screenshot`}
-                      className="audion-ux-step-shot"
-                    />
-                  </div>
-                ) : null}
+              {shot ? (
+                <div className="audion-journey-slide-section audion-ux-step-shot-section">
+                  <Text role="label" className="audion-journey-slide-section-label">
+                    Screenshot
+                  </Text>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={shot}
+                    alt={`Step ${n} screenshot`}
+                    className="audion-ux-step-shot"
+                  />
+                </div>
+              ) : null}
 
-                {target ? (
-                  <div className="audion-journey-slide-section">
-                    <Text role="label" className="audion-journey-slide-section-label">
-                      Target
-                    </Text>
-                    <p className="audion-journey-slide-summary">
-                      {expanded || target.length <= 90
-                        ? target
-                        : `${target.slice(0, 89)}…`}
-                    </p>
-                  </div>
-                ) : null}
+              {target ? (
+                <div className="audion-journey-slide-section">
+                  <Text role="label" className="audion-journey-slide-section-label">
+                    Target
+                  </Text>
+                  <p className="audion-journey-slide-summary">
+                    {expanded || target.length <= 90
+                      ? target
+                      : `${target.slice(0, 89)}…`}
+                  </p>
+                </div>
+              ) : null}
 
-                {gesehenes ? (
-                  <StepSection label="Gesehenes" open={expanded}>
-                    <StepMarkdown text={gesehenes} compact={!expanded} />
-                  </StepSection>
-                ) : null}
+              {lanes.length ? (
+                <ChannelStack className="audion-ux-step-channels" aria-label="Think aloud">
+                  {lanes.map((lane) => (
+                    <ChannelLane
+                      key={lane.key}
+                      className="audion-journey-slide-section audion-ux-step-section"
+                      label={
+                        <Text role="label" className="audion-journey-slide-section-label">
+                          {lane.label}
+                        </Text>
+                      }
+                      open={lane.open}
+                      compact={!expanded}
+                    >
+                      {lane.body}
+                    </ChannelLane>
+                  ))}
+                </ChannelStack>
+              ) : null}
 
-                {denken ? (
-                  <StepSection label="Denken" open>
-                    <StepMarkdown text={denken} compact={!expanded} />
-                  </StepSection>
-                ) : null}
+              {observations.length ? (
+                <div className="audion-journey-slide-section audion-ux-step-obs">
+                  <Text role="label" className="audion-journey-slide-section-label">
+                    Observations
+                  </Text>
+                  <ul className="audion-ux-step-obs-list">
+                    {observations.map((o, oi) => (
+                      <li
+                        key={`${o.category}-${oi}`}
+                        className={[
+                          'audion-ux-step-obs-chip',
+                          o.polarity < 0 ? 'is-negative' : o.polarity > 0 ? 'is-positive' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                      >
+                        <span className="audion-ux-step-obs-cat">{o.category}</span>
+                        <span>{o.note}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
-                {priorKnow ? (
-                  <StepSection label="Schon gewusst" open={expanded}>
-                    <StepMarkdown text={priorKnow} compact={!expanded} />
-                  </StepSection>
-                ) : null}
-
-                {learned ? (
-                  <StepSection label="Neu gelernt" open={expanded}>
-                    <StepMarkdown text={learned} compact={!expanded} />
-                  </StepSection>
-                ) : null}
-
-                {nextStep ? (
-                  <StepSection label="Nächster Schritt" open={expanded}>
-                    <StepMarkdown text={nextStep} compact={!expanded} />
-                  </StepSection>
-                ) : null}
-
-                {why ? (
-                  <StepSection label="Warum" open={expanded}>
-                    <StepMarkdown text={why} compact={!expanded} />
-                  </StepSection>
-                ) : null}
-
-                {feel?.label && expanded ? (
-                  <StepSection label="Gefühl" open>
-                    <p className="audion-journey-slide-summary">
-                      {feel.label}
-                      {typeof feel.valence === 'number' ? ` · valence ${feel.valence}` : ''}
-                    </p>
-                  </StepSection>
-                ) : null}
-
-                {result ? (
-                  <StepSection label="Ergebnis" open={expanded}>
-                    <StepMarkdown text={result} compact={!expanded} />
-                  </StepSection>
-                ) : null}
-
-                {observations.length ? (
-                  <div className="audion-journey-slide-section audion-ux-step-obs">
-                    <Text role="label" className="audion-journey-slide-section-label">
-                      Observations
-                    </Text>
-                    <ul className="audion-ux-step-obs-list">
-                      {observations.map((o, oi) => (
-                        <li
-                          key={`${o.category}-${oi}`}
-                          className={[
-                            'audion-ux-step-obs-chip',
-                            o.polarity < 0 ? 'is-negative' : o.polarity > 0 ? 'is-positive' : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                        >
-                          <span className="audion-ux-step-obs-cat">{o.category}</span>
-                          <span>{o.note}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {!shot && !target && !hasThinkAloud ? (
-                  <div className="audion-journey-slide-section">
-                    <Text role="label" className="audion-journey-slide-section-label">
-                      Denken
-                    </Text>
-                    <p className="audion-journey-slide-empty-moments">No detail yet.</p>
-                  </div>
-                ) : null}
-              </Panel>
-            </article>
-          )
-        })}
-      </div>
-    </section>
+              {!shot && !target && !hasThinkAloud ? (
+                <div className="audion-journey-slide-section">
+                  <Text role="label" className="audion-journey-slide-section-label">
+                    Denken
+                  </Text>
+                  <p className="audion-journey-slide-empty-moments">No detail yet.</p>
+                </div>
+              ) : null}
+            </Panel>
+          </StepStripItem>
+        )
+      })}
+    </StepStrip>
   )
 }

@@ -16,7 +16,9 @@ import {
   Alert,
   Button,
   EmptyState,
+  EventFooter,
   Field,
+  InspectDock,
   LoadingText,
   Textarea,
 } from '@msqdx/ui'
@@ -497,7 +499,7 @@ export function AudionChatPanel({
         {inspectJobId && !toolComplete ? <UxJourneyLivePoll jobId={inspectJobId} /> : null}
 
         {showInspectDock ? (
-          <div className="audion-chat-inspect-dock" aria-label="UX journey inspect">
+          <InspectDock aria-label="UX journey inspect">
             {inspectSteps.length || (inspectJobId && !toolComplete) ? (
               <UxJourneyStepsStrip
                 steps={inspectSteps}
@@ -509,55 +511,58 @@ export function AudionChatPanel({
             ) : null}
 
             {toolComplete ? (
-              <div className="audion-chat-tool-complete">
-                <p className="audion-chat-tool-complete-summary">{toolComplete.summary}</p>
+              <EventFooter
+                summary={toolComplete.summary}
+                actions={
+                  <>
+                    {toolComplete.videoUrl || toolComplete.jobId ? (
+                      <a
+                        className="audion-link"
+                        href={
+                          toolComplete.videoUrl ||
+                          paths.routes.apiUxJourneyAgentVideo(toolComplete.jobId || inspectJobId || '')
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open recording
+                      </a>
+                    ) : null}
+                    {allowConvert && toolComplete.convert && !convertedJourneyId ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={convertBusy}
+                        onClick={() => void convertFromInspect()}
+                      >
+                        {convertBusy ? 'Converting…' : 'Convert to journey'}
+                      </Button>
+                    ) : null}
+                    {convertedJourneyId ? (
+                      <span className="audion-chat-tool-complete-done">
+                        Journey created —{' '}
+                        <Link className="audion-link" href={paths.routes.journeyDetail(convertedJourneyId)}>
+                          Open journey
+                        </Link>
+                      </span>
+                    ) : null}
+                  </>
+                }
+              >
                 {formatPersonaPolicySummary(toolComplete.personaPolicy) ? (
-                  <p className="audion-muted audion-chat-persona-policy">
+                  <p className="audion-muted audion-chat-persona-policy ds-event-footer-meta">
                     {formatPersonaPolicySummary(toolComplete.personaPolicy)}
                   </p>
                 ) : null}
                 {formatScorecardSummary(toolComplete.scorecard) ? (
-                  <p className="audion-muted audion-chat-scorecard">
+                  <p className="audion-muted audion-chat-scorecard ds-event-footer-meta">
                     {formatScorecardSummary(toolComplete.scorecard)}
                   </p>
                 ) : null}
-                <div className="audion-chat-tool-complete-actions">
-                  {toolComplete.videoUrl || toolComplete.jobId ? (
-                    <a
-                      className="audion-link"
-                      href={
-                        toolComplete.videoUrl ||
-                        paths.routes.apiUxJourneyAgentVideo(toolComplete.jobId || inspectJobId || '')
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open recording
-                    </a>
-                  ) : null}
-                  {allowConvert && toolComplete.convert && !convertedJourneyId ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      disabled={convertBusy}
-                      onClick={() => void convertFromInspect()}
-                    >
-                      {convertBusy ? 'Converting…' : 'Convert to journey'}
-                    </Button>
-                  ) : null}
-                  {convertedJourneyId ? (
-                    <span className="audion-chat-tool-complete-done">
-                      Journey created —{' '}
-                      <Link className="audion-link" href={paths.routes.journeyDetail(convertedJourneyId)}>
-                        Open journey
-                      </Link>
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+              </EventFooter>
             ) : null}
-          </div>
+          </InspectDock>
         ) : null}
 
         {turnsAfterDock.map((turn) => (

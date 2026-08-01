@@ -14,6 +14,8 @@ import type {
   AiWorkflowId,
   EnrichPersonaRequest,
   EnrichPersonaResponse,
+  DerivePersonaAgentProfileRequest,
+  DerivePersonaAgentProfileResponse,
   GenerateJourneyPhaseMomentsRequest,
   GenerateJourneyPhaseMomentsResponse,
   GenerateJourneyRequest,
@@ -49,6 +51,11 @@ import { storeProjectDetail } from './fixtures/project-store'
 import { storeCreateResearchRun } from './fixtures/research-runs'
 import { mergeMoodboardTiles } from './moodboard-tiles'
 import { personaAvatarPath, personaVisualPath } from './paths'
+import {
+  deriveJourneyBehavior,
+  deriveResearchProfile,
+  normalizeDeriveFacets,
+} from './persona-agent-derive'
 import { shouldPreferAiLive, shouldRequireAiLive } from './persona-api-proxy'
 
 export {
@@ -537,6 +544,50 @@ export async function runStubEnrichPersona(
     goals: patched.goals,
     frustrations: patched.frustrations,
     traits: patched.traits,
+  }
+}
+
+export async function runStubDerivePersonaAgentProfile(
+  personaId: string,
+  body: DerivePersonaAgentProfileRequest = {},
+): Promise<DerivePersonaAgentProfileResponse | { error: string; status: number }> {
+  const persona = await storePersonaDetail(personaId)
+  if (!persona) return { error: 'Persona not found', status: 404 }
+
+  const facets = normalizeDeriveFacets(body.facets)
+  const locale = body.output_locale ?? 'en'
+  const upstreamBody: Record<string, unknown> = {
+    output_locale: locale,
+    facets,
+  }
+  const meta = stubMeta('derivePersonaAgentProfile', { personaId }, upstreamBody)
+
+  const patch: Parameters<typeof storePatchPersona>[1] = {}
+  const research = facets.includes('researchProfile') ? deriveResearchProfile(persona) : null
+  const journey = facets.includes('journeyBehavior') ? deriveJourneyBehavior(persona) : null
+
+  if (research) {
+    patch.techLiteracy = research.techLiteracy
+    patch.emotionalBaseline = research.emotionalBaseline
+    patch.stressTriggers = research.stressTriggers
+    patch.motivations = research.motivations
+  }
+  if (journey) {
+    patch.journeyBehavior = journey
+  }
+
+  const patched = await storePatchPersona(personaId, patch)
+  if (!patched) return { error: 'Persona not found', status: 404 }
+
+  return {
+    ...meta,
+    personaId,
+    facetsUpdated: facets,
+    techLiteracy: patched.techLiteracy,
+    emotionalBaseline: patched.emotionalBaseline,
+    stressTriggers: patched.stressTriggers,
+    motivations: patched.motivations,
+    journeyBehavior: patched.journeyBehavior,
   }
 }
 

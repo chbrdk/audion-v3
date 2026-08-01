@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PersonaMotivation } from '@audion-v3/contracts'
-import { Button, EmptyState, Field, Panel, SectionChrome } from '@msqdx/ui'
+import { Button, EmptyState, Field, Input, Meter, MeterList, Panel, SectionChrome, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { DerivePersonaAgentButton } from './derive-persona-agent-button'
 import { IconDelete } from './nav-icons'
 
 type Props = {
   personaId: string
+  personaName?: string
   techLiteracy: number | null
   emotionalBaseline: string | null
   stressTriggers: string[]
@@ -18,6 +20,7 @@ type Props = {
 
 export function PersonaEditableResearchProfile({
   personaId,
+  personaName,
   techLiteracy,
   emotionalBaseline,
   stressTriggers,
@@ -63,30 +66,49 @@ export function PersonaEditableResearchProfile({
     }
   }
 
+  const literacyPct = Math.round(literacy * 100)
+
   return (
-    <Panel as="section" className={className}>
-      <SectionChrome quiet title="Research profile" meta="UX agent" metaTone="accent" as="h3" />
-      <p className="audion-muted" style={{ marginTop: '0.35rem', marginBottom: '0.85rem' }}>
+    <Panel
+      as="section"
+      className={['stage-panel', 'audion-magazine-band', 'audion-persona-agent-panel', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <SectionChrome
+        quiet
+        title="Research profile"
+        meta="UX agent"
+        metaTone="accent"
+        as="h3"
+        action={
+          <DerivePersonaAgentButton
+            personaId={personaId}
+            personaName={personaName}
+            facet="researchProfile"
+            disabled={saving}
+          />
+        }
+      />
+      <Text role="meta" as="p" className="audion-persona-agent-lede">
         Motivations, digital skill, and emotional baseline feed the journey agent&apos;s prior
         knowledge and feel channels.
-      </p>
+      </Text>
 
-      <Field label={`Tech literacy · ${Math.round(literacy * 100)}%`}>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
-          value={Math.round(literacy * 100)}
+      <MeterList aria-label="Research dimensions">
+        <Meter
+          label="Tech literacy"
+          valueLabel={`${literacyPct}%`}
+          value={literacyPct}
           disabled={saving}
-          onChange={(e) => setLiteracy(Number(e.target.value) / 100)}
-          onMouseUp={() => void persist({ techLiteracy: literacy })}
-          onBlur={() => void persist({ techLiteracy: literacy })}
+          onChange={(n) => setLiteracy(n / 100)}
+          onCommit={(n) => void persist({ techLiteracy: n / 100 })}
         />
-      </Field>
+      </MeterList>
 
       <Field label="Emotional baseline">
-        <input
+        <Input
+          block
           value={baseline}
           disabled={saving}
           placeholder="e.g. cautious-optimistic"
@@ -95,9 +117,11 @@ export function PersonaEditableResearchProfile({
         />
       </Field>
 
-      <div className="audion-persona-journey-lists">
+      <div className="audion-persona-agent-lists">
         <div>
-          <h4 className="audion-persona-journey-list-title">Motivations</h4>
+          <Text role="label" as="h4" className="audion-persona-agent-list-title">
+            Motivations
+          </Text>
           {mots.length ? (
             <ul>
               {mots.map((m, index) => (
@@ -127,7 +151,8 @@ export function PersonaEditableResearchProfile({
             <EmptyState>No motivations yet.</EmptyState>
           )}
           <Field label="Add motivation">
-            <input
+            <Input
+              block
               value={newMot}
               disabled={saving}
               onChange={(e) => setNewMot(e.target.value)}
@@ -146,7 +171,9 @@ export function PersonaEditableResearchProfile({
         </div>
 
         <div>
-          <h4 className="audion-persona-journey-list-title">Stress triggers</h4>
+          <Text role="label" as="h4" className="audion-persona-agent-list-title">
+            Stress triggers
+          </Text>
           {triggers.length ? (
             <ul>
               {triggers.map((item, index) => (
@@ -173,7 +200,8 @@ export function PersonaEditableResearchProfile({
             <EmptyState>No stress triggers yet.</EmptyState>
           )}
           <Field label="Add stress trigger">
-            <input
+            <Input
+              block
               value={newTrigger}
               disabled={saving}
               onChange={(e) => setNewTrigger(e.target.value)}
@@ -192,8 +220,16 @@ export function PersonaEditableResearchProfile({
         </div>
       </div>
 
-      {error ? <p className="audion-form-error">{error}</p> : null}
-      {saving ? <p className="audion-muted">Saving…</p> : null}
+      {error ? (
+        <p className="audion-form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {saving ? (
+        <Text role="meta" as="p">
+          Saving…
+        </Text>
+      ) : null}
     </Panel>
   )
 }

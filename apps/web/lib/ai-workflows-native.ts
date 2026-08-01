@@ -8,6 +8,8 @@ import type {
   AiTargetCall,
   EnrichPersonaRequest,
   EnrichPersonaResponse,
+  DerivePersonaAgentProfileRequest,
+  DerivePersonaAgentProfileResponse,
   GenerateJourneyPhaseMomentsRequest,
   GenerateJourneyPhaseMomentsResponse,
   GenerateJourneyRequest,
@@ -61,6 +63,12 @@ import {
   storeTargetGroupDetail,
 } from './fixtures/target-group-store'
 import { mergeMoodboardTiles } from './moodboard-tiles'
+import { coerceJourneyBehavior, coerceMotivations } from './persona-coerce'
+import {
+  deriveJourneyBehavior,
+  deriveResearchProfile,
+  normalizeDeriveFacets,
+} from './persona-agent-derive'
 import { personaVisualPath } from './paths'
 import { scheduleNativeResearchJob } from './ai/research-native'
 
@@ -237,6 +245,115 @@ export async function runNativeEnrichPersona(
     goals: patched.goals,
     frustrations: patched.frustrations,
     traits: patched.traits,
+  }
+}
+
+function clamp01(n: unknown, fallback = 0.5): number {
+  const v = typeof n === 'number' ? n : Number(n)
+  if (!Number.isFinite(v)) return fallback
+  return Math.min(1, Math.max(0, v))
+}
+
+export async function runNativeDerivePersonaAgentProfile(
+  personaId: string,
+  body: DerivePersonaAgentProfileRequest = {},
+  _authorization?: string | null,
+): Promise<DerivePersonaAgentProfileResponse | NativeError> {
+  const persona = await storePersonaDetail(personaId)
+  if (!persona) return { error: 'Persona not found', status: 404 }
+
+  const facets = normalizeDeriveFacets(body.facets)
+  const locale = body.output_locale ?? 'en'
+  const upstreamBody: Record<string, unknown> = { output_locale: locale, facets }
+  const meta = nativeMeta('derivePersonaAgentProfile', { personaId }, upstreamBody)
+
+  const assist = await runAssistJson<{
+    techLiteracy?: number
+    emotionalBaseline?: string
+    stressTriggers?: string[]
+    motivations?: unknown
+    journeyBehavior?: unknown
+  }>('persona.derive_agent_profile', buildPersonaAssistVars(persona, { locale }))
+
+  const heuristicResearch = deriveResearchProfile(persona)
+  const heuristicJourney = deriveJourneyBehavior(persona)
+
+  let research = heuristicResearch
+  let journey = heuristicJourney
+
+  if (!('error' in assist)) {
+    const data = assist.data
+    research = {
+      techLiteracy: clamp01(data.techLiteracy, heuristicResearch.techLiteracy),
+      emotionalBaseline:
+        typeof data.emotionalBaseline === 'string' && data.emotionalBaseline.trim()
+          ? data.emotionalBaseline.trim()
+          : heuristicResearch.emotionalBaseline,
+      stressTriggers: Array.isArray(data.stressTriggers)
+        ? uniqStrings(
+            [...(persona.stressTriggers ?? []), ...data.stressTriggers.map(String)],
+            8,
+          )
+        : heuristicResearch.stressTriggers,
+      motivations: (() => {
+        const parsed = coerceMotivations(data.motivations)
+        if (!parsed.length) return heuristicResearch.motivations
+        const seen = new Set(
+          (persona.motivations ?? []).map((m) => m.label.trim().toLowerCase()),
+        )
+        const merged = [...(persona.motivations ?? [])]
+        for (const m of parsed) {
+          const key = m.label.trim().toLowerCase()
+          if (!key || seen.has(key)) continue
+          seen.add(key)
+          merged.push(m)
+          if (merged.length >= 8) break
+        }
+        return merged.length ? merged : heuristicResearch.motivations
+      })(),
+    }
+    const jb = coerceJourneyBehavior(data.journeyBehavior)
+    if (jb) {
+      journey = {
+        dimensionOverrides: {
+          ...heuristicJourney.dimensionOverrides,
+          ...(jb.dimensionOverrides ?? {}),
+        },
+        dos: uniqStrings([...(jb.dos ?? []), ...(heuristicJourney.dos ?? [])], 8),
+        donts: uniqStrings([...(jb.donts ?? []), ...(heuristicJourney.donts ?? [])], 8),
+        heuristics: uniqStrings(
+          [...(jb.heuristics ?? []), ...(heuristicJourney.heuristics ?? [])],
+          8,
+        ),
+        extraInstructions:
+          jb.extraInstructions?.trim() || heuristicJourney.extraInstructions,
+      }
+    }
+  }
+
+  const patch: Parameters<typeof storePatchPersona>[1] = {}
+  if (facets.includes('researchProfile')) {
+    patch.techLiteracy = research.techLiteracy
+    patch.emotionalBaseline = research.emotionalBaseline
+    patch.stressTriggers = research.stressTriggers
+    patch.motivations = research.motivations
+  }
+  if (facets.includes('journeyBehavior')) {
+    patch.journeyBehavior = journey
+  }
+
+  const patched = await storePatchPersona(personaId, patch)
+  if (!patched) return { error: 'Persona not found', status: 404 }
+
+  return {
+    ...meta,
+    personaId,
+    facetsUpdated: facets,
+    techLiteracy: patched.techLiteracy,
+    emotionalBaseline: patched.emotionalBaseline,
+    stressTriggers: patched.stressTriggers,
+    motivations: patched.motivations,
+    journeyBehavior: patched.journeyBehavior,
   }
 }
 

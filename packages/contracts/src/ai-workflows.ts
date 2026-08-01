@@ -5,6 +5,7 @@ export type AiWorkflowId =
   | 'generatePersonaAvatar'
   | 'suggestPersonaField'
   | 'enrichPersona'
+  | 'derivePersonaAgentProfile'
   | 'generateMoodboard'
   | 'suggestTargetGroups'
   | 'suggestPersonas'
@@ -195,6 +196,25 @@ export type EnrichPersonaResponse = AiStubMeta & {
   goals: Array<{ label: string; priority: number }>
   frustrations: Array<{ label: string; evidenceCount: number }>
   traits: Record<string, number>
+}
+
+/** Soft UX-agent controls derived from magazine traits / goals / frustrations. */
+export type PersonaAgentDeriveFacet = 'researchProfile' | 'journeyBehavior'
+
+export type DerivePersonaAgentProfileRequest = {
+  /** Defaults to both facets when omitted or empty. */
+  facets?: PersonaAgentDeriveFacet[]
+  output_locale?: string
+}
+
+export type DerivePersonaAgentProfileResponse = AiStubMeta & {
+  personaId: string
+  facetsUpdated: PersonaAgentDeriveFacet[]
+  techLiteracy: number | null
+  emotionalBaseline: string | null
+  stressTriggers: string[]
+  motivations: Array<{ label: string; type?: 'intrinsic' | 'extrinsic' | null }>
+  journeyBehavior: import('./personas').PersonaJourneyBehavior | null
 }
 
 export type GenerateMoodboardRequest = {

@@ -288,10 +288,10 @@ describe('audion chat panel', () => {
 
     await screen.findByLabelText('UX journey inspect')
     const turns = container.querySelector('.chat-turns')
-    const dock = container.querySelector('.audion-chat-inspect-dock')
+    const dock = container.querySelector('.ds-inspect-dock')
     expect(dock).toBeTruthy()
     expect(turns?.contains(dock)).toBe(true)
-    expect(dock?.querySelector('.audion-ux-steps')).toBeTruthy()
+    expect(dock?.querySelector('.ds-step-strip')).toBeTruthy()
     expect(screen.getByText('Inspection finished.')).toBeInTheDocument()
 
     fireEvent.click(screen.getByLabelText(/Step 01 · Navigate/i))
@@ -307,9 +307,9 @@ describe('audion chat panel', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
     const answer = await screen.findByText('The CTA felt rushed.')
-    expect(container.querySelector('.audion-chat-inspect-dock .audion-ux-steps')).toBeTruthy()
+    expect(container.querySelector('.ds-inspect-dock .ds-step-strip')).toBeTruthy()
     expect(screen.getByRole('status')).toHaveTextContent(/Chatting about/)
-    const dockAfter = container.querySelector('.audion-chat-inspect-dock')
+    const dockAfter = container.querySelector('.ds-inspect-dock')
     expect(dockAfter).toBeTruthy()
     expect(
       dockAfter!.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_FOLLOWING,

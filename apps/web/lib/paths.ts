@@ -176,6 +176,8 @@ export const paths = {
     apiAiSuggestPersonaField: (personaId: string) =>
       `/api/ai/personas/${personaId}/suggest-field`,
     apiAiEnrichPersona: (personaId: string) => `/api/ai/personas/${personaId}/enrich`,
+    apiAiDerivePersonaAgentProfile: (personaId: string) =>
+      `/api/ai/personas/${personaId}/derive-agent-profile`,
     apiAiGenerateMoodboard: (personaId: string) =>
       `/api/ai/personas/${personaId}/moodboard/generate`,
     apiAiSuggestTargetGroups: (projectId: string) =>

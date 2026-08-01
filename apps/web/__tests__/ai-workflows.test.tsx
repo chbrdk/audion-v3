@@ -52,6 +52,9 @@ describe('AI workflow stubs', () => {
     )
     expect(AI_WORKFLOW_TARGETS.suggestPersonaField.upstreamPath).toContain('/ai/')
     expect(AI_WORKFLOW_TARGETS.enrichPersona.upstreamPath).toBe('/personas/{personaId}/enrich')
+    expect(AI_WORKFLOW_TARGETS.derivePersonaAgentProfile.upstreamPath).toContain(
+      'derive-agent-profile',
+    )
     expect(AI_WORKFLOW_TARGETS.generateMoodboard.upstreamPath).toContain('/moodboards')
     expect(AI_WORKFLOW_TARGETS.suggestTargetGroups.upstreamPath).toContain(
       'suggest-target-groups',
