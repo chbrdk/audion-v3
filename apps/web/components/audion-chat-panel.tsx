@@ -463,65 +463,65 @@ export function AudionChatPanel({
         {inspectJobId && !toolComplete ? <UxJourneyLivePoll jobId={inspectJobId} /> : null}
 
         {busy ? <LoadingText>Streaming…</LoadingText> : null}
-      </div>
 
-      {showInspectDock ? (
-        <div className="audion-chat-inspect-dock" aria-label="UX journey inspect">
-          {inspectSteps.length || (inspectJobId && !toolComplete) ? (
-            <UxJourneyStepsStrip
-              steps={inspectSteps}
-              stepsTotal={toolComplete?.stepsTotal ?? inspectSteps.length}
-              running={Boolean(inspectJobId && !toolComplete)}
-              selectedIndex={selectedStepIndex}
-              onSelectStep={selectStepForChat}
-            />
-          ) : null}
+        {showInspectDock ? (
+          <div className="audion-chat-inspect-dock" aria-label="UX journey inspect">
+            {inspectSteps.length || (inspectJobId && !toolComplete) ? (
+              <UxJourneyStepsStrip
+                steps={inspectSteps}
+                stepsTotal={toolComplete?.stepsTotal ?? inspectSteps.length}
+                running={Boolean(inspectJobId && !toolComplete)}
+                selectedIndex={selectedStepIndex}
+                onSelectStep={selectStepForChat}
+              />
+            ) : null}
 
-          {toolComplete ? (
-            <div className="audion-chat-tool-complete">
-              <p className="audion-edit-lede">{toolComplete.summary}</p>
-              {formatPersonaPolicySummary(toolComplete.personaPolicy) ? (
-                <p className="audion-muted audion-chat-persona-policy">
-                  {formatPersonaPolicySummary(toolComplete.personaPolicy)}
-                </p>
-              ) : null}
-              {toolComplete.videoUrl || toolComplete.jobId ? (
-                <p className="audion-edit-lede">
-                  <a
-                    className="audion-link"
-                    href={
-                      toolComplete.videoUrl ||
-                      paths.routes.apiUxJourneyAgentVideo(toolComplete.jobId || inspectJobId || '')
-                    }
-                    target="_blank"
-                    rel="noreferrer"
+            {toolComplete ? (
+              <div className="audion-chat-tool-complete">
+                <p className="audion-edit-lede">{toolComplete.summary}</p>
+                {formatPersonaPolicySummary(toolComplete.personaPolicy) ? (
+                  <p className="audion-muted audion-chat-persona-policy">
+                    {formatPersonaPolicySummary(toolComplete.personaPolicy)}
+                  </p>
+                ) : null}
+                {toolComplete.videoUrl || toolComplete.jobId ? (
+                  <p className="audion-edit-lede">
+                    <a
+                      className="audion-link"
+                      href={
+                        toolComplete.videoUrl ||
+                        paths.routes.apiUxJourneyAgentVideo(toolComplete.jobId || inspectJobId || '')
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open recording
+                    </a>
+                  </p>
+                ) : null}
+                {allowConvert && toolComplete.convert && !convertedJourneyId ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={convertBusy}
+                    onClick={() => void convertFromInspect()}
                   >
-                    Open recording
-                  </a>
-                </p>
-              ) : null}
-              {allowConvert && toolComplete.convert && !convertedJourneyId ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={convertBusy}
-                  onClick={() => void convertFromInspect()}
-                >
-                  {convertBusy ? 'Converting…' : 'Convert to journey'}
-                </Button>
-              ) : null}
-              {convertedJourneyId ? (
-                <p className="audion-edit-lede">
-                  Journey created —{' '}
-                  <Link className="audion-link" href={paths.routes.journeyDetail(convertedJourneyId)}>
-                    Open journey
-                  </Link>
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+                    {convertBusy ? 'Converting…' : 'Convert to journey'}
+                  </Button>
+                ) : null}
+                {convertedJourneyId ? (
+                  <p className="audion-edit-lede">
+                    Journey created —{' '}
+                    <Link className="audion-link" href={paths.routes.journeyDetail(convertedJourneyId)}>
+                      Open journey
+                    </Link>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       {err ? <Alert tone="error">{err}</Alert> : null}
 

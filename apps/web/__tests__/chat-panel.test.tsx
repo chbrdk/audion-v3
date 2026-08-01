@@ -290,7 +290,7 @@ describe('audion chat panel', () => {
     const turns = container.querySelector('.chat-turns')
     const dock = container.querySelector('.audion-chat-inspect-dock')
     expect(dock).toBeTruthy()
-    expect(turns?.contains(dock)).toBe(false)
+    expect(turns?.contains(dock)).toBe(true)
     expect(dock?.querySelector('.audion-ux-steps')).toBeTruthy()
     expect(screen.getByText('Inspection finished.')).toBeInTheDocument()
 
