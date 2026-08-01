@@ -5,7 +5,7 @@ import type {
   PersonaStatus,
   PersonaWritePayload,
 } from '@audion-v3/contracts'
-import { coerceFrustrations, coerceGoals } from '../persona-coerce'
+import { coerceFrustrations, coerceGoals, coerceJourneyBehavior } from '../persona-coerce'
 import { normalizePersonaSections } from '../persona-notes'
 import { getDb } from './client'
 import { personas, type PersonaRow } from './schema'
@@ -31,6 +31,7 @@ const DETAIL_ONLY_KEYS = [
   'visuals',
   'profileDe',
   'headlineDe',
+  'journeyBehavior',
   'knowledgeEntries',
   'documents',
 ] as const
@@ -109,6 +110,7 @@ function rowToDetail(row: PersonaRow): PersonaDetail {
     visuals: payload.visuals ?? null,
     profileDe: payload.profileDe ?? null,
     headlineDe: payload.headlineDe ?? null,
+    journeyBehavior: coerceJourneyBehavior(payload.journeyBehavior),
     knowledgeEntries: payload.knowledgeEntries ?? [],
     documents: payload.documents ?? [],
   }
@@ -144,6 +146,7 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
       sections: [],
       profileDe: null,
       headlineDe: null,
+      journeyBehavior: null,
       knowledgeEntries: [],
       documents: [],
     } satisfies PersonaDetail)
@@ -181,6 +184,10 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
     visuals: payload.visuals !== undefined ? payload.visuals : base.visuals,
     profileDe: payload.profileDe !== undefined ? payload.profileDe : base.profileDe ?? null,
     headlineDe: payload.headlineDe !== undefined ? payload.headlineDe : base.headlineDe ?? null,
+    journeyBehavior:
+      payload.journeyBehavior !== undefined
+        ? coerceJourneyBehavior(payload.journeyBehavior)
+        : base.journeyBehavior ?? null,
     knowledgeEntries:
       payload.knowledgeEntries !== undefined
         ? payload.knowledgeEntries

@@ -28,6 +28,7 @@ const EMPTY_PROFILE = {
   visuals: null as PersonaDetail['visuals'],
   profileDe: null as PersonaDetail['profileDe'],
   headlineDe: null as string | null,
+  journeyBehavior: null as PersonaDetail['journeyBehavior'],
   knowledgeEntries: [] as PersonaDetail['knowledgeEntries'],
   documents: [] as PersonaDetail['documents'],
 }
@@ -173,6 +174,26 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
       bio: 'Ergebnisorientierte Product Lead für digitale Service-Plattformen. Verbindet Roadmap-Klarheit mit Forschungsevidenz und hält Discovery an Lieferentscheidungen gekoppelt.',
       interests: ['Service-Design-Systeme', 'Evidenzbasiertes Roadmapping', 'Product Ops'],
       values: ['Klarheit statt Theater', 'Geteiltes Insight-Ownership', 'Nachvollziehbare Entscheidungen'],
+    },
+    journeyBehavior: {
+      dimensionOverrides: {
+        riskAversion: 0.72,
+        timePressure: 0.62,
+        exploration: 0.45,
+        detailOrientation: 0.88,
+        trustSkepticism: 0.78,
+        accessibilityNeed: 0.4,
+      },
+      dos: [
+        'Prefer official navigation and documentation over ads or promo tiles',
+        'Look for specs, confidence levels, and named evidence before committing',
+      ],
+      donts: [
+        'Do not accept marketing cookies or newsletter walls as progress',
+        'Avoid buzzword-heavy hero sections that lack operational detail',
+      ],
+      extraInstructions:
+        'Under time pressure, scan for decision-ready briefs. Trade perfect synthesis for dated, shared evidence trails.',
     },
     knowledgeEntries: [
       {

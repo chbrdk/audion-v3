@@ -33,6 +33,10 @@ export type UxJourneyAgentJobStatus = {
     scorecard?: Record<string, unknown> | null
     summary?: string
     videoUrl?: string | null
+    personaPolicy?: {
+      dimensions?: Record<string, number> | null
+      heuristics?: string[] | null
+    } | null
   } | null
 }
 

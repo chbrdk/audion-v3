@@ -8,7 +8,7 @@ import type {
   PersonaList,
   PersonaWritePayload,
 } from '@audion-v3/contracts'
-import { coerceFrustrations, coerceGoals } from '../persona-coerce'
+import { coerceFrustrations, coerceGoals, coerceJourneyBehavior } from '../persona-coerce'
 import { normalizePersonaSections } from '../persona-notes'
 import { isProjectsDatabaseConfigured } from '../db/config'
 import { DEMO_PERSONAS } from './personas'
@@ -40,6 +40,7 @@ const DETAIL_ONLY_KEYS = [
   'visuals',
   'profileDe',
   'headlineDe',
+  'journeyBehavior',
   'knowledgeEntries',
   'documents',
 ] as const
@@ -101,6 +102,7 @@ function memoryPersonaDetail(id: string): PersonaDetail | null {
     ...found,
     profileDe: found.profileDe ?? null,
     headlineDe: found.headlineDe ?? null,
+    journeyBehavior: found.journeyBehavior ?? null,
     knowledgeEntries: found.knowledgeEntries ?? [],
     documents: found.documents ?? [],
   }
@@ -138,6 +140,7 @@ function memoryCreatePersona(payload: PersonaWritePayload): PersonaDetail {
     visuals: payload.visuals ?? null,
     profileDe: payload.profileDe ?? null,
     headlineDe: payload.headlineDe ?? null,
+    journeyBehavior: coerceJourneyBehavior(payload.journeyBehavior) ?? null,
     knowledgeEntries: payload.knowledgeEntries ?? [],
     documents: payload.documents ?? [],
   }
@@ -183,6 +186,10 @@ function memoryPatchPersona(id: string, payload: Partial<PersonaWritePayload>): 
     profileDe: payload.profileDe !== undefined ? payload.profileDe : current.profileDe ?? null,
     headlineDe:
       payload.headlineDe !== undefined ? payload.headlineDe : current.headlineDe ?? null,
+    journeyBehavior:
+      payload.journeyBehavior !== undefined
+        ? coerceJourneyBehavior(payload.journeyBehavior)
+        : current.journeyBehavior ?? null,
     knowledgeEntries:
       payload.knowledgeEntries !== undefined
         ? payload.knowledgeEntries

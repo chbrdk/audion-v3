@@ -31,6 +31,11 @@ export type ChatConversationDetail = ChatConversationSummary & {
 }
 
 /** Persisted inspect dock snapshot (steps + convert meta). */
+export type ChatPersonaPolicySnapshot = {
+  dimensions?: Record<string, number> | null
+  heuristics?: string[] | null
+}
+
 export type ChatConversationInspect = {
   jobId: string | null
   summary: string | null
@@ -45,6 +50,8 @@ export type ChatConversationInspect = {
     source: 'chat_inspect'
   } | null
   completedAt: string | null
+  /** Soft persona policy derived during the inspect run. */
+  personaPolicy?: ChatPersonaPolicySnapshot | null
 }
 
 export type ChatSendPayload = {
@@ -151,6 +158,8 @@ export type ChatToolCompleteEvent = {
   videoUrl?: string | null
   steps?: ChatUxJourneyStep[]
   stepsTotal?: number | null
+  /** Soft persona policy from the agent run (dims + heuristics). */
+  personaPolicy?: ChatPersonaPolicySnapshot | null
 }
 
 export type ChatToolDeniedEvent = {

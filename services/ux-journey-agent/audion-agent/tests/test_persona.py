@@ -399,5 +399,42 @@ class PolicyModelDumpTests(unittest.TestCase):
 		self.assertEqual(round_tripped.heuristics, policy.heuristics)
 
 
+class NestedProfilePolicyTests(unittest.TestCase):
+	"""BFF-shaped nested persona must drive non-neutral dims / heuristics."""
+
+	def test_nested_profile_and_overrides_leave_neutral(self):
+		persona = PersonaContext.coerce(
+			{
+				'id': 'persona-alex-morgan',
+				'name': 'Alex Morgan',
+				'headline': 'Product Lead',
+				'profile': {
+					'bio': 'Outcome-driven product lead. Evidenz, gründlich, vorsichtig with buzzwords.',
+					'goals': ['Ship clearer persona workflows'],
+					'painPoints': ['Scattered research notes'],
+					'values': ['Clarity over theatre', 'Traceable decisions'],
+					'traits': ['Analytical: 0.82', 'Pragmatic: 0.76'],
+				},
+				'dimensionOverrides': {
+					'detail_orientation': 0.88,
+					'trust_skepticism': 0.78,
+					'risk_aversion': 0.72,
+				},
+				'dos': ['Prefer official navigation over ads'],
+				'donts': ['Do not accept marketing cookies'],
+			}
+		)
+		self.assertIsNotNone(persona)
+		policy = derive_policy(persona)
+		self.assertGreaterEqual(policy.dimensions.detail_orientation, 0.8)
+		self.assertGreaterEqual(policy.dimensions.trust_skepticism, 0.7)
+		self.assertGreater(len(policy.heuristics), 0)
+		block = render_system_prompt_block(persona)
+		self.assertIn('PERSONA_CONTEXT:', block)
+		self.assertIn('ALWAYS:', block)
+		self.assertIn('NEVER:', block)
+		self.assertIn('official navigation', block)
+
+
 if __name__ == '__main__':
 	unittest.main()

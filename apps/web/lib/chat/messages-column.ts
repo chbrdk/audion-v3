@@ -46,6 +46,7 @@ export function inspectFromToolComplete(input: {
   steps?: ChatUxJourneyStep[] | null
   stepsTotal?: number | null
   convert: ChatConversationInspect['convert']
+  personaPolicy?: ChatConversationInspect['personaPolicy']
 }): ChatConversationInspect {
   const steps = Array.isArray(input.steps) ? input.steps : []
   return {
@@ -56,6 +57,7 @@ export function inspectFromToolComplete(input: {
     stepsTotal: input.stepsTotal ?? steps.length,
     convert: input.convert,
     completedAt: new Date().toISOString(),
+    personaPolicy: input.personaPolicy ?? null,
   }
 }
 
@@ -71,6 +73,7 @@ export function toolCompleteFromInspect(inspect: ChatConversationInspect): ChatT
     videoUrl: inspect.videoUrl,
     steps: inspect.steps,
     stepsTotal: inspect.stepsTotal,
+    personaPolicy: inspect.personaPolicy ?? null,
   }
 }
 
@@ -90,5 +93,9 @@ function normalizeInspect(raw: unknown): ChatConversationInspect | null {
     stepsTotal: typeof rec.stepsTotal === 'number' ? rec.stepsTotal : steps.length,
     convert,
     completedAt: typeof rec.completedAt === 'string' ? rec.completedAt : null,
+    personaPolicy:
+      rec.personaPolicy && typeof rec.personaPolicy === 'object'
+        ? (rec.personaPolicy as ChatConversationInspect['personaPolicy'])
+        : null,
   }
 }

@@ -1324,10 +1324,55 @@ async def _llm_scorecard_extras(
     persona_summary = ""
     if isinstance(persona, dict):
         bits: list[str] = []
-        for key in ("name", "role", "industry", "seniority", "goal"):
+        for key in ("name", "headline", "role", "industry", "seniority", "goal"):
             v = persona.get(key)
             if isinstance(v, str) and v.strip():
                 bits.append(f"{key}={v.strip()}")
+        profile = persona.get("profile")
+        if isinstance(profile, dict):
+            bio = profile.get("bio")
+            if isinstance(bio, str) and bio.strip():
+                bits.append(f"bio={_smart_trim(bio.strip(), limit=220)}")
+            for list_key, label in (
+                ("goals", "goals"),
+                ("painPoints", "painPoints"),
+                ("pain_points", "painPoints"),
+                ("values", "values"),
+                ("interests", "interests"),
+                ("traits", "traits"),
+            ):
+                raw = profile.get(list_key)
+                if isinstance(raw, list):
+                    items = [str(x).strip() for x in raw if str(x).strip()][:5]
+                    if items:
+                        bits.append(f"{label}={'; '.join(items)}")
+                elif isinstance(raw, str) and raw.strip():
+                    bits.append(f"{label}={_smart_trim(raw.strip(), limit=160)}")
+            style = profile.get("communicationStyle") or profile.get("communication_style")
+            if isinstance(style, dict):
+                vocab = style.get("vocabulary")
+                if isinstance(vocab, list) and vocab:
+                    bits.append(
+                        "vocab="
+                        + ", ".join(str(x).strip() for x in vocab[:6] if str(x).strip())
+                    )
+        overrides = persona.get("dimensionOverrides") or persona.get("dimension_overrides")
+        if isinstance(overrides, dict) and overrides:
+            override_bits = []
+            for k, v in list(overrides.items())[:6]:
+                if isinstance(v, (int, float)):
+                    override_bits.append(f"{k}={float(v):.2f}")
+            if override_bits:
+                bits.append("dims=" + ",".join(override_bits))
+        dos = persona.get("dos")
+        if isinstance(dos, list) and dos:
+            bits.append("dos=" + "; ".join(str(x).strip() for x in dos[:4] if str(x).strip()))
+        donts = persona.get("donts")
+        if isinstance(donts, list) and donts:
+            bits.append("donts=" + "; ".join(str(x).strip() for x in donts[:4] if str(x).strip()))
+        extra = persona.get("extraInstructions") or persona.get("extra_instructions")
+        if isinstance(extra, str) and extra.strip():
+            bits.append(f"extra={_smart_trim(extra.strip(), limit=240)}")
         persona_summary = "; ".join(bits)
 
     cat_csv = ", ".join(_OBSERVATION_CATEGORIES)

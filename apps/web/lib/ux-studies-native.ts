@@ -12,8 +12,9 @@ import {
   storeUxWaveDetail,
   storePatchUxWaveRuns,
 } from './fixtures/ux-study-store'
-import { storePersonaDetail } from './fixtures/persona-store'
 import { storeUpsertUxJourneyRun } from './fixtures/ux-journey-run-store'
+import { storePersonaDetail } from './fixtures/persona-store'
+import { resolveAgentPersonaContext } from './chat/persona-agent-context'
 import {
   isUxJourneyAgentConfigured,
   uxJourneyAgentGet,
@@ -38,22 +39,14 @@ export async function startUxWaveNativeOrFixture(
       updated.push(run)
       continue
     }
-    const persona = run.personaId ? await storePersonaDetail(run.personaId) : null
+    const persona = run.personaId
+      ? await resolveAgentPersonaContext(run.personaId, { locale: 'de' })
+      : null
     try {
       const { jobId } = await uxJourneyAgentStart({
         url: run.url,
         task: run.task || `Complete study wave task on ${run.url}`,
-        persona: persona
-          ? {
-              id: persona.id,
-              name: persona.name,
-              role: persona.role,
-              bio: persona.bio,
-              locale: 'de',
-            }
-          : run.personaId
-            ? { id: run.personaId }
-            : null,
+        persona: persona ?? (run.personaId ? { id: run.personaId } : null),
         maxSteps: 12,
       })
       await storeUpsertUxJourneyRun({

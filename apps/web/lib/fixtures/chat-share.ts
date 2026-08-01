@@ -155,6 +155,21 @@ export async function* storeChatToolDecisionStream(
     task: `Inspect ${url}`,
     source: 'chat_inspect' as const,
   }
+  const personaPolicy = {
+    dimensions: {
+      risk_aversion: 0.72,
+      time_pressure: 0.62,
+      exploration: 0.45,
+      detail_orientation: 0.88,
+      trust_skepticism: 0.78,
+      accessibility_need: 0.4,
+    },
+    heuristics: [
+      'Prefer official navigation over ads',
+      'Verify claims before committing',
+      'Scan for specs and evidence trails',
+    ],
+  }
   if (tool.conversationId) {
     const { storeChatSetInspect } = await import('./chat-store')
     await storeChatSetInspect(
@@ -166,6 +181,7 @@ export async function* storeChatToolDecisionStream(
         steps: stubSteps,
         stepsTotal: stubSteps.length,
         convert,
+        personaPolicy,
       }),
     )
   }
@@ -178,6 +194,7 @@ export async function* storeChatToolDecisionStream(
     jobId: convert.jobId,
     steps: stubSteps,
     stepsTotal: stubSteps.length,
+    personaPolicy,
   }
 }
 

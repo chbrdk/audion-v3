@@ -359,6 +359,13 @@ describe('audion chat panel', () => {
               source: 'chat_inspect',
             },
             completedAt: '2026-07-29T00:05:00.000Z',
+            personaPolicy: {
+              dimensions: {
+                detail_orientation: 0.88,
+                trust_skepticism: 0.78,
+              },
+              heuristics: ['Prefer official nav', 'Verify claims'],
+            },
           },
         }}
       />,
@@ -370,5 +377,6 @@ describe('audion chat panel', () => {
       'home',
     )
     expect(container.querySelector('.audion-ux-step-md .chat-answer em')?.textContent).toBe('CTA')
+    expect(container.querySelector('.audion-chat-persona-policy')?.textContent).toMatch(/Policy:/)
   })
 })

@@ -3,9 +3,9 @@
  */
 
 import type { ChatStreamEvent } from '@audion-v3/contracts'
-import { storePersonaDetail } from '../fixtures/persona-store'
 import { storeUpsertUxJourneyRun } from '../fixtures/ux-journey-run-store'
 import { inspectFromToolComplete } from './messages-column'
+import { resolveAgentPersonaContext } from './persona-agent-context'
 import {
   isUxJourneyAgentConfigured,
   sleep,
@@ -70,19 +70,10 @@ export async function* runLiveInspectWebsiteStream(input: {
     message: `Starting browser inspection of ${url}…`,
   }
 
-  const persona = await storePersonaDetail(input.personaId)
-  const personaPayload = persona
-    ? {
-        id: persona.id,
-        name: persona.name,
-        role: persona.role,
-        bio: persona.bio,
-        archetype: persona.archetype,
-        interests: persona.interests,
-        values: persona.values,
-        locale: 'de',
-      }
-    : { id: input.personaId }
+  const personaPayload =
+    (await resolveAgentPersonaContext(input.personaId, { locale: 'de' })) ?? {
+      id: input.personaId,
+    }
 
   let jobId: string
   try {
@@ -173,6 +164,7 @@ export async function* runLiveInspectWebsiteStream(input: {
           source: 'chat_inspect' as const,
         }
         const videoUrl = bffVideoUrlForJob(jobId, status.result?.videoUrl)
+        const personaPolicy = status.result?.personaPolicy ?? null
         if (input.conversationId) {
           const { storeChatSetInspect } = await import('../fixtures/chat-store')
           await storeChatSetInspect(
@@ -184,6 +176,7 @@ export async function* runLiveInspectWebsiteStream(input: {
               steps: chatSteps,
               stepsTotal: chatSteps.length,
               convert,
+              personaPolicy,
             }),
           )
         }
@@ -198,6 +191,7 @@ export async function* runLiveInspectWebsiteStream(input: {
           videoUrl,
           steps: chatSteps,
           stepsTotal: chatSteps.length,
+          personaPolicy,
         }
         return
       }

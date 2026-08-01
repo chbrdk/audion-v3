@@ -646,6 +646,70 @@ main { min-height: 100vh; }
   max-width: none;
 }
 
+.audion-persona-journey-dims {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.audion-persona-journey-dims label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.audion-persona-journey-dim-label {
+  font-weight: 600;
+}
+
+.audion-persona-journey-dim-hint {
+  font-size: var(--type-sm, 0.875rem);
+}
+
+.audion-persona-journey-dims input[type='range'] {
+  width: 100%;
+}
+
+.audion-persona-journey-lists {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 900px) {
+  .audion-persona-journey-lists {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.audion-persona-journey-list-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.audion-persona-journey-lists ul {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.audion-persona-journey-lists li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.audion-chat-persona-policy {
+  margin: 0.35rem 0 0.15rem;
+  font-size: var(--type-sm, 0.875rem);
+}
+
 /* Quiet numbered lists — dense enough for long entries */
 .audion-magazine-list {
   list-style: none;

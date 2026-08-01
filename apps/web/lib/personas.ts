@@ -6,7 +6,7 @@ import type {
   PersonaSummary,
   PersonaVisuals,
 } from '@audion-v3/contracts'
-import { coerceFrustrations, coerceGoals } from './persona-coerce'
+import { coerceFrustrations, coerceGoals, coerceJourneyBehavior } from './persona-coerce'
 import { normalizePersonaSections } from './persona-notes'
 import { storePersonaDetail, storePersonaList } from './fixtures/persona-store'
 import {
@@ -15,7 +15,7 @@ import {
   shouldUsePersonaFixturesOnly,
 } from './runtime-config'
 
-export { coerceFrustrations, coerceGoals } from './persona-coerce'
+export { coerceFrustrations, coerceGoals, coerceJourneyBehavior } from './persona-coerce'
 
 export type PersonaDataOrigin = 'api' | 'fixtures'
 
@@ -212,6 +212,7 @@ export function normalizePersonaDetail(raw: unknown): PersonaDetail | null {
         : typeof item.headline_de === 'string'
           ? item.headline_de
           : null,
+    journeyBehavior: coerceJourneyBehavior(item.journeyBehavior ?? item.journey_behavior),
     knowledgeEntries: Array.isArray(item.knowledgeEntries)
       ? (item.knowledgeEntries as PersonaDetail['knowledgeEntries'])
       : Array.isArray(item.knowledge_entries)

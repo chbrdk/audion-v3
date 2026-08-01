@@ -69,6 +69,24 @@ export type PersonaProfileDe = {
   traits?: Record<string, number>
 }
 
+/** Soft journey-agent behaviour knobs (0..1). Wins over keyword scoring. */
+export type PersonaJourneyDimensions = {
+  riskAversion?: number | null
+  timePressure?: number | null
+  exploration?: number | null
+  detailOrientation?: number | null
+  trustSkepticism?: number | null
+  accessibilityNeed?: number | null
+}
+
+/** Explicit journey DSL — mapped into Agent(persona=…) Phase-3 fields. */
+export type PersonaJourneyBehavior = {
+  dimensionOverrides?: PersonaJourneyDimensions | null
+  dos?: string[]
+  donts?: string[]
+  extraInstructions?: string | null
+}
+
 export type PersonaDetail = PersonaSummary & {
   age: string | null
   location: string | null
@@ -91,6 +109,8 @@ export type PersonaDetail = PersonaSummary & {
   /** German mirror of profile bands (EN remains canonical). */
   profileDe: PersonaProfileDe | null
   headlineDe: string | null
+  /** Soft UX-journey navigation policy (dimensions / dos / donts). */
+  journeyBehavior: PersonaJourneyBehavior | null
   knowledgeEntries: import('./knowledge-entries').KnowledgeEntry[]
   documents: import('./knowledge-entries').DocumentSource[]
 }
@@ -125,6 +145,7 @@ export type PersonaWritePayload = {
   projectId?: string | null
   profileDe?: PersonaProfileDe | null
   headlineDe?: string | null
+  journeyBehavior?: PersonaJourneyBehavior | null
   knowledgeEntries?: import('./knowledge-entries').KnowledgeEntry[]
   documents?: import('./knowledge-entries').DocumentSource[]
 }

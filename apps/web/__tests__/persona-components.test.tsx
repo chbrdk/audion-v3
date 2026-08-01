@@ -77,6 +77,7 @@ const detail: PersonaDetail = {
   },
   profileDe: null,
   headlineDe: null,
+  journeyBehavior: null,
   knowledgeEntries: [],
   documents: [],
 }

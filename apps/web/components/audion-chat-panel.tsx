@@ -21,6 +21,7 @@ import {
   Textarea,
 } from '@msqdx/ui'
 import { ChatAnswer } from '../lib/chat/chat-answer'
+import { formatPersonaPolicySummary } from '../lib/chat/persona-agent-context'
 import { toolCompleteFromInspect } from '../lib/chat/messages-column'
 import { postChatStream } from '../lib/chat/stream-client'
 import {
@@ -479,6 +480,11 @@ export function AudionChatPanel({
           {toolComplete ? (
             <div className="audion-chat-tool-complete">
               <p className="audion-edit-lede">{toolComplete.summary}</p>
+              {formatPersonaPolicySummary(toolComplete.personaPolicy) ? (
+                <p className="audion-muted audion-chat-persona-policy">
+                  {formatPersonaPolicySummary(toolComplete.personaPolicy)}
+                </p>
+              ) : null}
               {toolComplete.videoUrl || toolComplete.jobId ? (
                 <p className="audion-edit-lede">
                   <a
