@@ -226,39 +226,39 @@ export function UxJourneyStepsStrip({
                       Target
                     </Text>
                     <p className="audion-journey-slide-summary">
-                      {expanded || target.length <= 200
+                      {expanded || target.length <= 90
                         ? target
-                        : `${target.slice(0, 199)}…`}
+                        : `${target.slice(0, 89)}…`}
                     </p>
                   </div>
                 ) : null}
 
                 {denken ? (
-                  <StepSection label="Denken">
+                  <StepSection label="Denken" open>
                     <StepMarkdown text={denken} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
                 {gesehenes ? (
-                  <StepSection label="Gesehenes">
+                  <StepSection label="Gesehenes" open={expanded}>
                     <StepMarkdown text={gesehenes} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
                 {wissen ? (
-                  <StepSection label="Wissen">
+                  <StepSection label="Wissen" open={expanded}>
                     <StepMarkdown text={wissen} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
                 {nextStep ? (
-                  <StepSection label="Nächster Schritt">
+                  <StepSection label="Nächster Schritt" open={expanded}>
                     <StepMarkdown text={nextStep} compact={!expanded} />
                   </StepSection>
                 ) : null}
 
                 {result ? (
-                  <StepSection label="Ergebnis">
+                  <StepSection label="Ergebnis" open={expanded}>
                     <StepMarkdown text={result} compact={!expanded} />
                   </StepSection>
                 ) : null}
