@@ -36,8 +36,14 @@
 - UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts`
 - UX Study knowledge: `knowledge/ux-studies.md`
 - UX Journey Agent surface (Studies Start/Sync): `knowledge/ux-agent-surface.md`
-- Optional CHECKION single-page scan after explore URL (spec only): `specs/domain/checkion-single-scan-trigger.md` · companion checkion-v3 `specs/domain/audion-journey-scan-trigger.md`
-- CHECKION staging base (deep-link / BFF later): `URL_CHECKION_V3` = `https://checkion-v3.projects-a.plygrnd.tech` — env at implement: `NEXT_CHECKION_BASE_URL` (server) · document in Coolify alongside `knowledge/deploy-urls.md`
+- Optional CHECKION single-page scan after explore URL: `specs/domain/checkion-single-scan-trigger.md` · companion checkion-v3 `specs/domain/audion-journey-scan-trigger.md`
+- CHECKION deep-link helpers: `apps/web/lib/checkion-links.ts` · CTA `apps/web/components/scan-in-checkion-cta.tsx` (Chat-Inspect + Studies wave runs)
+- CHECKION staging base: `URL_CHECKION_V3` = `https://checkion-v3.projects-a.plygrnd.tech`
+  - Client: `NEXT_PUBLIC_CHECKION_BASE_URL` (preferred) or alias `NEXT_PUBLIC_CHECKION_URL`
+  - Server fallback: `NEXT_CHECKION_BASE_URL`
+  - Helpers: `paths.envCheckion*` · `getCheckionBaseUrl()` in `runtime-config.ts`
+- Launch shape: `{CHECKION_BASE}/scan?projectId=<checkion binding>&mode=single&url=<encoded>` (+ optional `platformProjectId` / `audionRunId` / `stepUrl`)
+- Collection binding field on AUDION project: `checkionProjectId` (from Plexon origin / binding)
 - Journey from UX run: `apps/web/lib/journey-from-ux-run.ts` · `paths.routes.apiJourneyFromUxRun`
 - Chat deep-link / F-Fragen prefill: `paths.routes.chatWithContext` · `apps/web/lib/chat/prefill.ts`
   (`prompt`, `personaId`, `studyId`, `waveId`, `projectId`, `studyName`, `waveKey`)

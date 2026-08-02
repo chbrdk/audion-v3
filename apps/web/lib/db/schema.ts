@@ -30,6 +30,7 @@ export const projects = pgTable(
     companyContext: text('company_context'),
     status: text('status').notNull().default('draft'),
     platformProjectId: text('platform_project_id'),
+    checkionProjectId: text('checkion_project_id'),
     platformCompanyId: text('platform_company_id'),
     ownerPlexonUserId: text('owner_plexon_user_id'),
     members: jsonb('members').$type<ProjectMember[]>().notNull().default([]),

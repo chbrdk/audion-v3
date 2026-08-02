@@ -20,7 +20,9 @@ describe('persona visuals helpers', () => {
       }),
     ).toEqual({
       styleKeywords: ['calm', 'warm'],
-      tiles: [{ id: 'tile-0', imageUrl: '/a.svg', category: 'tone', caption: 'Tone' }],
+      tiles: [
+        { id: 'tile-0', imageUrl: '/a.svg', category: 'tone', caption: 'Tone', locked: false },
+      ],
     })
   })
 
@@ -47,6 +49,7 @@ describe('persona visuals helpers', () => {
           imageUrl: '/fixtures/x.svg',
           category: 'portrait',
           caption: 'Portrait',
+          locked: false,
         },
       ],
     })

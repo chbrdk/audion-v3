@@ -223,6 +223,14 @@ export const paths = {
   envPlexonAuthUrl: 'PLEXON_AUTH_URL',
   envPlexonServiceSecret: 'PLEXON_SERVICE_SECRET',
   envPlexonRegisterUrl: 'NEXT_PUBLIC_PLEXON_REGISTER_URL',
+  /** CHECKION public base for single-scan deep-links (client; preferred). */
+  envCheckionBaseUrlPublic: 'NEXT_PUBLIC_CHECKION_BASE_URL',
+  /** Ecosystem alias (Plexon / CHECKION Coolify also use this name). */
+  envCheckionPublicUrlAlias: 'NEXT_PUBLIC_CHECKION_URL',
+  /** CHECKION base (server / Coolify). Falls back for link builders when public unset. */
+  envCheckionBaseUrl: 'NEXT_CHECKION_BASE_URL',
+  /** Documented staging default — only used when env unset in non-prod helpers. */
+  checkionStagingBaseUrl: 'https://checkion-v3.projects-a.plygrnd.tech',
   envAuthSecret: 'AUTH_SECRET',
   /** Local-only NextAuth fallback when AUTH_SECRET unset (never use in prod). */
   authDevFallbackSecret: 'audion-v3-local-dev-auth-secret-min-32chars',

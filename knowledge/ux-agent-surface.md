@@ -102,6 +102,6 @@ UX_JOURNEY_AGENT_SECRET=<shared>
 - Studies: `apps/web/lib/ux-studies-native.ts`
 - Deploy: `knowledge/deploy-urls.md`
 
-## Optional CHECKION single-page scan (spec only)
+## Optional CHECKION single-page scan
 
-After Inspect / wave step URLs, AUDION may later offer a **single-page** CHECKION scan (not domain crawl, not Journey UI in CHECKION). Spec: `specs/domain/checkion-single-scan-trigger.md` · companion `checkion-v3/specs/domain/audion-journey-scan-trigger.md`. Does not change agent ownership or soft-fork policy above.
+After Inspect / wave step URLs, AUDION offers **Scan in CHECKION** when `NEXT_PUBLIC_CHECKION_BASE_URL` (or alias) and Collection `checkionProjectId` binding are set. Opens CHECKION `/scan?projectId=&mode=single&url=` — not a domain crawl and not Journey UI in CHECKION. Spec: `specs/domain/checkion-single-scan-trigger.md` · companion `checkion-v3/specs/domain/audion-journey-scan-trigger.md`.

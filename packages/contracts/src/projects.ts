@@ -41,6 +41,8 @@ export type ProjectDetail = ProjectSummary & {
   knowledgeChapters: ProjectKnowledgeChapter[]
   /** Plexon platform project id when federated (Wave 1). */
   platformProjectId?: string | null
+  /** CHECKION binding external_project_id from Collection (single-scan deep-link). */
+  checkionProjectId?: string | null
   platformCompanyId?: string | null
   ownerPlexonUserId?: string | null
 }
@@ -56,6 +58,7 @@ export type ProjectWritePayload = {
   /** Full members replacement when provided (detail edit) */
   members?: ProjectMember[]
   platformProjectId?: string | null
+  checkionProjectId?: string | null
   platformCompanyId?: string | null
   ownerPlexonUserId?: string | null
 }

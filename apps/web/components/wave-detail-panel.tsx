@@ -45,6 +45,7 @@ import {
 } from '../lib/chat/prefill'
 import { CategoryScoreChart } from './category-score-chart'
 import { KnowledgeRichEditor } from './knowledge-rich-editor'
+import { ScanInCheckionCta } from './scan-in-checkion-cta'
 
 const VERDICT_OPTIONS = [
   { value: 'supported', label: 'Supported' },
@@ -496,12 +497,14 @@ function RunPanel({
   run,
   studyId,
   waveId,
+  audionProjectId,
   onPatchFinding,
   onConverted,
 }: {
   run: UxWaveRunItem
   studyId: string
   waveId: string
+  audionProjectId?: string | null
   onPatchFinding: (runKey: string, finding: string) => Promise<void>
   onConverted: (journeyId: string) => void
 }) {
@@ -657,7 +660,21 @@ function RunPanel({
         </div>
       ) : null}
 
+      {run.url ? (
+        <p className="audion-edit-lede">
+          <Text role="label" className="audion-wave-run-kicker">
+            Run URL
+          </Text>{' '}
+          <code title={run.url}>{run.url}</code>
+        </p>
+      ) : null}
+
       <div className="audion-wave-run-convert">
+        <ScanInCheckionCta
+          url={run.url}
+          audionProjectId={audionProjectId}
+          audionRunId={run.id}
+        />
         {run.derivedJourneyId ? (
           <Link
             href={paths.routes.journeyDetail(run.derivedJourneyId)}
@@ -1005,6 +1022,7 @@ export function WaveDetailPanel({
                       run={r}
                       studyId={study.id}
                       waveId={liveWave.id}
+                      audionProjectId={study.projectId}
                       onPatchFinding={async (runKey, finding) => {
                         await patchWave({
                           runs: [{ runKey, url: r.url, task: r.task, finding }],

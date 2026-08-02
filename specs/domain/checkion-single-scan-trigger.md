@@ -1,6 +1,6 @@
 # CHECKION single-page scan trigger (from AUDION)
 
-**Status:** Accepted — **spec only** (implement post Wave B staging / Wave X)  
+**Status:** Accepted — implemented (interactive deep-link CTA; optional BFF `POST /api/scans` later)  
 **Companion (CHECKION):** `checkion-v3/specs/domain/audion-journey-scan-trigger.md`  
 **Related:** `knowledge/ux-agent-surface.md` · `specs/domain/journey-workspace.md` · `specs/domain/ux-study-workspace.md` · `specs/domain/ux-journey-think-aloud.md` · PLEXON `specs/domain/collection-projects.md`
 
@@ -87,9 +87,10 @@ Canonical staging base: `URL_CHECKION_V3` / `https://checkion-v3.projects-a.plyg
 
 | Phase | Status |
 |-------|--------|
-| Spec + knowledge + deferred-doc alignment | **now** |
-| Env (`NEXT_CHECKION_BASE_URL`, token), BFF client, Chat/Studies CTA, deep-link helpers | later (post Wave B staging / Wave X) |
-| Optional correlation columns on CHECKION scan row | with implement wave |
+| Spec + knowledge + deferred-doc alignment | done |
+| Env (`NEXT_PUBLIC_CHECKION_BASE_URL` / `NEXT_CHECKION_BASE_URL`), deep-link helpers, Chat/Studies CTA | **done** (interactive deep-link) |
+| Optional correlation columns on CHECKION scan row | done on CHECKION |
+| AUDION BFF → `POST /api/scans` with Bearer token | later (optional machine path) |
 
 ## Acceptance (when implemented)
 

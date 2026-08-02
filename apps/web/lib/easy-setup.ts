@@ -178,6 +178,7 @@ export async function runEasySetup(
       project =
         (await storeApplyPlatformBinding(project.id, {
           platformProjectId: origin.platformProjectId,
+          checkionProjectId: origin.checkionProjectId ?? null,
           platformCompanyId: origin.platformCompanyId ?? owner.platformCompanyId,
           ownerPlexonUserId: owner.ownerPlexonUserId,
         })) ?? project

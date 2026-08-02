@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       project =
         (await storeApplyPlatformBinding(project.id, {
           platformProjectId: origin.platformProjectId,
+          checkionProjectId: origin.checkionProjectId ?? null,
           platformCompanyId: origin.platformCompanyId ?? platformCompanyId,
           ownerPlexonUserId,
         })) ?? project

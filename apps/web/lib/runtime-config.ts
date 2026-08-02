@@ -102,3 +102,21 @@ export function getPlexonRegisterUrl(): string | null {
 export function isPlexonAuthConfigured(): boolean {
   return Boolean(getPlexonAuthUrl() && getPlexonServiceSecret())
 }
+
+/**
+ * CHECKION public base for deep-links.
+ * Prefer static NEXT_PUBLIC_* reads so Next can inline them into the client bundle.
+ */
+export function getCheckionBaseUrl(): string {
+  const publicBase =
+    process.env.NEXT_PUBLIC_CHECKION_BASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_CHECKION_URL?.trim() ||
+    ''
+  if (publicBase) return publicBase
+  if (typeof window !== 'undefined') return ''
+  return process.env.NEXT_CHECKION_BASE_URL?.trim() || ''
+}
+
+export function isCheckionConfigured(): boolean {
+  return Boolean(getCheckionBaseUrl())
+}

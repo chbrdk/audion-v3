@@ -52,6 +52,7 @@ async function rowToDetail(row: ProjectRow): Promise<ProjectDetail> {
     memberCount: members.filter((m) => m.status !== 'removed').length,
     updatedAt: row.updatedAt?.toISOString() ?? null,
     platformProjectId: row.platformProjectId ?? null,
+    checkionProjectId: row.checkionProjectId ?? null,
     platformCompanyId: row.platformCompanyId ?? null,
     ownerPlexonUserId: row.ownerPlexonUserId ?? null,
     members,
@@ -151,6 +152,7 @@ export async function dbCreateProject(
     companyContext,
     status: payload.status ?? 'draft',
     platformProjectId: payload.platformProjectId ?? null,
+    checkionProjectId: payload.checkionProjectId ?? null,
     platformCompanyId: payload.platformCompanyId ?? options?.platformCompanyId ?? null,
     ownerPlexonUserId: payload.ownerPlexonUserId ?? options?.ownerPlexonUserId ?? null,
     members,
@@ -186,6 +188,10 @@ export async function dbPatchProject(
         payload.platformProjectId !== undefined
           ? payload.platformProjectId
           : current.platformProjectId,
+      checkionProjectId:
+        payload.checkionProjectId !== undefined
+          ? payload.checkionProjectId
+          : current.checkionProjectId,
       platformCompanyId:
         payload.platformCompanyId !== undefined
           ? payload.platformCompanyId
@@ -204,6 +210,7 @@ export async function dbApplyPlatformBinding(
   id: string,
   binding: {
     platformProjectId: string
+    checkionProjectId?: string | null
     platformCompanyId?: string | null
     ownerPlexonUserId?: string | null
   },
@@ -215,6 +222,10 @@ export async function dbApplyPlatformBinding(
     .update(projects)
     .set({
       platformProjectId: binding.platformProjectId,
+      checkionProjectId:
+        binding.checkionProjectId !== undefined
+          ? binding.checkionProjectId
+          : current.checkionProjectId ?? null,
       platformCompanyId: binding.platformCompanyId ?? current.platformCompanyId ?? null,
       ownerPlexonUserId: binding.ownerPlexonUserId ?? current.ownerPlexonUserId ?? null,
       updatedAt: new Date(),

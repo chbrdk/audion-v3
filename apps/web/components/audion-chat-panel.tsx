@@ -33,6 +33,7 @@ import {
 import { paths } from '../lib/paths'
 import { ChatInspectResultMeta } from './chat-inspect-result-meta'
 import { IconSend } from './nav-icons'
+import { ScanInCheckionCta } from './scan-in-checkion-cta'
 import { UxJourneyLivePoll } from './ux-journey-live-poll'
 import { UxJourneyStepsStrip } from './ux-journey-steps-strip'
 
@@ -527,6 +528,11 @@ export function AudionChatPanel({
                         Open recording
                       </a>
                     ) : null}
+                    <ScanInCheckionCta
+                      url={toolComplete.convert?.url}
+                      audionProjectId={shareProjectId ?? persona?.projectId ?? null}
+                      audionRunId={toolComplete.jobId || inspectJobId || toolComplete.convert?.jobId}
+                    />
                     {allowConvert && toolComplete.convert && !convertedJourneyId ? (
                       <Button
                         type="button"

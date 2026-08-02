@@ -158,6 +158,7 @@ async function memoryCreateProject(
     memberCount: 1,
     updatedAt: new Date().toISOString(),
     platformProjectId: payload.platformProjectId ?? null,
+    checkionProjectId: payload.checkionProjectId ?? null,
     platformCompanyId: payload.platformCompanyId ?? options?.platformCompanyId ?? null,
     ownerPlexonUserId: payload.ownerPlexonUserId ?? options?.ownerPlexonUserId ?? null,
     members: [
@@ -194,6 +195,10 @@ async function memoryPatchProject(
       payload.platformProjectId !== undefined
         ? payload.platformProjectId
         : current.platformProjectId,
+    checkionProjectId:
+      payload.checkionProjectId !== undefined
+        ? payload.checkionProjectId
+        : current.checkionProjectId,
     platformCompanyId:
       payload.platformCompanyId !== undefined
         ? payload.platformCompanyId
@@ -212,6 +217,7 @@ async function memoryApplyPlatformBinding(
   id: string,
   binding: {
     platformProjectId: string
+    checkionProjectId?: string | null
     platformCompanyId?: string | null
     ownerPlexonUserId?: string | null
   },
@@ -222,6 +228,10 @@ async function memoryApplyPlatformBinding(
   const next = await withDerived({
     ...current,
     platformProjectId: binding.platformProjectId,
+    checkionProjectId:
+      binding.checkionProjectId !== undefined
+        ? binding.checkionProjectId
+        : current.checkionProjectId ?? null,
     platformCompanyId: binding.platformCompanyId ?? current.platformCompanyId ?? null,
     ownerPlexonUserId: binding.ownerPlexonUserId ?? current.ownerPlexonUserId ?? null,
     updatedAt: new Date().toISOString(),
@@ -319,6 +329,7 @@ export async function storeApplyPlatformBinding(
   id: string,
   binding: {
     platformProjectId: string
+    checkionProjectId?: string | null
     platformCompanyId?: string | null
     ownerPlexonUserId?: string | null
   },
