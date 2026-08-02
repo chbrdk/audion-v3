@@ -103,20 +103,21 @@ export function ChatInspectResultMeta({
           <ul className="audion-chat-inspect-policy-chips">
             {policy.dims.map((dim) => (
               <li key={dim.key}>
-                <Chip
-                  static
-                  size="sm"
-                  className={[
-                    'audion-chat-inspect-chip',
-                    dim.direction === 'up' ? 'is-up' : 'is-down',
-                  ].join(' ')}
-                  title={`${dim.label} ${Math.round(dim.value * 100)}%`}
-                >
-                  {dim.label}
-                  <span className="audion-chat-inspect-chip-dir" aria-hidden>
-                    {dim.direction === 'up' ? '↑' : '↓'}
-                  </span>
-                </Chip>
+                <span title={`${dim.label} ${Math.round(dim.value * 100)}%`}>
+                  <Chip
+                    static
+                    size="sm"
+                    className={[
+                      'audion-chat-inspect-chip',
+                      dim.direction === 'up' ? 'is-up' : 'is-down',
+                    ].join(' ')}
+                  >
+                    {dim.label}
+                    <span className="audion-chat-inspect-chip-dir" aria-hidden>
+                      {dim.direction === 'up' ? '↑' : '↓'}
+                    </span>
+                  </Chip>
+                </span>
               </li>
             ))}
             {policy.heuristicCount > 0 ? (
