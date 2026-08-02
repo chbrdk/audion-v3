@@ -10,6 +10,7 @@ Central place for public origins — reference from Coolify env / docs; do not h
 |-----|-----|
 | `URL_AUDION_V3` | `https://audion-v3.projects-a.plygrnd.tech` |
 | `URL_AUDION_V3_UX_AGENT` | `https://uxagent.projects-a.plygrnd.tech` |
+| `URL_CHECKION_V3` | `https://checkion-v3.projects-a.plygrnd.tech` |
 | `URL_PLEXON_V3` | `https://plexon-v3.projects-a.plygrnd.tech` |
 | `URL_PLEXON_V3_REGISTER` | `https://plexon-v3.projects-a.plygrnd.tech/register` |
 

@@ -11,6 +11,7 @@
 | Target group fields | `specs/domain/target-group-fields.md` |
 | Journey workspace | `specs/domain/journey-workspace.md` |
 | Journey fields | `specs/domain/journey-fields.md` |
+| CHECKION single-page scan trigger (spec only) | `specs/domain/checkion-single-scan-trigger.md` |
 | UX Study workspace | `specs/domain/ux-study-workspace.md` |
 | UX Study fields | `specs/domain/ux-study-fields.md` |
 | Chat workspace | `specs/domain/chat-workspace.md` |
@@ -59,6 +60,7 @@ Workspace slice clone pattern (projects/settings): `knowledge/workspace-slice-pa
 V2 ↔ V3 feature parity + smoke: `knowledge/v2-v3-feature-parity.md`  
 Remaining gaps / P0–P2: `knowledge/remaining-gaps.md`  
 UX Journey Agent surface: `knowledge/ux-agent-surface.md`  
+Optional CHECKION single-page scan after explore URL (spec only): `specs/domain/checkion-single-scan-trigger.md`  
 AI workflows Wave 2: `knowledge/ai-workflows.md`  
 Persona enrich + moodboard (2026): `knowledge/persona-enrich-moodboard-2026.md`  
 Persona locked-tile rebuild: `knowledge/persona-locked-tiles-2026.md`  

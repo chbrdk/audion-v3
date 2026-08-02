@@ -36,4 +36,4 @@ Live Tavus / voice / public persona may 401 until the Auth stream lands. Fixture
 
 ## Deferred
 
-Full Whisper mic UI · polished Tavus iframe · live history list · citations hydrate
+Full Whisper mic UI · polished Tavus iframe · live history list · citations hydrate · optional CHECKION single-page scan after Inspect URL (`specs/domain/checkion-single-scan-trigger.md`)

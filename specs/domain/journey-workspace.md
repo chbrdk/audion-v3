@@ -59,6 +59,7 @@ Browse customer journey maps as a magazine/card index, read a phase timeline on 
 - Analytics (GA4 / Hotjar) panels
 - Durable Postgres validation report store
 - Deep-link from validation quotes into Chat workspace
+- CHECKION single-page scan handoff from journey phases (specced separately — `specs/domain/checkion-single-scan-trigger.md`; implement later)
 
 ## Acceptance
 

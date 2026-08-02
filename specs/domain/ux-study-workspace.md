@@ -37,6 +37,10 @@ First-class **Study → Wave → Run plan → Start/Sync → Evaluate → Compar
 | Export report | Markdown from evaluation + report draft |
 | F-Fragen → Chat | Deep-link + copy via `paths.routes.chatWithContext` (prompt, personaId from validEvidence run, study/wave ids + names) |
 
+## Later (spec only)
+
+Optional **Scan this URL in CHECKION** after a wave run URL / step — single-page only (`mode: single`). See `specs/domain/checkion-single-scan-trigger.md`. Not part of Phase 3 acceptance.
+
 ## UX rules
 
 - Magazine / workspace tone consistent with journeys (not dense admin tables only)
