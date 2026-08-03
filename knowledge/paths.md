@@ -108,7 +108,7 @@
 - Persona data source env: `NEXT_PERSONA_DATA_SOURCE` (`auto` | `fixtures` | `api`) — domain only
 - Native AI runtime: `NEXT_AI_RUNTIME` (`stub` | `native` | `auto`) · `OPENAI_API_KEY` · `AI_OPENAI_MODEL` (default **`gpt-5.4-nano`**, SoT `paths.aiOpenAiModel`) — `knowledge/ai-native-2026.md`
 - UX Journey OpenAI: `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-5.6-luna`**, SoT `paths.uxJourneyOpenAiModel`) — agent `main.py` / Dockerfile / local lab serve · A/B: `knowledge/lab-ab-nano-mini-luna-2026-08-03.md`
-- Confusion friction floors (L3): `UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1/2` defaults **7/8** · `knowledge/lab-l3-confusion-friction-2026-08-03.md` · floor-7 band fix `knowledge/lab-friction-band-floor7-2026-08-03.md`
+- Confusion friction floors (L3): `UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1/2` defaults **7/8** · `knowledge/lab-l3-confusion-friction-2026-08-03.md` · floor-7 band fix `knowledge/lab-friction-band-floor7-2026-08-03.md` · smoke `knowledge/lab-staging-smoke-friction-band-2026-08-03.md`
 - Evidence gate: `apps/web/lib/ux-wave-scorecard.ts` — `knowledge/lab-l5-evidence-gate-2026-08-03.md`
 - Native AI code: `apps/web/lib/ai/` · `ai-workflows-native.ts` · `chat/native-stream.ts`
 - Persona magazine notes: `knowledge/persona-magazine.md`

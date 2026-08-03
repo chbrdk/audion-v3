@@ -23,6 +23,6 @@ Luna = GPT-5.6 cost tier (~nano-class). Docs: https://developers.openai.com/api/
 
 ## Verdict
 
-**Luna wins this Lab slice:** nano-tier cost intent + mini-like block compliance + human abandon + full gold. Correlate slightly soft only because friction landed at 6.
+**Luna wins this Lab slice:** nano-tier cost intent + mini-like block compliance + human abandon + full gold. Correlate soft only because friction landed at 6 — fixed in `e1b9fe9` (`knowledge/lab-friction-band-floor7-2026-08-03.md`); re-smoke `1e6e8142…` → friction **8**, correlate **1.0**.
 
 Leave agent on `gpt-5.6-luna` unless cost/latency regresses on longer runs.

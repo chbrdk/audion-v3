@@ -27,3 +27,7 @@ Optimistic end-of-run LLM can report low friction while “goal looks done”. D
 - `scorecard.confusion.tagCount=6` (narration + observation + abandon cues); tags include `disabled_option_unexplained` + `selection_order_surprise`
 - Friction **8**, fit **3**, goal false, L2 force still on; floor=8 with `applied=false` (LLM already ≥ floor — unit tests cover raise path)
 - Fallback OpenAI **`gpt-5.4-nano`**; correlate **1.0**
+
+## Staging floor-7 (same day)
+
+See `knowledge/lab-friction-band-floor7-2026-08-03.md` + smoke `knowledge/lab-staging-smoke-friction-band-2026-08-03.md` (job `1e6e8142…`, friction 8, correlate 1.0).
