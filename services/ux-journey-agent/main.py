@@ -229,18 +229,11 @@ def _build_openai_llm():
         from audion_agent import ChatOpenAI
     except ImportError:
         from audion_agent.llm.openai import ChatOpenAI
-    # Default: GPT-4o. We deliberately do NOT default to the newer GPT-5.4
-    # family (mini/nano/full): in production we observed `gpt-5.4-mini`
-    # producing AgentOutput JSON with trailing characters (e.g. one extra
-    # closing brace), which browser-use rejects via Pydantic and then halts
-    # after 6 consecutive failures — fully defeating the point of the
-    # fallback. GPT-4o has been the canonical example in browser-use's own
-    # `fallback_model.py` since 2024 and reliably emits clean structured
-    # output for the AgentOutput schema. Operators who want to test a newer
-    # model can override via `UX_JOURNEY_OPENAI_MODEL` (e.g. `gpt-5.4-mini`,
-    # `gpt-5.4-nano`, `gpt-5.4`, `gpt-5.5`).
+    # Default: gpt-5.4-nano (cost). Override via UX_JOURNEY_OPENAI_MODEL
+    # (e.g. gpt-5.4-mini / gpt-4o) if AgentOutput validation gets flaky —
+    # GPT-5.4 family has occasionally emitted trailing braces that Pydantic rejects.
     return ChatOpenAI(
-        model=os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-4o"),
+        model=os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.4-nano"),
         temperature=0,
     )
 
@@ -324,7 +317,7 @@ def _llm_meta() -> dict[str, Any]:
             "max_tokens": os.environ.get("UX_JOURNEY_CLAUDE_MAX_TOKENS", "16384"),
             "tolerantParsing": tolerant,
             "fallback": (
-                {"provider": "openai", "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-4o")}
+                {"provider": "openai", "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.4-nano")}
                 if has_fallback
                 else None
             ),
@@ -332,7 +325,7 @@ def _llm_meta() -> dict[str, Any]:
     if provider == "openai":
         return {
             "provider": "openai",
-            "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-4o"),
+            "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.4-nano"),
             "tolerantParsing": tolerant,
             "fallback": (
                 {
@@ -433,6 +426,12 @@ _OBSERVATION_CATEGORIES: tuple[str, ...] = (
 )
 _OBSERVATION_SEVERITIES: tuple[str, ...] = ("low", "medium", "high")
 _OBSERVATION_POLARITIES: tuple[int, ...] = (-2, -1, 1, 2)
+# Lab L3 / quality levers — optional tag on an observation (or inferred from narration).
+_CONFUSION_TAGS: tuple[str, ...] = (
+    "disabled_option_unexplained",
+    "filter_cause_unknown",
+    "selection_order_surprise",
+)
 _OBSERVATION_NOTE_LIMIT = 320
 _OBSERVATION_FIX_LIMIT = 240
 _OBSERVATIONS_PER_STEP_CAP = 2
@@ -487,7 +486,40 @@ def _coerce_observation_entry(raw: Any) -> dict[str, Any] | None:
     fix = str(raw.get("fix") or "").strip()
     if fix:
         out["fix"] = _smart_trim(fix, limit=_OBSERVATION_FIX_LIMIT)
+    tag = str(raw.get("tag") or "").strip().lower()
+    if tag in _CONFUSION_TAGS:
+        out["tag"] = tag
+    else:
+        inferred = _infer_confusion_tag(note)
+        if inferred:
+            out["tag"] = inferred
     return out
+
+
+def _infer_confusion_tag(text: str) -> str | None:
+    """Map narration / observation note → L3 confusion tag, or None."""
+    if not _text_has_confusion_cue(text):
+        return None
+    lower = str(text).lower()
+    if re.search(
+        r"reihenfolge|selection.?order|falsche?\s+reihen|zuerst.*(akku|display|filter)|"
+        r"erst.*(wählen|auswählen).*(dann|bevor)",
+        lower,
+    ):
+        return "selection_order_surprise"
+    has_grey = bool(
+        re.search(r"grau|disabled|greyed|grayed|ausgeblend|ausgegrau", lower)
+    )
+    has_filter = bool(
+        re.search(r"filter(logik|ursache|ursachen)?|\bmatrix\b", lower)
+    )
+    if has_grey and not has_filter:
+        return "disabled_option_unexplained"
+    if has_filter:
+        return "filter_cause_unknown"
+    if has_grey:
+        return "disabled_option_unexplained"
+    return "filter_cause_unknown"
 
 
 def _extract_observations(thinking_text: str) -> tuple[list[dict[str, Any]], int]:
@@ -783,6 +815,213 @@ def _apply_persona_step_budget(
     else:
         min_steps = max(1, min(min_steps, max_steps - 1))
     return max_steps, min_steps, tp
+
+
+# ---------------------------------------------------------------------------
+# Lab L2: hard abandon after N unexplained confusion moments
+# ---------------------------------------------------------------------------
+# Matches the Persona Lab correlator cues (DE/EN) so runtime stop and score
+# stay aligned. Count is per step that contains ≥1 cue (not per regex hit).
+_CONFUSION_CUE_RES: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\bmatrix\b", re.I),
+    re.compile(r"\bgrau(e|en)?\b", re.I),
+    re.compile(r"ausgeblendet", re.I),
+    re.compile(r"disabled|greyed|grayed", re.I),
+    re.compile(r"unklar", re.I),
+    re.compile(r"überforder", re.I),
+    re.compile(r"(?<!keine\s)(?<!kein\s)(?<!ohne\s)verwirr", re.I),
+    re.compile(r"nicht selbsterklär", re.I),
+    re.compile(r"wei[sß]s? nicht warum", re.I),
+    re.compile(r"kein klarer nächster", re.I),
+    re.compile(r"filterlogik|filter.?ursache", re.I),
+    re.compile(r"ohne erklärung", re.I),
+    re.compile(r"reihenfolge|selection.?order", re.I),
+    re.compile(r"ausgegrau", re.I),
+)
+
+
+def _confusion_abandon_threshold() -> int:
+    try:
+        n = int(os.environ.get("UX_JOURNEY_CONFUSION_ABANDON_AFTER", "2"))
+    except ValueError:
+        n = 2
+    return max(1, n)
+
+
+def _confusion_abandon_enabled(time_pressure: float | None) -> bool:
+    """Default: on for impatient personas; ``UX_JOURNEY_CONFUSION_ABANDON`` overrides."""
+    raw = (os.environ.get("UX_JOURNEY_CONFUSION_ABANDON") or "").strip().lower()
+    if raw in ("0", "false", "off", "no"):
+        return False
+    if raw in ("1", "true", "on", "yes"):
+        return True
+    return time_pressure is not None and time_pressure >= 0.75
+
+
+def _text_has_confusion_cue(text: str) -> bool:
+    """True when narration reports real confusion (ignores negated „keine Verwirrung“)."""
+    if not text or not str(text).strip():
+        return False
+    blob = str(text)
+    if re.search(r"\bkeine\s+verwirrung\b", blob, re.I) and not re.search(
+        r"\bmatrix\b|\bausgeblendet\b|\bfilterlogik\b", blob, re.I
+    ):
+        return False
+    return any(p.search(blob) for p in _CONFUSION_CUE_RES)
+
+
+def _step_narration_blob(step: dict[str, Any]) -> str:
+    """Flatten think-aloud / reasoning / observations for cue scanning."""
+    parts: list[str] = []
+    for key in ("reasoning", "result", "error", "action"):
+        val = step.get(key)
+        if val:
+            parts.append(str(val))
+    ta = step.get("thinkAloud")
+    if isinstance(ta, dict):
+        for key in ("seen", "think", "learned", "why", "next", "priorKnow"):
+            val = ta.get(key)
+            if val:
+                parts.append(str(val))
+        feel = ta.get("feel")
+        if isinstance(feel, dict) and feel.get("label"):
+            parts.append(str(feel.get("label")))
+    meta = step.get("reasoningMeta")
+    if isinstance(meta, dict):
+        for key in ("evaluation_previous_goal", "memory", "next_goal"):
+            val = meta.get(key)
+            if val:
+                parts.append(str(val))
+    for obs in step.get("observations") or []:
+        if isinstance(obs, dict) and obs.get("note"):
+            parts.append(str(obs["note"]))
+    return "\n".join(parts)
+
+
+def _step_has_confusion_cue(step: dict[str, Any]) -> bool:
+    return _text_has_confusion_cue(_step_narration_blob(step))
+
+
+def _new_confusion_abandon_state(time_pressure: float | None) -> dict[str, Any]:
+    return {
+        "enabled": _confusion_abandon_enabled(time_pressure),
+        "threshold": _confusion_abandon_threshold(),
+        "count": 0,
+        "seenSteps": set(),
+        "cues": [],
+        "forceNext": False,
+        "forced": False,
+    }
+
+
+def _update_confusion_abandon_from_steps(
+    state: dict[str, Any],
+    steps: list[Any],
+) -> dict[str, Any]:
+    """Increment confusion count for newly seen steps; arm forceNext at threshold."""
+    if not state.get("enabled") or state.get("forced"):
+        return state
+    seen: set[int] = state.setdefault("seenSteps", set())
+    cues: list[dict[str, Any]] = state.setdefault("cues", [])
+    for raw in steps:
+        if not isinstance(raw, dict):
+            continue
+        n = raw.get("step")
+        if not isinstance(n, int) or n in seen:
+            continue
+        seen.add(n)
+        if not _step_has_confusion_cue(raw):
+            continue
+        state["count"] = int(state.get("count") or 0) + 1
+        blob = _step_narration_blob(raw)
+        snippet = _smart_trim(blob.replace("\n", " "), limit=160)
+        cues.append({"step": n, "snippet": snippet})
+    threshold = int(state.get("threshold") or 2)
+    if int(state.get("count") or 0) >= threshold:
+        state["forceNext"] = True
+    return state
+
+
+def _confusion_abandon_force_message(state: dict[str, Any]) -> str:
+    count = int(state.get("count") or 0)
+    threshold = int(state.get("threshold") or 2)
+    cue_bits = "; ".join(
+        f"S{c.get('step')}: {c.get('snippet')}" for c in (state.get("cues") or [])[-3:]
+    )
+    return (
+        "AUDION_CONFUSION_ABANDON:\n"
+        f"Du hast bereits {count} unerklärte Verwirrungs-Momente "
+        f"(Schwelle={threshold}: grau/disabled/unklare Filter). "
+        "Dies ist dein LETZTER Schritt. Deine einzige erlaubte Aktion ist `done`. "
+        "Setze success=false. In done.text: Frustration und die unerklärten "
+        "grauen/disabled Optionen ehrlich benennen — kein weiteres Klicken/Scrollen.\n"
+        f"Beobachtete Cues: {cue_bits or '(keine Snippets)'}"
+    )
+
+
+def _confusion_abandon_public(state: dict[str, Any]) -> dict[str, Any]:
+    """JSON-safe snapshot for the run result."""
+    out: dict[str, Any] = {
+        "enabled": bool(state.get("enabled")),
+        "threshold": int(state.get("threshold") or 2),
+        "count": int(state.get("count") or 0),
+        "forced": bool(state.get("forced")),
+        "cues": [
+            {"step": c.get("step"), "snippet": c.get("snippet")}
+            for c in (state.get("cues") or [])
+            if isinstance(c, dict)
+        ],
+    }
+    if state.get("llmFailedAfterForce"):
+        out["llmFailedAfterForce"] = True
+    return out
+
+
+async def _inject_confusion_abandon_if_armed(agent: Any, state: dict[str, Any]) -> bool:
+    """Force DoneAgentOutput + context message when L2 threshold is armed.
+
+    Must run inside the agent's prepare path (after action-model reset), so we
+    wrap ``_force_done_after_last_step`` rather than injecting from on_step_end.
+    """
+    if not state.get("enabled") or not state.get("forceNext") or state.get("forced"):
+        return False
+    try:
+        from audion_agent.llm.messages import UserMessage
+    except Exception:
+        return False
+    mm = getattr(agent, "_message_manager", None)
+    if mm is None or not hasattr(mm, "_add_context_message"):
+        return False
+    try:
+        mm._add_context_message(UserMessage(content=_confusion_abandon_force_message(state)))
+        done_schema = getattr(agent, "DoneAgentOutput", None)
+        if done_schema is not None:
+            agent.AgentOutput = done_schema
+        state["forced"] = True
+        # Don't burn the full max_failures budget if the forced done LLM call fails
+        # (quota / 502) — one retry is enough, then surface the abandon summary.
+        try:
+            if hasattr(agent, "settings") and hasattr(agent.settings, "max_failures"):
+                agent.settings.max_failures = 1
+            if hasattr(agent, "max_failures"):
+                agent.max_failures = 1
+        except Exception:
+            pass
+        return True
+    except Exception:
+        return False
+
+
+def _confusion_abandon_summary(state: dict[str, Any]) -> str:
+    """Persona-facing abandon note when L2 forced stop (even if LLM died on done)."""
+    bits = [
+        "Ich breche ab: nach zwei unerklärten grau/disabled bzw. unklaren Filter-Momenten "
+        "lohnt sich weiteres Klicken nicht (Persona time_pressure)."
+    ]
+    for cue in (state.get("cues") or [])[-2:]:
+        if isinstance(cue, dict) and cue.get("snippet"):
+            bits.append(f"Moment S{cue.get('step')}: {cue.get('snippet')}")
+    return " ".join(bits)
 
 
 def _smart_trim(text: str, *, limit: int, soft_floor_ratio: float = 0.6) -> str:
@@ -1292,6 +1531,123 @@ def _collect_observations(steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+def _confusion_friction_floors() -> tuple[int, int]:
+    """(floor_for_1_tag, floor_for_2plus_tags) clamped to 0..10."""
+    try:
+        one = int(os.environ.get("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1", "6"))
+    except ValueError:
+        one = 6
+    try:
+        two = int(os.environ.get("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_2", "8"))
+    except ValueError:
+        two = 8
+    one = max(0, min(10, one))
+    two = max(one, min(10, two))
+    return one, two
+
+
+def _collect_confusion_tags(
+    steps: list[dict[str, Any]],
+    *,
+    confusion_abandon: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Lab L3: gather confusion tags from observation.tag + narration inference.
+
+    Dedupes per (step, tag). Also folds in L2 abandon cues when present so
+    friction still rises if the LLM never emitted <<OBSERVATIONS>>.
+    """
+    out: list[dict[str, Any]] = []
+    seen: set[tuple[int, str]] = set()
+
+    def _add(step: int, tag: str, source: str, note: str | None = None) -> None:
+        if tag not in _CONFUSION_TAGS:
+            return
+        key = (step, tag)
+        if key in seen:
+            return
+        seen.add(key)
+        entry: dict[str, Any] = {"step": step, "tag": tag, "source": source}
+        if note:
+            entry["note"] = _smart_trim(note, limit=160)
+        out.append(entry)
+
+    for st in steps or []:
+        if not isinstance(st, dict):
+            continue
+        step_num = st.get("step")
+        if not isinstance(step_num, int):
+            continue
+        for obs in st.get("observations") or []:
+            if not isinstance(obs, dict):
+                continue
+            tag = str(obs.get("tag") or "").strip().lower()
+            note = str(obs.get("note") or "").strip()
+            if tag not in _CONFUSION_TAGS:
+                tag = _infer_confusion_tag(note) or ""
+            if tag:
+                _add(step_num, tag, "observation", note or None)
+        blob = _step_narration_blob(st)
+        inferred = _infer_confusion_tag(blob)
+        if inferred:
+            _add(step_num, inferred, "narration", _smart_trim(blob.replace("\n", " "), limit=160))
+
+    if isinstance(confusion_abandon, dict):
+        for cue in confusion_abandon.get("cues") or []:
+            if not isinstance(cue, dict):
+                continue
+            step_num = cue.get("step")
+            snippet = str(cue.get("snippet") or "")
+            if not isinstance(step_num, int):
+                continue
+            tag = _infer_confusion_tag(snippet) or "disabled_option_unexplained"
+            _add(step_num, tag, "abandon_cue", snippet or None)
+    return out
+
+
+def _apply_confusion_friction(
+    scorecard: dict[str, Any],
+    tags: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Raise frictionScore to a deterministic floor when confusion tags fire.
+
+    Even if the end-of-run LLM is optimistic (low friction + goalReached),
+    tagged confusion moments push friction into the human gold band.
+    """
+    floor_1, floor_2 = _confusion_friction_floors()
+    n = len(tags)
+    meta: dict[str, Any] = {
+        "tags": tags,
+        "tagCount": n,
+        "floor1": floor_1,
+        "floor2": floor_2,
+        "applied": False,
+        "raisedFrom": None,
+        "floor": None,
+    }
+    if n <= 0:
+        scorecard["confusion"] = meta
+        return scorecard
+    floor = floor_1 if n == 1 else floor_2
+    meta["floor"] = floor
+    prev = scorecard.get("frictionScore")
+    prev_i: int | None
+    try:
+        prev_i = int(prev) if prev is not None else None
+    except (TypeError, ValueError):
+        prev_i = None
+    if prev_i is None or prev_i < floor:
+        meta["applied"] = True
+        meta["raisedFrom"] = prev_i
+        scorecard["frictionScore"] = floor
+        print(
+            f"ux-journey: scorecard confusion friction floor={floor} "
+            f"(was={prev_i} tags={n})",
+            flush=True,
+        )
+    scorecard["confusion"] = meta
+    return scorecard
+
+
 def _journey_quotes_picker(steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Pick 3..5 verbatim Think-Aloud sentences as UX-research-style quotes.
 
@@ -1696,7 +2052,7 @@ async def _llm_scorecard_extras(
             from openai import AsyncOpenAI
 
             client = AsyncOpenAI(api_key=api_key_openai)
-            model = os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-4o")
+            model = os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.4-nano")
             resp = await client.chat.completions.create(
                 model=model,
                 messages=[
@@ -1815,6 +2171,7 @@ async def _build_scorecard(
     persona: dict[str, Any] | None,
     task: str,
     domain: str,
+    confusion_abandon: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Assemble the ``JourneyScorecard`` for ``result['scorecard']``.
 
@@ -1883,6 +2240,10 @@ async def _build_scorecard(
         # We forward perStepRatings so a power-user UI can later drill into
         # which step pulled a category up or down.
         scorecard.update(extras)
+
+    # Lab L3: deterministic confusion → friction floor (beats optimistic LLM).
+    tags = _collect_confusion_tags(steps, confusion_abandon=confusion_abandon)
+    _apply_confusion_friction(scorecard, tags)
     return scorecard
 
 
@@ -2829,8 +3190,10 @@ async def run_agent(
             "timePressure": persona_tp,
             "impatientApplied": bool(persona_tp is not None and persona_tp >= 0.75 and max_steps < base_max_steps),
         }
+        confusion_abandon = _new_confusion_abandon_state(persona_tp)
         print(
-            f"ux-journey: job={job_id} step_budget={step_budget}",
+            f"ux-journey: job={job_id} step_budget={step_budget} "
+            f"confusion_abandon={_confusion_abandon_public(confusion_abandon)}",
             flush=True,
         )
         # AUDION reasoning extension. With audion-agent Phase 3:
@@ -2843,12 +3206,14 @@ async def run_agent(
         # The persona block is automatically rendered last by the fork via
         # `Agent(persona=persona_dict)` — see audion-agent CHANGELOG Phase 2.
         if persona_tp is not None and persona_tp >= 0.75:
+            abandon_n = int(confusion_abandon.get("threshold") or 2)
             completion_block = (
                 "AUDION_COMPLETION:\n"
                 f"Persona time_pressure={persona_tp:.2f} — Step-Budget eng "
                 f"(max {max_steps}, soft min {min_steps}). "
-                "Wenn Filter/graue Optionen zweimal unerklärt bleiben: sofort done mit Teil-Finding "
-                "(Verwirrung ehrlich benennen). NICHT weiter suchen oder Side-Quests.\n"
+                f"HARD RULE: Nach {abandon_n} unerklärten grau/disabled/Filter-Momenten "
+                "sofort done mit Teil-Finding (Verwirrung ehrlich benennen). "
+                "Runtime erzwingt Abbruch — NICHT weiter suchen oder Side-Quests.\n"
                 "Markiere done erst mit verifiziertem Ergebnis ODER ehrlichem Abbruchgrund.\n"
             )
         else:
@@ -2927,7 +3292,15 @@ async def run_agent(
             "warum es dich stoert/begeistert. Persona-Stimme, nicht Bot-Stil.\n"
             "- 'fix' (OPTIONAL): 1 Satz, was du als Persona dir gewuenscht haettest. "
             "Konkret (Inhalt/Element), keine Generalvorschlaege wie 'besseres Design'.\n"
+            "- 'tag' (OPTIONAL, bei Verwirrung PFLICHT-EMPFEHLUNG): einer von "
+            "'disabled_option_unexplained' (grau/disabled ohne Erklaerung), "
+            "'filter_cause_unknown' (Filter/Matrix-Ursache unklar), "
+            "'selection_order_surprise' (unerwartete Reihenfolge der Auswahl).\n"
             "Beispiele fuer guten Ton:\n"
+            "  {\"category\":\"affordance\",\"polarity\":-2,\"severity\":\"high\","
+            "\"tag\":\"disabled_option_unexplained\","
+            "\"note\":\"Displays bleiben grau nach Motor-Wahl — ich verstehe nicht warum.\","
+            "\"fix\":\"Kurztext: warum Optionen gesperrt sind und was als Naechstes noetig ist.\"}\n"
             "  {\"category\":\"affordance\",\"polarity\":-1,\"severity\":\"medium\","
             "\"note\":\"Die Karten am Footer sehen wie statische Bilder aus, nicht klickbar — "
             "ich haette das nicht ausprobiert.\",\"fix\":\"Hover-State + 'mehr erfahren'-Pfeil "
@@ -2936,7 +3309,7 @@ async def run_agent(
             "\"note\":\"Drei konkrete Kunden mit Logo und Branche im Hero — das gibt mir "
             "sofort einen Anker als IT-Leitung.\"}\n"
             "Strenge Regeln: gueltiges JSON, KEINE Trailing-Kommas, KEINE Kommentare, "
-            "KEINE zusaetzlichen Felder. Bei Format-Zweifeln BLOCK WEGLASSEN — der Parser "
+            "KEINE zusaetzlichen Felder ausser den genannten. Bei Format-Zweifeln BLOCK WEGLASSEN — der Parser "
             "verwirft sonst stillschweigend.\n"
         )
         # Task is now JUST the task — no language pinning, no brevity rules,
@@ -3117,6 +3490,24 @@ async def run_agent(
         elif hasattr(agent, "max_actions"):
             agent.max_actions = max_steps
 
+        # Lab L2: wrap force-done so confusion threshold injects Done-only schema
+        # after each step's action-model reset (on_step_end alone is too early).
+        if confusion_abandon.get("enabled") and hasattr(agent, "_force_done_after_last_step"):
+            _orig_force_done = agent._force_done_after_last_step
+
+            async def _force_done_with_confusion(step_info: Any = None) -> None:
+                await _orig_force_done(step_info)
+                injected = await _inject_confusion_abandon_if_armed(agent, confusion_abandon)
+                if injected:
+                    print(
+                        f"ux-journey: job={job_id} confusion_abandon FORCED "
+                        f"count={confusion_abandon.get('count')}/"
+                        f"{confusion_abandon.get('threshold')}",
+                        flush=True,
+                    )
+
+            agent._force_done_after_last_step = _force_done_with_confusion
+
         # Persona snapshot: read the canonical PersonaPolicy that the fork
         # derived from the persona record. Useful when debugging "is the agent
         # actually role-playing the persona?" — if dimensions are all 0.5 the
@@ -3203,6 +3594,27 @@ async def run_agent(
                 domain=domain,
                 persona=persona,
             )
+
+            # Lab L2: scan new steps for confusion cues; arm force-done for next prepare.
+            if confusion_abandon.get("enabled") and not confusion_abandon.get("forced"):
+                try:
+                    hist = getattr(agent_instance, "history", None)
+                    steps_now = _history_to_steps(hist) if hist is not None else []
+                    before = int(confusion_abandon.get("count") or 0)
+                    _update_confusion_abandon_from_steps(confusion_abandon, steps_now)
+                    after = int(confusion_abandon.get("count") or 0)
+                    if after != before or confusion_abandon.get("forceNext"):
+                        print(
+                            f"ux-journey: job={job_id} confusion_count={after}/"
+                            f"{confusion_abandon.get('threshold')} "
+                            f"forceNext={bool(confusion_abandon.get('forceNext'))}",
+                            flush=True,
+                        )
+                except Exception as exc:  # pragma: no cover - never break the run
+                    print(
+                        f"ux-journey: job={job_id} confusion scan failed: {exc!r}",
+                        flush=True,
+                    )
 
         async def _on_action_end(
             agent_instance: Any,
@@ -3321,6 +3733,15 @@ async def run_agent(
                     f"ux-journey: job={job_id} failure_summary={fail_summary!r}",
                     flush=True,
                 )
+            # Lab L2: if we forced abandon but the done LLM call died (quota/502),
+            # surface a persona-facing summary instead of opaque provider errors.
+            if confusion_abandon.get("forced"):
+                fail_summary = _confusion_abandon_summary(confusion_abandon)
+                confusion_abandon["llmFailedAfterForce"] = True
+                print(
+                    f"ux-journey: job={job_id} confusion_abandon summary after LLM failure",
+                    flush=True,
+                )
 
         # Journey scorecard (per-category aggregation + optional end-of-run
         # LLM call for friction/persona-fit/coverage). Best-effort: never
@@ -3332,6 +3753,7 @@ async def run_agent(
                 persona=persona,
                 task=task,
                 domain=domain,
+                confusion_abandon=confusion_abandon,
             )
         except Exception as exc:
             print(f"ux-journey: scorecard build failed for job={job_id} err={exc!r}", flush=True)
@@ -3480,6 +3902,7 @@ async def run_agent(
         if fail_error:
             result["error"] = fail_error
         result["stepBudget"] = step_budget
+        result["confusionAbandon"] = _confusion_abandon_public(confusion_abandon)
         if persona and isinstance(persona, dict):
             result["persona"] = {
                 "id": persona.get("id"),

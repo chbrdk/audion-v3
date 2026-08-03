@@ -19,7 +19,7 @@
 | `NEXT_AI_RUNTIME` | `stub` \| `native` \| `auto` (default `auto`) |
 | `OPENAI_API_KEY` | Required for native / auto-with-key |
 | `OPENAI_API_BASE_URL` | Optional |
-| `AI_OPENAI_MODEL` | Default `gpt-5.4-mini` |
+| `AI_OPENAI_MODEL` | Default `gpt-5.4-nano` |
 | `AI_OPENAI_IMAGE_MODEL` | Default `gpt-image-1-mini` |
 
 `auto` = native when `OPENAI_API_KEY` set, else stub.
@@ -30,7 +30,7 @@
 NEXT_PERSONA_DATA_SOURCE=fixtures
 NEXT_AI_RUNTIME=auto
 OPENAI_API_KEY=<secret>
-AI_OPENAI_MODEL=gpt-5.4-mini
+AI_OPENAI_MODEL=gpt-5.4-nano
 # NEXT_PERSONA_BACKEND_* / NEXT_CHAT_API_* not required for AI
 ```
 

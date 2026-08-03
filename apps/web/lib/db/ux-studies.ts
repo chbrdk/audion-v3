@@ -452,17 +452,27 @@ export async function dbEvaluateUxWave(
   const current = await dbUxWaveDetail(studyId, waveId)
   if (!current) return null
   const { evaluateUxWaveFromRuns } = await import('../fixtures/ux-study-store')
-  const evaluation = evaluateUxWaveFromRuns(
+  const { mergeSoftScoreDraft } = await import('../soft-q-draft')
+  const { assistSoftScoresWithLlm } = await import('../soft-q-llm-assist')
+  let evaluation = evaluateUxWaveFromRuns(
     studyId,
     waveId,
     current.runs,
     current.evaluation?.hypotheses ?? null,
   )
+  const assisted = await assistSoftScoresWithLlm(evaluation.softScores, current.runs)
+  evaluation = {
+    ...evaluation,
+    softScores: assisted.softScores,
+    notes: assisted.applied
+      ? [...evaluation.notes.filter((n) => !/^Soft-Q LLM/i.test(n)), assisted.note]
+      : evaluation.notes,
+  }
   if (current.evaluation?.softScores) {
-    evaluation.softScores = {
-      ...current.evaluation.softScores,
-      basis: current.evaluation.softScores.basis ?? evaluation.softScores.basis,
-    }
+    evaluation.softScores = mergeSoftScoreDraft(
+      evaluation.softScores,
+      current.evaluation.softScores,
+    )
   }
   const status = current.status === 'draft' ? 'complete' : current.status
   return persistWave({

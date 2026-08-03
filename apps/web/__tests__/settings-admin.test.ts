@@ -30,7 +30,16 @@ describe('settings-admin providers', () => {
     expect(data.chatNative).toBe(true)
     const openai = data.providers.find((p) => p.id === 'openai')
     expect(openai?.configured).toBe(true)
-    expect(openai?.model).toBeTruthy()
+    expect(openai?.model).toBe('gpt-5.4-nano')
+  })
+
+  it('respects AI_OPENAI_MODEL override', () => {
+    vi.stubEnv('NEXT_AI_RUNTIME', 'auto')
+    vi.stubEnv('OPENAI_API_KEY', 'sk-test')
+    vi.stubEnv('AI_OPENAI_MODEL', 'gpt-5.4-mini')
+    const data = getSettingsProviders()
+    const openai = data.providers.find((p) => p.id === 'openai')
+    expect(openai?.model).toBe('gpt-5.4-mini')
   })
 
   it('reports stub when runtime is stub even with key', () => {

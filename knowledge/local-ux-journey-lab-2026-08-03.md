@@ -31,6 +31,8 @@ Terminal B:
 
 ```bash
 ./scripts/local-lab-run.sh
+# A/B: LAB_PERSONA=patient ./scripts/local-lab-run.sh
+# Compare: ./scripts/local-lab-compare.sh /tmp/local-lab-run-A.json /tmp/local-lab-run-B.json
 ```
 
 Inspect `/tmp/local-lab-run-<jobId>.json` — look for:

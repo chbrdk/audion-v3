@@ -1,6 +1,7 @@
 /**
  * Map UX Journey Agent scorecard + infrastructure signals onto UxWaveRunItem fields.
- * Evidence gate: agentSuccess alone is not validEvidence (CloudFront 403 / archive-only).
+ * Evidence gate: reject cancelled / empty / crash junk; agentSuccess alone is not enough
+ * (CloudFront 403 / archive-only). Honest abandon with Think-Aloud can still be valid.
  */
 
 import type { UxWaveRunItem } from '@audion-v3/contracts'
@@ -11,11 +12,25 @@ export type AgentScorecard = {
   personaFitScore?: number | null
   coverage?: { goalReached?: boolean | null } | null
   perCategoryLLM?: Record<string, number | { score?: number } | null> | null
+  confusion?: { tagCount?: number | null } | null
 }
 
 const INFRA_BLOCKER_PATTERNS: Array<{ re: RegExp; blocker: string }> = [
   { re: /\b403\b|cloudfront|access.?denied|request.?blocked/i, blocker: 'cloudfront_403' },
   { re: /web\.archive\.org|wayback|archive\.org/i, blocker: 'archive_org_workaround' },
+]
+
+const CRASH_OR_EMPTY_RES: RegExp[] = [
+  /^agent error$/i,
+  /could not parse response/i,
+  /credit_balance_exhausted|no credits remaining/i,
+  /run was cancelled before completion/i,
+]
+
+const GENERIC_FINDING_RES: RegExp[] = [
+  /^browser agent completed run\.?$/i,
+  /^agent error$/i,
+  /^run was cancelled/i,
 ]
 
 function flattenCategories(
@@ -61,17 +76,116 @@ export function inferInfrastructureBlockers(blob: string): string[] {
   return [...found]
 }
 
+function thinkAloudHasSubstance(thinkAloud: Record<string, unknown> | null | undefined): boolean {
+  if (!thinkAloud || typeof thinkAloud !== 'object') return false
+  for (const value of Object.values(thinkAloud)) {
+    if (typeof value === 'string' && value.trim().length >= 20) return true
+    if (value && typeof value === 'object') {
+      const label = (value as { label?: unknown }).label
+      if (typeof label === 'string' && label.trim().length > 0) return true
+    }
+  }
+  return false
+}
+
+/** True when the run has persona-facing UX substance (Think-Aloud / done / notes). */
+export function hasUsableUxSubstance(input: {
+  summary?: string | null
+  steps?: UxJourneyAgentStep[]
+  confusionTagCount?: number | null
+}): boolean {
+  const summary = (input.summary || '').trim()
+  if (summary.length >= 40 && !GENERIC_FINDING_RES.some((re) => re.test(summary))) {
+    return true
+  }
+  if (typeof input.confusionTagCount === 'number' && input.confusionTagCount > 0) {
+    return true
+  }
+  for (const step of input.steps ?? []) {
+    if (thinkAloudHasSubstance(step.thinkAloud ?? null)) return true
+    if (
+      String(step.action || '').toLowerCase() === 'done' &&
+      String(step.result || '').trim().length >= 40
+    ) {
+      return true
+    }
+    if (String(step.reasoning || '').trim().length >= 60) return true
+    if (Array.isArray(step.observations) && step.observations.length > 0) return true
+  }
+  return false
+}
+
+/**
+ * Lab L5 junk gate — cancelled / empty / crash runs must not become validEvidence.
+ */
+export function isJunkEvidenceRun(input: {
+  cancelled?: boolean
+  summary?: string | null
+  error?: string | null
+  steps?: UxJourneyAgentStep[]
+  agentSuccess?: boolean
+  taskCompleted?: boolean
+}): { junk: boolean; reason: string | null } {
+  if (input.cancelled) {
+    return { junk: true, reason: 'cancelled — not valid evidence' }
+  }
+  // Only treat as empty when the caller explicitly provided steps (finished job).
+  if (Array.isArray(input.steps) && input.steps.length === 0) {
+    return { junk: true, reason: 'empty run — no steps' }
+  }
+  const steps = input.steps ?? []
+  const blob = `${input.summary || ''}\n${input.error || ''}`.trim()
+  if (CRASH_OR_EMPTY_RES.some((re) => re.test(blob)) && !hasUsableUxSubstance(input)) {
+    return { junk: true, reason: 'empty/crash run — not valid evidence' }
+  }
+  if (steps.length > 0) {
+    const usableSteps = steps.filter((s) => String(s.action || '').toLowerCase() !== 'error')
+    if (usableSteps.length === 0) {
+      return { junk: true, reason: 'empty/crash run — only error steps' }
+    }
+  }
+  // Short/generic payloads without substance: junk only when the run also failed.
+  if (
+    !hasUsableUxSubstance(input) &&
+    !input.agentSuccess &&
+    !input.taskCompleted &&
+    blob.length < 40
+  ) {
+    return { junk: true, reason: 'empty summary — not valid evidence' }
+  }
+  return { junk: false, reason: null }
+}
+
 /**
  * Decide validEvidence for a completed agent run.
+ * - Cancelled / empty / crash junk → invalid (Lab L5)
  * - Hard infra (403 / archive) without successful task → invalid
  * - Task completed despite intermittent 403 → valid + caveat
- * - Agent success alone is insufficient (matches EBM July-30 semantics)
+ * - Honest abandon with Think-Aloud / confusion tags → valid even if goal unmet
+ * - Agent success alone is insufficient
  */
 export function inferValidEvidence(input: {
   agentSuccess: boolean
   taskCompleted: boolean
   blockers: string[]
+  cancelled?: boolean
+  summary?: string | null
+  error?: string | null
+  steps?: UxJourneyAgentStep[]
+  confusionTagCount?: number | null
 }): { validEvidence: boolean; validEvidenceCaveat: string | null } {
+  const junk = isJunkEvidenceRun({
+    cancelled: input.cancelled,
+    summary: input.summary,
+    error: input.error,
+    steps: input.steps,
+    agentSuccess: input.agentSuccess,
+    taskCompleted: input.taskCompleted,
+  })
+  if (junk.junk) {
+    return { validEvidence: false, validEvidenceCaveat: junk.reason }
+  }
+
   const hard403 = input.blockers.includes('cloudfront_403')
   const archive = input.blockers.includes('archive_org_workaround')
   const intermittent = input.blockers.includes('cloudfront_403_intermittent')
@@ -86,6 +200,20 @@ export function inferValidEvidence(input: {
 
   if (hard403 || archive) {
     return { validEvidence: false, validEvidenceCaveat: null }
+  }
+
+  const substance = hasUsableUxSubstance({
+    summary: input.summary,
+    steps: input.steps,
+    confusionTagCount: input.confusionTagCount,
+  })
+
+  // Honest incomplete / abandoned journeys still count when UX substance exists.
+  if (
+    substance &&
+    (input.agentSuccess || input.taskCompleted || String(input.summary || '').length >= 40)
+  ) {
+    return { validEvidence: true, validEvidenceCaveat: null }
   }
 
   if (!input.taskCompleted) {
@@ -103,11 +231,13 @@ export function mapAgentResultToWaveRun(
   status: UxJourneyAgentJobStatus,
 ): UxWaveRunItem {
   const steps = status.result?.steps ?? []
-  const agentSuccess = Boolean(status.result?.success) && status.status === 'complete'
+  const cancelled = Boolean(status.result?.cancelled)
+  const agentSuccess =
+    Boolean(status.result?.success) && status.status === 'complete' && !cancelled
   const sc = (status.result?.scorecard ?? null) as AgentScorecard | null
   const blob = collectTextBlob({
     summary: status.result?.summary,
-    error: status.error,
+    error: status.error ?? status.result?.error,
     steps,
   })
   let blockers = inferInfrastructureBlockers(blob)
@@ -120,7 +250,8 @@ export function mapAgentResultToWaveRun(
   // Prefer scorecard coverage; never treat hard infra as task complete via agentSuccess alone
   const goalReached = coverageGoal === true
   const taskCompleted =
-    coverageGoal === true || (coverageGoal === null && agentSuccess && !hardInfra)
+    coverageGoal === true ||
+    (coverageGoal === null && agentSuccess && !hardInfra && !cancelled)
 
   // Intermittent: task completed but 403 still present in trail
   if (taskCompleted && blockers.includes('cloudfront_403')) {
@@ -129,10 +260,18 @@ export function mapAgentResultToWaveRun(
       .concat('cloudfront_403_intermittent')
   }
 
+  const confusionTagCount =
+    typeof sc?.confusion?.tagCount === 'number' ? sc.confusion.tagCount : null
+
   const evidence = inferValidEvidence({
     agentSuccess,
     taskCompleted,
     blockers,
+    cancelled,
+    summary: status.result?.summary,
+    error: status.error ?? status.result?.error,
+    steps,
+    confusionTagCount,
   })
 
   const categories = flattenCategories(sc?.perCategoryLLM)
@@ -144,6 +283,15 @@ export function mapAgentResultToWaveRun(
     typeof sc?.personaFitScore === 'number'
       ? sc.personaFitScore
       : run.personaFitScore ?? null
+
+  const finding =
+    status.result?.summary ||
+    run.finding ||
+    (cancelled
+      ? 'Run was cancelled before completion.'
+      : agentSuccess
+        ? 'Browser agent completed run.'
+        : status.error || status.result?.error || 'Agent error')
 
   return {
     ...run,
@@ -158,11 +306,6 @@ export function mapAgentResultToWaveRun(
     frictionScore: friction,
     personaFitScore: fit,
     categories: Object.keys(categories).length ? categories : run.categories ?? {},
-    finding:
-      status.result?.summary ||
-      run.finding ||
-      (agentSuccess
-        ? 'Browser agent completed run.'
-        : status.error || status.result?.error || 'Agent error'),
+    finding,
   }
 }

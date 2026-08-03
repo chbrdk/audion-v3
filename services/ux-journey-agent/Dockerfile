@@ -51,6 +51,7 @@ COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
 ENV PORT=8320
+ENV UX_JOURNEY_OPENAI_MODEL=gpt-5.4-nano
 EXPOSE 8320
 
 ENTRYPOINT ["./entrypoint.sh"]

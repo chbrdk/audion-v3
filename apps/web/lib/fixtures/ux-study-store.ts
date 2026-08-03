@@ -19,6 +19,7 @@ import type {
   UxWaveWritePayload,
 } from '@audion-v3/contracts'
 import { isProjectsDatabaseConfigured } from '../db/config'
+import { draftSoftScoresFromValidRuns, mergeSoftScoreDraft } from '../soft-q-draft'
 import { DEMO_UX_STUDIES, DEMO_UX_WAVES } from './ux-studies'
 
 export { buildWaveReportMarkdown } from '../ux-wave-report'
@@ -210,6 +211,9 @@ export function evaluateUxWaveFromRuns(
       ),
     })) ?? []
 
+  // Lab L6: Soft-Q auto-draft from Think-Aloud / findings on validEvidence runs.
+  const softDraft = draftSoftScoresFromValidRuns(runs)
+
   return {
     schemaVersion: '1.0.0',
     studyId,
@@ -236,9 +240,10 @@ export function evaluateUxWaveFromRuns(
       segmentsMissingValidEvidence: segmentsMissing,
     },
     hypotheses: preserved,
-    softScores: { basis: 'validEvidence-only rule recompute; soft Q preserved when present' },
+    softScores: softDraft,
     notes: [
       'Evaluate aggregates only validEvidence=true runs for friction/fit/goal rates.',
+      'Soft-Q: Think-Aloud draft fills empty keys; hand-edited values are preserved on re-evaluate.',
       'Hypothesis verdicts preserved from prior evaluation when present.',
     ],
   }
@@ -435,21 +440,33 @@ function memoryMarkRunDerivedJourney(
   return next
 }
 
-function memoryEvaluateUxWave(studyId: string, waveId: string): UxWaveDetail | null {
+async function memoryEvaluateUxWave(
+  studyId: string,
+  waveId: string,
+): Promise<UxWaveDetail | null> {
   const index = waves.findIndex((w) => w.id === waveId && w.studyId === studyId)
   if (index < 0) return null
   const current = waves[index]!
-  const evaluation = evaluateUxWaveFromRuns(
+  let evaluation = evaluateUxWaveFromRuns(
     studyId,
     waveId,
     current.runs,
     current.evaluation?.hypotheses ?? null,
   )
+  const { assistSoftScoresWithLlm } = await import('../soft-q-llm-assist')
+  const assisted = await assistSoftScoresWithLlm(evaluation.softScores, current.runs)
+  evaluation = {
+    ...evaluation,
+    softScores: assisted.softScores,
+    notes: assisted.applied
+      ? [...evaluation.notes.filter((n) => !/^Soft-Q LLM/i.test(n)), assisted.note]
+      : evaluation.notes,
+  }
   if (current.evaluation?.softScores) {
-    evaluation.softScores = {
-      ...current.evaluation.softScores,
-      basis: current.evaluation.softScores.basis ?? evaluation.softScores.basis,
-    }
+    evaluation.softScores = mergeSoftScoreDraft(
+      evaluation.softScores,
+      current.evaluation.softScores,
+    )
   }
   const status = current.status === 'draft' ? 'complete' : current.status
   const next: UxWaveDetail = {

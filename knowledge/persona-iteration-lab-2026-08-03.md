@@ -80,8 +80,15 @@ Staging study/wave refs: see `knowledge/paths.md` / Bosch staging IDs in prior n
 | 2026-08-03 L0b | seeded `persona-alex-lab-ungeduldig-msdfje0b`, force restart | 7 | 11 | no (Agent error after navigate) | 0.65→reject after usable_run gate | **Fail as UX sample** — policy OK (`time_pressure=0.9`, heuristics present) but agent dies after first navigation; empty Think-Aloud |
 | 2026-08-03 L0c local | `./scripts/local-lab-run.sh` job `dac8e0af…` · OpenAI+Anthropic · maxFailures 10 | 9 | 7 | ja (grau / Filter nicht erklärt / Abbruch-Persona) | **1.0 closer** | **Pass** — Agent stabil; `time_pressure=0.9`; Confusion im Think-Aloud; fit=4; goal=true |
 | 2026-08-03 L1 local | same lab + `_apply_persona_step_budget` · request max=40 | 6 | 8 | ja (grau/verwirr) · goal=false | **1.0 closer** | **Pass** — `stepBudget.maxSteps=10` (`impatientApplied`); minSteps=3; fit=3 |
+| 2026-08-03 L2 local | + confusion abandon after 2 cues → force `done` · job `2d984769…` | 4 usable (+errors) | (scorecard LLM fail) | ja · `forced=true` count=2 | **1.0** (partial narrative) | **Pass mechanism** — force fired after S3/S4 (grau/Verwirrung); Anthropic 502 + OpenAI quota blocked `done`; summary/harden follow-up added |
+| 2026-08-03 L2b local | same · job `9a463717…` · coins refilled | **5** | **8** | ja · `forced=true` · done | **1.0 closer** | **Pass** — navigate→click→scroll→done; fit=3; goal=false; F3.1 „keine sichere Antwort / Displays grau“ |
+| 2026-08-03 L3 local | + confusion tags → friction floor · job `a6386873…` | **5** | **8** | ja · tags+forced | **1.0 closer** | **Pass** — see `scorecard.confusion` |
+| 2026-08-03 L4 local | Alex `a6386873…` vs Sam patient `10dd38a2…` | 5 vs **8** | 8 vs 8 | forced vs **not** | contrast 4/4 | **Pass** — budget/abandon/tp deltas; friction both high (L3 floor) |
+| 2026-08-03 L5 | evidence gate junk reject · unit + L3 dump check | — | — | cancelled/empty → invalid; abandon+TA → valid | — | **Pass** — `ux-wave-scorecard` L5 |
+| 2026-08-03 L6 | Soft-Q Think-Aloud draft on Evaluate · unit | — | — | confusion → Q2/Q3=2; hand edits preserved | — | **Pass** — `soft-q-draft` + evaluate merge |
+| 2026-08-03 L6b | optional LLM Soft-Q assist · mocked unit | — | — | ±1 clamp; fail → rule draft; env off by default | — | **Pass** — `soft-q-llm-assist` |
 
 **Staging study:** `study-persona-lab-l0-2026-08-03-msdfdbk8` · wave `wave-persona-lab-b-l0-msdfdbll`  
 **Lesson:** Scenario packs must reference **DB persona ids** on staging (or seed fixture ids). Fixture-only ids resolve to `{ id }` and wipe traits.
 
-**Next:** Diagnose journey-agent post-navigate crash on lab job; then L0c with usable Think-Aloud.
+**Next:** Commit L1–L6b + nano defaults; or live-smoke Evaluate with `AUDION_SOFT_Q_LLM_ASSIST=1`.

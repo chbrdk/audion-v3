@@ -34,6 +34,7 @@ export type UxJourneyAgentJobStatus = {
     scorecard?: Record<string, unknown> | null
     summary?: string
     error?: string | null
+    cancelled?: boolean
     videoUrl?: string | null
     personaPolicy?: {
       dimensions?: Record<string, number> | null

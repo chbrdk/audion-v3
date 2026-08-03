@@ -52,8 +52,16 @@ export const paths = {
   /** Fast B-only persona iteration pack — correlate via persona-lab-correlate.ts */
   personaLabPackId: 'pack-ebm-persona-lab-b',
   personaLabImpatientPersonaId: 'persona-alex-lab-impatient',
+  personaLabPatientPersonaId: 'persona-sam-lab-patient',
   personaLabCorrelatePath: 'apps/web/lib/persona-lab-correlate.ts',
   personaLabKnowledgePath: 'knowledge/persona-iteration-lab-2026-08-03.md',
+  /** Soft-Q Think-Aloud draft (Lab L6) — empty keys filled on Evaluate */
+  softQDraftPath: 'apps/web/lib/soft-q-draft.ts',
+  softQDraftKnowledgePath: 'knowledge/lab-l6-soft-q-draft-2026-08-03.md',
+  softQLlmAssistPath: 'apps/web/lib/soft-q-llm-assist.ts',
+  softQLlmAssistKnowledgePath: 'knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md',
+  /** Opt-in: Evaluate LLM Soft-Q assist (`1`/`true`). Default off. */
+  envSoftQLlmAssist: 'AUDION_SOFT_Q_LLM_ASSIST',
   /** Demo target for EBM Produktkombinationen (central key; resolve via backend/urls) */
   boschEbikeProduktkombinationenUrl:
     'https://www.bosch-ebike.com/de/service/produktkombinationen',
@@ -86,7 +94,8 @@ export const paths = {
   chatApiInternalUrl: 'http://chat-api:8001',
   /** Native AI runtime: stub | native | auto (auto = native when OPENAI_API_KEY set) */
   aiRuntime: 'auto' as const,
-  aiOpenAiModel: 'gpt-5.4-mini',
+  /** Cheap default for chat/assist — override via AI_OPENAI_MODEL */
+  aiOpenAiModel: 'gpt-5.4-nano',
   aiOpenAiImageModel: 'gpt-image-1-mini',
   /** Easy Setup optional website fetch (SSRF-safe) — knowledge/easy-setup-2026.md */
   easySetupUrlFetchTimeoutMs: 20_000,

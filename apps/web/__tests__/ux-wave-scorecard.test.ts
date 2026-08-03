@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import type { UxWaveRunItem } from '@audion-v3/contracts'
 import type { UxJourneyAgentJobStatus } from '../lib/ux-journey-agent-client'
 import {
+  hasUsableUxSubstance,
   inferInfrastructureBlockers,
   inferValidEvidence,
+  isJunkEvidenceRun,
   mapAgentResultToWaveRun,
 } from '../lib/ux-wave-scorecard'
 
@@ -126,5 +128,83 @@ describe('ux-wave-scorecard', () => {
     expect(mapped.agentSuccess).toBe(false)
     expect(mapped.finding).toContain('Could not parse response')
     expect(mapped.finding).not.toBe('Agent error')
+  })
+
+  it('rejects cancelled runs as invalid evidence (L5)', () => {
+    const status: UxJourneyAgentJobStatus = {
+      jobId: 'job-c',
+      status: 'complete',
+      result: {
+        success: false,
+        cancelled: true,
+        summary: 'Run was cancelled before completion.',
+        steps: [{ step: 1, action: 'navigate', result: 'ok', reasoning: 'Ich starte die Seite und schaue mir die Navigation an.' }],
+      },
+    }
+    const mapped = mapAgentResultToWaveRun(baseRun(), status)
+    expect(mapped.agentSuccess).toBe(false)
+    expect(mapped.validEvidence).toBe(false)
+    expect(mapped.validEvidenceCaveat).toMatch(/cancelled/i)
+  })
+
+  it('rejects empty crash runs without Think-Aloud (L5)', () => {
+    expect(
+      isJunkEvidenceRun({
+        summary: 'Agent error',
+        error: 'Could not parse response',
+        steps: [{ step: 1, action: 'error', result: 'fail' }],
+        agentSuccess: false,
+        taskCompleted: false,
+      }).junk,
+    ).toBe(true)
+
+    const evidence = inferValidEvidence({
+      agentSuccess: false,
+      taskCompleted: false,
+      blockers: [],
+      summary: '',
+      steps: [],
+    })
+    expect(evidence.validEvidence).toBe(false)
+    expect(evidence.validEvidenceCaveat).toMatch(/empty/i)
+  })
+
+  it('accepts honest abandon with Think-Aloud even when goal unmet (L5)', () => {
+    const status: UxJourneyAgentJobStatus = {
+      jobId: 'job-abandon',
+      status: 'complete',
+      result: {
+        success: true,
+        summary: '',
+        steps: [
+          {
+            step: 1,
+            action: 'click',
+            reasoning: 'Ich sehe graue Displays und verstehe die Filterlogik nicht.',
+            thinkAloud: {
+              think: 'Die Optionen sind grau ohne Erklärung — das frustriert mich.',
+              seen: 'Displays ausgegraut nach Performance Line.',
+            },
+          },
+          {
+            step: 2,
+            action: 'done',
+            result:
+              'Ich breche ab: nach zwei unerklärten grau/disabled Momenten keine sichere Display-Antwort.',
+          },
+        ],
+        scorecard: {
+          frictionScore: 8,
+          personaFitScore: 3,
+          coverage: { goalReached: false },
+          confusion: { tagCount: 2 },
+        },
+      },
+    }
+    const mapped = mapAgentResultToWaveRun(baseRun({ runKey: 'B-aufgabe1-nachruesten' }), status)
+    expect(mapped.taskCompleted).toBe(false)
+    expect(mapped.goalReached).toBe(false)
+    expect(hasUsableUxSubstance({ steps: status.result?.steps, confusionTagCount: 2 })).toBe(true)
+    expect(mapped.validEvidence).toBe(true)
   })
 })
