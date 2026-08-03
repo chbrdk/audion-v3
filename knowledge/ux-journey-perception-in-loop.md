@@ -56,6 +56,10 @@ Staging expect after deploy: `abandonStep` set, gold overlap ≥0.5, Soft-Q Q2/Q
 
 Missing `<<PERCEPTION>>` no longer force-dones. Decision actions are cleared; model must emit the block. See `knowledge/lab-p4.1-block-done-without-perception-2026-08-03.md`.
 
+## P5 — Filter / unklar warum + retry trim (2026-08-03)
+
+See `knowledge/lab-p5-gold-cues-retries-2026-08-03.md`. Enrich folds gold cues into full budgets; default missing retries = 2.
+
 ## Human gold (P3)
 
 Fixture: `knowledge/fixtures/perception-human-gold-b.json`  

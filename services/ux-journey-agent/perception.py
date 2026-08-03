@@ -475,11 +475,81 @@ def apply_impatient_abandon_stance(
 
 _SURFACE_PROMOTE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"performance\s*line", re.I), "Performance Line"),
-    (re.compile(r"\bfilter\w*\b", re.I), "Filter"),
-    (re.compile(r"\bgrau\w*|\bgrey\b|\bgray\b|\bdisabled\b", re.I), "grau / disabled"),
-    (re.compile(r"unklar\s+warum|warum .{0,24}grau|ohne erklärung", re.I), "unklar warum"),
-    (re.compile(r"\bdisplays?\b|\bdisplay[- ]?karten\b", re.I), "Displays"),
+    (
+        re.compile(
+            r"\bfilter\w*\b|kompatibil|freigeschalt|produktkombination|auswahl[- ]?logik",
+            re.I,
+        ),
+        "Filter",
+    ),
+    (re.compile(r"\bgrau\w*|\bgrey\w*|\bgray\w*|\bdisabled\b|ausgegraut|ausgeblend", re.I), "grau / disabled"),
+    (
+        re.compile(
+            r"unklar\s+warum|warum .{0,40}grau|ohne erklärung|ohne erkennbar|"
+            r"ohne .{0,20}ursache|nicht erklärt|keine erklärung|ursache unklar",
+            re.I,
+        ),
+        "unklar warum",
+    ),
+    (re.compile(r"\bdisplays?\b|\bdisplay[- ]?karten\b|\bbedieneinheit", re.I), "Displays"),
 ]
+
+# Prefer keeping these in noticed when budget is full (Lab B human gold).
+_CRITICAL_NOTICED_LABELS = frozenset(
+    {
+        "filter",
+        "unklar warum",
+        "grau / disabled",
+        "performance line",
+        "displays",
+    }
+)
+
+
+def _noticed_whats_blob(noticed: list[dict[str, Any]]) -> str:
+    return normalize_salience_label(
+        " ".join(str(n.get("what") or "") for n in noticed if isinstance(n, dict))
+    )
+
+
+def _label_covered(blob: str, label: str) -> bool:
+    norm = normalize_salience_label(label)
+    if not norm:
+        return True
+    if norm in blob:
+        return True
+    tokens = [tok for tok in norm.split() if len(tok) >= 4]
+    if not tokens:
+        return False
+    # AND: "grau / disabled" must not count as covered by "disabled" alone.
+    return all(tok in blob for tok in tokens)
+
+
+def _replace_index_for_critical(noticed: list[dict[str, Any]]) -> int | None:
+    """Pick an index to overwrite so a critical cue can enter a full budget."""
+    if not noticed:
+        return None
+    for rel in ("low", "med", "high"):
+        for i, n in enumerate(noticed):
+            if not isinstance(n, dict):
+                continue
+            if str(n.get("relevance") or "med") != rel:
+                continue
+            what_norm = normalize_salience_label(str(n.get("what") or ""))
+            if what_norm in _CRITICAL_NOTICED_LABELS:
+                continue
+            if any(c in what_norm for c in _CRITICAL_NOTICED_LABELS):
+                continue
+            return i
+    # last non-critical by substring
+    for i in range(len(noticed) - 1, -1, -1):
+        n = noticed[i]
+        if not isinstance(n, dict):
+            return i
+        what_norm = normalize_salience_label(str(n.get("what") or ""))
+        if what_norm not in _CRITICAL_NOTICED_LABELS:
+            return i
+    return None
 
 
 def enrich_noticed_from_perception_text(
@@ -487,8 +557,9 @@ def enrich_noticed_from_perception_text(
     budget: int,
 ) -> dict[str, Any] | None:
     """
-    Promote cues already written in think/why/intent into noticed[] up to budget.
-    Does not invent page UI — only lifts the persona's own words into salience slots.
+    Promote cues already written in think/why/intent/noticed into salience slots.
+    Does not invent page UI. When budget is full, may replace a non-critical
+    noticed item so Filter / unklar warum / grau still surface (Lab B).
     """
     if perception is None:
         return None
@@ -498,10 +569,7 @@ def enrich_noticed_from_perception_text(
         for n in (out.get("noticed") or [])
         if n
     ]
-    if len(noticed) >= budget:
-        out["noticed"] = noticed[:budget]
-        out["noticedUsed"] = len(noticed[:budget])
-        return out
+    noticed = noticed[: max(budget, 1)]
 
     source = " ".join(
         [
@@ -509,28 +577,33 @@ def enrich_noticed_from_perception_text(
             str(out.get("why") or ""),
             str(out.get("intent") or ""),
             str(out.get("taskReminder") or ""),
-            " ".join(
-                str(n.get("what") or "") for n in noticed if isinstance(n, dict)
-            ),
+            " ".join(str(n.get("what") or "") for n in noticed if isinstance(n, dict)),
+            str(out.get("confusion") or ""),
         ]
     )
-    blob = normalize_salience_label(
-        " ".join(str(n.get("what") or "") for n in noticed if isinstance(n, dict))
-    )
+    blob = _noticed_whats_blob(noticed)
     for pattern, label in _SURFACE_PROMOTE_PATTERNS:
-        if len(noticed) >= budget:
-            break
         if not pattern.search(source):
             continue
-        norm = normalize_salience_label(label)
-        if norm and any(tok in blob for tok in norm.split() if len(tok) >= 4):
+        if _label_covered(blob, label):
             continue
-        if norm and norm in blob:
-            continue
-        noticed.append({"what": label, "relevance": "high"})
-        blob = normalize_salience_label(
-            " ".join(str(n.get("what") or "") for n in noticed if isinstance(n, dict))
-        )
+        item = {"what": label, "relevance": "high"}
+        if len(noticed) < budget:
+            noticed.append(item)
+        else:
+            # Keep existing cues: fold label into a slot instead of dropping Performance Line / grau.
+            idx = _replace_index_for_critical(noticed)
+            if idx is None:
+                idx = len(noticed) - 1
+            prev = str(noticed[idx].get("what") or "").strip()
+            if label.lower() not in prev.lower():
+                merged = f"{prev}; {label}" if prev else label
+                noticed[idx] = {
+                    "what": _trim(merged, _NOTICED_WHAT_LIMIT),
+                    "relevance": "high",
+                }
+        blob = _noticed_whats_blob(noticed)
+
     out["noticed"] = noticed[:budget]
     out["noticedUsed"] = len(out["noticed"])
     out["salienceBudget"] = budget
@@ -726,10 +799,14 @@ def perception_prompt_extension(
         )
         persona_lines.append("- ignoredGuess ist bei dir erwartet (Tunnelblick OK).")
         persona_lines.append(
-            f"- Nutze das Budget: wenn Filter/Kompatibilität/grau sichtbar, fülle noticed mit "
-            f"bis zu {budget} UNTERSCHIEDLICHEN Aspekten "
-            "(1 Zustand grau/disabled, 2 Filter/Ursache unklar, 3 Produktlinie/Drive Unit wenn sichtbar) "
-            "— nicht nur einen Einzeiler."
+            f"- Nutze das Budget ({budget}): bei grau/disabled Displays noticed MUSS "
+            "die Aspekte trennen — wörtlich sinnvoll: (1) grau/disabled Zustand, "
+            "(2) „Filter“ / Kompatibilitätsfilter, (3) „unklar warum“ die Ursache fehlt "
+            "(plus Performance Line wenn sichtbar). Keine bloße Umschreibung ohne diese Worte."
+        )
+        persona_lines.append(
+            "- Bei unerklärtem Grau: confusion=disabled_option_unexplained oder "
+            "filter_cause_unknown setzen und in think/why „unklar warum“ sagen."
         )
     elif patient:
         persona_lines.append(
@@ -737,7 +814,7 @@ def perception_prompt_extension(
         )
         persona_lines.append(
             f"- Nutze bis zu {budget} noticed-Einträge wenn die Seite reich ist; "
-            "unterscheide Zustand vs. Ursache vs. Produktlinie."
+            "unterscheide Zustand vs. Filter/Ursache vs. Produktlinie (Wörter „Filter“, „unklar warum“ ok)."
         )
     if detail_orientation is not None and detail_orientation < 0.4:
         persona_lines.append("- Wenig Detailorientierung: Fokus Affordance/Outcome, nicht Microcopy.")
@@ -818,21 +895,21 @@ def synthesize_summary_from_perceptions(perceptions: list[dict[str, Any]]) -> st
 
 def perception_nudge_message(budget: int) -> str:
     return (
-        "AUDION_PERCEPTION_REQUIRED: Dein letzter Output hatte keinen gültigen "
-        f"<<PERCEPTION>>-Block (noticed 1–{budget}, feel, stance, intent, think). "
-        "Wiederhole den Step: ZUERST Perception, DANN Action. "
-        "VERBOTEN ohne Block: done, click, input, navigate. "
-        "Erfinde keine Perception aus freiem Text — nur was du JETZT siehst, im JSON-Block."
+        "AUDION_PERCEPTION_REQUIRED: Kein gültiger <<PERCEPTION>>-Block "
+        f"(noticed 1–{budget}, feel, stance, intent, think). "
+        "ZUERST Block, DANN Action. "
+        "VERBOTEN ohne Block: done/click/input/navigate. "
+        "Bei grauem Display: noticed mit Filter + unklar warum."
     )
 
 
 def perception_missing_retries() -> int:
-    """How many nudge+retry cycles before clearing decision actions (default 3)."""
-    raw = (os.environ.get("UX_JOURNEY_PERCEPTION_MISSING_RETRIES") or "3").strip()
+    """How many nudge+retry cycles before clearing decision actions (default 2)."""
+    raw = (os.environ.get("UX_JOURNEY_PERCEPTION_MISSING_RETRIES") or "2").strip()
     try:
         n = int(raw)
     except ValueError:
-        n = 3
+        n = 2
     return max(1, min(n, 6))
 
 

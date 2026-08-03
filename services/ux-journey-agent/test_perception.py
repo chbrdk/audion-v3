@@ -251,11 +251,43 @@ def test_nudge_forbids_done_without_block():
     msg = P.perception_nudge_message(3)
     assert "VERBOTEN" in msg
     assert "done" in msg.lower()
-    assert "erfunden" in msg.lower() or "Erfinde" in msg
-    assert P.perception_missing_retries() >= 1
+    assert "Filter" in msg or "unklar" in msg
+    assert P.perception_missing_retries() == 2
 
 
 def test_prompt_forbids_done_without_perception():
     block = P.perception_prompt_extension(time_pressure=0.9)
     assert "VERBOTEN" in block
-    assert "nicht aus freiem Text" in block.lower() or "NICHT aus freiem Text" in block
+    assert "unklar warum" in block
+    assert "Filter" in block
+
+
+def test_enrich_at_full_budget_promotes_filter_and_cause():
+    """Budget full of verbose notices — still lift Filter / unklar warum from think."""
+    perc = {
+        "taskReminder": "Displays finden",
+        "noticed": [
+            {"what": "Auswahl-Tool Finde deine Produktkombination sichtbar", "relevance": "high"},
+            {"what": "Performance Line Karte listet Drive Unit", "relevance": "high"},
+            {"what": "Displays Bereich mit greyed disabled Optik", "relevance": "med"},
+        ],
+        "think": "Kompatibilitätsfilter freischaltet nichts; ohne erkennbare Ursache unklar warum grau.",
+        "clarity": 0,
+        "feel": {"label": "frustriert", "valence": -2},
+        "confusion": "disabled_option_unexplained",
+        "stance": "abandon",
+        "intent": "Ich breche ab.",
+        "why": "Ohne Erklärung der Filter-Ursache keine sichere Antwort.",
+    }
+    out = P.enrich_noticed_from_perception_text(perc, budget=3)
+    assert out is not None
+    assert len(out["noticed"]) == 3
+    blob = " ".join(n["what"] for n in out["noticed"]).lower()
+    assert "filter" in blob
+    assert "unklar" in blob
+    overlap = P.perception_noticed_overlap(
+        out["noticed"],
+        ["grau", "Displays", "Filter", "Performance Line", "unklar warum"],
+    )
+    assert overlap["hits"] >= 4
+    assert overlap["score"] >= 0.8
