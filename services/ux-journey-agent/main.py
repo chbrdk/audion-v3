@@ -3758,6 +3758,55 @@ async def run_agent(
                 mo = getattr(getattr(agent, "state", None), "last_model_output", None)
                 actions = list(getattr(mo, "action", None) or []) if mo else []
                 filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
+
+                # Try-then-quit: do not collapse the exploratory soften turn into force-done.
+                # Models often emit only `done` with abandon; hesitate then empties → old path
+                # forced done immediately (Lab B step=2). Allow one exploratory proceed click
+                # or clear+nudge without forcing done.
+                if perc and perc.get("stanceSoftened"):
+                    done_names = ("done", "complete", "finish")
+                    non_done = [
+                        a
+                        for a in actions
+                        if ux_perception.action_tool_name(a) not in done_names
+                    ]
+                    if not filtered or reason in (
+                        "hesitate_force_done",
+                        "abandon_force_done",
+                        "abandon_done",
+                    ):
+                        if non_done:
+                            explore = dict(perc)
+                            explore["stance"] = "proceed"
+                            explore["stanceSoftened"] = True
+                            explore["tryThenQuit"] = True
+                            filtered, reason = ux_perception.filter_actions_for_stance(
+                                non_done, explore
+                            )
+                            perc = explore
+                            print(
+                                f"ux-journey: job={job_id} try-then-quit → exploratory proceed "
+                                f"({len(non_done)} non-done actions)",
+                                flush=True,
+                            )
+                        else:
+                            await _apply_actions([])
+                            await _nudge(
+                                "AUDION_TRY_THEN_QUIT: Erste Verwirrung — noch kein Abbruch. "
+                                "Nächster Step: kurz scrollen oder einen explorativen Klick "
+                                "(stance=hesitate/proceed), dann erst abandon wenn weiter unklar."
+                            )
+                            ux_perception.update_felt_state(felt_state, perc)
+                            felt_block = ux_perception.felt_state_prompt_block(felt_state)
+                            if felt_block:
+                                await _nudge(felt_block)
+                            print(
+                                f"ux-journey: job={job_id} try-then-quit hold "
+                                f"(no force-done; explor={felt_state.get('exploratoryAttempts')})",
+                                flush=True,
+                            )
+                            return
+
                 if reason.startswith("proceed") or reason == "hesitate_filter" or reason == "abandon_done":
                     filtered2, align_reason = ux_perception.filter_actions_intent_align(
                         filtered, perc
@@ -3806,6 +3855,17 @@ async def run_agent(
                                 )
 
                 if not filtered:
+                    if perc and perc.get("stanceSoftened"):
+                        await _apply_actions([])
+                        await _nudge(
+                            "AUDION_TRY_THEN_QUIT: Explorativer Versuch nötig — kein done in diesem Step."
+                        )
+                        ux_perception.update_felt_state(felt_state, perc)
+                        print(
+                            f"ux-journey: job={job_id} try-then-quit block force-done",
+                            flush=True,
+                        )
+                        return
                     await _force_done_schema(
                         f"AUDION_PERCEPTION_STANCE ({perc.get('stance')}): "
                         f"{perc.get('intent') or perc.get('why') or 'Ich stoppe hier.'}"
@@ -3820,7 +3880,8 @@ async def run_agent(
                 print(
                     f"ux-journey: job={job_id} perception stance={perc.get('stance')} "
                     f"noticed={perc.get('noticedUsed')}/{perc.get('salienceBudget')} "
-                    f"gate={reason} upgraded={bool(perc.get('stanceUpgraded'))}",
+                    f"gate={reason} upgraded={bool(perc.get('stanceUpgraded'))} "
+                    f"softened={bool(perc.get('stanceSoftened'))}",
                     flush=True,
                 )
 

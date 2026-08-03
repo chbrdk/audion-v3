@@ -348,6 +348,32 @@ def test_nudge_forbids_done_without_block():
     assert P.perception_missing_retries() == 2
 
 
+def test_try_then_quit_blocks_force_done_flag():
+    soft, _ = P.apply_impatient_abandon_stance(
+        {
+            "noticed": [{"what": "grau", "relevance": "high"}],
+            "think": "Filter unklar warum.",
+            "clarity": 0,
+            "feel": {"label": "frustriert", "valence": -2},
+            "confusion": "disabled_option_unexplained",
+            "stance": "abandon",
+            "intent": "Ich breche ab und sage das ehrlich.",
+            "why": "Grau ohne Erklärung.",
+        },
+        0.9,
+        exploratory_attempts=0,
+        try_before_abandon=1,
+    )
+    assert soft is not None
+    assert P.try_then_quit_blocks_force_done(soft) is True
+    hard, _ = P.apply_impatient_abandon_stance(
+        soft, 0.9, exploratory_attempts=1, try_before_abandon=1
+    )
+    assert hard is not None
+    assert hard["stance"] == "abandon"
+    assert P.try_then_quit_blocks_force_done(hard) is False
+
+
 def test_prompt_forbids_done_without_perception():
     block = P.perception_prompt_extension(time_pressure=0.9)
     assert "VERBOTEN" in block

@@ -498,6 +498,7 @@ def _hard_upgrade_abandon(perception: dict[str, Any]) -> dict[str, Any]:
     out["stance"] = "abandon"
     out["stanceUpgraded"] = True
     out["tryThenQuit"] = True
+    out.pop("stanceSoftened", None)
     why = str(out.get("why") or "").strip()
     if len(why) < 12:
         out["why"] = (
@@ -561,6 +562,7 @@ def apply_impatient_abandon_stance(
         if stance == "abandon":
             out = dict(perception)
             out["tryThenQuit"] = True
+            out.pop("stanceSoftened", None)
             return out, False
         return _hard_upgrade_abandon(perception), True
 
@@ -728,6 +730,11 @@ def finalize_perception_for_persona(
         exploration=exploration,
         clarity_trend=clarity_trend,
     )
+
+
+def try_then_quit_blocks_force_done(perception: dict[str, Any] | None) -> bool:
+    """True when the soften turn must not collapse into force-done."""
+    return bool(perception and perception.get("stanceSoftened"))
 
 
 def filter_actions_for_stance(

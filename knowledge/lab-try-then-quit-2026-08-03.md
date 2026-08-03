@@ -21,11 +21,15 @@ Humans with high time pressure still **try 1–2 interactions** (scroll / probe 
 After the first confusion / grey-filter cue:
 
 1. Soften model `abandon` or hard-upgrade candidate → `hesitate` (`stanceSoftened`, `tryThenQuit`).
-2. Count `exploratoryAttempts` in felt-state / `perceptionStats`.
-3. When budget spent **and** cues persist → hard `stance=abandon` (`stanceUpgraded`) or L2 `forceNext`.
+2. **Gate:** if the model only emitted `done`, do **not** force-done on that soften turn — allow exploratory proceed click when non-done actions exist, otherwise clear+nudge for scroll/click on the next step.
+3. Count `exploratoryAttempts` in felt-state / `perceptionStats`.
+4. When budget spent **and** cues persist → hard `stance=abandon` (`stanceUpgraded`) or L2 `forceNext`.
 
 L2 confusion-abandon arms `forceNext` only when `count ≥ threshold` **and** `exploratoryAttempts ≥ tryBeforeAbandon`.
 
+### Staging note (seed before gate fix)
+
+First smoke after initial commit still exited at **2** steps because soften→hesitate emptied `done`-only actions and the old empty-filter path forced done. Follow-up commit blocks that collapse.
 ## Felt-state continuity
 
 `clarityTrend` / `lowClarityStreak` feed the prompt and `should_prefer_abandon` so persistent low clarity after the try budget prefers quit over re-optimizing. Perception is never synthesized from free thinking (P4.1).
