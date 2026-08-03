@@ -3759,88 +3759,93 @@ async def run_agent(
                 actions = list(getattr(mo, "action", None) or []) if mo else []
                 filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
 
-                # Try-then-quit: do not collapse the exploratory soften turn into force-done.
-                # Models often emit only `done` with abandon; hesitate then empties → old path
-                # forced done immediately (Lab B step=2). Allow one exploratory proceed click
-                # or clear+nudge without forcing done.
+                # Try-then-quit: never accept done on the soften turn. Prefer an
+                # exploratory click/scroll; if the model only emitted done, nudge
+                # and re-ask once in the same turn (empty actions often stop the run).
                 if perc and perc.get("stanceSoftened"):
                     done_names = ("done", "complete", "finish")
-                    non_done = [
-                        a
-                        for a in actions
-                        if ux_perception.action_tool_name(a) not in done_names
-                    ]
-                    if not filtered or reason in (
-                        "hesitate_force_done",
-                        "abandon_force_done",
-                        "abandon_done",
-                    ):
-                        if non_done:
-                            explore = dict(perc)
-                            explore["stance"] = "proceed"
-                            explore["stanceSoftened"] = True
-                            explore["tryThenQuit"] = True
-                            filtered, reason = ux_perception.filter_actions_for_stance(
-                                non_done, explore
-                            )
-                            perc = explore
-                            print(
-                                f"ux-journey: job={job_id} try-then-quit → exploratory proceed "
-                                f"({len(non_done)} non-done actions)",
-                                flush=True,
-                            )
-                        else:
-                            await _apply_actions([])
-                            await _nudge(
-                                "AUDION_TRY_THEN_QUIT: Erste Verwirrung — noch kein Abbruch. "
-                                "Nächster Step: kurz scrollen oder einen explorativen Klick "
-                                "(stance=hesitate/proceed), dann erst abandon wenn weiter unklar."
-                            )
+
+                    def _strip_done(acts: list[Any]) -> list[Any]:
+                        return [
+                            a
+                            for a in acts
+                            if ux_perception.action_tool_name(a) not in done_names
+                        ]
+
+                    explore = dict(perc)
+                    explore["stance"] = "proceed"
+                    explore["stanceSoftened"] = True
+                    explore["tryThenQuit"] = True
+                    perc = explore
+                    filtered = _strip_done(filtered) if filtered else _strip_done(actions)
+                    if not filtered:
+                        await _nudge(
+                            "AUDION_TRY_THEN_QUIT: Erste Verwirrung — done ist VERBOTEN in diesem Step. "
+                            "Wähle scroll oder einen explorativen Klick (stance=proceed), "
+                            "mit gültigem <<PERCEPTION>>. Abbruch erst nach dem Try-Budget."
+                        )
+                        felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
+                        perc2 = await _once()
+                        if perc2:
+                            # Keep softened if still under budget
+                            if perc2.get("stanceSoftened") or str(perc2.get("stance")) != "abandon":
+                                perc = dict(perc2)
+                                perc["stance"] = "proceed"
+                                perc["stanceSoftened"] = True
+                                perc["tryThenQuit"] = True
+                            else:
+                                perc = perc2
+                        mo = getattr(getattr(agent, "state", None), "last_model_output", None)
+                        actions = list(getattr(mo, "action", None) or []) if mo else []
+                        filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
+                        filtered = _strip_done(filtered) if filtered else _strip_done(actions)
+                        print(
+                            f"ux-journey: job={job_id} try-then-quit exploratory retry "
+                            f"n={len(filtered)}",
+                            flush=True,
+                        )
+                    if filtered:
+                        reason = "try_then_quit_explore"
+                    else:
+                        soft_only, soft_reason = ux_perception.clear_decision_actions(actions)
+                        if soft_only:
+                            await _apply_actions(soft_only)
                             ux_perception.update_felt_state(felt_state, perc)
-                            felt_block = ux_perception.felt_state_prompt_block(felt_state)
-                            if felt_block:
-                                await _nudge(felt_block)
                             print(
-                                f"ux-journey: job={job_id} try-then-quit hold "
-                                f"(no force-done; explor={felt_state.get('exploratoryAttempts')})",
+                                f"ux-journey: job={job_id} try-then-quit soft_only={soft_reason}",
                                 flush=True,
                             )
                             return
+                        await _apply_actions([])
+                        await _nudge(
+                            "AUDION_TRY_THEN_QUIT: Kein explorativer Tool-Call — nächster Step "
+                            "muss scroll/klick liefern. done weiter verboten bis Try-Budget verbraucht."
+                        )
+                        ux_perception.update_felt_state(felt_state, perc)
+                        print(
+                            f"ux-journey: job={job_id} try-then-quit hold empty "
+                            f"explor={felt_state.get('exploratoryAttempts')}",
+                            flush=True,
+                        )
+                        return
 
-                if reason.startswith("proceed") or reason == "hesitate_filter" or reason == "abandon_done":
+                if (
+                    reason.startswith("proceed")
+                    or reason == "hesitate_filter"
+                    or reason == "abandon_done"
+                    or reason == "try_then_quit_explore"
+                ):
                     filtered2, align_reason = ux_perception.filter_actions_intent_align(
                         filtered, perc
                     )
                     if filtered2:
                         filtered = filtered2
                     elif align_reason == "align_all_dropped":
-                        # Impatient + confusion: skip click-retry — abandon instead of thrashing.
-                        perc_ab, upgraded = ux_perception.apply_impatient_abandon_stance(
-                            perc,
-                            persona_tp,
-                            felt_confusion_count=int(felt_state.get("confusionCount") or 0)
-                            + (1 if perc.get("confusion") else 0),
-                            exploratory_attempts=int(
-                                felt_state.get("exploratoryAttempts") or 0
-                            ),
-                            try_before_abandon=try_before_n,
-                            exploration=persona_dims.get("exploration"),
-                            clarity_trend=list(felt_state.get("clarityTrend") or []),
-                        )
-                        if upgraded and perc_ab:
-                            perc = perc_ab
-                            filtered, reason = ux_perception.filter_actions_for_stance(
-                                actions, perc
-                            )
-                            print(
-                                f"ux-journey: job={job_id} align_drop → abandon upgrade",
-                                flush=True,
-                            )
-                        else:
+                        if perc and perc.get("stanceSoftened"):
                             felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
                             await _nudge(
-                                "AUDION_PERCEPTION_INTENT: Klick nur auf Elemente aus noticed/intent. "
-                                "Wähle eine passende Action oder done — mit gültigem <<PERCEPTION>>."
+                                "AUDION_TRY_THEN_QUIT: Klick muss zu noticed/intent passen "
+                                "(explorativer Versuch, noch kein Abbruch)."
                             )
                             perc2 = await _once()
                             if perc2:
@@ -3850,9 +3855,52 @@ async def run_agent(
                                 filtered, reason = ux_perception.filter_actions_for_stance(
                                     actions, perc
                                 )
-                                filtered, _ = ux_perception.filter_actions_intent_align(
-                                    filtered, perc
+                                filtered = [
+                                    a
+                                    for a in (filtered or [])
+                                    if ux_perception.action_tool_name(a)
+                                    not in ("done", "complete", "finish")
+                                ]
+                        else:
+                            # Impatient + confusion: skip click-retry — abandon instead of thrashing.
+                            perc_ab, upgraded = ux_perception.apply_impatient_abandon_stance(
+                                perc,
+                                persona_tp,
+                                felt_confusion_count=int(felt_state.get("confusionCount") or 0)
+                                + (1 if perc.get("confusion") else 0),
+                                exploratory_attempts=int(
+                                    felt_state.get("exploratoryAttempts") or 0
+                                ),
+                                try_before_abandon=try_before_n,
+                                exploration=persona_dims.get("exploration"),
+                                clarity_trend=list(felt_state.get("clarityTrend") or []),
+                            )
+                            if upgraded and perc_ab:
+                                perc = perc_ab
+                                filtered, reason = ux_perception.filter_actions_for_stance(
+                                    actions, perc
                                 )
+                                print(
+                                    f"ux-journey: job={job_id} align_drop → abandon upgrade",
+                                    flush=True,
+                                )
+                            else:
+                                felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
+                                await _nudge(
+                                    "AUDION_PERCEPTION_INTENT: Klick nur auf Elemente aus noticed/intent. "
+                                    "Wähle eine passende Action oder done — mit gültigem <<PERCEPTION>>."
+                                )
+                                perc2 = await _once()
+                                if perc2:
+                                    perc = perc2
+                                    mo = getattr(getattr(agent, "state", None), "last_model_output", None)
+                                    actions = list(getattr(mo, "action", None) or []) if mo else []
+                                    filtered, reason = ux_perception.filter_actions_for_stance(
+                                        actions, perc
+                                    )
+                                    filtered, _ = ux_perception.filter_actions_intent_align(
+                                        filtered, perc
+                                    )
 
                 if not filtered:
                     if perc and perc.get("stanceSoftened"):

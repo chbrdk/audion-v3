@@ -471,9 +471,11 @@ def should_prefer_abandon(
 
 
 def _soften_to_hesitate(perception: dict[str, Any]) -> dict[str, Any]:
-    """First confused step: try (hesitate/scroll) before allowing abandon."""
+    """First confused step: prefer exploratory proceed/hesitate before abandon."""
     out = dict(perception)
-    out["stance"] = "hesitate"
+    # Prefer proceed so a probe click can pass the stance filter; hesitate alone
+    # often empties done-only model output and collapsed into force-done/stop.
+    out["stance"] = "proceed"
     out["stanceSoftened"] = True
     out["tryThenQuit"] = True
     intent = str(out.get("intent") or "").lower()
