@@ -37,7 +37,21 @@ Research crawl already works around this via `paths.researchCrawlUserAgent` (bro
 3. `/health` exposes `browserUserAgent` + `browserUserAgentSafe` (Coolify deploy probe).
 4. Central refs: `paths.uxJourneyBrowserUserAgent` · env `UX_JOURNEY_USER_AGENT` · tests `test_browser_ua.py` · `test_health_ua.py`.
 5. Force-restart hardened in `startUxWaveNativeOrFixture` (no longer re-enters `storeStartUxWave`, which preserves `complete`).
-6. After agent Coolify deploy (`browserUserAgentSafe: true` on `/health`): `POST …/start` with `{ "force": true }`.
+6. After agent Coolify deploy (`browserUserAgentSafe: true` on `https://uxagent.projects-a.plygrnd.tech/health`): `POST …/start` with `{ "force": true }`.
+
+### Deploy note (2026-08-03)
+
+Git push to `main` (`a1d6e1d`, `3d6ee02`) did **not** auto-roll staging within ~5+ minutes:
+
+- Agent `/health` still missing `browserUserAgent` / `browserUserAgentSafe`
+- Web start response still missing `forceApplied`
+
+**Action:** manually Redeploy Coolify apps `audion-v3-ux-journey-agent` **and** `audion-v3-web`, then force-restart the Bosch wave. Verify agent first:
+
+```bash
+curl -sS https://uxagent.projects-a.plygrnd.tech/health | jq '{browserUserAgentSafe,browserUserAgent}'
+# expect browserUserAgentSafe: true
+```
 
 ## Related
 
