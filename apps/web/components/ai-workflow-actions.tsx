@@ -557,9 +557,12 @@ export function SuggestPersonasAiButton({
 /* ─── Research start ─── */
 
 export function ResearchStartAiButton({ projectId }: { projectId: string }) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [seedUrl, setSeedUrl] = useState('')
   const [busy, setBusy] = useState(false)
+  const [applying, setApplying] = useState(false)
+  const [appliedNote, setAppliedNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [job, setJob] = useState<ResearchStartResponse | null>(null)
   const [events, setEvents] = useState<
@@ -577,6 +580,7 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
     setEvents([])
     setRunStatus(null)
     setLatestSummary(null)
+    setAppliedNote(null)
   }, [open])
 
   useEffect(() => {
@@ -631,6 +635,7 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
     setError(null)
     setEvents([])
     setLatestSummary(null)
+    setAppliedNote(null)
     try {
       const data = await postJson<ResearchStartResponse>(paths.routes.apiAiResearchStart(projectId), {
         seed_url: seedUrl,
@@ -643,6 +648,26 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
       setError(e instanceof Error ? e.message : 'Research start failed')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function applyToKnowledge() {
+    setApplying(true)
+    setError(null)
+    setAppliedNote(null)
+    try {
+      const data = await postJson<{ chaptersAdded?: number }>(
+        paths.routes.apiAiResearchApplyKnowledge(projectId),
+        {},
+      )
+      setAppliedNote(
+        `Added ${data.chaptersAdded ?? 0} chapter(s) to Project knowledge. Close to see the dossier.`,
+      )
+      router.refresh()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not add to project knowledge')
+    } finally {
+      setApplying(false)
     }
   }
 
@@ -660,6 +685,16 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
               <Button type="button" variant="ghost" size="md" onClick={() => setOpen(false)}>
                 Close
               </Button>
+              {latestSummary ? (
+                <Button
+                  type="button"
+                  size="md"
+                  disabled={applying}
+                  onClick={() => void applyToKnowledge()}
+                >
+                  {applying ? 'Adding…' : 'Add to project knowledge'}
+                </Button>
+              ) : null}
               {!job ? (
                 <Button type="button" size="md" disabled={busy} onClick={() => void run()}>
                   {busy ? 'Starting…' : 'Start'}
@@ -687,6 +722,11 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
             {error ? (
               <p className="audion-edit-error" role="alert">
                 {error}
+              </p>
+            ) : null}
+            {appliedNote ? (
+              <p className="audion-ai-result" role="status">
+                {appliedNote}
               </p>
             ) : null}
             {job ? (

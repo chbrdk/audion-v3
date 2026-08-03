@@ -28,7 +28,20 @@ Start a research crawl from the project AI tray, then follow progress until a su
 
 UI: **Start research** dialog polls status (~900ms) and renders events + latest summary. Stream route is available for clients that prefer EventSource.
 
-## Crawl hardening (2026-08-03)
+## Where results land
+
+| Surface | Behavior |
+|---------|----------|
+| Research modal | Progress events + latest summary (run store) |
+| Project knowledge dossier | **Not automatic** — click **Add to project knowledge** after success (`POST …/research/apply-knowledge`) → `ch-research-*` Accordion chapters |
+| Plexon Collection `research_brief` | Soft autosync when Collection bound (`scheduleResearchBriefAutosync`) |
+
+## Apply to knowledge (2026-08-03)
+
+- Lib: `apps/web/lib/research-to-knowledge.ts`
+- API: `paths.routes.apiAiResearchApplyKnowledge(projectId)`
+- UI: Research dialog footer button when summary is ready
+- Re-apply replaces previous `ch-research-*` chapters; keeps other dossier chapters
 
 - Browser-like `User-Agent` via `paths.researchCrawlUserAgent` (bare `node` UA → CloudFront **403** on `bosch-ebike.com`).
 - Detect blocked bodies (`Request blocked` / 403) and try host fallbacks from `paths` (e.g. Produktkombinationen + Bosch Presse Hub Line).

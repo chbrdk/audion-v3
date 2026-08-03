@@ -210,6 +210,9 @@ export const paths = {
       `/api/ai/projects/${projectId}/research/status`,
     apiAiResearchLatest: (projectId: string) =>
       `/api/ai/projects/${projectId}/research/latest`,
+    /** Apply latest research summary → project knowledge chapters */
+    apiAiResearchApplyKnowledge: (projectId: string) =>
+      `/api/ai/projects/${projectId}/research/apply-knowledge`,
     apiAiResearchStream: (projectId: string) =>
       `/api/ai/projects/${projectId}/research/stream`,
     /** Distill dossier + research → Collection Knowledge Pack research_brief. */
