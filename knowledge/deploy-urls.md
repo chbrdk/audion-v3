@@ -31,6 +31,9 @@ AUTH_SECRET=<≥32 chars>
 DATABASE_URL=postgresql://USER:PASSWORD@audion-v3-postgres:5432/audion
 PLEXON_AUTH_URL=https://plexon-v3.projects-a.plygrnd.tech
 PLEXON_SERVICE_SECRET=<same as plexon-v3>
+# Optional machine sync without session:
+# PLEXON_DEMO_OWNER_USER_ID=<plexon user uuid>
+# PLEXON_DEMO_COMPANY_ID=<platform company uuid>
 NEXT_PUBLIC_PLEXON_REGISTER_URL=https://plexon-v3.projects-a.plygrnd.tech/register
 NEXT_PERSONA_DATA_SOURCE=fixtures
 NEXT_AI_RUNTIME=auto
