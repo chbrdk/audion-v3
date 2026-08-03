@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { UxStudyDetail, UxStudyStatus, UxStudyWritePayload } from '@audion-v3/contracts'
-import { Button, Field, Input, Panel, Text, Textarea, WizardSteps } from '@msqdx/ui'
+import { Button, Field, Input, Panel, Text, Textarea, LedeStrip } from '@msqdx/ui'
 import { Dialog, Select, TagInput } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { EBM_HYPOTHESES } from '../lib/fixtures/ux-studies'
@@ -198,7 +198,7 @@ export function StudyEditDialog({
       }
     >
       <div className="audion-edit-form">
-        <WizardSteps steps={STEPS} activeIndex={step} onStepSelect={setStep} />
+        <LedeStrip variant="steps" steps={STEPS} activeIndex={step} onStepSelect={setStep} />
         <p className="audion-edit-lede">
           {isCreate
             ? 'Blank study or seed from a ScenarioPack (EBM Leitfaden → runs + Soft-Q shell).'
@@ -352,7 +352,7 @@ export function StudyCreateButton({
           className="audion-tg-card audion-tg-card--create"
           onClick={() => setOpen(true)}
         >
-          <Panel as="div" className="audion-tg-card-panel audion-tg-card-panel--create">
+          <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
             <Text role="headline" as="span" className="audion-tg-card-title">
               New study
             </Text>

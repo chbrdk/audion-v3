@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { UxWaveDetail, UxWaveWritePayload } from '@audion-v3/contracts'
-import { Button, Field, Input, Textarea, WizardSteps } from '@msqdx/ui'
+import { Button, Field, Input, Textarea, LedeStrip } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { TOOL_URL, HOME_URL } from '../lib/fixtures/ux-studies'
@@ -145,7 +145,7 @@ export function WaveEditDialog({
       }
     >
       <div className="audion-edit-form">
-        <WizardSteps steps={STEPS} activeIndex={step} onStepSelect={setStep} />
+        <LedeStrip variant="steps" steps={STEPS} activeIndex={step} onStepSelect={setStep} />
         <p className="audion-edit-lede">
           Seed one run plan (URL, persona, segment, task). Start orchestration from the wave page.
         </p>

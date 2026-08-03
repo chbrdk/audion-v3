@@ -227,6 +227,8 @@ main { min-height: 100vh; }
   justify-content: flex-end;
   gap: var(--space-3);
   padding: clamp(3.5rem, 8vw, 5.5rem) 1.25rem 1.15rem;
+  border-radius: 0;
+  background: transparent;
   transition:
     border-color var(--motion-hover, 160ms) ease,
     background var(--motion-hover, 160ms) ease;
@@ -638,8 +640,12 @@ main { min-height: 100vh; }
   min-width: 0;
 }
 
+/* Match DS editorial Panel: vertical rhythm only, no side “card” pad */
 .audion-magazine-band.ds-panel {
-  padding: 0.85rem 0.95rem 1rem;
+  padding: clamp(1rem, 2.5vw, 1.5rem) 0 clamp(1.25rem, 3vw, 1.85rem);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .audion-magazine-stage .audion-magazine-list-body {

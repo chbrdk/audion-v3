@@ -142,7 +142,7 @@ export function StudyDetailPanel({ study }: { study: UxStudyDetail | null }) {
                     href={paths.routes.studyWaveDetail(study.id, wave.id)}
                     className={`audion-tg-card audion-tg-card--${wave.status}`}
                   >
-                    <Panel as="div" className="audion-tg-card-panel">
+                    <Panel as="div" variant="card" className="audion-tg-card-panel">
                       <Text role="headline" as="h3" className="audion-tg-card-title">
                         {wave.waveKey}
                       </Text>

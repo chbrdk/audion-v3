@@ -14,7 +14,7 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
         </li>
         <li>
           <Link href={paths.routes.setup} className="audion-tg-card audion-tg-card--create">
-            <Panel as="div" className="audion-tg-card-panel audion-tg-card-panel--create">
+            <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
               <Text role="headline" as="span" className="audion-tg-card-title">
                 Easy setup
               </Text>
@@ -30,7 +30,7 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
               href={`${paths.routes.projectDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
               className={`audion-tg-card audion-tg-card--${item.status}`}
             >
-              <Panel as="div" className="audion-tg-card-panel">
+              <Panel as="div" variant="card" className="audion-tg-card-panel">
                 <Text role="headline" as="h2" className="audion-tg-card-title">
                   {item.name}
                 </Text>

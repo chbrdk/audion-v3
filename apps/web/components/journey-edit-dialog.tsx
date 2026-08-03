@@ -321,7 +321,7 @@ export function JourneyCreateButton({
           className="audion-tg-card audion-tg-card--create"
           onClick={() => setOpen(true)}
         >
-          <Panel as="div" className="audion-tg-card-panel audion-tg-card-panel--create">
+          <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
             <Text role="headline" as="span" className="audion-tg-card-title">
               New journey
             </Text>

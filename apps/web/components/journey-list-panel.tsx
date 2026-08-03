@@ -24,7 +24,7 @@ export function JourneyListPanel({
         </li>
         <li>
           <Link href={paths.routes.studies} className="audion-tg-card audion-tg-card--draft">
-            <Panel as="div" className="audion-tg-card-panel">
+            <Panel as="div" variant="card" className="audion-tg-card-panel">
               <Text role="headline" as="h2" className="audion-tg-card-title">
                 Convert from UX run
               </Text>
@@ -40,7 +40,7 @@ export function JourneyListPanel({
               href={`${paths.routes.journeyDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
               className={`audion-tg-card audion-tg-card--${item.status}`}
             >
-              <Panel as="div" className="audion-tg-card-panel">
+              <Panel as="div" variant="card" className="audion-tg-card-panel">
                 <Text role="headline" as="h2" className="audion-tg-card-title">
                   {item.name}
                 </Text>

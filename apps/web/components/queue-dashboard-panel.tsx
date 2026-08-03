@@ -10,7 +10,7 @@ import type {
 } from '@audion-v3/contracts'
 import { Alert, Button, EmptyState, Hint, Panel, Text, ToggleGroup } from '@msqdx/ui'
 import { ConfirmDialog } from '../lib/msqdx-ui-client'
-import { StatLede, StatLedeGroup } from '../lib/msqdx-ui'
+import { Lede, LedeStrip } from '../lib/msqdx-ui'
 import { paths } from '../lib/paths'
 
 const STATUS_FILTERS: Array<{ value: string; label: string }> = [
@@ -133,17 +133,17 @@ export function QueueDashboardPanel({
       {error ? <Alert tone="error">{error}</Alert> : null}
 
       {stats ? (
-        <StatLedeGroup columns={4} aria-label="Queue stats" data-testid="queue-stats">
-          <StatLede value={String(stats.pending)} label="Pending" kind="number" />
-          <StatLede value={String(stats.processing)} label="Processing" kind="number" />
-          <StatLede value={String(stats.completed)} label="Completed" kind="number" tone="pos" />
-          <StatLede
+        <LedeStrip columns={4} aria-label="Queue stats" data-testid="queue-stats">
+          <Lede value={String(stats.pending)} label="Pending" kind="number" />
+          <Lede value={String(stats.processing)} label="Processing" kind="number" />
+          <Lede value={String(stats.completed)} label="Completed" kind="number" tone="pos" />
+          <Lede
             value={String(stats.failed)}
             label="Failed"
             kind="number"
             tone={stats.failed > 0 ? 'low' : undefined}
           />
-        </StatLedeGroup>
+        </LedeStrip>
       ) : null}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
@@ -190,7 +190,7 @@ export function QueueDashboardPanel({
                         outline: active ? '2px solid var(--color-theme-accent, currentColor)' : undefined,
                       }}
                     >
-                      <Panel as="div" className="audion-tg-card-panel">
+                      <Panel as="div" variant="card" className="audion-tg-card-panel">
                         <Text role="headline" as="span" className="audion-tg-card-title">
                           {job.filename}
                         </Text>

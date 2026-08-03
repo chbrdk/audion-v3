@@ -24,7 +24,7 @@ export function StudyListPanel({
               href={`${paths.routes.studyDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
               className={`audion-tg-card audion-tg-card--${item.status}`}
             >
-              <Panel as="div" className="audion-tg-card-panel">
+              <Panel as="div" variant="card" className="audion-tg-card-panel">
                 <Text role="headline" as="h2" className="audion-tg-card-title">
                   {item.name}
                 </Text>

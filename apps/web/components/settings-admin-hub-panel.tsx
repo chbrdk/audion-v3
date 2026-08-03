@@ -43,7 +43,7 @@ export function SettingsAdminHubPanel() {
         {ADMIN_CARDS.map((card) => (
           <li key={card.href}>
             <Link href={card.href} className="audion-tg-card audion-tg-card--create">
-              <Panel as="div" className="audion-tg-card-panel audion-tg-card-panel--create">
+              <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
                 <Text role="headline" as="span" className="audion-tg-card-title">
                   {card.title}
                 </Text>

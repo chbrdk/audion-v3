@@ -94,7 +94,7 @@ export function TargetGroupLinkedPersonas({
                 href={paths.routes.personaDetail(persona.id)}
                 className={`audion-tg-card audion-tg-card--${persona.status}`}
               >
-                <Panel as="div" className="audion-tg-card-panel">
+                <Panel as="div" variant="card" className="audion-tg-card-panel">
                   <Text role="headline" as="h4" className="audion-tg-card-title">
                     {persona.name}
                   </Text>
