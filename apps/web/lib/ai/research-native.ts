@@ -3,32 +3,13 @@
  */
 
 import { runAssistJson } from './assist'
+import { crawlResearchSeed } from './research-crawl'
 import {
   storeAppendResearchEvent,
   storeCompleteResearchRun,
   storeFailResearchRun,
   storeMarkResearchRunning,
 } from '../fixtures/research-runs'
-
-async function fetchPageText(url: string): Promise<string> {
-  try {
-    const res = await fetch(url, {
-      headers: { Accept: 'text/html,text/plain,*/*' },
-      cache: 'no-store',
-      signal: AbortSignal.timeout(12_000),
-    })
-    const text = await res.text()
-    return text
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 12_000)
-  } catch (error) {
-    return `Fetch failed for ${url}: ${error instanceof Error ? error.message : 'unknown'}`
-  }
-}
 
 export function scheduleNativeResearchJob(
   runId: string,
@@ -40,17 +21,36 @@ export function scheduleNativeResearchJob(
     try {
       storeMarkResearchRunning(runId)
       storeAppendResearchEvent(runId, 'crawl_start', `Crawl ${seedUrl}`)
-      const pageText = await fetchPageText(seedUrl)
-      storeAppendResearchEvent(runId, 'page_fetched', 'Fetched seed page', {
-        url: seedUrl,
-        pages_fetched: 1,
-        chars: pageText.length,
+      const crawl = await crawlResearchSeed(seedUrl)
+      for (const page of crawl.pages) {
+        storeAppendResearchEvent(
+          runId,
+          'page_fetched',
+          page.ok
+            ? `Fetched ${page.url}`
+            : page.blocked
+              ? `Blocked ${page.url} (HTTP ${page.status})`
+              : `Failed ${page.url}`,
+          {
+            url: page.url,
+            status: page.status,
+            blocked: page.blocked,
+            chars: page.text.length,
+            error: page.error,
+          },
+        )
+      }
+      storeAppendResearchEvent(runId, 'crawl_done', 'Crawl finished', {
+        pages_fetched: crawl.pages.length,
+        pages_ok: crawl.fetchedOk,
+        pages_blocked: crawl.blockedCount,
       })
-      storeAppendResearchEvent(runId, 'crawl_done', 'Crawl finished', { pages_fetched: 1 })
       storeAppendResearchEvent(runId, 'synthesize_start', 'Synthesizing summary')
       const packBlock = packContext?.trim()
         ? `${packContext.trim()}\n\n`
         : ''
+      const citationUrls = crawl.pages.filter((p) => p.ok).map((p) => p.url)
+      const primaryCitations = citationUrls.length ? citationUrls : [seedUrl]
       const assist = await runAssistJson<{
         title?: string
         summary?: string
@@ -58,7 +58,12 @@ export function scheduleNativeResearchJob(
         citations?: Array<{ url?: string; note?: string }>
       }>('research.synthesize', {
         locale: 'en',
-        context: `${packBlock}URL: ${seedUrl}\n\nExtract:\n${pageText.slice(0, 8000)}`,
+        context: `${packBlock}SEED URL: ${seedUrl}
+PAGES OK: ${crawl.fetchedOk}
+PAGES BLOCKED: ${crawl.blockedCount}
+
+Extracts:
+${crawl.combinedText.slice(0, 10_000)}`,
       })
       if ('error' in assist) {
         storeFailResearchRun(runId, assist.detail || assist.error)
@@ -70,7 +75,7 @@ export function scheduleNativeResearchJob(
         claims: [
           {
             text: s.body?.trim() || assist.data.summary || 'No claim',
-            citations: [seedUrl],
+            citations: primaryCitations,
           },
         ],
       }))
@@ -78,7 +83,7 @@ export function scheduleNativeResearchJob(
         sections.push({
           key: 'overview',
           title: assist.data.title || 'Overview',
-          claims: [{ text: assist.data.summary, citations: [seedUrl] }],
+          claims: [{ text: assist.data.summary, citations: primaryCitations }],
         })
       }
       storeAppendResearchEvent(runId, 'synthesize_done', 'Summary synthesized')

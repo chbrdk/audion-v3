@@ -28,6 +28,13 @@ Start a research crawl from the project AI tray, then follow progress until a su
 
 UI: **Start research** dialog polls status (~900ms) and renders events + latest summary. Stream route is available for clients that prefer EventSource.
 
+## Crawl hardening (2026-08-03)
+
+- Browser-like `User-Agent` via `paths.researchCrawlUserAgent` (bare `node` UA → CloudFront **403** on `bosch-ebike.com`).
+- Detect blocked bodies (`Request blocked` / 403) and try host fallbacks from `paths` (e.g. Produktkombinationen + Bosch Presse Hub Line).
+- Lib: `apps/web/lib/ai/research-crawl.ts` · tests: `__tests__/research-crawl.test.ts`
+- Easy Setup UA aligned to the same browser-compatible pattern.
+
 ## Deferred
 
 - EventSource client in the dialog (poll is enough for MVP)

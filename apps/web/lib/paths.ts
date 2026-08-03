@@ -53,7 +53,16 @@ export const paths = {
   boschEbikeProduktkombinationenUrl:
     'https://www.bosch-ebike.com/de/service/produktkombinationen',
   boschEbikeHomeUrl: 'https://www.bosch-ebike.com/de/',
+  /** Official press release (accessible when CloudFront blocks bot UAs on bosch-ebike.com). */
+  boschEbikePressHubMotorUrl:
+    'https://www.bosch-presse.de/pressportal/de/de/das-warten-hat-sich-gelohnt-bosch-ebike-systems-bringt-ersten-nabenmotor-283392.html',
   audionMcpPlaygroundUrl: 'https://mcp-audion.projects-a.plygrnd.tech',
+  /** Browser-like UA — CloudFront on bosch-ebike.com returns 403 for bare `node` / custom bot UAs. */
+  researchCrawlUserAgent:
+    'Mozilla/5.0 (compatible; AudionResearch/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+  researchCrawlTimeoutMs: 15_000,
+  researchCrawlMaxTextChars: 12_000,
+  researchCrawlMaxPages: 3,
   /** Demo / public persona portraits under apps/web/public */
   personaAvatarBasePath: '/fixtures/personas',
   /** Demo moodboard / visual tiles under apps/web/public */
@@ -71,7 +80,8 @@ export const paths = {
   easySetupUrlFetchTimeoutMs: 20_000,
   easySetupUrlMaxResponseBytes: 2 * 1024 * 1024,
   easySetupUrlMaxTextChars: 16_000,
-  easySetupUrlUserAgent: 'AudionEasySetup/1.0 (+https://audion)',
+  easySetupUrlUserAgent:
+    'Mozilla/5.0 (compatible; AudionEasySetup/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
   defaultDisplayName: 'AUDION',
   displayNameStorageKey: 'audion.v3.displayName',
   themeStorageKey: 'audion.v3.theme',
