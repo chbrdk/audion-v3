@@ -88,7 +88,7 @@ Staging study/wave refs: see `knowledge/paths.md` / Bosch staging IDs in prior n
 | 2026-08-03 L6 | Soft-Q Think-Aloud draft on Evaluate · unit | — | — | confusion → Q2/Q3=2; hand edits preserved | — | **Pass** — `soft-q-draft` + evaluate merge |
 | 2026-08-03 L6b | optional LLM Soft-Q assist · mocked unit | — | — | ±1 clamp; fail → rule draft; env off by default | — | **Pass** — `soft-q-llm-assist` |
 | 2026-08-03 staging smoke | seeded `persona-alex-lab-ungeduldig-msdfje0b` · job `e5ce3caf…` · wave `wave-persona-lab-b-deploy-smoke-msdm3k9g` | **4** | **8** | ja · forced abandon count=2 · tp=0.9 · budget 10 | **1.0 closer** (local correlate on job) | **Agent Pass / Web gap** — L1–L3 live; empty `summary` → wave finding generic + `validEvidence=false`; Soft-Q draft notes missing on Evaluate (web L5/L6 likely not rolled or summary mapping gap). Fixture-only `persona-alex-lab-impatient` still resolves to `{id}` only. |
-| 2026-08-03 staging web2 | same study · job `a8e4fdf4…` after web redeploy | **5** | **9** | forced abandon · tp=0.9 · budget 10 | closer (agent) | **Web Pass L5/L6** — `validEvidence=true`; Soft-Q draft notes; Q2=2 via friction. Finding still generic until done-step fallback; with done `result` patched → **Q2/Q3=2**. |
+| 2026-08-03 staging try-then-quit | Luna · Alex 2 seeds `dbf4429b`/`ffe270d8` · Sam `91e88836` | **3** / **3** / **6** | **8** | ja Soft-Q 2/2 | closer | **Pass** — see `lab-staging-smoke-try-then-quit-2026-08-03.md` |
 
 **Staging study:** `study-persona-lab-l2-l6b-deploy-smoke-2026-08-03-msdm3k8z` · wave `wave-persona-lab-b-deploy-smoke-msdm3k9g`  
 **Lesson:** Scenario packs must reference **DB persona ids** on staging (or seed fixture ids). Fixture-only ids resolve to `{ id }` and wipe traits.

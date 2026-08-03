@@ -112,8 +112,9 @@
 - Try-then-quit (human-ish abandon): `UX_JOURNEY_TRY_BEFORE_ABANDON` default **1** · `knowledge/lab-try-then-quit-2026-08-03.md` · perception gate + L2 force gated on exploratory attempts
 - Evidence gate: `apps/web/lib/ux-wave-scorecard.ts` — `knowledge/lab-l5-evidence-gate-2026-08-03.md`
 - Soft-Q L6b LLM assist: **leave OFF** on staging unless Soft-Q rationales drift after try-then-quit smokes · `AUDION_SOFT_Q_LLM_ASSIST` · `knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md`
-- Lab DB personas (staging): impatient Alex `persona-alex-lab-ungeduldig-msdfje0b` · patient Sam (seed) `paths.personaLabPatientPersonaId` / see lab try-then-quit note after ops
+- Lab DB personas (staging): impatient Alex `persona-alex-lab-ungeduldig-msdfje0b` · patient Sam `persona-sam-lab-geduldig-msdroy3t` (tp 0.2) · fixture aliases `paths.personaLabImpatientPersonaId` / `personaLabPatientPersonaId`
 - Persona Lab study/wave smoke: `study-persona-lab-l2-l6b-deploy-smoke-2026-08-03-msdm3k8z` / `wave-persona-lab-b-deploy-smoke-msdm3k9g` · project `proj-bosch-ebike-msd3hwtv`
+- Try-then-quit staging smoke: `knowledge/lab-staging-smoke-try-then-quit-2026-08-03.md` · Sam study `study-persona-lab-sam-patient-db-2026-08-03-msds5ghc`
 - Native AI code: `apps/web/lib/ai/` · `ai-workflows-native.ts` · `chat/native-stream.ts`
 - Persona magazine notes: `knowledge/persona-magazine.md`
 - Persona migration map: `knowledge/persona-migration-map.md`
