@@ -11,3 +11,4 @@ coverage/
 .idea/
 .vscode/
 apps/web/.env.local
+services/ux-journey-agent/.venv/
