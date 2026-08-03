@@ -36,6 +36,21 @@ HESITATE_ACTIONS = frozenset(
     {"scroll", "wait", "extract", "extract_page_content", "screenshot", "send_keys"}
 )
 PROCEED_BLOCKED_WHEN_EMPTY_NOTICED = frozenset({"click", "input", "type", "navigate", "go_to_url"})
+# P4.1: these require a valid <<PERCEPTION>> in the same turn (no thinking synthesize).
+DECISION_ACTIONS = frozenset(
+    {
+        "done",
+        "complete",
+        "finish",
+        "click",
+        "input",
+        "type",
+        "navigate",
+        "go_to_url",
+        "select_dropdown",
+        "send_keys",
+    }
+)
 
 _FIELD_LIMIT = 420
 _NOTICED_WHAT_LIMIT = 160
@@ -633,6 +648,7 @@ def new_felt_state() -> dict[str, Any]:
         "stepsWithPerception": 0,
         "retries": 0,
         "forcedDone": 0,
+        "missingPerceptionClears": 0,
     }
 
 
@@ -766,6 +782,8 @@ def perception_prompt_extension(
         "stance (proceed|hesitate|abandon), intent, why.\n"
         "stance=abandon → nur done. stance=hesitate → nur scroll/wait. "
         "stance=proceed → Klick nur auf etwas aus noticed.\n"
+        "HARD: done/click/input/navigate OHNE gültigen <<PERCEPTION>>-Block ist VERBOTEN. "
+        "Runtime verwirft solche Actions — Perception wird NICHT aus freiem Text erfunden.\n"
         "VO in thinking: 1–3 Sätze Erste Person Präsens mit aktivem Verb.\n"
         "INTERNE FELDER: evaluation_previous_goal, memory, next_goal (Bot-Selektor OK).\n"
         f"{completion_block}"
@@ -803,8 +821,40 @@ def perception_nudge_message(budget: int) -> str:
         "AUDION_PERCEPTION_REQUIRED: Dein letzter Output hatte keinen gültigen "
         f"<<PERCEPTION>>-Block (noticed 1–{budget}, feel, stance, intent, think). "
         "Wiederhole den Step: ZUERST Perception, DANN Action. "
-        "Ohne Perception keine Klicks."
+        "VERBOTEN ohne Block: done, click, input, navigate. "
+        "Erfinde keine Perception aus freiem Text — nur was du JETZT siehst, im JSON-Block."
     )
+
+
+def perception_missing_retries() -> int:
+    """How many nudge+retry cycles before clearing decision actions (default 3)."""
+    raw = (os.environ.get("UX_JOURNEY_PERCEPTION_MISSING_RETRIES") or "3").strip()
+    try:
+        n = int(raw)
+    except ValueError:
+        n = 3
+    return max(1, min(n, 6))
+
+
+def actions_need_perception(actions: list[Any] | None) -> bool:
+    """True when any proposed tool requires a valid PERCEPTION in the same turn."""
+    for a in actions or []:
+        if action_tool_name(a) in DECISION_ACTIONS:
+            return True
+    return False
+
+
+def clear_decision_actions(actions: list[Any] | None) -> tuple[list[Any], str]:
+    """
+    Strip done/click/… when PERCEPTION is missing.
+    Keep hesitate-class soft tools only; never invent a perception from thinking.
+    """
+    if not actions:
+        return [], "no_perc_empty"
+    soft = [a for a in actions if action_tool_name(a) in HESITATE_ACTIONS]
+    if soft:
+        return soft, "no_perc_soft_only"
+    return [], "no_perc_cleared"
 
 
 def public_perception_stats(felt: dict[str, Any] | None, steps: list[dict[str, Any]]) -> dict[str, Any]:
@@ -829,6 +879,7 @@ def public_perception_stats(felt: dict[str, Any] | None, steps: list[dict[str, A
         "forcedDone": int((felt or {}).get("forcedDone") or 0),
         "retries": int((felt or {}).get("retries") or 0),
         "stanceUpgraded": upgraded,
+        "missingPerceptionClears": int((felt or {}).get("missingPerceptionClears") or 0),
     }
 
 

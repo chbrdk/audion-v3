@@ -52,6 +52,10 @@ Persona Lab B-run: each decision step should expose `perception`; impatient aban
 
 Staging expect after deploy: `abandonStep` set, gold overlap ≥0.5, Soft-Q Q2/Q3≈2, correlate ≥0.65.
 
+## P4.1 — no thinking synthesize (2026-08-03)
+
+Missing `<<PERCEPTION>>` no longer force-dones. Decision actions are cleared; model must emit the block. See `knowledge/lab-p4.1-block-done-without-perception-2026-08-03.md`.
+
 ## Human gold (P3)
 
 Fixture: `knowledge/fixtures/perception-human-gold-b.json`  

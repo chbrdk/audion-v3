@@ -3562,26 +3562,110 @@ async def run_agent(
                     except Exception:
                         pass
 
+                async def _apply_actions(filtered: list[Any]) -> None:
+                    mo_local = getattr(getattr(agent, "state", None), "last_model_output", None)
+                    if mo_local is None:
+                        return
+                    try:
+                        mo_local.action = filtered  # type: ignore[union-attr]
+                    except Exception:
+                        pass
+
                 async def _force_done_schema(reason: str) -> None:
+                    """Last-resort done (stance abandon / empty filter) — still needs PERCEPTION."""
                     felt_state["forcedDone"] = int(felt_state.get("forcedDone") or 0) + 1
-                    await _nudge(reason)
+                    await _nudge(
+                        reason
+                        + " "
+                        + ux_perception.perception_nudge_message(_perc_budget)
+                    )
                     done_schema = getattr(agent, "DoneAgentOutput", None)
                     if done_schema is not None:
                         agent.AgentOutput = done_schema
-                    await _orig_get_next(browser_state_summary)
+                    # Require a real <<PERCEPTION>> on the done turn — never synthesize from prose.
+                    max_done_tries = 2
+                    perc_done: dict[str, Any] | None = None
+                    for _ in range(max_done_tries):
+                        perc_done = await _once()
+                        if perc_done is not None:
+                            break
+                        felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
+                        await _nudge(ux_perception.perception_nudge_message(_perc_budget))
+                    if perc_done is None:
+                        # Refuse silent done: clear actions; next step / max_steps handles stop.
+                        felt_state["missingPerceptionClears"] = (
+                            int(felt_state.get("missingPerceptionClears") or 0) + 1
+                        )
+                        await _apply_actions([])
+                        print(
+                            f"ux-journey: job={job_id} force_done blocked — "
+                            "still no <<PERCEPTION>> (no synthesize)",
+                            flush=True,
+                        )
+                        return
+                    mo_d = getattr(getattr(agent, "state", None), "last_model_output", None)
+                    actions_d = list(getattr(mo_d, "action", None) or []) if mo_d else []
+                    filtered_d, _reason_d = ux_perception.filter_actions_for_stance(
+                        actions_d, perc_done
+                    )
+                    if not filtered_d:
+                        # Stance abandon with no done tool in output — leave empty; schema is Done-only.
+                        await _apply_actions([])
+                    else:
+                        await _apply_actions(filtered_d)
+                    ux_perception.update_felt_state(felt_state, perc_done)
+                    print(
+                        f"ux-journey: job={job_id} perception stance={perc_done.get('stance')} "
+                        f"noticed={perc_done.get('noticedUsed')}/{perc_done.get('salienceBudget')} "
+                        f"gate=force_done_ok upgraded={bool(perc_done.get('stanceUpgraded'))}",
+                        flush=True,
+                    )
 
+                # P4.1: never accept done/click without a parsed <<PERCEPTION>>.
+                # Do not invent perception from free-form thinking.
+                max_missing = ux_perception.perception_missing_retries()
                 perc = await _once()
-                if perc is None:
+                missing = 0
+                while perc is None and missing < max_missing:
+                    missing += 1
                     felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
+                    mo_miss = getattr(getattr(agent, "state", None), "last_model_output", None)
+                    actions_miss = (
+                        list(getattr(mo_miss, "action", None) or []) if mo_miss else []
+                    )
+                    cleared, clear_reason = ux_perception.clear_decision_actions(actions_miss)
+                    await _apply_actions(cleared)
+                    felt_state["missingPerceptionClears"] = (
+                        int(felt_state.get("missingPerceptionClears") or 0) + 1
+                    )
                     await _nudge(ux_perception.perception_nudge_message(_perc_budget))
-                    perc = await _once()
-                if perc is None:
-                    await _force_done_schema(
-                        "AUDION_PERCEPTION_MISSING: Kein gültiger Perception-Block — "
-                        "beende mit ehrlichem done (keine weiteren Klicks)."
+                    print(
+                        f"ux-journey: job={job_id} perception missing retry={missing}/"
+                        f"{max_missing} clear={clear_reason}",
+                        flush=True,
                     )
                     perc = await _once()
-                    ux_perception.update_felt_state(felt_state, perc)
+
+                if perc is None:
+                    # Still no block: strip decision actions, do NOT force DoneAgentOutput.
+                    mo_miss = getattr(getattr(agent, "state", None), "last_model_output", None)
+                    actions_miss = (
+                        list(getattr(mo_miss, "action", None) or []) if mo_miss else []
+                    )
+                    cleared, clear_reason = ux_perception.clear_decision_actions(actions_miss)
+                    await _apply_actions(cleared)
+                    felt_state["missingPerceptionClears"] = (
+                        int(felt_state.get("missingPerceptionClears") or 0) + 1
+                    )
+                    await _nudge(
+                        "AUDION_PERCEPTION_HARD_BLOCK: done/click ohne <<PERCEPTION>> verworfen. "
+                        "Nächster Step MUSS den Block liefern. Runtime erfindet keine Perception."
+                    )
+                    print(
+                        f"ux-journey: job={job_id} perception hard-block "
+                        f"clear={clear_reason} (no synthesize, no force-done)",
+                        flush=True,
+                    )
                     return
 
                 mo = getattr(getattr(agent, "state", None), "last_model_output", None)
@@ -3614,7 +3698,7 @@ async def run_agent(
                             felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
                             await _nudge(
                                 "AUDION_PERCEPTION_INTENT: Klick nur auf Elemente aus noticed/intent. "
-                                "Wähle eine passende Action oder done."
+                                "Wähle eine passende Action oder done — mit gültigem <<PERCEPTION>>."
                             )
                             perc2 = await _once()
                             if perc2:
@@ -3631,18 +3715,11 @@ async def run_agent(
                 if not filtered:
                     await _force_done_schema(
                         f"AUDION_PERCEPTION_STANCE ({perc.get('stance')}): "
-                        f"{perc.get('intent') or perc.get('why') or 'Ich stoppe hier.'} "
-                        "Antworte mit done."
+                        f"{perc.get('intent') or perc.get('why') or 'Ich stoppe hier.'}"
                     )
-                    perc2 = await _once()
-                    if perc2:
-                        perc = perc2
-                else:
-                    try:
-                        mo.action = filtered  # type: ignore[union-attr]
-                    except Exception:
-                        pass
+                    return
 
+                await _apply_actions(filtered)
                 ux_perception.update_felt_state(felt_state, perc)
                 felt_block = ux_perception.felt_state_prompt_block(felt_state)
                 if felt_block:

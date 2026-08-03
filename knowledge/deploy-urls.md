@@ -14,6 +14,17 @@ Central place for public origins — reference from Coolify env / docs; do not h
 | `URL_PLEXON_V3` | `https://plexon-v3.projects-a.plygrnd.tech` |
 | `URL_PLEXON_V3_REGISTER` | `https://plexon-v3.projects-a.plygrnd.tech/register` |
 
+## Coolify (project `MSQDX-Audion-v3`)
+
+Inventory: `knowledge/coolify-msqdx-audion-v3-2026-08-03.md` · MCP `user-coolify` (read-only).
+
+| Resource | UUID |
+|----------|------|
+| Project | `ipevzbcyerfjylknqhifgntn` |
+| Web `audion-v3:main-app` | `putvwgqq1c9yb30tsqosujde` |
+| Agent `audion-v3-ux-journey-agent` | `lfv0921nlqzl0qow9xse4it4` |
+| Postgres `audion-v3-postgres` | `smr9w75vb61w1t8t6kean0xu` |
+
 ## Coolify app `audion-v3-web`
 
 | Setting | Value |

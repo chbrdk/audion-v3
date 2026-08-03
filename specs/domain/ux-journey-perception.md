@@ -52,12 +52,12 @@ Extra −1 when `detail_orientation` < 0.35 (min 2). Extra +1 when ≥ 0.75 (max
 
 ## Gate (runtime)
 
-1. Missing/invalid PERCEPTION → one retry nudge; then force `done` with caveat.  
-2. `stance=abandon` → only `done` allowed.  
+1. **P4.1 — no synthesize:** Missing/invalid `<<PERCEPTION>>` → nudge + clear `done`/`click`/… (soft wait/scroll only). Retries via `UX_JOURNEY_PERCEPTION_MISSING_RETRIES` (default 3). **Never** invent a perception from free-form thinking. **Never** force `DoneAgentOutput` solely because the block is missing.  
+2. `stance=abandon` → only `done` allowed (still requires a valid PERCEPTION on that turn).  
 3. `stance=hesitate` → only `scroll` / `wait` / `extract` (no deep `click`/`input`/`navigate`).  
 4. `stance=proceed` → normal actions; soft intent↔target overlap (P2).  
-5. **Hard impatient upgrade (P4):** `time_pressure ≥ 0.75` + (`confusion` tag or clarity≤1) + grey/filter signal → force `stance=abandon` (even if model said proceed). Intent-align thrash upgrades to abandon instead of opaque `forcedDone`.  
-6. Noticed enrich: cues already in think/why/intent may be promoted into `noticed[]` up to salience budget (no invented UI).  
+5. **Hard impatient upgrade (P4):** `time_pressure ≥ 0.75` + (`confusion` tag or clarity≤1) + grey/filter signal → force `stance=abandon` (even if model said proceed). Intent-align thrash upgrades to abandon instead of opaque click-retry.  
+6. Noticed enrich: cues already in perception think/why/intent may be promoted into `noticed[]` up to salience budget (no invented UI, no free-thinking invent).  
 7. L2 regex confusion-abandon remains safety net.
 
 ## Step payload

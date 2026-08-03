@@ -221,3 +221,41 @@ def test_patient_does_not_force_abandon():
     out, upgraded = P.apply_impatient_abandon_stance(perc, 0.2)
     assert upgraded is False
     assert out["stance"] == "hesitate"
+
+
+def test_clear_decision_actions_strips_done_without_perception():
+    class D:
+        def model_dump(self, exclude_none=True):
+            return {"done": {"text": "bye"}}
+
+    class C:
+        def model_dump(self, exclude_none=True):
+            return {"click": {"index": 1}}
+
+    class S:
+        def model_dump(self, exclude_none=True):
+            return {"scroll": {"down": True}}
+
+    assert P.actions_need_perception([D()]) is True
+    assert P.actions_need_perception([S()]) is False
+    cleared, reason = P.clear_decision_actions([D(), C()])
+    assert cleared == []
+    assert reason == "no_perc_cleared"
+    soft, reason2 = P.clear_decision_actions([D(), S()])
+    assert len(soft) == 1
+    assert P.action_tool_name(soft[0]) == "scroll"
+    assert reason2 == "no_perc_soft_only"
+
+
+def test_nudge_forbids_done_without_block():
+    msg = P.perception_nudge_message(3)
+    assert "VERBOTEN" in msg
+    assert "done" in msg.lower()
+    assert "erfunden" in msg.lower() or "Erfinde" in msg
+    assert P.perception_missing_retries() >= 1
+
+
+def test_prompt_forbids_done_without_perception():
+    block = P.perception_prompt_extension(time_pressure=0.9)
+    assert "VERBOTEN" in block
+    assert "nicht aus freiem Text" in block.lower() or "NICHT aus freiem Text" in block
