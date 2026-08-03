@@ -6,12 +6,26 @@ First-class Study → Wave → Evaluate → Compare product loop (Testbirds-like
 
 ## How to start (today)
 
+### EBM Referenz (sofort — ohne Live-Agent)
+
 1. Open audion-v3 → nav **Studies** → `/studies`
-2. **New study** (create card) or open seed **EBM Produktkombinationen**
-3. Study detail → **New wave** (seed run plan) or open **`audion-2026-07-30-mcp`**
-4. Wave topbar: **Start** (confirm) → sync polls while `running`; **Evaluate**; **Compare** (picker); **Export report**
-5. **Report** band: TipTap narrative + structured Soft-Q / hypothesis / finding edits via PATCH
-6. **F-Fragen**: Copy or **Open in Chat** (`paths.routes.chatWithContext` — prompt + personaId + study/wave)
+2. Open seed **EBM Produktkombinationen** → `/studies/study-ebm-produktkombinationen`
+3. Open complete wave **`audion-2026-07-30-mcp`** → `/studies/study-ebm-produktkombinationen/waves/wave-audion-2026-07-30-mcp`
+4. Use **Evaluate** (aggregates / Soft-Q / H1–H5), **Compare**, **Report** / **Export**, **F-Fragen → Chat**
+5. Staging: same paths under `https://audion-v3.projects-a.plygrnd.tech`
+
+### Live / fixture Retest
+
+1. Prefer draft wave **`phase2-nav-segment-plan`** or **New wave** / **New study from pack** (EBM ScenarioPack)
+2. Wave topbar: **Start** (confirm) → sync polls while `running`; **Evaluate**; **Compare** vs `audion-2026-07-30-mcp`; **Export report**
+3. Requires `UX_JOURNEY_AGENT_URL` (+ secret) for live browser runs; fixtures simulate progression without agent
+4. Soft-Q / hypothesis narrative edits via PATCH on the evaluation slice
+
+### Create flow
+
+1. **New study** (blank) or **From pack: EBM Produktkombinationen**
+2. Study detail → **New wave** (seed run plan) when not created from pack
+3. F-Fragen: Copy or **Open in Chat** (`paths.routes.chatWithContext` — prompt + personaId + study/wave)
 
 Default data source: fixtures (`NEXT_PERSONA_DATA_SOURCE=fixtures|auto`). Live API: set `api` + `NEXT_PERSONA_BACKEND_INTERNAL_URL` to AUDION-v2 — Start/Sync proxy to v2 orchestrate.
 
@@ -65,12 +79,15 @@ Wave **Report** band stores `reportMarkdown` (+ `reportUpdatedAt`). Export uses 
 | Done | Open |
 |------|------|
 | Create Study / Wave dialogs | Statistischer n=15 / Testbirds-Parity |
-| Start + Sync poll (fixture + API proxy) — **official UX Journey Agent surface** | Full report versioning / artifact CDN |
-| Compare picker (multi-wave) | New charting framework |
+| **New study from ScenarioPack** (EBM pack) | Full report versioning / artifact CDN |
+| Start + Sync poll (fixture + API proxy) — **official UX Journey Agent surface** | New charting framework |
+| `maxSteps` per run → agent; scorecard + validEvidence (403) mapping | Soft-Q auto-draft from valid runs (assist) |
+| Compare picker (multi-wave) | |
 | Report TipTap + structured PATCH + export body | |
 | F-Fragen Copy + Chat deep-link (persona + study context) | |
 | Soft-Q value / confidence / rationale PATCH | |
 | DS StatLede / DivergingBar / WizardSteps | |
 | Convert wave run → Journey | |
+| EBM personas Alex/Sam fixtures | |
 
 Agent surface contract: `knowledge/ux-agent-surface.md`.

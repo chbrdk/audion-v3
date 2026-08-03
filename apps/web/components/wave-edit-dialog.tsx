@@ -19,9 +19,9 @@ const URL_OPTIONS = [
 ]
 
 const PERSONA_OPTIONS = [
-  { value: 'persona-owner-upgrade', label: 'Owner upgrade' },
-  { value: 'persona-purchase-intent', label: 'Purchase intent' },
-  { value: 'persona-explorer', label: 'Explorer' },
+  { value: 'persona-alex-nachruester', label: 'Alex Nachrüster' },
+  { value: 'persona-sam-kaufinteressent', label: 'Sam Kaufinteressent' },
+  { value: 'persona-alex-morgan', label: 'Alex Morgan' },
 ]
 
 const SEGMENT_OPTIONS = [

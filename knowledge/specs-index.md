@@ -69,5 +69,6 @@ Journey phase AI + validate: `knowledge/journey-phase-ai-validate-2026.md`
 Project research SSE polish: `knowledge/project-research-sse-2026.md`  
 TG + persona knowledge / profile_de: `knowledge/tg-persona-knowledge-profile-de-2026.md`  
 Chat modalities (share / moodboard / inspect / convert): `knowledge/chat-modalities-2026.md`  
+Scenario packs (EBM Leitfaden → Study/Wave): `knowledge/scenario-packs.md`  
 Canonical URLs/paths: see `knowledge/paths.md`.  
 Collection Knowledge Pack (Plexon SoT): `plexon-v3/specs/domain/collection-knowledge-pack.md` · Audion publish: `specs/domain/knowledge-pack-publish.md`.

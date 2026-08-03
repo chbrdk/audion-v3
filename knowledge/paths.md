@@ -32,9 +32,13 @@
 - Journey lib: `apps/web/lib/journeys.ts`
 - UX Study routes: `/studies`, `/studies/[studyId]`, `/studies/[studyId]/waves/[waveId]` (`paths.routes.studies*`)
 - UX Study API: `/api/studies*` → optional proxy to v2 `/ux-studies` when `NEXT_PERSONA_DATA_SOURCE=api`
+- UX Study from pack: `paths.routes.apiStudiesFromPack` (`/api/studies/from-pack`)
 - UX Study fixtures/store: `apps/web/lib/fixtures/ux-studies.ts` · `ux-study-store.ts`
-- UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts`
+- Scenario packs: `apps/web/lib/scenario-packs.ts` · `apps/web/lib/fixtures/scenario-packs/` · `knowledge/scenario-packs.md`
+- Wave scorecard / validEvidence: `apps/web/lib/ux-wave-scorecard.ts`
+- UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts` · `ux-studies-native.ts`
 - UX Study knowledge: `knowledge/ux-studies.md`
+- EBM baseline wave: `/studies/study-ebm-produktkombinationen/waves/wave-audion-2026-07-30-mcp`
 - UX Journey Agent surface (Studies Start/Sync): `knowledge/ux-agent-surface.md`
 - Optional CHECKION single-page scan after explore URL: `specs/domain/checkion-single-scan-trigger.md` · companion checkion-v3 `specs/domain/audion-journey-scan-trigger.md`
 - CHECKION deep-link helpers: `apps/web/lib/checkion-links.ts` · CTA `apps/web/components/scan-in-checkion-cta.tsx` (Chat-Inspect + Studies wave runs)

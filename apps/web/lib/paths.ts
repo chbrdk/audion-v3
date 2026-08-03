@@ -40,6 +40,7 @@ export const paths = {
   apiTokenFixtureOwnerId: 'local-admin',
   uxStudyFixturesPath: 'apps/web/lib/fixtures/ux-studies.ts',
   uxStudyStorePath: 'apps/web/lib/fixtures/ux-study-store.ts',
+  uxScenarioPacksPath: 'apps/web/lib/fixtures/scenario-packs',
   /** Demo target for EBM Produktkombinationen (central key; resolve via backend/urls) */
   boschEbikeProduktkombinationenUrl:
     'https://www.bosch-ebike.com/de/service/produktkombinationen',
@@ -104,6 +105,7 @@ export const paths = {
     studyWaveDetail: (studyId: string, waveId: string) =>
       `/studies/${studyId}/waves/${waveId}`,
     apiStudies: '/api/studies',
+    apiStudiesFromPack: '/api/studies/from-pack',
     apiStudyDetail: (id: string) => `/api/studies/${id}`,
     apiStudyWaves: (studyId: string) => `/api/studies/${studyId}/waves`,
     apiStudyWaveDetail: (studyId: string, waveId: string) =>

@@ -202,3 +202,53 @@ export type UxWaveCompareDelta = {
   worsened: string[]
   summary: string
 }
+
+/** Reusable Leitfaden → Study/Wave seed (no PDF parsing). */
+export type UxScenarioPackRun = {
+  runKey: string
+  leitfadenBlock: string | null
+  /** Fixture persona id */
+  personaId: string
+  personaName: string | null
+  segment: string | null
+  /** paths key: bosch.ebike.produktkombinationen | bosch.ebike.home */
+  urlKey: string
+  task: string
+  maxSteps: number
+}
+
+export type UxScenarioPack = {
+  id: string
+  name: string
+  description: string | null
+  sourceGuide: string | null
+  targetUrlKey: string
+  projectId: string | null
+  hypothesisTemplates: UxHypothesisTemplate[]
+  softScoreKeys: SoftScoreKey[]
+  fFragenPrompts: string[]
+  defaultWaveKey: string
+  runs: UxScenarioPackRun[]
+}
+
+export type UxScenarioPackSummary = {
+  id: string
+  name: string
+  sourceGuide: string | null
+  targetUrlKey: string
+  runCount: number
+}
+
+export type UxStudyFromPackPayload = {
+  packId: string
+  /** Optional override study name */
+  name?: string
+  projectId?: string | null
+  waveKey?: string
+}
+
+export type UxStudyFromPackResult = {
+  study: UxStudyDetail
+  wave: UxWaveDetail
+  packId: string
+}

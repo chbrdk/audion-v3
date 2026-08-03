@@ -7,6 +7,7 @@ import { Button, Field, Input, Panel, Text, Textarea, WizardSteps } from '@msqdx
 import { Dialog, Select, TagInput } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { EBM_HYPOTHESES } from '../lib/fixtures/ux-studies'
+import type { UxScenarioPackSummary, UxStudyFromPackResult } from '@audion-v3/contracts'
 
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
@@ -18,6 +19,8 @@ const STEPS = [
   { id: 'basics', label: 'Basics' },
   { id: 'hypotheses', label: 'Hypotheses' },
 ]
+
+const BLANK_PACK = '__blank__'
 
 function emptyPayload(): UxStudyWritePayload {
   return {
@@ -63,6 +66,8 @@ export function StudyEditDialog({
   const [nameError, setNameError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [packs, setPacks] = useState<UxScenarioPackSummary[]>([])
+  const [packId, setPackId] = useState(BLANK_PACK)
 
   useEffect(() => {
     if (!open) return
@@ -71,6 +76,13 @@ export function StudyEditDialog({
       const empty = emptyPayload()
       setForm(empty)
       setHypTags(templatesToTags(empty.hypothesisTemplates ?? []))
+      setPackId(BLANK_PACK)
+      void fetch(paths.routes.apiStudiesFromPack)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: { items?: UxScenarioPackSummary[] } | null) => {
+          if (data?.items?.length) setPacks(data.items)
+        })
+        .catch(() => undefined)
     } else {
       setForm({
         name: study.name,
@@ -82,13 +94,14 @@ export function StudyEditDialog({
         hypothesisTemplates: study.hypothesisTemplates,
       })
       setHypTags(templatesToTags(study.hypothesisTemplates))
+      setPackId(BLANK_PACK)
     }
     setNameError(null)
     setSaveError(null)
   }, [open, mode, study])
 
   async function onSave() {
-    if (!form.name.trim()) {
+    if (!form.name.trim() && packId === BLANK_PACK) {
       setNameError('Name is required')
       setStep(0)
       return
@@ -96,6 +109,27 @@ export function StudyEditDialog({
     setSaving(true)
     setSaveError(null)
     try {
+      if (mode === 'create' && packId !== BLANK_PACK) {
+        const response = await fetch(paths.routes.apiStudiesFromPack, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            packId,
+            name: form.name.trim() || undefined,
+            projectId: form.projectId || null,
+          }),
+        })
+        if (!response.ok) {
+          const err = (await response.json().catch(() => null)) as { error?: string } | null
+          throw new Error(err?.error || `Save failed (${response.status})`)
+        }
+        const saved = (await response.json()) as UxStudyFromPackResult
+        onClose()
+        router.push(paths.routes.studyWaveDetail(saved.study.id, saved.wave.id))
+        router.refresh()
+        return
+      }
+
       const payload: UxStudyWritePayload = {
         ...form,
         name: form.name.trim(),
@@ -145,13 +179,19 @@ export function StudyEditDialog({
               Back
             </Button>
           ) : null}
-          {step < STEPS.length - 1 ? (
+          {step < STEPS.length - 1 && packId === BLANK_PACK ? (
             <Button size="md" onClick={() => setStep((s) => s + 1)} disabled={saving}>
               Next
             </Button>
           ) : (
             <Button size="md" onClick={() => void onSave()} disabled={saving}>
-              {saving ? 'Saving…' : isCreate ? 'Create' : 'Save'}
+              {saving
+                ? 'Saving…'
+                : isCreate && packId !== BLANK_PACK
+                  ? 'Create from pack'
+                  : isCreate
+                    ? 'Create'
+                    : 'Save'}
             </Button>
           )}
         </>
@@ -161,12 +201,44 @@ export function StudyEditDialog({
         <WizardSteps steps={STEPS} activeIndex={step} onStepSelect={setStep} />
         <p className="audion-edit-lede">
           {isCreate
-            ? 'Name the study, target URL key, and H1–H5 templates — waves are added next.'
+            ? 'Blank study or seed from a ScenarioPack (EBM Leitfaden → runs + Soft-Q shell).'
             : 'Update study brief and hypothesis templates.'}
         </p>
 
         {step === 0 ? (
           <>
+            {isCreate && packs.length ? (
+              <Field
+                label="Scenario pack"
+                size="md"
+                htmlFor="study-pack"
+                className="audion-edit-field"
+              >
+                <Select
+                  id="study-pack"
+                  options={[
+                    { value: BLANK_PACK, label: 'Blank study' },
+                    ...packs.map((p) => ({
+                      value: p.id,
+                      label: `${p.name} (${p.runCount} runs)`,
+                    })),
+                  ]}
+                  value={packId}
+                  onChange={(value) => {
+                    setPackId(value)
+                    const pack = packs.find((p) => p.id === value)
+                    if (pack) {
+                      setForm((prev) => ({
+                        ...prev,
+                        name: prev.name || pack.name,
+                        sourceGuide: pack.sourceGuide ?? prev.sourceGuide,
+                        targetUrlKey: pack.targetUrlKey,
+                      }))
+                    }
+                  }}
+                />
+              </Field>
+            ) : null}
             <Field
               label="Name"
               size="md"
@@ -182,7 +254,7 @@ export function StudyEditDialog({
                   setForm((prev) => ({ ...prev, name: e.target.value }))
                   if (nameError) setNameError(null)
                 }}
-                placeholder="Study name"
+                placeholder={packId !== BLANK_PACK ? 'Optional override (pack name default)' : 'Study name'}
               />
             </Field>
             <Field label="Status" size="md" htmlFor="study-status" className="audion-edit-field">

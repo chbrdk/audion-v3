@@ -20,6 +20,7 @@ import {
   uxJourneyAgentGet,
   uxJourneyAgentStart,
 } from './ux-journey-agent-client'
+import { mapAgentResultToWaveRun } from './ux-wave-scorecard'
 
 export async function startUxWaveNativeOrFixture(
   studyId: string,
@@ -47,7 +48,7 @@ export async function startUxWaveNativeOrFixture(
         url: run.url,
         task: run.task || `Complete study wave task on ${run.url}`,
         persona: persona ?? (run.personaId ? { id: run.personaId } : null),
-        maxSteps: 12,
+        maxSteps: run.maxSteps ?? 12,
       })
       await storeUpsertUxJourneyRun({
         personaId: run.personaId || 'unknown',
@@ -108,20 +109,7 @@ export async function syncUxWaveNativeOrFixture(
           scorecard: (status.result?.scorecard as Record<string, unknown> | null) ?? null,
           steps,
         })
-        updated.push({
-          ...run,
-          agentStatus: 'complete',
-          agentSuccess: success,
-          taskCompleted: success,
-          validEvidence: success,
-          goalReached: success,
-          steps: steps.length || run.steps,
-          finding:
-            status.result?.summary ||
-            run.finding ||
-            (success ? 'Browser agent completed run.' : status.error || 'Agent error'),
-          frictionScore: run.frictionScore ?? (success ? 7 : 11),
-        })
+        updated.push(mapAgentResultToWaveRun(run, status))
       } catch {
         anyRunning = true
         updated.push(run)

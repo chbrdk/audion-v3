@@ -352,17 +352,29 @@ function memorySyncUxWave(studyId: string, waveId: string): UxWaveDetail | null 
     if (r.agentStatus === 'complete') return r
     if (r.agentStatus === 'running' || current.status === 'running') {
       advanced = true
-      const ok = !r.runKey.startsWith('A-')
+      // A-* ≈ Erstkontakt 403; other keys get fixture-valid evidence
+      const infraBlocked = r.runKey.startsWith('A-')
+      const taskCompleted = !infraBlocked
+      const agentSuccess = !infraBlocked
+      const blockers = infraBlocked ? ['cloudfront_403'] : []
       return {
         ...r,
-        agentStatus: 'complete',
-        agentSuccess: ok,
-        taskCompleted: ok,
-        validEvidence: ok,
-        validEvidenceCaveat: ok ? r.validEvidenceCaveat : 'fixture sync: invalid evidence',
-        goalReached: ok,
-        frictionScore: r.frictionScore ?? (ok ? 8 : 10),
-        finding: r.finding ?? (ok ? 'Fixture sync completed run.' : 'Fixture sync: blocked.'),
+        agentStatus: 'complete' as const,
+        agentSuccess,
+        taskCompleted,
+        validEvidence: taskCompleted,
+        validEvidenceCaveat: infraBlocked
+          ? null
+          : r.validEvidenceCaveat ?? null,
+        blockers,
+        goalReached: taskCompleted,
+        frictionScore: r.frictionScore ?? (taskCompleted ? 8 : 10),
+        personaFitScore: r.personaFitScore ?? (taskCompleted ? 2 : 0),
+        finding:
+          r.finding ??
+          (taskCompleted
+            ? 'Fixture sync completed run.'
+            : 'Fixture sync: infrastructure blocked (403).'),
       }
     }
     return r

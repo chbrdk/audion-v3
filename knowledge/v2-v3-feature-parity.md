@@ -195,15 +195,16 @@ Run against audion-v3 (`apps/web`, default port **3006**). Paths via `paths.rout
 ### A. Fixtures Studies loop (default / `fixtures` \| `auto`)
 
 1. Open `/studies` — list loads; seed **EBM Produktkombinationen** visible.
-2. **New study** — create dialog (`WizardSteps`) saves and opens detail.
-3. Study detail → **New wave** — wave appears in list.
-4. Open seed wave `audion-2026-07-30-mcp` (or new wave).
-5. Topbar **Start** → Confirm → status moves toward running; **Sync** / auto-poll updates run dots (`StatusMeterPanel`).
-6. **Evaluate** — aggregates / Soft-Q board refresh.
-7. Soft-Q: change value, confidence %, rationale → persists (reload wave).
-8. Report band: edit TipTap narrative → persists; **Export report** downloads markdown body.
-9. **Compare** — pick another wave (or create second) → delta UI.
-10. F-Fragen: **Copy** works; **Open in Chat** opens `/chat` with `prompt` + `personaId` + study/wave query (`chatWithContext`).
+2. Open baseline wave `/studies/study-ebm-produktkombinationen/waves/wave-audion-2026-07-30-mcp` — Soft-Q / H1–H5 / Export work.
+3. **New study** — blank **or** Scenario pack **EBM Produktkombinationen** → creates study + draft wave with A/B/C/Nav runs.
+4. Study detail → **New wave** — wave appears in list (or use pack-seeded wave).
+5. Open seed wave `audion-2026-07-30-mcp` (or retest / pack wave).
+6. Topbar **Start** → Confirm → status moves toward running; **Sync** / auto-poll updates run dots (`StatusMeterPanel`). Agent Start must pass per-run `maxSteps` (B=40, C=50).
+7. **Evaluate** — aggregates / Soft-Q board refresh; A-runs stay `validEvidence=false` on 403 fixture path.
+8. Soft-Q: change value, confidence %, rationale → persists (reload wave).
+9. Report band: edit TipTap narrative → persists; **Export report** downloads markdown body.
+10. **Compare** — pick `audion-2026-07-30-mcp` vs retest wave → delta UI.
+11. F-Fragen: **Copy** works; **Open in Chat** opens `/chat` with `prompt` + `personaId` + study/wave query (`chatWithContext`).
 
 ### B. Optional live API proxy (`NEXT_PERSONA_DATA_SOURCE=api`)
 
@@ -226,7 +227,7 @@ Prereq: AUDION-v2 API up; `NEXT_PERSONA_BACKEND_INTERNAL_URL` set (see `paths.md
 
 1. `/chat` — send message; stream completes (fixture NDJSON unless `api`).
 2. `/chat/history` — list opens a prior conversation when seeded.
-3. Deep-link from Studies (step A.10) pre-fills composer.
+3. Deep-link from Studies (step A.11) pre-fills composer.
 
 ### E. Shell smoke
 
