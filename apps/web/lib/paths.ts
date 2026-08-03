@@ -38,6 +38,14 @@ export const paths = {
   apiTokenPrefix: 'audion_',
   apiTokenBytes: 32,
   apiTokenFixtureOwnerId: 'local-admin',
+  /**
+   * Coolify / local env for machine Bearer access (MCP, seed scripts).
+   * When set, middleware accepts this raw token for `/api/*` without a session.
+   */
+  audionApiTokenEnvKey: 'AUDION_API_TOKEN',
+  /** Staging origin — see knowledge/deploy-urls.md (`URL_AUDION_V3`). */
+  audionV3StagingOrigin: 'https://audion-v3.projects-a.plygrnd.tech',
+  audionV3BaseUrlEnvKey: 'AUDION_V3_BASE_URL',
   uxStudyFixturesPath: 'apps/web/lib/fixtures/ux-studies.ts',
   uxStudyStorePath: 'apps/web/lib/fixtures/ux-study-store.ts',
   uxScenarioPacksPath: 'apps/web/lib/fixtures/scenario-packs',

@@ -22,9 +22,17 @@ Personal Bearer tokens (V2 parity) under Settings Admin. Fixture store until pro
 - Stored: SHA-256 hash only
 - Owner: session user id/email, else `paths.apiTokenFixtureOwnerId` (`local-admin`)
 
+## Bearer on BFF (2026-08-03)
+
+- Middleware (when Plexon is configured): `/api/*` with `Authorization: Bearer audion_…` is allowed when
+  1. raw token equals `process.env.AUDION_API_TOKEN`, or
+  2. `POST /api/settings/tokens/verify` succeeds (fixture / UI token in Node store).
+- Verify route is public (no session) so Edge middleware can validate fixture tokens.
+- Env key: `paths.audionApiTokenEnvKey` → `AUDION_API_TOKEN` (see `.env.example`).
+
 ## Out of scope
 
-Wiring Bearer into every BFF route · Postgres · scopes/expiry · CHECKION service tokens
+Postgres-backed token store · scopes/expiry · CHECKION service tokens · session impersonation from Bearer
 
 ## Smoke
 

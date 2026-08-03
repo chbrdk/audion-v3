@@ -77,16 +77,37 @@ export function storeRevokeApiToken(tokenId: string, ownerId: string): boolean {
   return true
 }
 
-/** Resolve owner from raw Bearer token (with or without "Bearer " prefix). */
-export function resolveApiTokenOwner(
+/** Strip optional `Bearer ` prefix; return raw token or null. */
+export function extractRawApiToken(
   rawBearer: string | null | undefined,
-): { ownerId: string; tokenId: string } | null {
+): string | null {
   if (!rawBearer) return null
   let raw = rawBearer.trim()
   if (raw.toLowerCase().startsWith('bearer ')) {
     raw = raw.slice(7).trim()
   }
+  return raw || null
+}
+
+/**
+ * Resolve owner from raw Bearer token (with or without "Bearer " prefix).
+ * Also accepts `process.env[paths.audionApiTokenEnvKey]` (machine / Coolify).
+ */
+export function resolveApiTokenOwner(
+  rawBearer: string | null | undefined,
+): { ownerId: string; tokenId: string } | null {
+  const raw = extractRawApiToken(rawBearer)
+  if (!raw) return null
   if (!raw.startsWith(paths.apiTokenPrefix)) return null
+
+  const envTok = process.env[paths.audionApiTokenEnvKey]?.trim()
+  if (envTok && raw === envTok) {
+    return {
+      ownerId: paths.apiTokenFixtureOwnerId,
+      tokenId: 'tok-env',
+    }
+  }
+
   const id = store().byHash.get(hashApiToken(raw))
   if (!id) return null
   const row = store().byId.get(id)

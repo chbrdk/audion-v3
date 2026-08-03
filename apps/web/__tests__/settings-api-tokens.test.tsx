@@ -44,6 +44,17 @@ describe('settings api tokens lib', () => {
     })
   })
 
+  it('accepts AUDION_API_TOKEN env as machine Bearer', () => {
+    const envTok = `${paths.apiTokenPrefix}${'cd'.repeat(32)}`
+    vi.stubEnv(paths.audionApiTokenEnvKey, envTok)
+    const ok = verifyApiTokenBearer(`Bearer ${envTok}`)
+    expect('error' in ok).toBe(false)
+    if ('error' in ok) return
+    expect(ok.ownerId).toBe(paths.apiTokenFixtureOwnerId)
+    expect(ok.tokenId).toBe('tok-env')
+    vi.unstubAllEnvs()
+  })
+
   it('rejects revoke for wrong owner', () => {
     const created = createApiTokenForOwner('owner-a', 'x')
     expect(revokeApiTokenForOwner(created.id, 'owner-b')).toEqual({
