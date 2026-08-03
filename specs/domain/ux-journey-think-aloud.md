@@ -69,6 +69,11 @@ Chat inspect dock (v1, compact — not full magazine spider):
 
 If `thinkAloud.next` is present but **weak** (under ~28 chars, trailing ellipsis, or a single token), web + agent backfill from cleaned `next_goal`.
 
+## Perception-in-the-Loop (2026-08-03)
+
+Primary product channel is now `<<PERCEPTION>>` — see `specs/domain/ux-journey-perception.md`.  
+`thinkAloud` remains a mapped alias (`seen` ← noticed digest, `next` ← intent). Runtime gates actions by `stance`.
+
 ## Out of scope
 
 - Forking browser-use `AgentOutput` schema

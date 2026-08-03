@@ -62,6 +62,11 @@ export const paths = {
   softQLlmAssistKnowledgePath: 'knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md',
   /** Opt-in: Evaluate LLM Soft-Q assist (`1`/`true`). Default off. */
   envSoftQLlmAssist: 'AUDION_SOFT_Q_LLM_ASSIST',
+  /** Perception-in-the-Loop (agent) */
+  uxJourneyPerceptionPath: 'services/ux-journey-agent/perception.py',
+  uxJourneyPerceptionSpecPath: 'specs/domain/ux-journey-perception.md',
+  uxJourneyPerceptionKnowledgePath: 'knowledge/ux-journey-perception-in-loop.md',
+  perceptionHumanGoldPath: 'knowledge/fixtures/perception-human-gold-b.json',
   /** Demo target for EBM Produktkombinationen (central key; resolve via backend/urls) */
   boschEbikeProduktkombinationenUrl:
     'https://www.bosch-ebike.com/de/service/produktkombinationen',

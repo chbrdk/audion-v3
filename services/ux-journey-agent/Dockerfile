@@ -47,6 +47,8 @@ RUN python -m playwright install chromium && python -m playwright install-deps c
 COPY main.py .
 COPY security.py .
 COPY browser_ua.py .
+COPY perception.py .
+COPY persona_lab_l4.py .
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 

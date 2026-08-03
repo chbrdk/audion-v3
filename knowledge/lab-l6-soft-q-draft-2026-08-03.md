@@ -40,3 +40,7 @@ Confusion Think-Aloud (L3-style) → draft Q2/Q3=2 matching gold band.
 ## Optional L6b
 
 LLM Soft-Q assist: `knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md` (`AUDION_SOFT_Q_LLM_ASSIST=1`).
+
+## Perception cues (2026-08-03)
+
+Findings may include Perception-in-the-Loop markers (`stance:abandon`, confusion tags, „Wahrgenommen:“). Soft-Q treats those like classic confusion cues.

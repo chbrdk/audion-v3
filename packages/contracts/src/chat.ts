@@ -126,6 +126,28 @@ export type ChatUxJourneyThinkAloud = {
   feel?: ChatUxJourneyFeel | null
 }
 
+/** Perception-in-the-Loop (spec: ux-journey-perception) — gates actions. */
+export type ChatUxJourneyPerceptionNoticed = {
+  what: string
+  where?: string | null
+  relevance?: 'high' | 'med' | 'low' | string | null
+}
+
+export type ChatUxJourneyPerception = {
+  taskReminder?: string | null
+  noticed?: ChatUxJourneyPerceptionNoticed[] | null
+  ignoredGuess?: string | null
+  think?: string | null
+  clarity?: number | null
+  feel?: ChatUxJourneyFeel | null
+  confusion?: string | null
+  stance?: 'proceed' | 'hesitate' | 'abandon' | string | null
+  intent?: string | null
+  why?: string | null
+  salienceBudget?: number | null
+  noticedUsed?: number | null
+}
+
 /** UX research observation flag (max 2 per step from agent). */
 export type ChatUxJourneyObservation = {
   category: string
@@ -147,6 +169,8 @@ export type ChatUxJourneyStep = {
   reasoningMeta?: ChatUxJourneyStepReasoningMeta | null
   /** Product think-aloud channels (spec: ux-journey-think-aloud) */
   thinkAloud?: ChatUxJourneyThinkAloud | null
+  /** Perception-in-the-Loop (spec: ux-journey-perception) */
+  perception?: ChatUxJourneyPerception | null
   /** Research flags for expanded step UI + scorecard */
   observations?: ChatUxJourneyObservation[] | null
   /** data: URL or absolute/relative path */

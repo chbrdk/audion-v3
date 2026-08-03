@@ -35,6 +35,22 @@ function narrativeFromRun(run: UxWaveRunItem): string {
   return [run.finding, run.validEvidenceCaveat].filter(Boolean).join('\n')
 }
 
+/** Perception-in-the-Loop cues embedded in findings / caveats (agent summary synth). */
+function hasPerceptionConfusionCue(text: string): boolean {
+  if (!text.trim()) return false
+  if (/disabled_option_unexplained|filter_cause_unknown|selection_order_surprise/i.test(text)) {
+    return true
+  }
+  if (/stance\s*[:=]\s*abandon|"stance"\s*:\s*"abandon"/i.test(text)) return true
+  if (/clarity\s*[:=]\s*[01]\b|"clarity"\s*:\s*[01]\b/i.test(text)) return true
+  if (/wahrgenommen:.*grau|ignoredguess|blind.?spot/i.test(text)) return true
+  return false
+}
+
+function hasSoftQConfusion(text: string): boolean {
+  return hasConfusionSignal(text) || hasPerceptionConfusionCue(text)
+}
+
 function quoteSnippet(runs: UxWaveRunItem[]): string {
   for (const run of runs) {
     const text = narrativeFromRun(run)
@@ -114,7 +130,7 @@ export function draftSoftScoresFromValidRuns(runs: UxWaveRunItem[]): SoftQDraft 
   }
 
   const blob = valid.map(narrativeFromRun).join('\n')
-  const confusion = hasConfusionSignal(blob)
+  const confusion = hasSoftQConfusion(blob)
   const optimistic = anyOptimistic(blob)
   const friction = meanFriction(valid)
   const goalRate =

@@ -93,4 +93,4 @@ Staging study/wave refs: see `knowledge/paths.md` / Bosch staging IDs in prior n
 **Staging study:** `study-persona-lab-l2-l6b-deploy-smoke-2026-08-03-msdm3k8z` · wave `wave-persona-lab-b-deploy-smoke-msdm3k9g`  
 **Lesson:** Scenario packs must reference **DB persona ids** on staging (or seed fixture ids). Fixture-only ids resolve to `{ id }` and wipe traits.
 
-**Next:** Ship `resolveFindingFromAgentResult` (empty summary → done.result); re-sync after web deploy.
+**Next:** Perception-in-the-Loop P0+ shipped — see `knowledge/ux-journey-perception-in-loop.md`.

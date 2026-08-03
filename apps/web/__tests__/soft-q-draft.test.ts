@@ -110,6 +110,18 @@ describe('soft-q-draft L6', () => {
     expect(evaluation.notes.some((n) => /Soft-Q/i.test(n))).toBe(true)
   })
 
+  it('drafts Q2/Q3 ≈ 2 from perception stance/confusion markers in finding', () => {
+    const draft = draftSoftScoresFromValidRuns([
+      validConfusionRun({
+        finding:
+          'Wahrgenommen: Displays grau. stance:abandon confusion:disabled_option_unexplained — Abbruch.',
+        frictionScore: 5,
+      }),
+    ])
+    expect(draft.Q2_bedienbarkeit?.value).toBe(2)
+    expect(draft.Q3_filterlogik?.value).toBe(2)
+  })
+
   it('memory Evaluate preserves human Soft-Q on EBM fixture wave', async () => {
     resetUxStudyStore()
     const studyId = 'study-ebm-produktkombinationen'
@@ -119,7 +131,6 @@ describe('soft-q-draft L6', () => {
     const after = await storeEvaluateUxWave(studyId, waveId)
     expect(after?.evaluation?.softScores.Q2_bedienbarkeit?.value).toBe(2)
     expect(after?.evaluation?.softScores.Q2_bedienbarkeit?.rationale).toMatch(/Matrix/i)
-    // Hand rationale preserved (not overwritten by Auto-draft)
     expect(String(after?.evaluation?.softScores.Q2_bedienbarkeit?.rationale)).not.toMatch(
       /^Auto-draft/i,
     )

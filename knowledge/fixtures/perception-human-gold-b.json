@@ -1,0 +1,18 @@
+{
+  "id": "perception-human-gold-b",
+  "runKey": "B-aufgabe1-nachruesten",
+  "task": "Kompatible Displays für Performance Line finden",
+  "humanSalience": [
+    "grau",
+    "Displays",
+    "Filter",
+    "Performance Line",
+    "unklar warum"
+  ],
+  "humanIgnored": [
+    "Footer-Logos",
+    "App & mehr Feindetails"
+  ],
+  "humanAbandonReason": "Unerklärte graue Display-Optionen — keine sichere Antwort",
+  "notes": "Annotierte Human-Gold-Salienz für Persona Lab B (EBM). Overlap via perception_gold.score_run."
+}

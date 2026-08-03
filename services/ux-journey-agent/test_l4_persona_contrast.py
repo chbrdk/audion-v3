@@ -12,12 +12,16 @@ def test_l4_ideal_contrast():
             "impatientApplied": True,
             "abandonForced": True,
             "time_pressure": 0.9,
+            "meanNoticed": 2.0,
+            "abandonStep": 4,
         },
         {
             "steps": 12,
             "impatientApplied": False,
             "abandonForced": False,
             "time_pressure": 0.2,
+            "meanNoticed": 4.5,
+            "abandonStep": None,
         },
     )
     assert all(ok for _, ok in checks)

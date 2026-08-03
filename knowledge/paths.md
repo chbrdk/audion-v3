@@ -36,6 +36,7 @@
 - UX Study fixtures/store: `apps/web/lib/fixtures/ux-studies.ts` · `ux-study-store.ts`
 - Scenario packs: `apps/web/lib/scenario-packs.ts` · `apps/web/lib/fixtures/scenario-packs/` · `knowledge/scenario-packs.md`
 - Persona Lab pack: `paths.personaLabPackId` · correlator `paths.personaLabCorrelatePath` · playbook `paths.personaLabKnowledgePath`
+- Perception-in-the-Loop: `paths.uxJourneyPerceptionPath` · spec `paths.uxJourneyPerceptionSpecPath` · knowledge `paths.uxJourneyPerceptionKnowledgePath` · human gold `paths.perceptionHumanGoldPath`
 - Wave scorecard / validEvidence: `apps/web/lib/ux-wave-scorecard.ts`
 - UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts` · `ux-studies-native.ts`
 - UX Study knowledge: `knowledge/ux-studies.md`

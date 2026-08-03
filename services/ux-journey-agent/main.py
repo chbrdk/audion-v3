@@ -27,7 +27,9 @@ from fastapi import FastAPI, HTTPException
 
 from security import AgentAuthMiddleware, assert_public_http_url
 from browser_ua import resolve_browser_user_agent
+import perception as ux_perception
 from fastapi.responses import FileResponse, Response, StreamingResponse
+
 from pydantic import BaseModel
 
 MJPEG_BOUNDARY = b"frame"
@@ -682,8 +684,9 @@ def _extract_think_aloud(thinking_text: str) -> dict[str, Any] | None:
 
 
 def _strip_thinking_blocks(text: str) -> str:
-    """Strip both THINK_ALOUD and OBSERVATIONS delimited blocks from VO text."""
-    return _strip_observations_block(_strip_think_aloud_block(text))
+    """Strip PERCEPTION / THINK_ALOUD / OBSERVATIONS delimited blocks from VO text."""
+    cleaned = ux_perception.strip_perception_blocks(text)
+    return _strip_observations_block(_strip_think_aloud_block(cleaned))
 
 
 def _extract_structured_model_output(text: str) -> dict[str, str] | None:
@@ -774,6 +777,36 @@ def _persona_time_pressure(persona: dict[str, Any] | None) -> float | None:
     except Exception:
         pass
     return None
+
+
+def _persona_dim_map(persona: dict[str, Any] | None) -> dict[str, float | None]:
+    """Normalize dimension overrides (camelCase or snake) for perception prompt."""
+    out: dict[str, float | None] = {
+        "time_pressure": None,
+        "detail_orientation": None,
+        "exploration": None,
+        "trust_skepticism": None,
+    }
+    if not isinstance(persona, dict):
+        return out
+    overrides = persona.get("dimensionOverrides") or persona.get("dimension_overrides") or {}
+    if not isinstance(overrides, dict):
+        return out
+    aliases = {
+        "time_pressure": ("time_pressure", "timePressure"),
+        "detail_orientation": ("detail_orientation", "detailOrientation"),
+        "exploration": ("exploration",),
+        "trust_skepticism": ("trust_skepticism", "trustSkepticism"),
+    }
+    for dest, keys in aliases.items():
+        for key in keys:
+            raw = overrides.get(key)
+            if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+                out[dest] = max(0.0, min(1.0, float(raw)))
+                break
+    if out["time_pressure"] is None:
+        out["time_pressure"] = _persona_time_pressure(persona)
+    return out
 
 
 def _apply_persona_step_budget(
@@ -871,12 +904,28 @@ def _text_has_confusion_cue(text: str) -> bool:
 
 
 def _step_narration_blob(step: dict[str, Any]) -> str:
-    """Flatten think-aloud / reasoning / observations for cue scanning."""
+    """Flatten perception / think-aloud / reasoning / observations for cue scanning."""
     parts: list[str] = []
     for key in ("reasoning", "result", "error", "action"):
         val = step.get(key)
         if val:
             parts.append(str(val))
+    perc = step.get("perception")
+    if isinstance(perc, dict):
+        for key in ("taskReminder", "think", "intent", "why", "ignoredGuess"):
+            val = perc.get(key)
+            if val:
+                parts.append(str(val))
+        if perc.get("confusion"):
+            parts.append(str(perc["confusion"]))
+        for n in perc.get("noticed") or []:
+            if isinstance(n, dict) and n.get("what"):
+                parts.append(str(n["what"]))
+                if n.get("where"):
+                    parts.append(str(n["where"]))
+        feel = perc.get("feel")
+        if isinstance(feel, dict) and feel.get("label"):
+            parts.append(str(feel.get("label")))
     ta = step.get("thinkAloud")
     if isinstance(ta, dict):
         for key in ("seen", "think", "learned", "why", "next", "priorKnow"):
@@ -1258,18 +1307,23 @@ def _history_to_steps(history: Any) -> list[dict[str, Any]]:
                 structured = thoughts[i].get("structured")
                 structured_dict = structured if isinstance(structured, dict) else None
                 if thinking:
-                    # Extract product think-aloud + observations BEFORE trim.
+                    # Extract perception (or legacy think-aloud) + observations BEFORE trim.
+                    perception = ux_perception.extract_perception_from_thinking(thinking)
                     think_aloud = _extract_think_aloud(thinking)
                     observations, invalid_obs = _extract_observations(thinking)
                     cleaned_thinking = _strip_thinking_blocks(thinking)
+                    if perception:
+                        step_entry["perception"] = perception
+                        think_aloud = ux_perception.perception_to_think_aloud(perception)
                     if think_aloud:
                         think_aloud = _enrich_think_aloud_next(think_aloud, structured_dict)
                         step_entry["thinkAloud"] = think_aloud
                     if observations:
                         step_entry["observations"] = observations
-                    if observations or invalid_obs or think_aloud:
+                    if observations or invalid_obs or think_aloud or perception:
                         print(
-                            f"ux-journey: step {step_num} thinkAloud={'yes' if think_aloud else 'no'} "
+                            f"ux-journey: step {step_num} perception={'yes' if perception else 'no'} "
+                            f"thinkAloud={'yes' if think_aloud else 'no'} "
                             f"observations parsed={len(observations)} invalid={invalid_obs}",
                             flush=True,
                         )
@@ -3191,9 +3245,12 @@ async def run_agent(
             "impatientApplied": bool(persona_tp is not None and persona_tp >= 0.75 and max_steps < base_max_steps),
         }
         confusion_abandon = _new_confusion_abandon_state(persona_tp)
+        persona_dims = _persona_dim_map(persona if isinstance(persona, dict) else None)
+        felt_state = ux_perception.new_felt_state()
         print(
             f"ux-journey: job={job_id} step_budget={step_budget} "
-            f"confusion_abandon={_confusion_abandon_public(confusion_abandon)}",
+            f"confusion_abandon={_confusion_abandon_public(confusion_abandon)} "
+            f"perception_budget={ux_perception.salience_budget(persona_tp, persona_dims.get('detail_orientation'))}",
             flush=True,
         )
         # AUDION reasoning extension. With audion-agent Phase 3:
@@ -3224,93 +3281,23 @@ async def run_agent(
                 f"WICHTIG: Beende NICHT vor mindestens {min_steps} Schritten. Wenn das Ziel früher erreicht wirkt, nutze die restlichen Schritte für "
                 "Validierung (zurück/nach vorne, alternative Navigation, erneute Sichtprüfung), statt zu stoppen.\n"
             )
-        audion_brevity_extension = (
-            "AUDION_THINK_ALOUD_UND_INTERNES:\n"
-            "ROLLENBILD: Du bist die Persona in einem moderierten UX-Research-Interview "
-            "(Think-Aloud). Du erklärst, was du GERADE SIEHST, was du denkst, was du schon weißt, "
-            "was du dazulerntest, was als Nächstes kommt und WARUM — plus wie du dich fühlst.\n"
-            "WICHTIG für 'thinking' (= Voice-Over + Untertitel im Review-Video): \n"
-            "- 1–3 vollständige Sätze, ERSTE PERSON, PRÄSENS (see → do → why).\n"
-            "- BENENNE die Aktion EXPLIZIT mit aktivem Verb: 'Ich klicke …', 'Ich scrolle …', "
-            "'Ich tippe … ein'. NICHT 'Ich werde …' / 'Ich möchte …'.\n"
-            "- KEINE Bot-Sprache (Index/Selektor) — das gehört nur in 'next_goal' (intern).\n"
-            "PFLICHT: Hänge an 'thinking' einen strukturierten Produkt-Block an (wird aus dem VO entfernt):\n"
-            "<<THINK_ALOUD>>{\"seen\":\"Hero mit großem CTA\",\"think\":\"Ich prüfe, ob der Einstieg klar ist.\","
-            "\"priorKnow\":\"\",\"learned\":\"Die Hauptnavigation sitzt oben links\","
-            "\"next\":\"Als Nächstes öffne ich Produkte, um die Angebotstiefe zu sehen.\","
-            "\"why\":\"Ich brauche konkrete Cases, nicht nur Claims.\","
-            "\"feel\":{\"label\":\"unsicher\",\"valence\":-1}}<</THINK_ALOUD>>\n"
-            "Kanal-Bedeutung:\n"
-            "- seen: was auf dem Screen wahrgenommen wird (Percept).\n"
-            "- think: Interpretation / Hypothese (VO-Kern).\n"
-            "- priorKnow: Persona-Vorwissen, das die Entscheidung treibt (sonst leer).\n"
-            "- learned: was du in DIESEM Schritt / Besuch neu gelernt hast (Delta).\n"
-            "- next: EIN vollständiger Satz in Erster Person — was du als Nächstes tust "
-            "(z.B. 'Als Nächstes klicke ich auf Produkte, um die Angebotstiefe zu prüfen.'). "
-            "NIEMALS abbrechen; NIEMALS nur Satzanfänge wie 'Auf…'/'Ich…' oder reine Ellipsis.\n"
-            "- why: Begründung (Bedürfnis, Zweifel, Ziel).\n"
-            "- feel.label + feel.valence (-2..2): aktuelles Gefühl.\n"
-            "INTERNE FELDER (browser-use Bookkeeping — NICHT die UI-Labels Gesehenes/Wissen):\n"
-            "- 'evaluation_previous_goal': 1 Satz, neutrale Bewertung des letzten Schritts.\n"
-            "- 'memory': NUR wiederverwendbare Fakten (Zahlen, IDs, URLs); max. 2 kurze Sätze.\n"
-            "- 'next_goal': Bot-Stil mit Element + Index/Selektor (Hand-Off, nicht Persona-Text).\n"
-            "WICHTIG für 'done.text': Erste Person, max. 4 kurze Sätze — Was nehme ich mit?\n"
-            "WICHTIG: Schreibe in ALLEN Feldern vollständige Sätze. Keine '…'/'etc.' als Platzhalter.\n"
-            f"{completion_block}"
-            "AUDION_NAVIGATION_ONLY:\n"
-            "Nutze keine Websuche und keine Suchmaschinen (kein DuckDuckGo, Google, Bing). "
-            "Bleibe auf der im Auftrag genannten Ziel-URL und ihren internen Links — keine generischen Web-Suchen.\n"
+        audion_brevity_extension = ux_perception.perception_prompt_extension(
+            time_pressure=persona_tp,
+            detail_orientation=persona_dims.get("detail_orientation"),
+            exploration=persona_dims.get("exploration"),
+            trust_skepticism=persona_dims.get("trust_skepticism"),
+            felt_state=None,  # live updates via felt-state context messages
+            completion_block=completion_block,
+        )
+        # Keep optional OBSERVATIONS for scorecard research flags (max 2).
+        audion_brevity_extension += (
             "AUDION_OBSERVATIONS:\n"
-            # Optional UX-research flags emitted INSIDE `thinking` as a delimited
-            # JSON block. The post-processor extracts these into a structured
-            # `step.observations` array and strips the block from the visible
-            # narration. We piggyback on `thinking` (vs. forking AgentOutput)
-            # so the browser-use schema stays untouched. See main.py
-            # `_extract_observations` / `_strip_observations_block` for the
-            # parser; see README "Per-step observations & journey scorecard"
-            # for product semantics.
-            "Wenn dir bei DIESEM Schritt etwas an der Seite WIRKLICH auffaellt — "
-            "positiv oder negativ — kannst du am Ende von 'thinking' OPTIONAL einen "
-            "abgegrenzten JSON-Block anhaengen. Wenn nichts auffaellig ist: BLOCK WEGLASSEN. "
-            "Erfinde keine Beobachtungen, nur damit der Block voll ist.\n"
-            "Format (genau diese Marker, JSON-Array, max. 2 Eintraege pro Schritt):\n"
-            "<<OBSERVATIONS>>[{\"category\":\"copy\",\"polarity\":-1,\"severity\":\"low\","
-            "\"note\":\"Buzzwords wie 'Transformation' ohne konkrete Cases — fuer mich zu vage.\","
-            "\"fix\":\"1-2 Beispielprojekte mit Branche und Zahl direkt im Hero.\"}]<</OBSERVATIONS>>\n"
-            "Felder pro Eintrag:\n"
-            "- 'category' (PFLICHT): einer von 'layout' (Hierarchie/Whitespace/Aufmerksamkeit), "
-            "'visual' (Farbe/Bildsprache/Markenlook), 'typography' (Schriftgroessen/Lesbarkeit), "
-            "'copy' (Texttiefe/Tonalitaet/Buzzwords), 'affordance' (sieht man wo zu klicken ist?), "
-            "'navigation' (finde ich was ich suche?), 'info_density' (zu viel/zu wenig auf einmal), "
-            "'trust' (Cases/Logos/DSGVO/Proof Points), 'performance' (Ladegefuehl/Layout-Shift), "
-            "'persona_fit' (passt das zu meiner Rolle/Branche?).\n"
-            "- 'polarity' (PFLICHT): -2 (klares Negativ), -1 (leichtes Negativ), 1 (leichtes Plus), "
-            "2 (klares Plus). KEIN 0 — wenn du keinen Eindruck hast, lass den Eintrag weg.\n"
-            "- 'severity' (PFLICHT): 'low' (kosmetisch), 'medium' (bremst Persona aus), "
-            "'high' (blockiert das Aufgabenziel).\n"
-            "- 'note' (PFLICHT): 1 vollstaendiger Satz aus Persona-Sicht — was du siehst, "
-            "warum es dich stoert/begeistert. Persona-Stimme, nicht Bot-Stil.\n"
-            "- 'fix' (OPTIONAL): 1 Satz, was du als Persona dir gewuenscht haettest. "
-            "Konkret (Inhalt/Element), keine Generalvorschlaege wie 'besseres Design'.\n"
-            "- 'tag' (OPTIONAL, bei Verwirrung PFLICHT-EMPFEHLUNG): einer von "
-            "'disabled_option_unexplained' (grau/disabled ohne Erklaerung), "
-            "'filter_cause_unknown' (Filter/Matrix-Ursache unklar), "
-            "'selection_order_surprise' (unerwartete Reihenfolge der Auswahl).\n"
-            "Beispiele fuer guten Ton:\n"
-            "  {\"category\":\"affordance\",\"polarity\":-2,\"severity\":\"high\","
-            "\"tag\":\"disabled_option_unexplained\","
-            "\"note\":\"Displays bleiben grau nach Motor-Wahl — ich verstehe nicht warum.\","
-            "\"fix\":\"Kurztext: warum Optionen gesperrt sind und was als Naechstes noetig ist.\"}\n"
-            "  {\"category\":\"affordance\",\"polarity\":-1,\"severity\":\"medium\","
-            "\"note\":\"Die Karten am Footer sehen wie statische Bilder aus, nicht klickbar — "
-            "ich haette das nicht ausprobiert.\",\"fix\":\"Hover-State + 'mehr erfahren'-Pfeil "
-            "auf den Karten.\"}\n"
-            "  {\"category\":\"trust\",\"polarity\":2,\"severity\":\"medium\","
-            "\"note\":\"Drei konkrete Kunden mit Logo und Branche im Hero — das gibt mir "
-            "sofort einen Anker als IT-Leitung.\"}\n"
-            "Strenge Regeln: gueltiges JSON, KEINE Trailing-Kommas, KEINE Kommentare, "
-            "KEINE zusaetzlichen Felder ausser den genannten. Bei Format-Zweifeln BLOCK WEGLASSEN — der Parser "
-            "verwirft sonst stillschweigend.\n"
+            "Optional research flags am Ende von thinking (max 2). "
+            "Format: <<OBSERVATIONS>>[{category,polarity,severity,note,fix?,tag?}]<</OBSERVATIONS>>\n"
+            "Categories: layout|visual|typography|copy|affordance|navigation|info_density|"
+            "trust|performance|persona_fit. polarity -2..2 (kein 0). "
+            "Optional tag: disabled_option_unexplained|filter_cause_unknown|selection_order_surprise.\n"
+            "Bei Format-Zweifeln BLOCK WEGLASSEN.\n"
         )
         # Task is now JUST the task — no language pinning, no brevity rules,
         # no persona stuffing. Reasoning language is handled by the fork
@@ -3507,6 +3494,105 @@ async def run_agent(
                     )
 
             agent._force_done_after_last_step = _force_done_with_confusion
+
+        # Perception-in-the-Loop: gate actions after each LLM turn.
+        if ux_perception.perception_gate_enabled() and hasattr(agent, "_get_next_action"):
+            _orig_get_next = agent._get_next_action
+            _perc_budget = ux_perception.salience_budget(
+                persona_tp, persona_dims.get("detail_orientation")
+            )
+
+            async def _get_next_action_with_perception(browser_state_summary: Any) -> None:
+                async def _once() -> dict[str, Any] | None:
+                    await _orig_get_next(browser_state_summary)
+                    mo = getattr(getattr(agent, "state", None), "last_model_output", None)
+                    thinking = str(getattr(mo, "thinking", None) or "") if mo else ""
+                    return ux_perception.extract_perception_from_thinking(
+                        thinking, budget=_perc_budget
+                    )
+
+                async def _nudge(msg: str) -> None:
+                    try:
+                        from audion_agent.llm.messages import UserMessage
+
+                        mm = getattr(agent, "_message_manager", None)
+                        if mm is not None and hasattr(mm, "_add_context_message"):
+                            mm._add_context_message(UserMessage(content=msg))
+                    except Exception:
+                        pass
+
+                async def _force_done_schema(reason: str) -> None:
+                    felt_state["forcedDone"] = int(felt_state.get("forcedDone") or 0) + 1
+                    await _nudge(reason)
+                    done_schema = getattr(agent, "DoneAgentOutput", None)
+                    if done_schema is not None:
+                        agent.AgentOutput = done_schema
+                    await _orig_get_next(browser_state_summary)
+
+                perc = await _once()
+                if perc is None:
+                    felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
+                    await _nudge(ux_perception.perception_nudge_message(_perc_budget))
+                    perc = await _once()
+                if perc is None:
+                    await _force_done_schema(
+                        "AUDION_PERCEPTION_MISSING: Kein gültiger Perception-Block — "
+                        "beende mit ehrlichem done (keine weiteren Klicks)."
+                    )
+                    perc = await _once()
+                    ux_perception.update_felt_state(felt_state, perc)
+                    return
+
+                mo = getattr(getattr(agent, "state", None), "last_model_output", None)
+                actions = list(getattr(mo, "action", None) or []) if mo else []
+                filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
+                if reason.startswith("proceed") or reason == "hesitate_filter" or reason == "abandon_done":
+                    filtered2, align_reason = ux_perception.filter_actions_intent_align(
+                        filtered, perc
+                    )
+                    if filtered2:
+                        filtered = filtered2
+                    elif align_reason == "align_all_dropped":
+                        felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
+                        await _nudge(
+                            "AUDION_PERCEPTION_INTENT: Klick nur auf Elemente aus noticed/intent. "
+                            "Wähle eine passende Action oder done."
+                        )
+                        perc2 = await _once()
+                        if perc2:
+                            perc = perc2
+                            mo = getattr(getattr(agent, "state", None), "last_model_output", None)
+                            actions = list(getattr(mo, "action", None) or []) if mo else []
+                            filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
+                            filtered, _ = ux_perception.filter_actions_intent_align(filtered, perc)
+
+                if not filtered:
+                    await _force_done_schema(
+                        f"AUDION_PERCEPTION_STANCE ({perc.get('stance')}): "
+                        f"{perc.get('intent') or perc.get('why') or 'Ich stoppe hier.'} "
+                        "Antworte mit done."
+                    )
+                    perc2 = await _once()
+                    if perc2:
+                        perc = perc2
+                else:
+                    try:
+                        mo.action = filtered  # type: ignore[union-attr]
+                    except Exception:
+                        pass
+
+                ux_perception.update_felt_state(felt_state, perc)
+                felt_block = ux_perception.felt_state_prompt_block(felt_state)
+                if felt_block:
+                    await _nudge(felt_block)
+                print(
+                    f"ux-journey: job={job_id} perception stance={perc.get('stance')} "
+                    f"noticed={perc.get('noticedUsed')}/{perc.get('salienceBudget')} "
+                    f"gate={reason}",
+                    flush=True,
+                )
+
+            agent._get_next_action = _get_next_action_with_perception
 
         # Persona snapshot: read the canonical PersonaPolicy that the fork
         # derived from the persona record. Useful when debugging "is the agent
@@ -3903,6 +3989,16 @@ async def run_agent(
             result["error"] = fail_error
         result["stepBudget"] = step_budget
         result["confusionAbandon"] = _confusion_abandon_public(confusion_abandon)
+        result["perceptionStats"] = ux_perception.public_perception_stats(felt_state, steps)
+        if not result.get("summary"):
+            trail = [
+                s.get("perception")
+                for s in steps
+                if isinstance(s, dict) and isinstance(s.get("perception"), dict)
+            ]
+            synth = ux_perception.synthesize_summary_from_perceptions(trail)  # type: ignore[arg-type]
+            if synth:
+                result["summary"] = synth
         if persona and isinstance(persona, dict):
             result["persona"] = {
                 "id": persona.get("id"),
