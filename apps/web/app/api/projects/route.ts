@@ -31,7 +31,8 @@ export async function POST(request: Request) {
     platformCompanyId,
   })
 
-  if (ownerPlexonUserId && platformCompanyId && isPlexonAuthConfigured()) {
+  // Always register on Plexon when federated — owner/company optional (Plexon auto-resolves).
+  if (isPlexonAuthConfigured()) {
     const origin = await registerAudionProjectOnPlexon({
       audionProjectId: project.id,
       name: project.name,
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
           platformProjectId: origin.platformProjectId,
           checkionProjectId: origin.checkionProjectId ?? null,
           platformCompanyId: origin.platformCompanyId ?? platformCompanyId,
-          ownerPlexonUserId,
+          ownerPlexonUserId: origin.ownerPlexonUserId ?? ownerPlexonUserId,
         })) ?? project
     }
   }

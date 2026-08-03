@@ -163,11 +163,7 @@ export async function runEasySetup(
     owner,
   )
 
-  if (
-    owner.ownerPlexonUserId &&
-    owner.platformCompanyId &&
-    isPlexonAuthConfigured()
-  ) {
+  if (isPlexonAuthConfigured()) {
     const origin = await registerAudionProjectOnPlexon({
       audionProjectId: project.id,
       name: project.name,
@@ -179,8 +175,10 @@ export async function runEasySetup(
         (await storeApplyPlatformBinding(project.id, {
           platformProjectId: origin.platformProjectId,
           checkionProjectId: origin.checkionProjectId ?? null,
-          platformCompanyId: origin.platformCompanyId ?? owner.platformCompanyId,
-          ownerPlexonUserId: owner.ownerPlexonUserId,
+          platformCompanyId:
+            origin.platformCompanyId ?? owner.platformCompanyId ?? null,
+          ownerPlexonUserId:
+            origin.ownerPlexonUserId ?? owner.ownerPlexonUserId ?? null,
         })) ?? project
     }
   }

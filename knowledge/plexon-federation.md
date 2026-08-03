@@ -42,22 +42,22 @@
 | `PLEXON_SERVICE_SECRET` | Shared service secret (≥16 chars) |
 | `NEXT_PUBLIC_PLEXON_REGISTER_URL` | Register / forgot-password deep links |
 | `AUTH_SECRET` | NextAuth JWT (≥32 chars in production) |
-| `PLEXON_DEMO_OWNER_USER_ID` | Optional machine sync owner (API Bearer create without session) |
-| `PLEXON_DEMO_COMPANY_ID` | Optional machine sync company |
+| `PLEXON_DEMO_OWNER_USER_ID` | Legacy optional hint (unused for origin — Plexon auto-resolves) |
+| `PLEXON_DEMO_COMPANY_ID` | Legacy optional hint (unused for origin — Plexon auto-resolves) |
 
 When `PLEXON_AUTH_URL` + `PLEXON_SERVICE_SECRET` are **unset**, middleware does not force login (local fixture dev).
 
 ## Repair unbound projects
 
-API create with only `AUDION_API_TOKEN` skips origin registration (no session owner). Repair:
+API create with only `AUDION_API_TOKEN` used to skip origin when no session owner. **Fixed:** create + `POST /api/projects/{id}/sync-plexon` always call Plexon; owner/company are optional — Plexon auto-resolves (existing membership) or bootstraps a Federation home. No Coolify demo-user env required.
 
 ```http
 POST /api/projects/{id}/sync-plexon
 Authorization: Bearer audion_…
-{ "ownerPlexonUserId": "…", "platformCompanyId": "…", "domain": "bosch-ebike.com" }
+{ "domain": "bosch-ebike.com" }
 ```
 
-Or set Coolify `PLEXON_DEMO_OWNER_USER_ID` / `PLEXON_DEMO_COMPANY_ID` and call with empty body. Idempotent when already bound.
+Idempotent when already bound.
 
 ## Routes
 

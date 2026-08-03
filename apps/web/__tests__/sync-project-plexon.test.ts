@@ -52,10 +52,7 @@ describe('syncProjectToPlexon', () => {
 
   it('registers unbound project via origin + persists binding', async () => {
     const project = await storeCreateProject({ name: 'Bosch eBike' })
-    const result = await syncProjectToPlexon(project.id, {
-      ownerPlexonUserId: 'user-1',
-      platformCompanyId: 'co-1',
-    })
+    const result = await syncProjectToPlexon(project.id)
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.alreadyBound).toBe(false)

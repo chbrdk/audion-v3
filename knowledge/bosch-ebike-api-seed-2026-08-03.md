@@ -68,20 +68,19 @@ Setup script (idempotent-ish): `scripts/setup-bosch-ebm-testing.mjs`
 
 ## Plexon Collection sync
 
-Bearer-only create left `platformProjectId` / `checkionProjectId` / owner / company **null**. Repair after deploy of `POST /api/projects/:id/sync-plexon`:
+Bearer-only create used to leave `platformProjectId` null. **Fix (2026-08-03):** origin owner/company are optional — Plexon auto-resolves. Repair:
 
 ```bash
-# Needs Coolify PLEXON_DEMO_OWNER_USER_ID + PLEXON_DEMO_COMPANY_ID, or pass body:
 AUDION_API_TOKEN=audion_… node -e '
 fetch("https://audion-v3.projects-a.plygrnd.tech/api/projects/proj-bosch-ebike-msd3hwtv/sync-plexon",{
   method:"POST",
   headers:{Authorization:"Bearer "+process.env.AUDION_API_TOKEN,"Content-Type":"application/json"},
-  body:JSON.stringify({ownerPlexonUserId:"…",platformCompanyId:"…",domain:"bosch-ebike.com"})
+  body:JSON.stringify({domain:"bosch-ebike.com"})
 }).then(r=>r.json()).then(console.log)
 '
 ```
 
-See `knowledge/plexon-federation.md` § Repair unbound projects.
+See `plexon-v3/knowledge/product-origin-owner-resolution.md`.
 
 ## Related
 

@@ -1,5 +1,6 @@
 /**
  * Register an existing AUDION project on Plexon (Collection + CHECKION mirror).
+ * Owner/company optional — Plexon auto-resolves when omitted.
  */
 
 import { auth } from '../auth'
@@ -9,11 +10,7 @@ import {
 } from './fixtures/project-store'
 import { getPlexonProfile } from './plexon-auth'
 import { registerAudionProjectOnPlexon } from './plexon-project-origin'
-import {
-  getPlexonDemoCompanyId,
-  getPlexonDemoOwnerUserId,
-  isPlexonAuthConfigured,
-} from './runtime-config'
+import { isPlexonAuthConfigured } from './runtime-config'
 
 export type SyncProjectToPlexonInput = {
   ownerPlexonUserId?: string | null
@@ -61,36 +58,22 @@ export async function syncProjectToPlexon(
     input.ownerPlexonUserId?.trim() ||
     session?.user?.id?.trim() ||
     project.ownerPlexonUserId?.trim() ||
-    getPlexonDemoOwnerUserId() ||
     ''
 
   let platformCompanyId =
-    input.platformCompanyId?.trim() ||
-    project.platformCompanyId?.trim() ||
-    getPlexonDemoCompanyId() ||
-    ''
+    input.platformCompanyId?.trim() || project.platformCompanyId?.trim() || ''
 
   if (ownerPlexonUserId && !platformCompanyId) {
     const profile = await getPlexonProfile(ownerPlexonUserId)
     platformCompanyId = profile?.default_platform_company_id?.trim() || ''
   }
 
-  if (!ownerPlexonUserId || !platformCompanyId) {
-    return {
-      ok: false,
-      status: 422,
-      error: 'owner_or_company_required',
-      detail:
-        'Pass ownerPlexonUserId + platformCompanyId, sign in, or set PLEXON_DEMO_OWNER_USER_ID / PLEXON_DEMO_COMPANY_ID',
-    }
-  }
-
   const origin = await registerAudionProjectOnPlexon({
     audionProjectId: project.id,
     name: project.name,
-    domain: input.domain?.trim() || 'bosch-ebike.com',
-    ownerPlexonUserId,
-    platformCompanyId,
+    domain: input.domain?.trim() || null,
+    ownerPlexonUserId: ownerPlexonUserId || null,
+    platformCompanyId: platformCompanyId || null,
   })
 
   if (!origin?.platformProjectId) {
@@ -105,8 +88,8 @@ export async function syncProjectToPlexon(
   const bound = await storeApplyPlatformBinding(project.id, {
     platformProjectId: origin.platformProjectId,
     checkionProjectId: origin.checkionProjectId ?? null,
-    platformCompanyId: origin.platformCompanyId ?? platformCompanyId,
-    ownerPlexonUserId,
+    platformCompanyId: origin.platformCompanyId ?? (platformCompanyId || null),
+    ownerPlexonUserId: origin.ownerPlexonUserId ?? (ownerPlexonUserId || null),
   })
 
   if (!bound) {
