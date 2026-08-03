@@ -105,6 +105,8 @@ export const paths = {
     apiProjects: '/api/projects',
     apiProjectsBootstrap: '/api/projects/bootstrap',
     apiProjectDetail: (id: string) => `/api/projects/${id}`,
+    /** Register existing project on Plexon Collection (audion-project-origin). */
+    apiProjectSyncPlexon: (id: string) => `/api/projects/${id}/sync-plexon`,
     personas: '/personas',
     personaDetail: (id: string) => `/personas/${id}`,
     apiPersonas: '/api/personas',
@@ -249,6 +251,9 @@ export const paths = {
   envPlexonAuthUrl: 'PLEXON_AUTH_URL',
   envPlexonServiceSecret: 'PLEXON_SERVICE_SECRET',
   envPlexonRegisterUrl: 'NEXT_PUBLIC_PLEXON_REGISTER_URL',
+  /** Demo owner/company for machine sync when no session (Coolify). */
+  envPlexonDemoOwner: 'PLEXON_DEMO_OWNER_USER_ID',
+  envPlexonDemoCompany: 'PLEXON_DEMO_COMPANY_ID',
   /** CHECKION public base for single-scan deep-links (client; preferred). */
   envCheckionBaseUrlPublic: 'NEXT_PUBLIC_CHECKION_BASE_URL',
   /** Ecosystem alias (Plexon / CHECKION Coolify also use this name). */

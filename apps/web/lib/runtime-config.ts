@@ -103,6 +103,15 @@ export function isPlexonAuthConfigured(): boolean {
   return Boolean(getPlexonAuthUrl() && getPlexonServiceSecret())
 }
 
+/** Demo owner for AUDION→Plexon origin when Bearer/API create has no session. */
+export function getPlexonDemoOwnerUserId(): string {
+  return process.env[paths.envPlexonDemoOwner]?.trim() || ''
+}
+
+export function getPlexonDemoCompanyId(): string {
+  return process.env[paths.envPlexonDemoCompany]?.trim() || ''
+}
+
 /**
  * CHECKION public base for deep-links.
  * Prefer static NEXT_PUBLIC_* reads so Next can inline them into the client bundle.

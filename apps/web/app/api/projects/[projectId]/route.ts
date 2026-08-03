@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server'
 import type { ProjectWritePayload } from '@audion-v3/contracts'
-import { storePatchProject } from '../../../../lib/fixtures/project-store'
+import {
+  storePatchProject,
+  storeProjectDetail,
+} from '../../../../lib/fixtures/project-store'
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ projectId: string }> },
+) {
+  const { projectId } = await context.params
+  const project = await storeProjectDetail(projectId)
+  if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  return NextResponse.json(project)
+}
 
 export async function PATCH(
   request: Request,
