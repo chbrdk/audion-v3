@@ -24,8 +24,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 FROM base AS ds
 ARG MSQDX_UI_REPO=https://github.com/chbrdk/msqdx-ui.git
 ARG MSQDX_UI_BRANCH=main
+# Hoisted linker so node_modules survive COPY into the builder stage (pnpm's
+# default symlink store breaks across Docker stages → Coolify "Module not found"
+# for lucide-react / react-driftkit when Next compiles sibling DS source).
 RUN git clone --depth 1 -b "${MSQDX_UI_BRANCH}" "${MSQDX_UI_REPO}" /workspace/msqdx-ui \
     && cd /workspace/msqdx-ui \
+    && printf 'node-linker=hoisted\n' > .npmrc \
     && pnpm install --frozen-lockfile \
     && pnpm build
 

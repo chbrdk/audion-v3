@@ -15,10 +15,17 @@ describe('Dockerfile Coolify packaging', () => {
     const df = readFileSync(resolve(repoRoot, 'Dockerfile'), 'utf8')
     expect(df).toContain('audion-v3.projects-a.plygrnd.tech')
     expect(df).toContain('msqdx-ui')
+    expect(df).toContain('node-linker=hoisted')
     expect(df).toContain('EXPOSE 3000')
     expect(df).toContain('docker-entrypoint.sh')
     expect(df).toContain('apps/web/drizzle.config.ts')
     expect(df).toMatch(/docker-entrypoint\.sh|npm run start -w web/)
+  })
+
+  it('points webpack at workspace node_modules for sibling DS deps', () => {
+    const cfg = readFileSync(resolve(repoRoot, 'apps/web/next.config.ts'), 'utf8')
+    expect(cfg).toContain('workspaceNodeModules')
+    expect(cfg).toContain('config.resolve.modules')
   })
 
   it('keeps health path for Traefik probes', () => {

@@ -1,6 +1,10 @@
 import type { NextConfig } from 'next'
 import path from 'node:path'
 
+const workspaceRoot = path.resolve(__dirname, '../..')
+const workspaceNodeModules = path.resolve(workspaceRoot, 'node_modules')
+const webNodeModules = path.resolve(__dirname, 'node_modules')
+
 const nextConfig: NextConfig = {
   serverExternalPackages: ['pg', 'drizzle-orm'],
   webpack: (config) => {
@@ -13,6 +17,15 @@ const nextConfig: NextConfig = {
       '@msqdx/ui/styles.css': path.resolve(__dirname, '../../../msqdx-ui/packages/ui/src/styles.css'),
       '@msqdx/ui-tokens': path.resolve(__dirname, '../../../msqdx-ui/packages/ui-tokens/dist/index.js'),
     }
+    // Coolify: msqdx-ui source is compiled from /workspace/msqdx-ui (sibling).
+    // Webpack walks node_modules from that tree — pnpm symlinks often break after
+    // multi-stage COPY. Prefer audion workspace installs (lucide-react, react-driftkit).
+    const modules = new Set<string>([
+      webNodeModules,
+      workspaceNodeModules,
+      ...((config.resolve.modules as string[] | undefined) ?? ['node_modules']),
+    ])
+    config.resolve.modules = [...modules]
     return config
   },
 }
