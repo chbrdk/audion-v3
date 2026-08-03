@@ -80,6 +80,17 @@ fetch("https://audion-v3.projects-a.plygrnd.tech/api/projects/proj-bosch-ebike-m
 '
 ```
 
+### Staging bind (2026-08-03, after plexon auto-resolve deploy)
+
+| Field | Value |
+|-------|--------|
+| `platformProjectId` | `7efa3e75-f28f-4600-9f2e-6a7d1cdbd5d5` |
+| `checkionProjectId` | `proj-msd87eme` |
+| `platformCompanyId` | `70811332-e74b-4765-a278-20568ffd1306` |
+| `ownerPlexonUserId` | `52fe5482-7a68-438b-8376-cd1840167334` |
+
+Plexon Collection: https://plexon-v3.projects-a.plygrnd.tech/projects/7efa3e75-f28f-4600-9f2e-6a7d1cdbd5d5
+
 See `plexon-v3/knowledge/product-origin-owner-resolution.md`.
 
 ## Related
