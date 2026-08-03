@@ -20,6 +20,8 @@ export OPENAI_API_KEY=…
 
 Default: **off** — Evaluate stays deterministic/fast.
 
+**Staging policy (2026-08-03):** Keep **OFF** on Coolify web unless try-then-quit / Luna smokes show Soft-Q rationale drift that needs assist. Rule draft (L6) already lands Q2/Q3≈2 for Lab B.
+
 ## Safety
 
 | Guard | Behavior |

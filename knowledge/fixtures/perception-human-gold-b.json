@@ -7,12 +7,17 @@
     "Displays",
     "Filter",
     "Performance Line",
-    "unklar warum"
+    "unklar warum",
+    "Kompatibilität",
+    "ausgeblendet"
   ],
   "humanIgnored": [
     "Footer-Logos",
-    "App & mehr Feindetails"
+    "App & mehr Feindetails",
+    "Cookie-Banner",
+    "Presse / News-Teaser",
+    "Nebenlinks im Service-Menü"
   ],
-  "humanAbandonReason": "Unerklärte graue Display-Optionen — keine sichere Antwort",
-  "notes": "Annotierte Human-Gold-Salienz für Persona Lab B (EBM). Overlap via perception_gold.score_run."
+  "humanAbandonReason": "Unerklärte graue Display-Optionen — keine sichere Antwort; Filterursache nicht selbsterklärend",
+  "notes": "Annotierte Human-Gold-Salienz für Persona Lab B (EBM Aufgabe 1 Nachrüsten). Overlap via perception_gold.score_run. Extra labels (Kompatibilität, ausgeblendet) mirror owner Think-Aloud; ignoredGuess covers footer/app chrome humans skip under time pressure."
 }

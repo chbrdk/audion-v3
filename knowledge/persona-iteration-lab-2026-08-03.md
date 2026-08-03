@@ -93,4 +93,11 @@ Staging study/wave refs: see `knowledge/paths.md` / Bosch staging IDs in prior n
 **Staging study:** `study-persona-lab-l2-l6b-deploy-smoke-2026-08-03-msdm3k8z` · wave `wave-persona-lab-b-deploy-smoke-msdm3k9g`  
 **Lesson:** Scenario packs must reference **DB persona ids** on staging (or seed fixture ids). Fixture-only ids resolve to `{ id }` and wipe traits.
 
-**Next:** Perception-in-the-Loop P0+ shipped — see `knowledge/ux-journey-perception-in-loop.md`.
+**Next:** Perception-in-the-Loop P0+ shipped — see `knowledge/ux-journey-perception-in-loop.md`.  
+**Try-then-quit (2026-08-03):** `knowledge/lab-try-then-quit-2026-08-03.md` — exploratory hesitate before hard abandon.
+
+### Deferred next (do not mix into this lab unit)
+
+- Full Nav-proof H3 (URL/title must match tool page)
+- Purchase / A+C multi-run waves + segment Soft-Q contrast
+- Routine 2–3 seed variance dashboard (ok as occasional ops check after try-then-quit deploy)

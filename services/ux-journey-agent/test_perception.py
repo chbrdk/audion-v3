@@ -172,12 +172,101 @@ def test_impatient_abandon_upgrade_from_proceed():
     }
     assert P.should_prefer_abandon(perc, 0.9) is True
     assert P.should_prefer_abandon(perc, 0.2) is False
-    out, upgraded = P.apply_impatient_abandon_stance(perc, 0.9)
+    # Try budget already spent → hard upgrade
+    out, upgraded = P.apply_impatient_abandon_stance(
+        perc, 0.9, exploratory_attempts=1, try_before_abandon=1
+    )
     assert upgraded is True
     assert out is not None
     assert out["stance"] == "abandon"
     assert out.get("stanceUpgraded") is True
     assert "abbrech" in (out.get("intent") or "").lower() or "sicher" in (out.get("intent") or "").lower()
+
+
+def test_try_then_quit_softens_first_confused_step():
+    perc = {
+        "taskReminder": "Displays finden",
+        "noticed": [{"what": "Display-Karten grau", "relevance": "high"}],
+        "think": "Filter-Ursache unklar warum die Optionen grau sind.",
+        "clarity": 1,
+        "feel": {"label": "unsicher", "valence": 0},
+        "confusion": "filter_cause_unknown",
+        "stance": "abandon",
+        "intent": "Ich breche ab und sage das ehrlich.",
+        "why": "Grau ohne Erklärung.",
+    }
+    soft, upgraded = P.apply_impatient_abandon_stance(
+        perc, 0.9, exploratory_attempts=0, try_before_abandon=1
+    )
+    assert upgraded is False
+    assert soft is not None
+    assert soft["stance"] == "hesitate"
+    assert soft.get("stanceSoftened") is True
+    assert soft.get("tryThenQuit") is True
+
+    hard, upgraded2 = P.apply_impatient_abandon_stance(
+        perc, 0.9, exploratory_attempts=1, try_before_abandon=1
+    )
+    assert upgraded2 is False  # already abandon
+    assert hard is not None
+    assert hard["stance"] == "abandon"
+
+
+def test_try_before_abandon_satisficing_budget(monkeypatch):
+    monkeypatch.delenv("UX_JOURNEY_TRY_BEFORE_ABANDON", raising=False)
+    assert P.try_before_abandon_required(0.9) == 1
+    assert P.try_before_abandon_required(0.5) == 2
+    assert P.try_before_abandon_required(0.2) == 3
+    assert P.try_before_abandon_required(0.9, exploration=0.8) == 2
+    monkeypatch.setenv("UX_JOURNEY_TRY_BEFORE_ABANDON", "0")
+    assert P.try_before_abandon_required(0.9) == 0
+
+
+def test_felt_state_counts_exploratory_and_persist_low_clarity():
+    state = P.new_felt_state()
+    p1 = {
+        "noticed": [{"what": "grau", "relevance": "high"}],
+        "clarity": 1,
+        "feel": {"label": "unsicher", "valence": -1},
+        "confusion": "filter_cause_unknown",
+        "stance": "hesitate",
+        "stanceSoftened": True,
+        "think": "Erstmal scrollen.",
+        "intent": "Ich prüfe noch kurz.",
+        "why": "Erste Verwirrung.",
+    }
+    P.update_felt_state(state, p1)
+    assert state["exploratoryAttempts"] == 1
+    assert state["tryThenQuitSoftens"] == 1
+    assert state["confusionCount"] == 1
+    assert state["lowClarityStreak"] == 1
+
+    p2 = {
+        "noticed": [{"what": "Filter unklar", "relevance": "high"}],
+        "clarity": 0,
+        "feel": {"label": "frustriert", "valence": -2},
+        "confusion": "disabled_option_unexplained",
+        "stance": "proceed",
+        "think": "Immer noch unklar.",
+        "intent": "Ich klicke einmal probehalber.",
+        "why": "Noch ein Versuch.",
+    }
+    P.update_felt_state(state, p2)
+    assert state["exploratoryAttempts"] == 2
+    assert state["lowClarityStreak"] == 2
+    assert P.clarity_persistently_low(state["clarityTrend"], min_steps=2) is True
+
+    # After try budget: persistent low clarity + confusion → abandon
+    hard, upgraded = P.apply_impatient_abandon_stance(
+        p2,
+        0.9,
+        felt_confusion_count=state["confusionCount"],
+        exploratory_attempts=state["exploratoryAttempts"],
+        try_before_abandon=1,
+        clarity_trend=state["clarityTrend"],
+    )
+    assert upgraded is True
+    assert hard["stance"] == "abandon"
 
 
 def test_enrich_noticed_from_think_fills_budget():
@@ -193,7 +282,11 @@ def test_enrich_noticed_from_think_fills_budget():
         "why": "Ohne Erklärung komme ich nicht weiter.",
     }
     finalized, upgraded = P.finalize_perception_for_persona(
-        perc, budget=3, time_pressure=0.9
+        perc,
+        budget=3,
+        time_pressure=0.9,
+        exploratory_attempts=1,
+        try_before_abandon=1,
     )
     assert finalized is not None
     assert upgraded is True
@@ -260,6 +353,7 @@ def test_prompt_forbids_done_without_perception():
     assert "VERBOTEN" in block
     assert "unklar warum" in block
     assert "Filter" in block
+    assert "Try-then-quit" in block or "try-then-quit" in block.lower()
 
 
 def test_enrich_at_full_budget_promotes_filter_and_cause():

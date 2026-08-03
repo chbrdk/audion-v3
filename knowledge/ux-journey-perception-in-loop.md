@@ -60,7 +60,33 @@ Missing `<<PERCEPTION>>` no longer force-dones. Decision actions are cleared; mo
 
 See `knowledge/lab-p5-gold-cues-retries-2026-08-03.md`. Enrich folds gold cues into full budgets; default missing retries = 2.
 
+## Try-then-quit + felt continuity (2026-08-03)
+
+See `knowledge/lab-try-then-quit-2026-08-03.md`.
+
+| Lever | Behavior |
+|-------|----------|
+| `UX_JOURNEY_TRY_BEFORE_ABANDON` | Default **1** exploratory action after first confusion before hard abandon / L2 force |
+| Soften | First confused step → `hesitate` (`stanceSoftened`) even if model said abandon |
+| Hard upgrade | After try budget + persistent cues / low clarity → `stance=abandon` |
+| Satisficing | Patient / low tp / high exploration → higher try budget |
+| Felt-state | `clarityTrend`, `lowClarityStreak`, `exploratoryAttempts` in prompt + gate |
+| Stats | `perceptionStats.exploratoryAttempts`, `stanceSoftened`, `tryThenQuitSoftens` |
+
+Staging expect: Alex steps **3–8** (not always 2), friction 7–10, Soft-Q Q2/Q3≈2, abandon after try.
+
+## Soft-Q L6b
+
+Leave **OFF** on staging (`AUDION_SOFT_Q_LLM_ASSIST` unset). Enable only after try-then-quit smokes show stable Soft-Q drift needing rationale polish — see `knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md`.
+
 ## Human gold (P3)
 
 Fixture: `knowledge/fixtures/perception-human-gold-b.json`  
 Scorer: `perception_gold.py` — overlap of agent `noticed.what` vs human saliency labels.
+
+## Next (deferred)
+
+- Full Nav-proof H3 / purchase / A+C multi-run waves
+- 2-seed variance as routine (not every deploy)
+- Wave UI confusion timeline
+

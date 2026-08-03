@@ -42,20 +42,32 @@ def test_env_force_on_and_off(monkeypatch):
 def test_counter_arms_force_after_threshold(monkeypatch):
     monkeypatch.setenv("UX_JOURNEY_CONFUSION_ABANDON_AFTER", "2")
     monkeypatch.setenv("UX_JOURNEY_CONFUSION_ABANDON", "1")
-    state = ux_main._new_confusion_abandon_state(0.2)
+    monkeypatch.setenv("UX_JOURNEY_TRY_BEFORE_ABANDON", "1")
+    state = ux_main._new_confusion_abandon_state(0.9)
     assert state["enabled"] is True
+    assert state["tryBeforeAbandon"] == 1
     steps = [
         {"step": 1, "reasoning": "Ich navigiere zur Seite."},
         {"step": 2, "reasoning": "Einige Optionen sind grau ohne Erklärung."},
         {"step": 3, "thinkAloud": {"think": "Immer noch unklar warum disabled."}},
     ]
-    ux_main._update_confusion_abandon_from_steps(state, steps)
+    # Confusion cues hit threshold but try-then-quit not spent yet
+    ux_main._update_confusion_abandon_from_steps(
+        state, steps, exploratory_attempts=0
+    )
     assert state["count"] == 2
+    assert state["forceNext"] is False
+
+    ux_main._update_confusion_abandon_from_steps(
+        state, steps, exploratory_attempts=1
+    )
     assert state["forceNext"] is True
     assert len(state["cues"]) == 2
 
     # Idempotent on re-scan of same steps
-    ux_main._update_confusion_abandon_from_steps(state, steps)
+    ux_main._update_confusion_abandon_from_steps(
+        state, steps, exploratory_attempts=1
+    )
     assert state["count"] == 2
 
 
@@ -68,17 +80,25 @@ def test_public_snapshot_is_json_safe(monkeypatch):
     pub = ux_main._confusion_abandon_public(state)
     assert pub["enabled"] is True
     assert pub["count"] == 1
+    assert pub["tryBeforeAbandon"] == 1
     assert pub["cues"][0]["step"] == 1
     assert "seenSteps" not in pub
 
 
 def test_force_message_mentions_done():
     msg = ux_main._confusion_abandon_force_message(
-        {"count": 2, "threshold": 2, "cues": [{"step": 4, "snippet": "grau"}]}
+        {
+            "count": 2,
+            "threshold": 2,
+            "tryBeforeAbandon": 1,
+            "exploratoryAttempts": 1,
+            "cues": [{"step": 4, "snippet": "grau"}],
+        }
     )
     assert "done" in msg.lower()
     assert "success=false" in msg
     assert "grau" in msg
+    assert "try-then-quit" in msg.lower() or "explorativ" in msg.lower()
 
 
 def test_abandon_summary_names_cues():

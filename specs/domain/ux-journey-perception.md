@@ -56,9 +56,10 @@ Extra −1 when `detail_orientation` < 0.35 (min 2). Extra +1 when ≥ 0.75 (max
 2. `stance=abandon` → only `done` allowed (still requires a valid PERCEPTION on that turn).  
 3. `stance=hesitate` → only `scroll` / `wait` / `extract` (no deep `click`/`input`/`navigate`).  
 4. `stance=proceed` → normal actions; soft intent↔target overlap (P2).  
-5. **Hard impatient upgrade (P4):** `time_pressure ≥ 0.75` + (`confusion` tag or clarity≤1) + grey/filter signal → force `stance=abandon` (even if model said proceed). Intent-align thrash upgrades to abandon instead of opaque click-retry.  
+5. **Impatient upgrade with try-then-quit:** `time_pressure ≥ 0.75` + (`confusion` tag or clarity≤1) + grey/filter signal → prefer abandon, but first require `UX_JOURNEY_TRY_BEFORE_ABANDON` (default 1) exploratory hesitate/scroll/click (`stanceSoftened`). After budget + persistent low clarity → force `stance=abandon`. Intent-align thrash upgrades to abandon only after try budget.  
 6. Noticed enrich: cues already in perception think/why/intent may be promoted into `noticed[]` up to salience budget (no invented UI, no free-thinking invent).  
-7. L2 regex confusion-abandon remains safety net.
+7. L2 regex confusion-abandon remains safety net — also gated on try-then-quit exploratory budget.  
+8. Felt-state continuity: `clarityTrend` / `exploratoryAttempts` injected next step; prefer abandon when clarity stays low across steps after try budget.
 
 ## Step payload
 
@@ -71,7 +72,7 @@ step.thinkAloud  // legacy alias mapped from perception (seen←noticed digest, 
 
 Cross-step digest injected into the next user context:
 
-`clarityTrend`, `lastValence`, `confusionCount`, `openQuestions[]`, `lastNoticedDigest`
+`clarityTrend`, `lastValence`, `confusionCount`, `openQuestions[]`, `lastNoticedDigest`, `exploratoryAttempts`, `lowClarityStreak`
 
 ## Soft-Q
 

@@ -109,7 +109,11 @@
 - Native AI runtime: `NEXT_AI_RUNTIME` (`stub` | `native` | `auto`) · `OPENAI_API_KEY` · `AI_OPENAI_MODEL` (default **`gpt-5.4-nano`**, SoT `paths.aiOpenAiModel`) — `knowledge/ai-native-2026.md`
 - UX Journey OpenAI: `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-5.6-luna`**, SoT `paths.uxJourneyOpenAiModel`) — agent `main.py` / Dockerfile / local lab serve · A/B: `knowledge/lab-ab-nano-mini-luna-2026-08-03.md`
 - Confusion friction floors (L3): `UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1/2` defaults **7/8** · `knowledge/lab-l3-confusion-friction-2026-08-03.md` · floor-7 band fix `knowledge/lab-friction-band-floor7-2026-08-03.md` · smoke `knowledge/lab-staging-smoke-friction-band-2026-08-03.md`
+- Try-then-quit (human-ish abandon): `UX_JOURNEY_TRY_BEFORE_ABANDON` default **1** · `knowledge/lab-try-then-quit-2026-08-03.md` · perception gate + L2 force gated on exploratory attempts
 - Evidence gate: `apps/web/lib/ux-wave-scorecard.ts` — `knowledge/lab-l5-evidence-gate-2026-08-03.md`
+- Soft-Q L6b LLM assist: **leave OFF** on staging unless Soft-Q rationales drift after try-then-quit smokes · `AUDION_SOFT_Q_LLM_ASSIST` · `knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md`
+- Lab DB personas (staging): impatient Alex `persona-alex-lab-ungeduldig-msdfje0b` · patient Sam (seed) `paths.personaLabPatientPersonaId` / see lab try-then-quit note after ops
+- Persona Lab study/wave smoke: `study-persona-lab-l2-l6b-deploy-smoke-2026-08-03-msdm3k8z` / `wave-persona-lab-b-deploy-smoke-msdm3k9g` · project `proj-bosch-ebike-msd3hwtv`
 - Native AI code: `apps/web/lib/ai/` · `ai-workflows-native.ts` · `chat/native-stream.ts`
 - Persona magazine notes: `knowledge/persona-magazine.md`
 - Persona migration map: `knowledge/persona-migration-map.md`

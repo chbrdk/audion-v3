@@ -395,15 +395,55 @@ def has_grey_filter_signal(perception: dict[str, Any] | None) -> bool:
     return any(cue in blob for cue in _GREY_FILTER_CUES)
 
 
+def try_before_abandon_required(
+    time_pressure: float | None,
+    *,
+    exploration: float | None = None,
+) -> int:
+    """
+    Min exploratory actions after the first confusion cue before hard abandon / L2 force.
+
+    Env ``UX_JOURNEY_TRY_BEFORE_ABANDON`` (default **1**) is the impatient floor.
+    Patient / low time_pressure and high exploration raise the budget (satisficing).
+    """
+    raw = (os.environ.get("UX_JOURNEY_TRY_BEFORE_ABANDON") or "1").strip()
+    try:
+        base = int(raw)
+    except ValueError:
+        base = 1
+    base = max(0, min(base, 5))
+    tp = 0.5 if time_pressure is None else float(time_pressure)
+    if tp <= 0.35:
+        # Patient / satisficing: try more before quit
+        base = min(5, max(base, base + 2))
+    elif tp < 0.75:
+        base = min(5, max(base, base + 1))
+    if exploration is not None and float(exploration) >= 0.65:
+        base = min(5, base + 1)
+    return base
+
+
+def clarity_persistently_low(clarity_trend: list[Any] | None, *, min_steps: int = 2) -> bool:
+    """True when recent clarity stays ≤1 across ≥min_steps (felt-state continuity)."""
+    if not clarity_trend:
+        return False
+    recent = [c for c in clarity_trend[-4:] if isinstance(c, int)]
+    if len(recent) < min_steps:
+        return False
+    return all(c <= 1 for c in recent[-min_steps:])
+
+
 def should_prefer_abandon(
     perception: dict[str, Any] | None,
     time_pressure: float | None,
     *,
     felt_confusion_count: int = 0,
+    clarity_trend: list[Any] | None = None,
 ) -> bool:
     """
     Impatient personas: confusion + low clarity / grey-filter signal → abandon.
-    Soft preference becomes a hard stance upgrade in apply_impatient_abandon_stance.
+    Soft preference becomes a hard stance upgrade in apply_impatient_abandon_stance
+    only after the try-then-quit budget is exhausted.
     """
     if perception is None:
         return False
@@ -417,40 +457,47 @@ def should_prefer_abandon(
     low_clarity = isinstance(clarity, int) and clarity <= 1
     signal = has_grey_filter_signal(perception)
     prior = int(felt_confusion_count or 0) >= 1
+    stuck = clarity_persistently_low(clarity_trend, min_steps=2)
 
-    if confusion and (low_clarity or signal or prior):
+    if confusion and (low_clarity or signal or prior or stuck):
         return True
     if low_clarity and signal:
         return True
     if prior and signal and low_clarity:
         return True
+    if stuck and signal and prior:
+        return True
     return False
 
 
-def apply_impatient_abandon_stance(
-    perception: dict[str, Any] | None,
-    time_pressure: float | None,
-    *,
-    felt_confusion_count: int = 0,
-) -> tuple[dict[str, Any] | None, bool]:
-    """
-    Hard-upgrade proceed/hesitate → abandon for impatient + confusion.
-    Returns (perception, upgraded).
-    """
-    if perception is None:
-        return None, False
-    if str(perception.get("stance") or "") == "abandon":
-        return perception, False
-    if not should_prefer_abandon(
-        perception,
-        time_pressure,
-        felt_confusion_count=felt_confusion_count,
-    ):
-        return perception, False
+def _soften_to_hesitate(perception: dict[str, Any]) -> dict[str, Any]:
+    """First confused step: try (hesitate/scroll) before allowing abandon."""
+    out = dict(perception)
+    out["stance"] = "hesitate"
+    out["stanceSoftened"] = True
+    out["tryThenQuit"] = True
+    intent = str(out.get("intent") or "").lower()
+    if any(tok in intent for tok in ("abbrech", "abbruch", "aufgeb", "fertig")):
+        out["intent"] = (
+            "Ich prüfe noch einmal kurz (scroll/klick), bevor ich aufgebe."
+        )
+    elif len(str(out.get("intent") or "").strip()) < 12:
+        out["intent"] = (
+            "Ich zögere und versuche eine kurze Exploration, bevor ich abbreche."
+        )
+    why = str(out.get("why") or "").strip()
+    if len(why) < 12:
+        out["why"] = (
+            "Erste Verwirrung — ich probiere kurz, statt sofort aufzugeben."
+        )
+    return out
 
+
+def _hard_upgrade_abandon(perception: dict[str, Any]) -> dict[str, Any]:
     out = dict(perception)
     out["stance"] = "abandon"
     out["stanceUpgraded"] = True
+    out["tryThenQuit"] = True
     why = str(out.get("why") or "").strip()
     if len(why) < 12:
         out["why"] = (
@@ -470,7 +517,54 @@ def apply_impatient_abandon_stance(
             "label": str(feel.get("label") or "frustriert"),
             "valence": -2,
         }
-    return out, True
+    return out
+
+
+def apply_impatient_abandon_stance(
+    perception: dict[str, Any] | None,
+    time_pressure: float | None,
+    *,
+    felt_confusion_count: int = 0,
+    exploratory_attempts: int = 0,
+    try_before_abandon: int | None = None,
+    exploration: float | None = None,
+    clarity_trend: list[Any] | None = None,
+) -> tuple[dict[str, Any] | None, bool]:
+    """
+    Try-then-quit then hard-upgrade for impatient + confusion.
+
+    While ``exploratory_attempts < try_before_abandon``: soften abandon/proceed →
+    hesitate (one exploratory click/scroll). After the budget: hard-upgrade to abandon.
+    Returns (perception, upgraded_to_abandon).
+    """
+    if perception is None:
+        return None, False
+
+    required = (
+        try_before_abandon
+        if try_before_abandon is not None
+        else try_before_abandon_required(time_pressure, exploration=exploration)
+    )
+    prefers = should_prefer_abandon(
+        perception,
+        time_pressure,
+        felt_confusion_count=felt_confusion_count,
+        clarity_trend=clarity_trend,
+    )
+    stance = str(perception.get("stance") or "")
+
+    # Model already abandoning / would prefer abandon — gate on try budget.
+    if stance == "abandon" or prefers:
+        if int(exploratory_attempts or 0) < int(required):
+            # Soften even model-chosen abandon on the first confused step.
+            return _soften_to_hesitate(perception), False
+        if stance == "abandon":
+            out = dict(perception)
+            out["tryThenQuit"] = True
+            return out, False
+        return _hard_upgrade_abandon(perception), True
+
+    return perception, False
 
 
 _SURFACE_PROMOTE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
@@ -616,8 +710,12 @@ def finalize_perception_for_persona(
     budget: int,
     time_pressure: float | None,
     felt_confusion_count: int = 0,
+    exploratory_attempts: int = 0,
+    try_before_abandon: int | None = None,
+    exploration: float | None = None,
+    clarity_trend: list[Any] | None = None,
 ) -> tuple[dict[str, Any] | None, bool]:
-    """Enrich noticed from own text, then hard-upgrade impatient abandon."""
+    """Enrich noticed from own text, then try-then-quit / hard-upgrade abandon."""
     if perception is None:
         return None, False
     enriched = enrich_noticed_from_perception_text(perception, budget) or perception
@@ -625,6 +723,10 @@ def finalize_perception_for_persona(
         enriched,
         time_pressure,
         felt_confusion_count=felt_confusion_count,
+        exploratory_attempts=exploratory_attempts,
+        try_before_abandon=try_before_abandon,
+        exploration=exploration,
+        clarity_trend=clarity_trend,
     )
 
 
@@ -722,6 +824,9 @@ def new_felt_state() -> dict[str, Any]:
         "retries": 0,
         "forcedDone": 0,
         "missingPerceptionClears": 0,
+        "exploratoryAttempts": 0,
+        "tryThenQuitSoftens": 0,
+        "lowClarityStreak": 0,
     }
 
 
@@ -734,9 +839,14 @@ def update_felt_state(state: dict[str, Any], perception: dict[str, Any] | None) 
         trend = list(state.get("clarityTrend") or [])
         trend.append(clarity)
         state["clarityTrend"] = trend[-8:]
+        if clarity <= 1:
+            state["lowClarityStreak"] = int(state.get("lowClarityStreak") or 0) + 1
+        else:
+            state["lowClarityStreak"] = 0
     feel = perception.get("feel")
     if isinstance(feel, dict) and feel.get("valence") is not None:
         state["lastValence"] = feel.get("valence")
+    had_confusion_before = int(state.get("confusionCount") or 0) > 0
     if perception.get("confusion"):
         state["confusionCount"] = int(state.get("confusionCount") or 0) + 1
         q = str(perception.get("think") or perception.get("why") or "")[:120]
@@ -751,6 +861,15 @@ def update_felt_state(state: dict[str, Any], perception: dict[str, Any] | None) 
     ]
     state["lastNoticedDigest"] = "; ".join(digest_bits)[:240]
     state["lastStance"] = perception.get("stance")
+
+    stance = str(perception.get("stance") or "")
+    confused_now = bool(perception.get("confusion")) or has_grey_filter_signal(perception)
+    # Count exploratory tries after (or on) confusion cues — try-then-quit budget.
+    if perception.get("stanceSoftened"):
+        state["exploratoryAttempts"] = int(state.get("exploratoryAttempts") or 0) + 1
+        state["tryThenQuitSoftens"] = int(state.get("tryThenQuitSoftens") or 0) + 1
+    elif stance in ("hesitate", "proceed") and (had_confusion_before or confused_now):
+        state["exploratoryAttempts"] = int(state.get("exploratoryAttempts") or 0) + 1
     return state
 
 
@@ -759,14 +878,22 @@ def felt_state_prompt_block(state: dict[str, Any] | None) -> str:
         return ""
     trend = state.get("clarityTrend") or []
     oq = state.get("openQuestions") or []
+    stuck = clarity_persistently_low(trend, min_steps=2)
     lines = [
         "AUDION_FELT_STATE (dein bisheriger Eindruck — baue darauf auf, nicht neu optimieren):",
         f"- Klarheit-Verlauf: {trend[-5:] if trend else '—'}",
+        f"- Niedrige-Klarheit-Serie: {state.get('lowClarityStreak')}",
         f"- Letztes Gefühl valence: {state.get('lastValence')}",
         f"- Confusion-Momente bisher: {state.get('confusionCount')}",
+        f"- Explorative Versuche nach Verwirrung: {state.get('exploratoryAttempts')}",
         f"- Letzte Stance: {state.get('lastStance')}",
         f"- Zuletzt bemerkt: {state.get('lastNoticedDigest') or '—'}",
     ]
+    if stuck:
+        lines.append(
+            "- Persistenz: Klarheit bleibt niedrig über mehrere Steps — "
+            "nach kurzem Versuch eher stance=abandon als weiteroptimieren."
+        )
     if oq:
         lines.append(f"- Offene Zweifel: {' | '.join(str(x) for x in oq[-2:])}")
     return "\n".join(lines)
@@ -793,9 +920,15 @@ def perception_prompt_extension(
         "- ignoredGuess: sag kurz, was du bewusst überspringst / nicht prüfst.",
     ]
     if impatient:
+        try_n = try_before_abandon_required(tp, exploration=exploration)
+        persona_lines.append(
+            f"- Try-then-quit: nach erster Verwirrung (grau/Filter) erst {try_n}× "
+            "zögern/kurz explorieren (hesitate/scroll/ein Klick), DANN erst stance=abandon. "
+            "Runtime erzwingt das."
+        )
         persona_lines.append(
             "- Du bist ungeduldig: bei clarity≤1 ODER confusion-Tag und unerklärtem Grau/Filter "
-            "→ stance=abandon (ehrlicher Abbruch, kein Weiteroptimieren). Runtime erzwingt das."
+            "→ nach dem kurzen Versuch stance=abandon (ehrlicher Abbruch, kein Weiteroptimieren)."
         )
         persona_lines.append("- ignoredGuess ist bei dir erwartet (Tunnelblick OK).")
         persona_lines.append(
@@ -808,9 +941,15 @@ def perception_prompt_extension(
             "- Bei unerklärtem Grau: confusion=disabled_option_unexplained oder "
             "filter_cause_unknown setzen und in think/why „unklar warum“ sagen."
         )
+        if felt_state and clarity_persistently_low(felt_state.get("clarityTrend"), min_steps=2):
+            persona_lines.append(
+                "- Felt-State: Klarheit bleibt niedrig — Abbruch ist wahrscheinlicher als Optimieren."
+            )
     elif patient:
+        try_n = try_before_abandon_required(tp, exploration=exploration)
         persona_lines.append(
-            "- Du bist geduldig: stance=hesitate (scroll/prüfen) ist erlaubt; abandon nur bei klarer Sackgasse."
+            f"- Du bist geduldig (satisficing Explore-Budget ≈{try_n}): "
+            "stance=hesitate (scroll/prüfen) ist erlaubt; abandon nur bei klarer Sackgasse."
         )
         persona_lines.append(
             f"- Nutze bis zu {budget} noticed-Einträge wenn die Seite reich ist; "
@@ -946,6 +1085,7 @@ def public_perception_stats(felt: dict[str, Any] | None, steps: list[dict[str, A
     abandon_idx = next((i + 1 for i, st in enumerate(stances) if st == "abandon"), None)
     clarities = [p.get("clarity") for p in percs if isinstance(p.get("clarity"), int)]
     upgraded = sum(1 for p in percs if p.get("stanceUpgraded"))
+    softened = sum(1 for p in percs if p.get("stanceSoftened"))
     return {
         "stepsWithPerception": len(percs),
         "meanNoticed": (sum(noticed_lens) / len(noticed_lens)) if noticed_lens else None,
@@ -956,6 +1096,10 @@ def public_perception_stats(felt: dict[str, Any] | None, steps: list[dict[str, A
         "forcedDone": int((felt or {}).get("forcedDone") or 0),
         "retries": int((felt or {}).get("retries") or 0),
         "stanceUpgraded": upgraded,
+        "stanceSoftened": softened,
+        "exploratoryAttempts": int((felt or {}).get("exploratoryAttempts") or 0),
+        "tryThenQuitSoftens": int((felt or {}).get("tryThenQuitSoftens") or 0),
+        "lowClarityStreak": int((felt or {}).get("lowClarityStreak") or 0),
         "missingPerceptionClears": int((felt or {}).get("missingPerceptionClears") or 0),
     }
 

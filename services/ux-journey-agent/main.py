@@ -951,10 +951,19 @@ def _step_has_confusion_cue(step: dict[str, Any]) -> bool:
     return _text_has_confusion_cue(_step_narration_blob(step))
 
 
-def _new_confusion_abandon_state(time_pressure: float | None) -> dict[str, Any]:
+def _new_confusion_abandon_state(
+    time_pressure: float | None,
+    *,
+    exploration: float | None = None,
+) -> dict[str, Any]:
+    try_before = ux_perception.try_before_abandon_required(
+        time_pressure, exploration=exploration
+    )
     return {
         "enabled": _confusion_abandon_enabled(time_pressure),
         "threshold": _confusion_abandon_threshold(),
+        "tryBeforeAbandon": try_before,
+        "exploratoryAttempts": 0,
         "count": 0,
         "seenSteps": set(),
         "cues": [],
@@ -966,10 +975,14 @@ def _new_confusion_abandon_state(time_pressure: float | None) -> dict[str, Any]:
 def _update_confusion_abandon_from_steps(
     state: dict[str, Any],
     steps: list[Any],
+    *,
+    exploratory_attempts: int | None = None,
 ) -> dict[str, Any]:
-    """Increment confusion count for newly seen steps; arm forceNext at threshold."""
+    """Increment confusion count for newly seen steps; arm forceNext at threshold + try budget."""
     if not state.get("enabled") or state.get("forced"):
         return state
+    if exploratory_attempts is not None:
+        state["exploratoryAttempts"] = int(exploratory_attempts)
     seen: set[int] = state.setdefault("seenSteps", set())
     cues: list[dict[str, Any]] = state.setdefault("cues", [])
     for raw in steps:
@@ -986,21 +999,29 @@ def _update_confusion_abandon_from_steps(
         snippet = _smart_trim(blob.replace("\n", " "), limit=160)
         cues.append({"step": n, "snippet": snippet})
     threshold = int(state.get("threshold") or 2)
-    if int(state.get("count") or 0) >= threshold:
+    try_before = int(state.get("tryBeforeAbandon") or 0)
+    explor = int(state.get("exploratoryAttempts") or 0)
+    # Try-then-quit: do not force-done until exploratory budget is spent.
+    if int(state.get("count") or 0) >= threshold and explor >= try_before:
         state["forceNext"] = True
+    else:
+        state["forceNext"] = False
     return state
 
 
 def _confusion_abandon_force_message(state: dict[str, Any]) -> str:
     count = int(state.get("count") or 0)
     threshold = int(state.get("threshold") or 2)
+    try_before = int(state.get("tryBeforeAbandon") or 0)
+    explor = int(state.get("exploratoryAttempts") or 0)
     cue_bits = "; ".join(
         f"S{c.get('step')}: {c.get('snippet')}" for c in (state.get("cues") or [])[-3:]
     )
     return (
         "AUDION_CONFUSION_ABANDON:\n"
         f"Du hast bereits {count} unerklärte Verwirrungs-Momente "
-        f"(Schwelle={threshold}: grau/disabled/unklare Filter). "
+        f"(Schwelle={threshold}: grau/disabled/unklare Filter) und "
+        f"{explor}/{try_before} explorative Versuche (try-then-quit). "
         "Dies ist dein LETZTER Schritt. Deine einzige erlaubte Aktion ist `done`. "
         "Setze success=false. In done.text: Frustration und die unerklärten "
         "grauen/disabled Optionen ehrlich benennen — kein weiteres Klicken/Scrollen.\n"
@@ -1013,6 +1034,8 @@ def _confusion_abandon_public(state: dict[str, Any]) -> dict[str, Any]:
     out: dict[str, Any] = {
         "enabled": bool(state.get("enabled")),
         "threshold": int(state.get("threshold") or 2),
+        "tryBeforeAbandon": int(state.get("tryBeforeAbandon") or 0),
+        "exploratoryAttempts": int(state.get("exploratoryAttempts") or 0),
         "count": int(state.get("count") or 0),
         "forced": bool(state.get("forced")),
         "cues": [
@@ -1274,9 +1297,15 @@ def _apply_persona_perception_finalize(
     *,
     time_pressure: float | None,
     budget: int,
+    exploration: float | None = None,
 ) -> list[dict[str, Any]]:
-    """Re-apply enrich + impatient abandon so stored steps match the live gate."""
+    """Re-apply enrich + try-then-quit / impatient abandon so stored steps match the live gate."""
     confusion_so_far = 0
+    exploratory = 0
+    clarity_trend: list[int] = []
+    try_before = ux_perception.try_before_abandon_required(
+        time_pressure, exploration=exploration
+    )
     for step in steps:
         if not isinstance(step, dict):
             continue
@@ -1288,10 +1317,25 @@ def _apply_persona_perception_finalize(
             budget=budget,
             time_pressure=time_pressure,
             felt_confusion_count=confusion_so_far,
+            exploratory_attempts=exploratory,
+            try_before_abandon=try_before,
+            exploration=exploration,
+            clarity_trend=list(clarity_trend),
         )
         if finalized:
             step["perception"] = finalized
             step["thinkAloud"] = ux_perception.perception_to_think_aloud(finalized)
+            if isinstance(finalized.get("clarity"), int):
+                clarity_trend.append(int(finalized["clarity"]))
+            if finalized.get("stanceSoftened") or (
+                str(finalized.get("stance") or "") in ("hesitate", "proceed")
+                and (
+                    finalized.get("confusion")
+                    or ux_perception.has_grey_filter_signal(finalized)
+                    or confusion_so_far > 0
+                )
+            ):
+                exploratory += 1
             if finalized.get("confusion"):
                 confusion_so_far += 1
     return steps
@@ -3295,12 +3339,17 @@ async def run_agent(
             "timePressure": persona_tp,
             "impatientApplied": bool(persona_tp is not None and persona_tp >= 0.75 and max_steps < base_max_steps),
         }
-        confusion_abandon = _new_confusion_abandon_state(persona_tp)
         persona_dims = _persona_dim_map(persona if isinstance(persona, dict) else None)
+        confusion_abandon = _new_confusion_abandon_state(
+            persona_tp,
+            exploration=persona_dims.get("exploration"),
+        )
         felt_state = ux_perception.new_felt_state()
+        try_before_n = int(confusion_abandon.get("tryBeforeAbandon") or 1)
         print(
             f"ux-journey: job={job_id} step_budget={step_budget} "
             f"confusion_abandon={_confusion_abandon_public(confusion_abandon)} "
+            f"try_before_abandon={try_before_n} "
             f"perception_budget={ux_perception.salience_budget(persona_tp, persona_dims.get('detail_orientation'))}",
             flush=True,
         )
@@ -3319,9 +3368,12 @@ async def run_agent(
                 "AUDION_COMPLETION:\n"
                 f"Persona time_pressure={persona_tp:.2f} — Step-Budget eng "
                 f"(max {max_steps}, soft min {min_steps}). "
+                f"TRY-THEN-QUIT: nach erster Verwirrung erst {try_before_n}× kurz "
+                "zögern/explorieren, DANN Abbruch. "
                 f"HARD RULE: Nach {abandon_n} unerklärten grau/disabled/Filter-Momenten "
+                f"UND {try_before_n} explorativen Versuchen "
                 "sofort done mit Teil-Finding (Verwirrung ehrlich benennen). "
-                "Runtime erzwingt Abbruch — NICHT weiter suchen oder Side-Quests.\n"
+                "Runtime erzwingt Abbruch — NICHT endlos suchen oder Side-Quests.\n"
                 "Markiere done erst mit verifiziertem Ergebnis ODER ehrlichem Abbruchgrund.\n"
             )
         else:
@@ -3566,11 +3618,23 @@ async def run_agent(
                         budget=_perc_budget,
                         time_pressure=persona_tp,
                         felt_confusion_count=int(felt_state.get("confusionCount") or 0),
+                        exploratory_attempts=int(
+                            felt_state.get("exploratoryAttempts") or 0
+                        ),
+                        try_before_abandon=try_before_n,
+                        exploration=persona_dims.get("exploration"),
+                        clarity_trend=list(felt_state.get("clarityTrend") or []),
                     )
                     if upgraded:
                         print(
                             f"ux-journey: job={job_id} perception stance upgraded → abandon "
-                            f"(tp={persona_tp})",
+                            f"(tp={persona_tp} explor={felt_state.get('exploratoryAttempts')})",
+                            flush=True,
+                        )
+                    elif perc_out and perc_out.get("stanceSoftened"):
+                        print(
+                            f"ux-journey: job={job_id} try-then-quit soften → hesitate "
+                            f"(explor={felt_state.get('exploratoryAttempts')}/{try_before_n})",
                             flush=True,
                         )
                     return perc_out
@@ -3707,6 +3771,12 @@ async def run_agent(
                             persona_tp,
                             felt_confusion_count=int(felt_state.get("confusionCount") or 0)
                             + (1 if perc.get("confusion") else 0),
+                            exploratory_attempts=int(
+                                felt_state.get("exploratoryAttempts") or 0
+                            ),
+                            try_before_abandon=try_before_n,
+                            exploration=persona_dims.get("exploration"),
+                            clarity_trend=list(felt_state.get("clarityTrend") or []),
                         )
                         if upgraded and perc_ab:
                             perc = perc_ab
@@ -3849,12 +3919,20 @@ async def run_agent(
                     hist = getattr(agent_instance, "history", None)
                     steps_now = _history_to_steps(hist) if hist is not None else []
                     before = int(confusion_abandon.get("count") or 0)
-                    _update_confusion_abandon_from_steps(confusion_abandon, steps_now)
+                    _update_confusion_abandon_from_steps(
+                        confusion_abandon,
+                        steps_now,
+                        exploratory_attempts=int(
+                            felt_state.get("exploratoryAttempts") or 0
+                        ),
+                    )
                     after = int(confusion_abandon.get("count") or 0)
                     if after != before or confusion_abandon.get("forceNext"):
                         print(
                             f"ux-journey: job={job_id} confusion_count={after}/"
                             f"{confusion_abandon.get('threshold')} "
+                            f"explor={confusion_abandon.get('exploratoryAttempts')}/"
+                            f"{confusion_abandon.get('tryBeforeAbandon')} "
                             f"forceNext={bool(confusion_abandon.get('forceNext'))}",
                             flush=True,
                         )
@@ -3976,6 +4054,7 @@ async def run_agent(
             budget=ux_perception.salience_budget(
                 persona_tp, persona_dims.get("detail_orientation")
             ),
+            exploration=persona_dims.get("exploration"),
         )
         _annotate_steps_with_video_offsets(job_id, steps)
         success = _history_success(history)

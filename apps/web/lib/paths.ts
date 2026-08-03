@@ -55,6 +55,8 @@ export const paths = {
   personaLabPatientPersonaId: 'persona-sam-lab-patient',
   personaLabCorrelatePath: 'apps/web/lib/persona-lab-correlate.ts',
   personaLabKnowledgePath: 'knowledge/persona-iteration-lab-2026-08-03.md',
+  personaLabTryThenQuitKnowledgePath: 'knowledge/lab-try-then-quit-2026-08-03.md',
+  envUxJourneyTryBeforeAbandon: 'UX_JOURNEY_TRY_BEFORE_ABANDON',
   /** Soft-Q Think-Aloud draft (Lab L6) — empty keys filled on Evaluate */
   softQDraftPath: 'apps/web/lib/soft-q-draft.ts',
   softQDraftKnowledgePath: 'knowledge/lab-l6-soft-q-draft-2026-08-03.md',
