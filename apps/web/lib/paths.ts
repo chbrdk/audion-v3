@@ -101,6 +101,8 @@ export const paths = {
   aiRuntime: 'auto' as const,
   /** Cheap default for chat/assist — override via AI_OPENAI_MODEL */
   aiOpenAiModel: 'gpt-5.4-nano',
+  /** UX Journey Agent OpenAI — Lab A/B 2026-08-03; override via UX_JOURNEY_OPENAI_MODEL */
+  uxJourneyOpenAiModel: 'gpt-5.6-luna',
   aiOpenAiImageModel: 'gpt-image-1-mini',
   /** Easy Setup optional website fetch (SSRF-safe) — knowledge/easy-setup-2026.md */
   easySetupUrlFetchTimeoutMs: 20_000,
@@ -272,6 +274,7 @@ export const paths = {
   envOpenAiApiKey: 'OPENAI_API_KEY',
   envOpenAiApiBaseUrl: 'OPENAI_API_BASE_URL',
   envAiOpenAiModel: 'AI_OPENAI_MODEL',
+  envUxJourneyOpenAiModel: 'UX_JOURNEY_OPENAI_MODEL',
   envAiOpenAiImageModel: 'AI_OPENAI_IMAGE_MODEL',
   /** Plexon federation — knowledge/plexon-federation.md */
   envPlexonAuthUrl: 'PLEXON_AUTH_URL',

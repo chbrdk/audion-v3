@@ -107,7 +107,7 @@
 - Channel icon registry: `apps/web/lib/channel-icons.tsx` (`knowledge/persona-channel-icons.md`)
 - Persona data source env: `NEXT_PERSONA_DATA_SOURCE` (`auto` | `fixtures` | `api`) — domain only
 - Native AI runtime: `NEXT_AI_RUNTIME` (`stub` | `native` | `auto`) · `OPENAI_API_KEY` · `AI_OPENAI_MODEL` (default **`gpt-5.4-nano`**, SoT `paths.aiOpenAiModel`) — `knowledge/ai-native-2026.md`
-- UX Journey OpenAI: `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-5.4-nano`**) — agent `main.py` / Dockerfile / local lab serve
+- UX Journey OpenAI: `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-5.6-luna`**, SoT `paths.uxJourneyOpenAiModel`) — agent `main.py` / Dockerfile / local lab serve · A/B: `knowledge/lab-ab-nano-mini-luna-2026-08-03.md`
 - Evidence gate: `apps/web/lib/ux-wave-scorecard.ts` — `knowledge/lab-l5-evidence-gate-2026-08-03.md`
 - Native AI code: `apps/web/lib/ai/` · `ai-workflows-native.ts` · `chat/native-stream.ts`
 - Persona magazine notes: `knowledge/persona-magazine.md`

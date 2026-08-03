@@ -231,11 +231,11 @@ def _build_openai_llm():
         from audion_agent import ChatOpenAI
     except ImportError:
         from audion_agent.llm.openai import ChatOpenAI
-    # Default: gpt-5.4-nano (cost). Override via UX_JOURNEY_OPENAI_MODEL
-    # (e.g. gpt-5.4-mini / gpt-4o) if AgentOutput validation gets flaky —
+    # Default: gpt-5.6-luna (Lab A/B 2026-08-03). Override via UX_JOURNEY_OPENAI_MODEL
+    # (e.g. gpt-5.4-mini / gpt-5.4-nano) if AgentOutput validation gets flaky —
     # GPT-5.4 family has occasionally emitted trailing braces that Pydantic rejects.
     return ChatOpenAI(
-        model=os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.4-nano"),
+        model=os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.6-luna"),
         temperature=0,
     )
 
@@ -319,7 +319,7 @@ def _llm_meta() -> dict[str, Any]:
             "max_tokens": os.environ.get("UX_JOURNEY_CLAUDE_MAX_TOKENS", "16384"),
             "tolerantParsing": tolerant,
             "fallback": (
-                {"provider": "openai", "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.4-nano")}
+                {"provider": "openai", "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.6-luna")}
                 if has_fallback
                 else None
             ),
@@ -327,7 +327,7 @@ def _llm_meta() -> dict[str, Any]:
     if provider == "openai":
         return {
             "provider": "openai",
-            "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.4-nano"),
+            "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.6-luna"),
             "tolerantParsing": tolerant,
             "fallback": (
                 {
@@ -2134,7 +2134,7 @@ async def _llm_scorecard_extras(
             from openai import AsyncOpenAI
 
             client = AsyncOpenAI(api_key=api_key_openai)
-            model = os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.4-nano")
+            model = os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.6-luna")
             resp = await client.chat.completions.create(
                 model=model,
                 messages=[
