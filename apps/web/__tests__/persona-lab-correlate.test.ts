@@ -52,6 +52,24 @@ describe('persona lab pack + self-correlation', () => {
     expect(result.checks.find((c) => c.id === 'step_budget')?.pass).toBe(false)
   })
 
+  it('rejects agent-crash snapshots as not closer', () => {
+    const result = correlatePersonaLabRun({
+      runKey: 'B-aufgabe1-nachruesten',
+      steps: 7,
+      maxSteps: 15,
+      frictionScore: 11,
+      personaFitScore: null,
+      goalReached: false,
+      taskCompleted: false,
+      finding: 'Agent error',
+      narrativeBlob: 'Navigated to tool',
+      timePressure: 0.9,
+      blockers: [],
+    })
+    expect(result.closer).toBe(false)
+    expect(result.checks.find((c) => c.id === 'usable_run')?.pass).toBe(false)
+  })
+
   it('maps wave run → snapshot and fails infra-blocked runs', () => {
     const run: UxWaveRunItem = {
       id: 'run-lab-1',

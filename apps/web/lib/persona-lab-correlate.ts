@@ -91,6 +91,7 @@ export type PersonaLabRunSnapshot = {
 export type PersonaLabCheckId =
   | 'run_key'
   | 'infra_clean'
+  | 'usable_run'
   | 'step_budget'
   | 'friction_band'
   | 'confusion_named'
@@ -186,6 +187,13 @@ export function correlatePersonaLabRun(
   const hardInfra = snap.blockers.some(
     (b) => b === 'cloudfront_403' || b === 'archive_org_workaround',
   )
+  const findingLower = (snap.finding ?? '').toLowerCase()
+  // Hard gate: empty/crash runs must never count as closer (even if step budget looks human).
+  const crashOrEmpty =
+    /agent error|crash|exception/i.test(findingLower) ||
+    (!hasConfusionSignal(text) &&
+      (snap.narrativeBlob.trim().length < 40 ||
+        /^agent error$/i.test((snap.finding ?? '').trim())))
   const stepCap = Math.min(gold.maxStepsCap, snap.maxSteps ?? gold.maxStepsCap)
   const stepsOk =
     typeof snap.steps === 'number' && snap.steps > 0 && snap.steps <= stepCap
@@ -222,6 +230,13 @@ export function correlatePersonaLabRun(
       pass: !hardInfra,
       weight: 2,
       detail: hardInfra ? snap.blockers.join(',') : 'ok',
+    },
+    {
+      id: 'usable_run',
+      label: 'Usable UX sample (not agent crash / empty narrative)',
+      pass: !crashOrEmpty,
+      weight: 4,
+      detail: crashOrEmpty ? 'crash or empty narrative' : 'ok',
     },
     {
       id: 'step_budget',
@@ -274,7 +289,7 @@ export function correlatePersonaLabRun(
   const totalW = checks.reduce((s, c) => s + c.weight, 0)
   const earned = checks.reduce((s, c) => s + (c.pass ? c.weight : 0), 0)
   const score = totalW > 0 ? Math.round((earned / totalW) * 100) / 100 : 0
-  const closer = score >= gold.closerScoreThreshold && !hardInfra
+  const closer = score >= gold.closerScoreThreshold && !hardInfra && !crashOrEmpty
 
   const failed = checks.filter((c) => !c.pass).map((c) => c.id)
   const verdict = closer

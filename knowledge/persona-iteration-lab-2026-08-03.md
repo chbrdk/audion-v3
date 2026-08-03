@@ -76,4 +76,10 @@ Staging study/wave refs: see `knowledge/paths.md` / Bosch staging IDs in prior n
 
 | When | Config | Steps | Friction | Abandon/confusion? | Correlate score | Verdict |
 |------|--------|-------|----------|--------------------|-----------------|---------|
-| _(empty — fill on first L0)_ | | | | | | |
+| 2026-08-03 L0a | pack lab + fixture id `persona-alex-lab-impatient` | 7 | 11 | no (Agent error) | 0.53 | **Fail** — persona not in staging Postgres → only `{id}` sent → `time_pressure=0.5` |
+| 2026-08-03 L0b | seeded `persona-alex-lab-ungeduldig-msdfje0b`, force restart | 7 | 11 | no (Agent error after navigate) | 0.65→reject after usable_run gate | **Fail as UX sample** — policy OK (`time_pressure=0.9`, heuristics present) but agent dies after first navigation; empty Think-Aloud |
+
+**Staging study:** `study-persona-lab-l0-2026-08-03-msdfdbk8` · wave `wave-persona-lab-b-l0-msdfdbll`  
+**Lesson:** Scenario packs must reference **DB persona ids** on staging (or seed fixture ids). Fixture-only ids resolve to `{ id }` and wipe traits.
+
+**Next:** Diagnose journey-agent post-navigate crash on lab job; then L0c with usable Think-Aloud.

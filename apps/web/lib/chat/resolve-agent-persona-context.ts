@@ -6,6 +6,7 @@
 import { generateDefaultPersonaSystemPrompt } from '../fixtures/persona-prompts-store'
 import { storePersonaDetail } from '../fixtures/persona-store'
 import { resolvePersonaSystemPrompt } from '../fixtures/persona-prompts-store'
+import { demoPersonaDetail } from '../fixtures/personas'
 import {
   toAgentPersonaContext,
   type AgentPersonaContext,
@@ -18,7 +19,8 @@ export async function resolveAgentPersonaContext(
 ): Promise<AgentPersonaContext | { id: string } | null> {
   const id = personaId.trim()
   if (!id) return null
-  const persona = await storePersonaDetail(id)
+  // Staging Postgres may lag fixture-only ids (e.g. persona lab). Fall back to DEMO_PERSONAS.
+  const persona = (await storePersonaDetail(id)) ?? demoPersonaDetail(id)
   if (!persona) return { id }
   let systemPrompt: string
   try {
