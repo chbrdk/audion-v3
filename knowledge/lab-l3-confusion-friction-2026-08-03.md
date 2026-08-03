@@ -9,10 +9,12 @@
 - Optional observation field `tag` ∈  
   `disabled_option_unexplained` | `filter_cause_unknown` | `selection_order_surprise`
 - Auto-infer from note / Think-Aloud / L2 abandon cues when tag missing
-- Scorecard gets `confusion: { tags[], tagCount, floor, applied, raisedFrom }`
-- Friction floor (env):
-  - 1 tag → `UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1` (default **6**)
+- Scorecard gets `confusion: { tags[], tagCount, floor, applied, raisedFrom, abandonBump }`
+- Tag sources: observation · narration · abandon_cue · **perception.confusion**
+- Friction floor (env) — aligned to Persona Lab gold **7–10**:
+  - 1 tag → `UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1` (default **7**)
   - 2+ tags → `UX_JOURNEY_CONFUSION_FRICTION_FLOOR_2` (default **8**)
+  - perception `stance=abandon` + ≥1 tag → uses floor_2 even if tagCount=1
 - Floor **raises** LLM friction when below; never lowers an already-high score
 
 ## Why

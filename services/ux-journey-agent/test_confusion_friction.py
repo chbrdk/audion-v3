@@ -89,7 +89,7 @@ def test_collect_tags_from_narration(monkeypatch):
 
 
 def test_friction_floor_raises_optimistic_score(monkeypatch):
-    monkeypatch.setenv("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1", "6")
+    monkeypatch.setenv("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1", "7")
     monkeypatch.setenv("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_2", "8")
     scorecard = {"frictionScore": 3, "coverage": {"goalReached": True}}
     tags = [
@@ -116,11 +116,53 @@ def test_friction_floor_noop_when_already_high(monkeypatch):
 
 
 def test_single_tag_uses_floor_1(monkeypatch):
-    monkeypatch.setenv("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1", "6")
-    monkeypatch.setenv("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_2", "8")
+    monkeypatch.delenv("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1", raising=False)
+    monkeypatch.delenv("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_2", raising=False)
     scorecard = {"frictionScore": 2}
     out = ux_main._apply_confusion_friction(
         scorecard,
         [{"step": 1, "tag": "disabled_option_unexplained", "source": "narration"}],
     )
-    assert out["frictionScore"] == 6
+    assert out["frictionScore"] == 7
+    assert out["confusion"]["floor"] == 7
+    assert out["confusion"]["abandonBump"] is False
+
+
+def test_collect_tags_from_perception():
+    steps = [
+        {
+            "step": 2,
+            "perception": {
+                "stance": "abandon",
+                "confusion": "disabled_option_unexplained",
+                "think": "Grau ohne Grund — ich breche ab.",
+            },
+            "reasoning": "Filterlogik unklar — ich weiß nicht warum.",
+        },
+    ]
+    tags = ux_main._collect_confusion_tags(steps)
+    sources = {t["source"] for t in tags}
+    assert "perception" in sources
+    assert "narration" in sources
+    assert len(tags) >= 2
+    assert all(t.get("abandonStance") is True for t in tags)
+
+
+def test_abandon_bump_uses_floor_2(monkeypatch):
+    monkeypatch.setenv("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1", "7")
+    monkeypatch.setenv("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_2", "8")
+    scorecard = {"frictionScore": 4}
+    out = ux_main._apply_confusion_friction(
+        scorecard,
+        [
+            {
+                "step": 2,
+                "tag": "disabled_option_unexplained",
+                "source": "perception",
+                "abandonStance": True,
+            }
+        ],
+    )
+    assert out["frictionScore"] == 8
+    assert out["confusion"]["abandonBump"] is True
+    assert out["confusion"]["floor"] == 8

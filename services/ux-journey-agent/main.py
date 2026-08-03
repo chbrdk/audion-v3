@@ -1614,11 +1614,15 @@ def _collect_observations(steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _confusion_friction_floors() -> tuple[int, int]:
-    """(floor_for_1_tag, floor_for_2plus_tags) clamped to 0..10."""
+    """(floor_for_1_tag, floor_for_2plus_tags) clamped to 0..10.
+
+    Defaults align with Persona Lab gold friction band (7–10): one confusion
+    moment → 7; two+ → 8. Override via UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1/2.
+    """
     try:
-        one = int(os.environ.get("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1", "6"))
+        one = int(os.environ.get("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1", "7"))
     except ValueError:
-        one = 6
+        one = 7
     try:
         two = int(os.environ.get("UX_JOURNEY_CONFUSION_FRICTION_FLOOR_2", "8"))
     except ValueError:
@@ -1635,8 +1639,8 @@ def _collect_confusion_tags(
 ) -> list[dict[str, Any]]:
     """Lab L3: gather confusion tags from observation.tag + narration inference.
 
-    Dedupes per (step, tag). Also folds in L2 abandon cues when present so
-    friction still rises if the LLM never emitted <<OBSERVATIONS>>.
+    Dedupes per (step, tag). Also folds in L2 abandon cues and explicit
+    ``perception.confusion`` so friction still rises if <<OBSERVATIONS>> missing.
     """
     out: list[dict[str, Any]] = []
     seen: set[tuple[int, str]] = set()
@@ -1653,12 +1657,21 @@ def _collect_confusion_tags(
             entry["note"] = _smart_trim(note, limit=160)
         out.append(entry)
 
+    abandon_stance = False
     for st in steps or []:
         if not isinstance(st, dict):
             continue
         step_num = st.get("step")
         if not isinstance(step_num, int):
             continue
+        perc = st.get("perception")
+        if isinstance(perc, dict):
+            if str(perc.get("stance") or "") == "abandon":
+                abandon_stance = True
+            raw_tag = str(perc.get("confusion") or "").strip().lower()
+            if raw_tag in _CONFUSION_TAGS:
+                note = str(perc.get("think") or perc.get("why") or "")
+                _add(step_num, raw_tag, "perception", note or None)
         for obs in st.get("observations") or []:
             if not isinstance(obs, dict):
                 continue
@@ -1683,6 +1696,11 @@ def _collect_confusion_tags(
                 continue
             tag = _infer_confusion_tag(snippet) or "disabled_option_unexplained"
             _add(step_num, tag, "abandon_cue", snippet or None)
+
+    # Attach abandon hint for friction applicator (not a tag itself).
+    if abandon_stance and out:
+        for entry in out:
+            entry.setdefault("abandonStance", True)
     return out
 
 
@@ -1694,14 +1712,17 @@ def _apply_confusion_friction(
 
     Even if the end-of-run LLM is optimistic (low friction + goalReached),
     tagged confusion moments push friction into the human gold band.
+    Perception abandon + ≥1 tag uses the 2+ floor (human quit under confusion).
     """
     floor_1, floor_2 = _confusion_friction_floors()
     n = len(tags)
+    abandon_bump = any(isinstance(t, dict) and t.get("abandonStance") for t in tags)
     meta: dict[str, Any] = {
         "tags": tags,
         "tagCount": n,
         "floor1": floor_1,
         "floor2": floor_2,
+        "abandonBump": abandon_bump,
         "applied": False,
         "raisedFrom": None,
         "floor": None,
@@ -1710,6 +1731,8 @@ def _apply_confusion_friction(
         scorecard["confusion"] = meta
         return scorecard
     floor = floor_1 if n == 1 else floor_2
+    if abandon_bump:
+        floor = max(floor, floor_2)
     meta["floor"] = floor
     prev = scorecard.get("frictionScore")
     prev_i: int | None
@@ -1723,7 +1746,7 @@ def _apply_confusion_friction(
         scorecard["frictionScore"] = floor
         print(
             f"ux-journey: scorecard confusion friction floor={floor} "
-            f"(was={prev_i} tags={n})",
+            f"tags={n} abandonBump={abandon_bump} raisedFrom={prev_i}",
             flush=True,
         )
     scorecard["confusion"] = meta
