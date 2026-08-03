@@ -66,6 +66,9 @@ UX_JOURNEY_AGENT_SECRET=<same as web>
 UX_JOURNEY_VIDEO_DIR=/data/journey-videos
 OPENAI_API_KEY=<secret>
 # and/or ANTHROPIC_API_KEY=
+# Optional override; default is desktop Chrome without HeadlessChrome
+# (required for bosch-ebike.com CloudFront — see knowledge/cloudfront-403-bosch-headless-ua-2026-08-03.md):
+# UX_JOURNEY_USER_AGENT=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36
 ```
 
 **Smoke:** `GET https://uxagent.projects-a.plygrnd.tech/health` should report `openaiKey`/`anthropicKey` true after deploy. Chat inspect failing immediately as `Agent running… (error)` almost always means missing LLM keys on **this** service (not on web).

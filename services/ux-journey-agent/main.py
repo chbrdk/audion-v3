@@ -26,6 +26,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 
 from security import AgentAuthMiddleware, assert_public_http_url
+from browser_ua import resolve_browser_user_agent
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
@@ -2665,10 +2666,17 @@ async def run_agent(
 
     try:
         llm = _make_llm()
+        # Spoof a desktop Chrome UA — default headless Chromium sends
+        # "HeadlessChrome" which CloudFront WAF on sites like bosch-ebike.com
+        # blocks with 403 (see knowledge/cloudfront-403-bosch-headless-ua-2026-08-03.md).
+        browser_ua = resolve_browser_user_agent()
         try:
-            browser = Browser(record_video_dir=video_dir)
+            browser = Browser(record_video_dir=video_dir, user_agent=browser_ua)
         except TypeError:
-            browser = Browser()
+            try:
+                browser = Browser(user_agent=browser_ua)
+            except TypeError:
+                browser = Browser()
         _recording_mono[job_id] = time.monotonic()
         # Prefer initial_url if supported; else bake URL into task. Instruct model to output reasoning in German.
         sig = inspect.signature(Agent.__init__)

@@ -60,6 +60,13 @@ export const paths = {
   /** Browser-like UA — CloudFront on bosch-ebike.com returns 403 for bare `node` / custom bot UAs. */
   researchCrawlUserAgent:
     'Mozilla/5.0 (compatible; AudionResearch/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+  /**
+   * Journey-agent Chromium UA (no HeadlessChrome). Keep in sync with
+   * `services/ux-journey-agent/browser_ua.py` DEFAULT + env `UX_JOURNEY_USER_AGENT`.
+   * @see knowledge/cloudfront-403-bosch-headless-ua-2026-08-03.md
+   */
+  uxJourneyBrowserUserAgent:
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
   researchCrawlTimeoutMs: 15_000,
   researchCrawlMaxTextChars: 12_000,
   researchCrawlMaxPages: 3,

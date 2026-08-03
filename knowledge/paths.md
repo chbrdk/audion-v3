@@ -55,6 +55,7 @@
   (`prompt`, `personaId`, `studyId`, `waveId`, `projectId`, `studyName`, `waveKey`)
 - Bosch EBM demo URL: `paths.boschEbikeProduktkombinationenUrl` / `paths.boschEbikeHomeUrl` / `paths.boschEbikePressHubMotorUrl`
 - Research crawl UA: `paths.researchCrawlUserAgent` (CloudFront on bosch-ebike.com blocks bare `node` UA → 403)
+- Journey agent browser UA: `paths.uxJourneyBrowserUserAgent` · Python `services/ux-journey-agent/browser_ua.py` · env `UX_JOURNEY_USER_AGENT` · `knowledge/cloudfront-403-bosch-headless-ua-2026-08-03.md`
 - Project routes: `/projects`, `/projects/[projectId]`
 - Project API: `/api/projects`, `/api/projects/[projectId]`
 - Easy Setup: `/setup` · `POST /api/projects/bootstrap` (`paths.routes.setup` · `apiProjectsBootstrap`) · `knowledge/easy-setup-2026.md`

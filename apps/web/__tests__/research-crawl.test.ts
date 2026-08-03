@@ -19,6 +19,11 @@ describe('research crawl', () => {
     expect(isResearchCrawlBlocked(200, '403 Request blocked by CloudFront')).toBe(true)
   })
 
+  it('keeps journey browser UA free of HeadlessChrome (CloudFront WAF)', () => {
+    expect(paths.uxJourneyBrowserUserAgent).not.toMatch(/HeadlessChrome/i)
+    expect(paths.uxJourneyBrowserUserAgent).toMatch(/Chrome\//)
+  })
+
   it('returns Bosch press + service fallbacks from paths', () => {
     const urls = researchFallbackUrls(paths.boschEbikeHomeUrl)
     expect(urls).toContain(paths.boschEbikeProduktkombinationenUrl)
