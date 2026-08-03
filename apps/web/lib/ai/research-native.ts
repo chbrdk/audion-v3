@@ -34,6 +34,7 @@ export function scheduleNativeResearchJob(
   runId: string,
   projectId: string,
   seedUrl: string,
+  packContext?: string,
 ): void {
   void (async () => {
     try {
@@ -47,6 +48,9 @@ export function scheduleNativeResearchJob(
       })
       storeAppendResearchEvent(runId, 'crawl_done', 'Crawl finished', { pages_fetched: 1 })
       storeAppendResearchEvent(runId, 'synthesize_start', 'Synthesizing summary')
+      const packBlock = packContext?.trim()
+        ? `${packContext.trim()}\n\n`
+        : ''
       const assist = await runAssistJson<{
         title?: string
         summary?: string
@@ -54,7 +58,7 @@ export function scheduleNativeResearchJob(
         citations?: Array<{ url?: string; note?: string }>
       }>('research.synthesize', {
         locale: 'en',
-        context: `URL: ${seedUrl}\n\nExtract:\n${pageText.slice(0, 8000)}`,
+        context: `${packBlock}URL: ${seedUrl}\n\nExtract:\n${pageText.slice(0, 8000)}`,
       })
       if ('error' in assist) {
         storeFailResearchRun(runId, assist.detail || assist.error)

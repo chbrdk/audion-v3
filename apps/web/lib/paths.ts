@@ -192,6 +192,9 @@ export const paths = {
       `/api/ai/projects/${projectId}/research/latest`,
     apiAiResearchStream: (projectId: string) =>
       `/api/ai/projects/${projectId}/research/stream`,
+    /** Distill dossier + research → Collection Knowledge Pack research_brief. */
+    apiAiKnowledgePackPublish: (projectId: string) =>
+      `/api/ai/projects/${encodeURIComponent(projectId)}/knowledge-pack/publish`,
     apiTargetGroupKnowledge: (tgId: string) => `/api/target-groups/${tgId}/knowledge`,
     apiTargetGroupKnowledgeEntry: (tgId: string, entryId: string) =>
       `/api/target-groups/${tgId}/knowledge/${entryId}`,

@@ -14,15 +14,18 @@ import {
   sanitizeKnowledgeHtml,
 } from '../lib/project-knowledge'
 import { KnowledgeRichEditor } from './knowledge-rich-editor'
+import { PublishKnowledgePackCta } from './publish-knowledge-pack-cta'
 
 export function ProjectKnowledgeDossier({
   projectId,
   companyContext,
   knowledgeChapters,
+  platformProjectId,
 }: {
   projectId: string
   companyContext: string | null
   knowledgeChapters?: ProjectKnowledgeChapter[]
+  platformProjectId?: string | null
 }) {
   const router = useRouter()
   const titleRef = useRef<HTMLInputElement>(null)
@@ -173,6 +176,10 @@ export function ProjectKnowledgeDossier({
         meta={chapters.length ? `${chapters.length}` : undefined}
         metaTone="accent"
         as="h3"
+      />
+      <PublishKnowledgePackCta
+        projectId={projectId}
+        platformProjectId={platformProjectId}
       />
 
       {chapters.length === 0 ? (

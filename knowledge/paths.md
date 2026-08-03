@@ -57,7 +57,7 @@
 - Project knowledge helpers: `apps/web/lib/project-knowledge.ts`
 - Project knowledge WYSIWYG: `apps/web/components/knowledge-rich-editor.tsx` (TipTap `@tiptap/react` 3.29.x)
 - Shared resource knowledge dossier: `apps/web/components/resource-knowledge-dossier.tsx`
-- Collection Knowledge Pack publish (spec): `specs/domain/knowledge-pack-publish.md` — distill research/chapters → Plexon `research_brief` (not TipTap SoT). Plexon: `plexon-v3/specs/domain/collection-knowledge-pack.md`
+- Collection Knowledge Pack publish: `specs/domain/knowledge-pack-publish.md` · client `apps/web/lib/plexon-knowledge-pack.ts` · `POST /api/ai/projects/:id/knowledge-pack/publish` (`paths.routes.apiAiKnowledgePackPublish`) · CTA on project magazine dossier. Seeds research from pack facets when `platformProjectId` is set. Plexon SoT: `plexon-v3/specs/domain/collection-knowledge-pack.md` · base `PLEXON_AUTH_URL`
 - TG/persona knowledge API: `paths.routes.apiTargetGroupKnowledge*` · `apiPersonaKnowledge*`
 - Persona profile_de helpers: `apps/web/lib/persona-profile-de.ts`
 - Research fixture runs: `apps/web/lib/fixtures/research-runs.ts` · `knowledge/project-research-sse-2026.md`

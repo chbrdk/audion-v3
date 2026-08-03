@@ -126,6 +126,7 @@ export function ProjectDetailPanel({
           projectId={project.id}
           companyContext={project.companyContext}
           knowledgeChapters={project.knowledgeChapters}
+          platformProjectId={project.platformProjectId}
         />
       </div>
     </article>

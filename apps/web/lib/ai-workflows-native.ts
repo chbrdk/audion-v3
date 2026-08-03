@@ -783,7 +783,8 @@ export async function runNativeResearchStart(
   body: ResearchStartRequest,
   _authorization?: string | null,
 ): Promise<ResearchStartResponse | NativeError> {
-  if (!(await storeProjectDetail(projectId))) return { error: 'Project not found', status: 404 }
+  const project = await storeProjectDetail(projectId)
+  if (!project) return { error: 'Project not found', status: 404 }
   const seedUrl = String(body.seed_url ?? '').trim() || 'https://example.com'
   const upstreamBody = {
     seed_url: seedUrl,
@@ -792,6 +793,21 @@ export async function runNativeResearchStart(
   }
   const meta = nativeMeta('researchStart', { projectId }, upstreamBody)
   const jobId = storeCreateResearchRun(projectId, seedUrl, false)
-  scheduleNativeResearchJob(jobId, projectId, seedUrl)
+
+  let packContext = ''
+  const platformProjectId = project.platformProjectId?.trim()
+  if (platformProjectId) {
+    try {
+      const { fetchCollectionKnowledgePack, formatPackSeedContext } = await import(
+        './plexon-knowledge-pack'
+      )
+      const pack = await fetchCollectionKnowledgePack(platformProjectId)
+      packContext = formatPackSeedContext(pack)
+    } catch {
+      /* research proceeds without pack */
+    }
+  }
+
+  scheduleNativeResearchJob(jobId, projectId, seedUrl, packContext || undefined)
   return { ...meta, jobId, status: 'queued' }
 }
