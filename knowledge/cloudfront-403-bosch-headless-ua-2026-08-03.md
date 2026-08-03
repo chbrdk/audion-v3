@@ -37,7 +37,8 @@ Research crawl already works around this via `paths.researchCrawlUserAgent` (bro
 3. `/health` exposes `browserUserAgent` + `browserUserAgentSafe` (Coolify deploy probe).
 4. Central refs: `paths.uxJourneyBrowserUserAgent` · env `UX_JOURNEY_USER_AGENT` · tests `test_browser_ua.py` · `test_health_ua.py`.
 5. Force-restart hardened in `startUxWaveNativeOrFixture` (no longer re-enters `storeStartUxWave`, which preserves `complete`).
-6. After agent Coolify deploy (`browserUserAgentSafe: true` on `https://uxagent.projects-a.plygrnd.tech/health`): `POST …/start` with `{ "force": true }`.
+6. Dockerfile must `COPY browser_ua.py` (Coolify base dir = `services/ux-journey-agent`; missing copy → `ModuleNotFoundError: browser_ua`).
+7. After agent Coolify deploy (`browserUserAgentSafe: true` on `https://uxagent.projects-a.plygrnd.tech/health`): `POST …/start` with `{ "force": true }`.
 
 ### Deploy note (2026-08-03)
 

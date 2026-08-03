@@ -46,6 +46,7 @@ RUN python -m playwright install chromium && python -m playwright install-deps c
 # the heavy package installs above.
 COPY main.py .
 COPY security.py .
+COPY browser_ua.py .
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
