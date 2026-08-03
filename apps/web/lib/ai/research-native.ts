@@ -27,7 +27,7 @@ export function scheduleNativeResearchJob(
           runId,
           'page_fetched',
           page.ok
-            ? `Fetched ${page.url}`
+            ? `Fetched ${page.url}${page.source === 'checkion_fetch_page' ? ' via CHECKION' : ''}`
             : page.blocked
               ? `Blocked ${page.url} (HTTP ${page.status})`
               : `Failed ${page.url}`,
@@ -37,6 +37,7 @@ export function scheduleNativeResearchJob(
             blocked: page.blocked,
             chars: page.text.length,
             error: page.error,
+            source: page.source,
           },
         )
       }

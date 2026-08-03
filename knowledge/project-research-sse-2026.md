@@ -32,7 +32,8 @@ UI: **Start research** dialog polls status (~900ms) and renders events + latest 
 
 - Browser-like `User-Agent` via `paths.researchCrawlUserAgent` (bare `node` UA → CloudFront **403** on `bosch-ebike.com`).
 - Detect blocked bodies (`Request blocked` / 403) and try host fallbacks from `paths` (e.g. Produktkombinationen + Bosch Presse Hub Line).
-- Lib: `apps/web/lib/ai/research-crawl.ts` · tests: `__tests__/research-crawl.test.ts`
+- **CHECKION fallback:** when seed still blocked and `CHECKION_API_TOKEN` + CHECKION base are set → `POST /api/fetch-page` (Puppeteer text). Spec: `specs/domain/checkion-fetch-page-research.md`.
+- Lib: `apps/web/lib/ai/research-crawl.ts` · `apps/web/lib/checkion-fetch-page.ts` · tests: `__tests__/research-crawl.test.ts`
 - Easy Setup UA aligned to the same browser-compatible pattern.
 
 ## Deferred

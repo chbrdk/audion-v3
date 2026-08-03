@@ -12,6 +12,7 @@
 | Journey workspace | `specs/domain/journey-workspace.md` |
 | Journey fields | `specs/domain/journey-fields.md` |
 | CHECKION single-page scan trigger | `specs/domain/checkion-single-scan-trigger.md` |
+| CHECKION fetch-page research fallback | `specs/domain/checkion-fetch-page-research.md` |
 | UX Study workspace | `specs/domain/ux-study-workspace.md` |
 | UX Study fields | `specs/domain/ux-study-fields.md` |
 | Chat workspace | `specs/domain/chat-workspace.md` |

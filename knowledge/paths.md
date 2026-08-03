@@ -45,13 +45,16 @@
 - CHECKION staging base: `URL_CHECKION_V3` = `https://checkion-v3.projects-a.plygrnd.tech`
   - Client: `NEXT_PUBLIC_CHECKION_BASE_URL` (preferred) or alias `NEXT_PUBLIC_CHECKION_URL`
   - Server fallback: `NEXT_CHECKION_BASE_URL`
+  - Machine token for fetch-page: `CHECKION_API_TOKEN` (`paths.envCheckionApiToken`)
+- Thin Chromium text (research fallback): CHECKION `POST /api/fetch-page` — `specs/domain/checkion-fetch-page-research.md`
   - Helpers: `paths.envCheckion*` · `getCheckionBaseUrl()` in `runtime-config.ts`
 - Launch shape: `{CHECKION_BASE}/scan?projectId=<checkion binding>&mode=single&url=<encoded>` (+ optional `platformProjectId` / `audionRunId` / `stepUrl`)
 - Collection binding field on AUDION project: `checkionProjectId` (from Plexon origin / binding)
 - Journey from UX run: `apps/web/lib/journey-from-ux-run.ts` · `paths.routes.apiJourneyFromUxRun`
 - Chat deep-link / F-Fragen prefill: `paths.routes.chatWithContext` · `apps/web/lib/chat/prefill.ts`
   (`prompt`, `personaId`, `studyId`, `waveId`, `projectId`, `studyName`, `waveKey`)
-- Bosch EBM demo URL: `paths.boschEbikeProduktkombinationenUrl` / `paths.boschEbikeHomeUrl`
+- Bosch EBM demo URL: `paths.boschEbikeProduktkombinationenUrl` / `paths.boschEbikeHomeUrl` / `paths.boschEbikePressHubMotorUrl`
+- Research crawl UA: `paths.researchCrawlUserAgent` (CloudFront on bosch-ebike.com blocks bare `node` UA → 403)
 - Project routes: `/projects`, `/projects/[projectId]`
 - Project API: `/api/projects`, `/api/projects/[projectId]`
 - Easy Setup: `/setup` · `POST /api/projects/bootstrap` (`paths.routes.setup` · `apiProjectsBootstrap`) · `knowledge/easy-setup-2026.md`

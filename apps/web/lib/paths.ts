@@ -252,6 +252,11 @@ export const paths = {
   envCheckionPublicUrlAlias: 'NEXT_PUBLIC_CHECKION_URL',
   /** CHECKION base (server / Coolify). Falls back for link builders when public unset. */
   envCheckionBaseUrl: 'NEXT_CHECKION_BASE_URL',
+  /** Machine Bearer for CHECKION fetch-page / optional scan APIs (`checkion_…`). */
+  envCheckionApiToken: 'CHECKION_API_TOKEN',
+  /** CHECKION thin Chromium text route (relative). */
+  checkionApiFetchPage: '/api/fetch-page',
+  checkionFetchPageTimeoutMs: 90_000,
   /** Documented staging default — only used when env unset in non-prod helpers. */
   checkionStagingBaseUrl: 'https://checkion-v3.projects-a.plygrnd.tech',
   envAuthSecret: 'AUTH_SECRET',

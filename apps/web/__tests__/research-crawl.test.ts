@@ -4,11 +4,13 @@ import {
   isResearchCrawlBlocked,
   researchFallbackUrls,
 } from '../lib/ai/research-crawl'
+import { setCheckionFetchPageForTests } from '../lib/checkion-fetch-page'
 import { paths } from '../lib/paths'
 
 describe('research crawl', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    setCheckionFetchPageForTests(null)
   })
 
   it('detects CloudFront 403 / request blocked bodies', () => {
@@ -47,6 +49,23 @@ describe('research crawl', () => {
     expect(result.pages.some((p) => p.url === paths.boschEbikePressHubMotorUrl && p.ok)).toBe(
       true,
     )
+  })
+
+  it('recovers blocked seed via CHECKION fetch-page before URL fallbacks', async () => {
+    const fetchMock = vi.fn(async () => new Response('Request blocked', { status: 403 }))
+    vi.stubGlobal('fetch', fetchMock)
+    setCheckionFetchPageForTests(async (url) => ({
+      url,
+      finalUrl: url,
+      title: 'Bosch',
+      bodyTextExcerpt: 'CHECKION Chromium recovered Hub Line and PowerTube content for research.',
+      httpStatus: 200,
+      stubbed: false,
+    }))
+
+    const result = await crawlResearchSeed('https://www.bosch-ebike.com/de/')
+    expect(result.pages.some((p) => p.source === 'checkion_fetch_page' && p.ok)).toBe(true)
+    expect(result.combinedText).toMatch(/CHECKION Chromium recovered/)
   })
 
   it('sends browser-like User-Agent on crawl fetch', async () => {

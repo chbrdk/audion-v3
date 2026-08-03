@@ -1,8 +1,10 @@
 /**
  * Project research crawl helpers — browser-like fetch + blocked-page fallbacks.
  * CloudFront on bosch-ebike.com returns 403 for bare Node / custom bot User-Agents.
+ * When blocked, optionally recover via CHECKION POST /api/fetch-page (Puppeteer text).
  */
 
+import { fetchPageViaCheckion } from '../checkion-fetch-page'
 import { paths } from '../paths'
 
 export type ResearchCrawlPage = {
@@ -12,6 +14,7 @@ export type ResearchCrawlPage = {
   blocked: boolean
   text: string
   error?: string
+  source?: 'http' | 'checkion_fetch_page'
 }
 
 export type ResearchCrawlResult = {
@@ -87,6 +90,7 @@ export async function fetchResearchPage(url: string): Promise<ResearchCrawlPage>
       ok: res.ok && !blocked && plain.length > 40,
       blocked,
       text: plain,
+      source: 'http',
       error: blocked
         ? `Blocked HTTP ${res.status}`
         : !res.ok
@@ -102,14 +106,33 @@ export async function fetchResearchPage(url: string): Promise<ResearchCrawlPage>
       ok: false,
       blocked: false,
       text: '',
+      source: 'http',
       error: error instanceof Error ? error.message : 'Fetch failed',
     }
   }
 }
 
+/** Map CHECKION fetch-page payload onto research crawl page shape. */
+export async function fetchResearchPageViaCheckion(
+  url: string,
+): Promise<ResearchCrawlPage | null> {
+  const data = await fetchPageViaCheckion(url)
+  if (!data?.bodyTextExcerpt?.trim()) return null
+  const text = data.bodyTextExcerpt.trim().slice(0, paths.researchCrawlMaxTextChars)
+  const blocked = isResearchCrawlBlocked(data.httpStatus ?? 200, text)
+  return {
+    url: data.finalUrl || data.url || url,
+    status: data.httpStatus ?? 200,
+    ok: !blocked && text.length > 40,
+    blocked,
+    text,
+    source: 'checkion_fetch_page',
+    error: blocked ? `CHECKION fetch blocked HTTP ${data.httpStatus}` : undefined,
+  }
+}
+
 /**
- * Crawl seed first; on block/failure try host-specific fallbacks (max pages).
- * When seed succeeds, still pull up to one extra fallback for richer context.
+ * Crawl seed first; on block try CHECKION Chromium, then host-specific URL fallbacks.
  */
 export async function crawlResearchSeed(seedUrl: string): Promise<ResearchCrawlResult> {
   const maxPages = paths.researchCrawlMaxPages
@@ -118,22 +141,28 @@ export async function crawlResearchSeed(seedUrl: string): Promise<ResearchCrawlR
   const seed = await fetchResearchPage(seedUrl)
   pages.push(seed)
 
+  if (!seed.ok) {
+    const viaCheckion = await fetchResearchPageViaCheckion(seedUrl)
+    if (viaCheckion) pages.push(viaCheckion)
+  }
+
   const fallbacks = researchFallbackUrls(seedUrl)
-  // When seed is blocked, keep trying fallbacks until one succeeds (or list ends).
-  const attemptBudget = seed.ok ? maxPages : Math.min(maxPages + fallbacks.length, 1 + fallbacks.length)
+  const attemptBudget = pages.some((p) => p.ok)
+    ? maxPages
+    : Math.min(maxPages + fallbacks.length, pages.length + fallbacks.length)
 
   for (const url of fallbacks) {
     if (pages.length >= attemptBudget) break
     const okCount = pages.filter((p) => p.ok).length
-    if (seed.ok && okCount >= 2) break
-    if (!seed.ok && okCount >= 1 && pages.length >= 2) break
+    if (okCount >= 2) break
+    if (okCount >= 1 && pages.length >= 2) break
     const page = await fetchResearchPage(url)
     pages.push(page)
   }
 
   const okPages = pages.filter((p) => p.ok)
   const combinedText = okPages
-    .map((p) => `### ${p.url}\n${p.text}`)
+    .map((p) => `### ${p.url} [${p.source || 'http'}]\n${p.text}`)
     .join('\n\n')
     .slice(0, paths.researchCrawlMaxTextChars * 2)
 
@@ -144,7 +173,7 @@ export async function crawlResearchSeed(seedUrl: string): Promise<ResearchCrawlR
       pages
         .map(
           (p) =>
-            `### ${p.url}\nstatus=${p.status} blocked=${p.blocked} error=${p.error || ''}\n${p.text}`,
+            `### ${p.url}\nstatus=${p.status} blocked=${p.blocked} source=${p.source} error=${p.error || ''}\n${p.text}`,
         )
         .join('\n\n')
         .slice(0, 4_000),
