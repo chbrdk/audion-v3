@@ -15,9 +15,10 @@ import type {
 } from '@audion-v3/contracts'
 import { paths } from './paths'
 import { EBM_PRODUKTKOMBINATIONEN_PACK } from './fixtures/scenario-packs/ebm-produktkombinationen'
+import { EBM_PERSONA_LAB_B_PACK } from './fixtures/scenario-packs/ebm-persona-lab-b'
 import { storeCreateUxStudy, storeCreateUxWave } from './fixtures/ux-study-store'
 
-const PACKS: UxScenarioPack[] = [EBM_PRODUKTKOMBINATIONEN_PACK]
+const PACKS: UxScenarioPack[] = [EBM_PRODUKTKOMBINATIONEN_PACK, EBM_PERSONA_LAB_B_PACK]
 
 export function listScenarioPacks(): UxScenarioPackSummary[] {
   return PACKS.map((p) => ({

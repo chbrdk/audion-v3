@@ -49,6 +49,11 @@ export const paths = {
   uxStudyFixturesPath: 'apps/web/lib/fixtures/ux-studies.ts',
   uxStudyStorePath: 'apps/web/lib/fixtures/ux-study-store.ts',
   uxScenarioPacksPath: 'apps/web/lib/fixtures/scenario-packs',
+  /** Fast B-only persona iteration pack — correlate via persona-lab-correlate.ts */
+  personaLabPackId: 'pack-ebm-persona-lab-b',
+  personaLabImpatientPersonaId: 'persona-alex-lab-impatient',
+  personaLabCorrelatePath: 'apps/web/lib/persona-lab-correlate.ts',
+  personaLabKnowledgePath: 'knowledge/persona-iteration-lab-2026-08-03.md',
   /** Demo target for EBM Produktkombinationen (central key; resolve via backend/urls) */
   boschEbikeProduktkombinationenUrl:
     'https://www.bosch-ebike.com/de/service/produktkombinationen',
