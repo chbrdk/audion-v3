@@ -18,6 +18,7 @@
 | Chat fields | `specs/domain/chat-fields.md` |
 | Project workspace | `specs/domain/project-workspace.md` |
 | Project fields | `specs/domain/project-fields.md` |
+| Knowledge Pack publish (→ Plexon Collection) | `specs/domain/knowledge-pack-publish.md` |
 | Settings | `specs/domain/settings.md` |
 | Edit dialogs | `specs/domain/edit-dialogs.md` |
 
@@ -68,4 +69,5 @@ Journey phase AI + validate: `knowledge/journey-phase-ai-validate-2026.md`
 Project research SSE polish: `knowledge/project-research-sse-2026.md`  
 TG + persona knowledge / profile_de: `knowledge/tg-persona-knowledge-profile-de-2026.md`  
 Chat modalities (share / moodboard / inspect / convert): `knowledge/chat-modalities-2026.md`  
-Canonical URLs/paths: see `knowledge/paths.md`.
+Canonical URLs/paths: see `knowledge/paths.md`.  
+Collection Knowledge Pack (Plexon SoT): `plexon-v3/specs/domain/collection-knowledge-pack.md` · Audion publish: `specs/domain/knowledge-pack-publish.md`.

@@ -4,6 +4,7 @@
 **Routes:** `/projects`, `/projects/[projectId]`  
 **Contracts:** `packages/contracts/src/projects.ts`  
 **Knowledge:** `knowledge/project-migration-map.md`, `knowledge/project-knowledge-ux.md`, `knowledge/remaining-gaps.md`, `knowledge/ai-workflows.md`, `knowledge/paths.md`  
+**Collection pack:** distillates only — `specs/domain/knowledge-pack-publish.md` (Plexon SoT: `plexon-v3/specs/domain/collection-knowledge-pack.md`)  
 **Design system:** `@msqdx/ui` — `Accordion`, `SectionChrome` (`metaTone="accent"`) · specs `msqdx-ui-accordion.md` · `msqdx-ui-section-chrome.md`  
 **Legacy:** AUDION-v2 `/admin/projects*`
 
