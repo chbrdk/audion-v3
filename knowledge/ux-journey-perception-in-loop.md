@@ -39,7 +39,18 @@ cd services/ux-journey-agent
 python -m pytest test_perception.py test_perception_gold.py test_l4_persona_contrast.py -q
 ```
 
-Persona Lab B-run: each step should expose `perception`; impatient abandon should name grey/filter in `noticed`.
+Persona Lab B-run: each decision step should expose `perception`; impatient abandon should name grey/filter in `noticed` and show `stance=abandon` (or `stanceUpgraded`).
+
+## P4 — breadth + hard abandon (2026-08-03)
+
+| Lever | Behavior |
+|-------|----------|
+| Prompt | Impatient: fill budget with Zustand / Filter-Ursache / Produktlinie when visible |
+| `finalize_perception_for_persona` | Enrich noticed from own think/why; hard-upgrade abandon when tp≥0.75 + confusion/low clarity + grey-filter cue |
+| Align drop | Prefer abandon upgrade over click-retry thrash |
+| Stats | `perceptionStats.stanceUpgraded` |
+
+Staging expect after deploy: `abandonStep` set, gold overlap ≥0.5, Soft-Q Q2/Q3≈2, correlate ≥0.65.
 
 ## Human gold (P3)
 

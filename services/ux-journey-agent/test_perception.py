@@ -156,3 +156,68 @@ def test_synthesize_summary():
     ]
     summary = P.synthesize_summary_from_perceptions(trail)
     assert summary and "grau" in summary.lower()
+
+
+def test_impatient_abandon_upgrade_from_proceed():
+    perc = {
+        "taskReminder": "Displays finden",
+        "noticed": [{"what": "Display-Karten grau", "relevance": "high"}],
+        "think": "Filter-Ursache unklar warum die Optionen grau sind.",
+        "clarity": 1,
+        "feel": {"label": "unsicher", "valence": 0},
+        "confusion": "filter_cause_unknown",
+        "stance": "proceed",
+        "intent": "Ich klicke auf Performance Line",
+        "why": "Vielleicht hilft die Drive Unit.",
+    }
+    assert P.should_prefer_abandon(perc, 0.9) is True
+    assert P.should_prefer_abandon(perc, 0.2) is False
+    out, upgraded = P.apply_impatient_abandon_stance(perc, 0.9)
+    assert upgraded is True
+    assert out is not None
+    assert out["stance"] == "abandon"
+    assert out.get("stanceUpgraded") is True
+    assert "abbrech" in (out.get("intent") or "").lower() or "sicher" in (out.get("intent") or "").lower()
+
+
+def test_enrich_noticed_from_think_fills_budget():
+    perc = {
+        "taskReminder": "Kompatible Displays für Performance Line finden",
+        "noticed": [{"what": "Display-Karten grau", "relevance": "high"}],
+        "think": "Filter unklar warum grau; Performance Line noch nicht gewählt.",
+        "clarity": 1,
+        "feel": {"label": "frustriert", "valence": -2},
+        "confusion": "disabled_option_unexplained",
+        "stance": "proceed",
+        "intent": "Ich will weiterklicken.",
+        "why": "Ohne Erklärung komme ich nicht weiter.",
+    }
+    finalized, upgraded = P.finalize_perception_for_persona(
+        perc, budget=3, time_pressure=0.9
+    )
+    assert finalized is not None
+    assert upgraded is True
+    assert finalized["stance"] == "abandon"
+    assert len(finalized["noticed"]) >= 2
+    overlap = P.perception_noticed_overlap(
+        finalized["noticed"],
+        ["grau", "Displays", "Filter", "Performance Line", "unklar warum"],
+    )
+    assert overlap["hits"] >= 3
+    assert overlap["score"] >= 0.5
+
+
+def test_patient_does_not_force_abandon():
+    perc = {
+        "noticed": [{"what": "Display-Karten grau", "relevance": "high"}],
+        "think": "Filter unklar warum.",
+        "clarity": 1,
+        "feel": {"label": "nachdenklich", "valence": -1},
+        "confusion": "filter_cause_unknown",
+        "stance": "hesitate",
+        "intent": "Ich scrolle und prüfe noch.",
+        "why": "Vielleicht steht die Erklärung weiter unten.",
+    }
+    out, upgraded = P.apply_impatient_abandon_stance(perc, 0.2)
+    assert upgraded is False
+    assert out["stance"] == "hesitate"

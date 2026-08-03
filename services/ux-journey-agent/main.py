@@ -1269,6 +1269,34 @@ def _history_step_errors(history: Any) -> list[str | None]:
     return []
 
 
+def _apply_persona_perception_finalize(
+    steps: list[dict[str, Any]],
+    *,
+    time_pressure: float | None,
+    budget: int,
+) -> list[dict[str, Any]]:
+    """Re-apply enrich + impatient abandon so stored steps match the live gate."""
+    confusion_so_far = 0
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        perc = step.get("perception")
+        if not isinstance(perc, dict):
+            continue
+        finalized, _upgraded = ux_perception.finalize_perception_for_persona(
+            perc,
+            budget=budget,
+            time_pressure=time_pressure,
+            felt_confusion_count=confusion_so_far,
+        )
+        if finalized:
+            step["perception"] = finalized
+            step["thinkAloud"] = ux_perception.perception_to_think_aloud(finalized)
+            if finalized.get("confusion"):
+                confusion_so_far += 1
+    return steps
+
+
 def _history_to_steps(history: Any) -> list[dict[str, Any]]:
     """Map browser-use action_history to AUDION steps (readable labels, target, result, reasoning).
 
@@ -3507,9 +3535,22 @@ async def run_agent(
                     await _orig_get_next(browser_state_summary)
                     mo = getattr(getattr(agent, "state", None), "last_model_output", None)
                     thinking = str(getattr(mo, "thinking", None) or "") if mo else ""
-                    return ux_perception.extract_perception_from_thinking(
+                    raw_perc = ux_perception.extract_perception_from_thinking(
                         thinking, budget=_perc_budget
                     )
+                    perc_out, upgraded = ux_perception.finalize_perception_for_persona(
+                        raw_perc,
+                        budget=_perc_budget,
+                        time_pressure=persona_tp,
+                        felt_confusion_count=int(felt_state.get("confusionCount") or 0),
+                    )
+                    if upgraded:
+                        print(
+                            f"ux-journey: job={job_id} perception stance upgraded → abandon "
+                            f"(tp={persona_tp})",
+                            flush=True,
+                        )
+                    return perc_out
 
                 async def _nudge(msg: str) -> None:
                     try:
@@ -3553,18 +3594,39 @@ async def run_agent(
                     if filtered2:
                         filtered = filtered2
                     elif align_reason == "align_all_dropped":
-                        felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
-                        await _nudge(
-                            "AUDION_PERCEPTION_INTENT: Klick nur auf Elemente aus noticed/intent. "
-                            "Wähle eine passende Action oder done."
+                        # Impatient + confusion: skip click-retry — abandon instead of thrashing.
+                        perc_ab, upgraded = ux_perception.apply_impatient_abandon_stance(
+                            perc,
+                            persona_tp,
+                            felt_confusion_count=int(felt_state.get("confusionCount") or 0)
+                            + (1 if perc.get("confusion") else 0),
                         )
-                        perc2 = await _once()
-                        if perc2:
-                            perc = perc2
-                            mo = getattr(getattr(agent, "state", None), "last_model_output", None)
-                            actions = list(getattr(mo, "action", None) or []) if mo else []
-                            filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
-                            filtered, _ = ux_perception.filter_actions_intent_align(filtered, perc)
+                        if upgraded and perc_ab:
+                            perc = perc_ab
+                            filtered, reason = ux_perception.filter_actions_for_stance(
+                                actions, perc
+                            )
+                            print(
+                                f"ux-journey: job={job_id} align_drop → abandon upgrade",
+                                flush=True,
+                            )
+                        else:
+                            felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
+                            await _nudge(
+                                "AUDION_PERCEPTION_INTENT: Klick nur auf Elemente aus noticed/intent. "
+                                "Wähle eine passende Action oder done."
+                            )
+                            perc2 = await _once()
+                            if perc2:
+                                perc = perc2
+                                mo = getattr(getattr(agent, "state", None), "last_model_output", None)
+                                actions = list(getattr(mo, "action", None) or []) if mo else []
+                                filtered, reason = ux_perception.filter_actions_for_stance(
+                                    actions, perc
+                                )
+                                filtered, _ = ux_perception.filter_actions_intent_align(
+                                    filtered, perc
+                                )
 
                 if not filtered:
                     await _force_done_schema(
@@ -3588,7 +3650,7 @@ async def run_agent(
                 print(
                     f"ux-journey: job={job_id} perception stance={perc.get('stance')} "
                     f"noticed={perc.get('noticedUsed')}/{perc.get('salienceBudget')} "
-                    f"gate={reason}",
+                    f"gate={reason} upgraded={bool(perc.get('stanceUpgraded'))}",
                     flush=True,
                 )
 
@@ -3808,6 +3870,13 @@ async def run_agent(
 
         # Map browser-use history to AUDION result format
         steps = _history_to_steps(history)
+        steps = _apply_persona_perception_finalize(
+            steps,
+            time_pressure=persona_tp,
+            budget=ux_perception.salience_budget(
+                persona_tp, persona_dims.get("detail_orientation")
+            ),
+        )
         _annotate_steps_with_video_offsets(job_id, steps)
         success = _history_success(history)
         screenshots = _history_screenshots(history)

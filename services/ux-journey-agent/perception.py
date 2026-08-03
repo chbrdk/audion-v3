@@ -339,6 +339,207 @@ def action_tool_name(action: Any) -> str:
     return ""
 
 
+_GREY_FILTER_CUES = (
+    "grau",
+    "gray",
+    "grey",
+    "disabled",
+    "deaktiv",
+    "ausgeblend",
+    "ausgegraut",
+    "filter",
+    "unklar",
+    "nicht klick",
+    "nicht wähl",
+    "kompatibil",
+)
+
+
+def perception_text_blob(perception: dict[str, Any] | None) -> str:
+    """Flatten noticed/think/intent/why for cue scans."""
+    if not perception:
+        return ""
+    parts: list[str] = [
+        str(perception.get("think") or ""),
+        str(perception.get("intent") or ""),
+        str(perception.get("why") or ""),
+        str(perception.get("taskReminder") or ""),
+        str(perception.get("ignoredGuess") or ""),
+    ]
+    for n in perception.get("noticed") or []:
+        if isinstance(n, dict):
+            parts.append(str(n.get("what") or ""))
+            parts.append(str(n.get("where") or ""))
+        else:
+            parts.append(str(n))
+    return normalize_salience_label(" ".join(parts))
+
+
+def has_grey_filter_signal(perception: dict[str, Any] | None) -> bool:
+    blob = perception_text_blob(perception)
+    return any(cue in blob for cue in _GREY_FILTER_CUES)
+
+
+def should_prefer_abandon(
+    perception: dict[str, Any] | None,
+    time_pressure: float | None,
+    *,
+    felt_confusion_count: int = 0,
+) -> bool:
+    """
+    Impatient personas: confusion + low clarity / grey-filter signal → abandon.
+    Soft preference becomes a hard stance upgrade in apply_impatient_abandon_stance.
+    """
+    if perception is None:
+        return False
+    if time_pressure is None or float(time_pressure) < 0.75:
+        return False
+    if str(perception.get("stance") or "") == "abandon":
+        return True
+
+    confusion = perception.get("confusion")
+    clarity = perception.get("clarity")
+    low_clarity = isinstance(clarity, int) and clarity <= 1
+    signal = has_grey_filter_signal(perception)
+    prior = int(felt_confusion_count or 0) >= 1
+
+    if confusion and (low_clarity or signal or prior):
+        return True
+    if low_clarity and signal:
+        return True
+    if prior and signal and low_clarity:
+        return True
+    return False
+
+
+def apply_impatient_abandon_stance(
+    perception: dict[str, Any] | None,
+    time_pressure: float | None,
+    *,
+    felt_confusion_count: int = 0,
+) -> tuple[dict[str, Any] | None, bool]:
+    """
+    Hard-upgrade proceed/hesitate → abandon for impatient + confusion.
+    Returns (perception, upgraded).
+    """
+    if perception is None:
+        return None, False
+    if str(perception.get("stance") or "") == "abandon":
+        return perception, False
+    if not should_prefer_abandon(
+        perception,
+        time_pressure,
+        felt_confusion_count=felt_confusion_count,
+    ):
+        return perception, False
+
+    out = dict(perception)
+    out["stance"] = "abandon"
+    out["stanceUpgraded"] = True
+    why = str(out.get("why") or "").strip()
+    if len(why) < 12:
+        out["why"] = (
+            "Unerklärte graue/Filter-Lage — unter Zeitdruck breche ich ab, "
+            "statt weiter zu raten."
+        )
+    intent = str(out.get("intent") or "").lower()
+    if not any(tok in intent for tok in ("abbrech", "abbruch", "aufgeb", "stoppe", "fertig")):
+        out["intent"] = (
+            "Ich breche ab und sage ehrlich, dass ich keine sichere Antwort habe."
+        )
+    feel = out.get("feel")
+    if not isinstance(feel, dict) or feel.get("valence") is None:
+        out["feel"] = {"label": "frustriert", "valence": -2}
+    elif isinstance(feel.get("valence"), int) and feel["valence"] > -1:
+        out["feel"] = {
+            "label": str(feel.get("label") or "frustriert"),
+            "valence": -2,
+        }
+    return out, True
+
+
+_SURFACE_PROMOTE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"performance\s*line", re.I), "Performance Line"),
+    (re.compile(r"\bfilter\w*\b", re.I), "Filter"),
+    (re.compile(r"\bgrau\w*|\bgrey\b|\bgray\b|\bdisabled\b", re.I), "grau / disabled"),
+    (re.compile(r"unklar\s+warum|warum .{0,24}grau|ohne erklärung", re.I), "unklar warum"),
+    (re.compile(r"\bdisplays?\b|\bdisplay[- ]?karten\b", re.I), "Displays"),
+]
+
+
+def enrich_noticed_from_perception_text(
+    perception: dict[str, Any] | None,
+    budget: int,
+) -> dict[str, Any] | None:
+    """
+    Promote cues already written in think/why/intent into noticed[] up to budget.
+    Does not invent page UI — only lifts the persona's own words into salience slots.
+    """
+    if perception is None:
+        return None
+    out = dict(perception)
+    noticed = [
+        dict(n) if isinstance(n, dict) else {"what": str(n), "relevance": "med"}
+        for n in (out.get("noticed") or [])
+        if n
+    ]
+    if len(noticed) >= budget:
+        out["noticed"] = noticed[:budget]
+        out["noticedUsed"] = len(noticed[:budget])
+        return out
+
+    source = " ".join(
+        [
+            str(out.get("think") or ""),
+            str(out.get("why") or ""),
+            str(out.get("intent") or ""),
+            str(out.get("taskReminder") or ""),
+            " ".join(
+                str(n.get("what") or "") for n in noticed if isinstance(n, dict)
+            ),
+        ]
+    )
+    blob = normalize_salience_label(
+        " ".join(str(n.get("what") or "") for n in noticed if isinstance(n, dict))
+    )
+    for pattern, label in _SURFACE_PROMOTE_PATTERNS:
+        if len(noticed) >= budget:
+            break
+        if not pattern.search(source):
+            continue
+        norm = normalize_salience_label(label)
+        if norm and any(tok in blob for tok in norm.split() if len(tok) >= 4):
+            continue
+        if norm and norm in blob:
+            continue
+        noticed.append({"what": label, "relevance": "high"})
+        blob = normalize_salience_label(
+            " ".join(str(n.get("what") or "") for n in noticed if isinstance(n, dict))
+        )
+    out["noticed"] = noticed[:budget]
+    out["noticedUsed"] = len(out["noticed"])
+    out["salienceBudget"] = budget
+    return out
+
+
+def finalize_perception_for_persona(
+    perception: dict[str, Any] | None,
+    *,
+    budget: int,
+    time_pressure: float | None,
+    felt_confusion_count: int = 0,
+) -> tuple[dict[str, Any] | None, bool]:
+    """Enrich noticed from own text, then hard-upgrade impatient abandon."""
+    if perception is None:
+        return None, False
+    enriched = enrich_noticed_from_perception_text(perception, budget) or perception
+    return apply_impatient_abandon_stance(
+        enriched,
+        time_pressure,
+        felt_confusion_count=felt_confusion_count,
+    )
+
+
 def filter_actions_for_stance(
     actions: list[Any],
     perception: dict[str, Any] | None,
@@ -504,13 +705,23 @@ def perception_prompt_extension(
     ]
     if impatient:
         persona_lines.append(
-            "- Du bist ungeduldig: bei clarity≤1 und unerklärtem Grau/Filter → stance=abandon "
-            "(ehrlicher Abbruch, kein Weiteroptimieren)."
+            "- Du bist ungeduldig: bei clarity≤1 ODER confusion-Tag und unerklärtem Grau/Filter "
+            "→ stance=abandon (ehrlicher Abbruch, kein Weiteroptimieren). Runtime erzwingt das."
         )
         persona_lines.append("- ignoredGuess ist bei dir erwartet (Tunnelblick OK).")
+        persona_lines.append(
+            f"- Nutze das Budget: wenn Filter/Kompatibilität/grau sichtbar, fülle noticed mit "
+            f"bis zu {budget} UNTERSCHIEDLICHEN Aspekten "
+            "(1 Zustand grau/disabled, 2 Filter/Ursache unklar, 3 Produktlinie/Drive Unit wenn sichtbar) "
+            "— nicht nur einen Einzeiler."
+        )
     elif patient:
         persona_lines.append(
             "- Du bist geduldig: stance=hesitate (scroll/prüfen) ist erlaubt; abandon nur bei klarer Sackgasse."
+        )
+        persona_lines.append(
+            f"- Nutze bis zu {budget} noticed-Einträge wenn die Seite reich ist; "
+            "unterscheide Zustand vs. Ursache vs. Produktlinie."
         )
     if detail_orientation is not None and detail_orientation < 0.4:
         persona_lines.append("- Wenig Detailorientierung: Fokus Affordance/Outcome, nicht Microcopy.")
@@ -535,15 +746,19 @@ def perception_prompt_extension(
         "PFLICHT: Hänge an 'thinking' diesen Block an (wird aus dem VO entfernt):\n"
         "<<PERCEPTION>>{"
         '"taskReminder":"Ich will kompatible Displays finden",'
-        '"noticed":[{"what":"Display-Karten grau","where":"rechts","relevance":"high"}],'
-        '"ignoredGuess":"Feine Tooltips lese ich nicht",'
+        '"noticed":['
+        '{"what":"Display-Karten grau/disabled","where":"rechts","relevance":"high"},'
+        '{"what":"Filter-Ursache unklar warum","where":"Kompatibilitätswahl","relevance":"high"},'
+        '{"what":"Performance Line Karte","where":"Drive Unit","relevance":"med"}'
+        '],'
+        '"ignoredGuess":"Feine Tooltips und Footer lese ich nicht",'
         '"think":"Ohne Erklärung warum grau komme ich nicht weiter.",'
         '"clarity":0,'
         '"feel":{"label":"frustriert","valence":-2},'
         '"confusion":"disabled_option_unexplained",'
         '"stance":"abandon",'
         '"intent":"Ich breche ab und sage ehrlich, dass ich keine sichere Antwort habe.",'
-        '"why":"Zwei unerklärte graue Optionen — lohnt sich nicht."'
+        '"why":"Unerklärte graue Display-Optionen — keine sichere Antwort."'
         "}<</PERCEPTION>>\n"
         "Felder: taskReminder, noticed[{what,where?,relevance:high|med|low}], ignoredGuess, "
         "think, clarity 0-3, feel{label,valence -2..2}, "
@@ -603,6 +818,7 @@ def public_perception_stats(felt: dict[str, Any] | None, steps: list[dict[str, A
     stances = [str(p.get("stance")) for p in percs]
     abandon_idx = next((i + 1 for i, st in enumerate(stances) if st == "abandon"), None)
     clarities = [p.get("clarity") for p in percs if isinstance(p.get("clarity"), int)]
+    upgraded = sum(1 for p in percs if p.get("stanceUpgraded"))
     return {
         "stepsWithPerception": len(percs),
         "meanNoticed": (sum(noticed_lens) / len(noticed_lens)) if noticed_lens else None,
@@ -612,6 +828,7 @@ def public_perception_stats(felt: dict[str, Any] | None, steps: list[dict[str, A
         "confusionCount": int((felt or {}).get("confusionCount") or 0),
         "forcedDone": int((felt or {}).get("forcedDone") or 0),
         "retries": int((felt or {}).get("retries") or 0),
+        "stanceUpgraded": upgraded,
     }
 
 
