@@ -32,6 +32,8 @@ export async function startUxWaveNativeOrFixture(
   if (!wave) return null
 
   if (force) {
+    // Clear prior agent outcomes, then mark running without storeStartUxWave —
+    // that helper preserves agentStatus==='complete' and would skip re-queue.
     const resetRuns: UxWaveRunItem[] = wave.runs.map((run) => {
       const shouldReset =
         run.agentStatus === 'complete' ||
@@ -42,7 +44,7 @@ export async function startUxWaveNativeOrFixture(
       return {
         ...run,
         jobId: null,
-        agentStatus: null,
+        agentStatus: 'running',
         agentSuccess: null,
         taskCompleted: null,
         validEvidence: null,
@@ -54,14 +56,20 @@ export async function startUxWaveNativeOrFixture(
         categories: {},
       }
     })
-    wave =
-      (await storePatchUxWaveRuns(studyId, waveId, resetRuns)) ??
-      (await storeStartUxWave(studyId, waveId))
+    wave = await storePatchUxWaveRuns(studyId, waveId, resetRuns)
+    if (!wave) return null
+    wave = {
+      ...wave,
+      status: 'running',
+      updatedAt: new Date().toISOString(),
+    }
+    wave = (await storePatchUxWaveRuns(studyId, waveId, wave.runs)) ?? wave
+  } else {
+    wave = await storeStartUxWave(studyId, waveId)
     if (!wave) return null
   }
 
-  wave = await storeStartUxWave(studyId, waveId)
-  if (!wave || !isUxJourneyAgentConfigured()) return wave
+  if (!isUxJourneyAgentConfigured()) return wave
 
   const study = await storeUxStudyDetail(studyId)
   const updated: UxWaveRunItem[] = []

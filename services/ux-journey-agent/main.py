@@ -2669,14 +2669,26 @@ async def run_agent(
         # Spoof a desktop Chrome UA — default headless Chromium sends
         # "HeadlessChrome" which CloudFront WAF on sites like bosch-ebike.com
         # blocks with 403 (see knowledge/cloudfront-403-bosch-headless-ua-2026-08-03.md).
+        # Pass both `user_agent` (--user-agent chrome flag) and `headers` so
+        # CDP / extra-header paths cannot fall back to browser-use/* bot UA.
         browser_ua = resolve_browser_user_agent()
-        try:
-            browser = Browser(record_video_dir=video_dir, user_agent=browser_ua)
-        except TypeError:
+        browser_headers = {"User-Agent": browser_ua, "Accept-Language": "de-DE,de;q=0.9,en;q=0.8"}
+        browser = None
+        for kwargs in (
+            {"record_video_dir": video_dir, "user_agent": browser_ua, "headers": browser_headers},
+            {"record_video_dir": video_dir, "user_agent": browser_ua},
+            {"user_agent": browser_ua, "headers": browser_headers},
+            {"user_agent": browser_ua},
+            {"record_video_dir": video_dir},
+            {},
+        ):
             try:
-                browser = Browser(user_agent=browser_ua)
+                browser = Browser(**kwargs)
+                break
             except TypeError:
-                browser = Browser()
+                continue
+        if browser is None:
+            browser = Browser()
         _recording_mono[job_id] = time.monotonic()
         # Prefer initial_url if supported; else bake URL into task. Instruct model to output reasoning in German.
         sig = inspect.signature(Agent.__init__)
@@ -4893,11 +4905,15 @@ app.add_middleware(AgentAuthMiddleware)
 def health() -> dict[str, Any]:
     """Liveness + coarse readiness (no secrets)."""
     provider = _resolve_llm_provider()
+    browser_ua = resolve_browser_user_agent()
     return {
         "status": "ok",
         "llmProvider": provider,
         "openaiKey": bool((os.environ.get("OPENAI_API_KEY") or "").strip()),
         "anthropicKey": bool((os.environ.get("ANTHROPIC_API_KEY") or "").strip()),
+        # Deploy probe: Coolify UA fix is live when this is present and has no HeadlessChrome.
+        "browserUserAgent": browser_ua,
+        "browserUserAgentSafe": "HeadlessChrome" not in browser_ua,
     }
 
 @app.post("/run", response_model=RunResponse)

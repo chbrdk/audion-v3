@@ -33,9 +33,11 @@ Research crawl already works around this via `paths.researchCrawlUserAgent` (bro
 ## Fix (2026-08-03)
 
 1. `services/ux-journey-agent/browser_ua.py` — `resolve_browser_user_agent()` default desktop Chrome UA (rejects `HeadlessChrome` overrides).
-2. `main.py` `run_agent` passes `user_agent=` into `Browser(...)`.
-3. Central refs: `paths.uxJourneyBrowserUserAgent` · env `UX_JOURNEY_USER_AGENT` · tests `test_browser_ua.py`.
-4. After agent Coolify deploy: force-restart Bosch wave (`POST …/start` with `{ "force": true }`).
+2. `main.py` `run_agent` passes `user_agent=` + `headers.User-Agent` into `Browser(...)`.
+3. `/health` exposes `browserUserAgent` + `browserUserAgentSafe` (Coolify deploy probe).
+4. Central refs: `paths.uxJourneyBrowserUserAgent` · env `UX_JOURNEY_USER_AGENT` · tests `test_browser_ua.py` · `test_health_ua.py`.
+5. Force-restart hardened in `startUxWaveNativeOrFixture` (no longer re-enters `storeStartUxWave`, which preserves `complete`).
+6. After agent Coolify deploy (`browserUserAgentSafe: true` on `/health`): `POST …/start` with `{ "force": true }`.
 
 ## Related
 

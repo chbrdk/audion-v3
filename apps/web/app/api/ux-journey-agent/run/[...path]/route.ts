@@ -1,4 +1,5 @@
 import { auth } from '../../../../../auth'
+import { paths } from '../../../../../lib/paths'
 import {
   isUxJourneyAgentConfigured,
   uxJourneyAgentProxy,
@@ -6,13 +7,34 @@ import {
 
 type Params = { params: Promise<{ path?: string[] }> }
 
+async function isAuthorizedForAgentProxy(request: Request): Promise<boolean> {
+  const session = await auth()
+  if (session?.user) return true
+  const authorization = request.headers.get('authorization')
+  if (!authorization?.toLowerCase().startsWith('bearer ')) return false
+  const raw = authorization.trim().replace(/^Bearer\s+/i, '').trim()
+  const envTok = process.env[paths.audionApiTokenEnvKey]?.trim()
+  if (envTok && raw === envTok) return true
+  try {
+    const verifyUrl = new URL(paths.routes.apiSettingsTokenVerify, request.url)
+    const res = await fetch(verifyUrl, {
+      method: 'POST',
+      headers: { authorization },
+      cache: 'no-store',
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 /**
  * Authenticated BFF proxy to the V3 UX Journey Agent
  * (live frames, video, status) — keeps the agent secret server-side.
+ * Accepts session cookie or AUDION API Bearer (machine/scripts).
  */
 export async function GET(request: Request, { params }: Params) {
-  const session = await auth()
-  if (!session?.user) {
+  if (!(await isAuthorizedForAgentProxy(request))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
   if (!isUxJourneyAgentConfigured()) {
@@ -46,8 +68,7 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const session = await auth()
-  if (!session?.user) {
+  if (!(await isAuthorizedForAgentProxy(request))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
   if (!isUxJourneyAgentConfigured()) {

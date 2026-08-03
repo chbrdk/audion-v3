@@ -26,6 +26,7 @@ export async function POST(
     studyId,
     waveId,
     status: wave.status,
+    forceApplied: force,
     started: wave.runs.map((r) => ({
       runKey: r.runKey,
       jobId: r.jobId,
