@@ -48,6 +48,8 @@ python3 -m pytest test_perception.py test_confusion_abandon.py -q
 
 Staging expect after deploy: Alex steps typically **3–8** (not always 2), friction 7–10, Soft-Q≈2, abandon still named after try.
 
+**Staging smoke 2026-08-03:** Alex seeds **3**+**3** steps, fric 8, Soft-Q 2/2; Sam patient **6** steps — `knowledge/lab-staging-smoke-try-then-quit-2026-08-03.md`.
+
 ## Next (out of scope here)
 
 Full Nav-proof H3 / purchase / A+C multi-run waves — see `knowledge/persona-iteration-lab-2026-08-03.md` Extra levers.
