@@ -24,12 +24,22 @@ describe('audion knowledge pack distill + seed', () => {
         geo_context: {
           data: { queryThemes: ['alternatives'], seedQueries: ['Best Acme tools'] },
         },
+        research_brief: {
+          data: {
+            summary: 'Acme leads mid-market',
+            topics: ['Pricing', 'Trust'],
+            sections: [{ title: 'Buyers', plainText: 'Ops leads evaluate onboarding speed.' }],
+          },
+        },
       },
     }
     const text = formatPackSeedContext(pack)
     expect(text).toContain('Acme')
     expect(text).toContain('rival.com')
     expect(text).toContain('Best Acme tools')
+    expect(text).toContain('Acme leads mid-market')
+    expect(text).toContain('Pricing')
+    expect(text).toContain('Ops leads evaluate')
   })
 
   it('distills chapters to plain sections without HTML', () => {

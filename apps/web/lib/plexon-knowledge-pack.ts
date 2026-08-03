@@ -38,6 +38,7 @@ export function formatPackSeedContext(pack: KnowledgePackResponse | null): strin
   const profile = pack.facets.profile?.data ?? {}
   const competitive = pack.facets.competitive?.data ?? {}
   const geo = pack.facets.geo_context?.data ?? {}
+  const brief = pack.facets.research_brief?.data ?? {}
 
   if (typeof profile.displayName === 'string' && profile.displayName.trim()) {
     lines.push(`Collection display name: ${profile.displayName.trim()}`)
@@ -70,8 +71,44 @@ export function formatPackSeedContext(pack: KnowledgePackResponse | null): strin
     : []
   if (seeds.length) lines.push(`GEO seed queries:\n- ${seeds.join('\n- ')}`)
 
+  if (typeof brief.summary === 'string' && brief.summary.trim()) {
+    lines.push(`Research brief summary: ${brief.summary.trim().slice(0, 1200)}`)
+  }
+  const topics = Array.isArray(brief.topics)
+    ? brief.topics.filter((t): t is string => typeof t === 'string').slice(0, 16)
+    : []
+  if (topics.length) lines.push(`Research topics: ${topics.join(', ')}`)
+  const sections = Array.isArray(brief.sections) ? brief.sections : []
+  for (const section of sections.slice(0, 4)) {
+    if (!section || typeof section !== 'object') continue
+    const title =
+      typeof (section as { title?: string }).title === 'string'
+        ? (section as { title: string }).title.trim()
+        : ''
+    const plain =
+      typeof (section as { plainText?: string }).plainText === 'string'
+        ? (section as { plainText: string }).plainText.trim().slice(0, 400)
+        : ''
+    if (title && plain) lines.push(`Brief · ${title}: ${plain}`)
+    else if (plain) lines.push(`Brief section: ${plain}`)
+  }
+
   if (!lines.length) return ''
   return `Collection knowledge (shared brief):\n${lines.join('\n')}`
+}
+
+/** Pull pack seed text for a Collection-bound Audion project (empty if unbound / unavailable). */
+export async function loadPackSeedForPlatformProject(
+  platformProjectId: string | null | undefined,
+): Promise<string> {
+  const id = platformProjectId?.trim()
+  if (!id) return ''
+  try {
+    const pack = await fetchCollectionKnowledgePack(id)
+    return formatPackSeedContext(pack)
+  } catch {
+    return ''
+  }
 }
 
 export async function fetchCollectionKnowledgePack(
@@ -168,31 +205,42 @@ export async function publishResearchBriefToPack(opts: {
     return { ok: false, status: 503, error: 'plexon_not_configured' }
   }
   const secret = getPlexonServiceSecret()
+  let expectedRevision = opts.expectedRevision
   try {
-    const res = await fetch(facetPublishPath(opts.platformProjectId, 'research_brief'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getPlexonContractHeaders(secret),
-      },
-      body: JSON.stringify({
-        mode: 'replace',
-        expectedRevision: opts.expectedRevision,
-        provenance: {
-          actorType: 'service',
-          productId: 'audion',
-          runId: opts.runId ?? opts.data.sourceRunId,
-          note: 'research distillate publish',
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const res = await fetch(facetPublishPath(opts.platformProjectId, 'research_brief'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getPlexonContractHeaders(secret),
         },
-        data: opts.data,
-      }),
-    })
-    if (!res.ok) {
+        body: JSON.stringify({
+          mode: 'replace',
+          expectedRevision,
+          provenance: {
+            actorType: 'service',
+            productId: 'audion',
+            runId: opts.runId ?? opts.data.sourceRunId,
+            note: 'research distillate publish',
+          },
+          data: opts.data,
+        }),
+      })
+      if (res.ok) {
+        const body = (await res.json()) as { revision?: number }
+        return { ok: true, revision: body.revision ?? expectedRevision + 1 }
+      }
+      if (res.status === 409 && attempt === 0) {
+        const fresh = await fetchCollectionKnowledgePack(opts.platformProjectId)
+        if (fresh) {
+          expectedRevision = fresh.revision
+          continue
+        }
+      }
       const text = await res.text().catch(() => '')
       return { ok: false, status: res.status, error: text || res.statusText }
     }
-    const body = (await res.json()) as { revision?: number }
-    return { ok: true, revision: body.revision ?? opts.expectedRevision + 1 }
+    return { ok: false, status: 409, error: 'revision_conflict' }
   } catch (e) {
     return {
       ok: false,

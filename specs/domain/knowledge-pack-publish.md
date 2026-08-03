@@ -1,8 +1,9 @@
 # Knowledge Pack publish — AUDION → Collection
 
-**Status:** Accepted (spec only) — 2026-08-03  
+**Status:** Accepted — implemented — 2026-08-03  
 **Plexon SoT:** `plexon-v3/specs/domain/collection-knowledge-pack.md`  
 **API:** `plexon-v3/specs/api/collection-knowledge-pack.md`  
+**Sync:** `plexon-v3/knowledge/collection-knowledge-sync.md`  
 **Local dossier:** `specs/domain/project-workspace.md` · `project-fields.md` · `knowledge/project-knowledge-ux.md` · `knowledge/project-research-sse-2026.md`
 
 ## Purpose
@@ -13,22 +14,22 @@ AUDION keeps the **rich** project knowledge dossier (`knowledgeChapters` HTML / 
 
 - Replacing Audion `knowledgeChapters` with the pack
 - Publishing personas, journeys, UX studies, or chat transcripts into the pack
-- Auto-publishing on every keystroke (explicit user/service action)
+- Auto-publishing on every keystroke (dossier edits use Re-sync CTA)
 - Sending full HTML into Plexon
 
 ## Flow
 
 ```
-Audion dossier / research run
+Audion research succeeds
         │
-        ▼  distill (plain sections)
+        ▼  autosync distill (plain sections + chapters)
 POST Plexon …/knowledge/facets/research_brief/publish
         │
         ▼
 Collection pack.research_brief  (shared SoT)
         │
         ▼  pull-on-use
-CHECKION GEO suggest · Assistant · future Brandion
+CHECKION GEO suggest · Personas · Assistant · future Brandion
 ```
 
 ## Distill rules
@@ -45,19 +46,23 @@ Caps: follow plexon API size budgets (`research_brief` ≤ 64 KiB). Prefer ≤ 8
 
 | Trigger | Behaviour |
 |---------|-----------|
-| Project magazine — “Publish to Collection” | Admin confirms sections to include → service/session publish |
-| After research success | Optional prompt: “Publish brief to Collection?” |
-| Deferred auto | Out of scope for Phase 3 |
+| After research success | **Autosync** distill → `research_brief` (soft-skip if unbound / plexon down) |
+| Project magazine — “Re-sync to Collection” | Manual re-publish after dossier edits or failed autosync |
+| Kill-switch | `KNOWLEDGE_PACK_AUTOSYNC=0` |
 
-Requires `platformProjectId` on the Audion project (Wave 1 federation). If missing → CTA to repair Collection binding, do not invent a second project.
+Requires `platformProjectId` on the Audion project (Wave 1 federation). If missing → soft-skip + CTA to repair Collection binding.
 
-## Consume (research seed)
+## Consume (pull-on-use)
 
-When starting research with a bound Collection:
+When a project is bound to a Collection (`platformProjectId`):
 
-1. `GET` pack facets `profile`, `competitive`, `geo_context` from plexon-v3.
-2. Seed crawl / prompt context from those fields.
-3. Do **not** require pack presence — empty facets → current Audion-only behaviour.
+| Action | Pack use |
+|--------|----------|
+| Research start | Seed crawl / prompt from `profile`, `competitive`, `geo_context`, `research_brief` |
+| Generate / suggest personas | Seed assist context from the same facets |
+| Suggest target groups | Seed assist context from the same facets |
+
+Do **not** require pack presence — empty facets / auth unset → Audion-only behaviour. Personas stay product-local; only the shared brief is pulled.
 
 ## Mapping
 
@@ -79,7 +84,7 @@ When starting research with a bound Collection:
 | Phase | Notes |
 |-------|-------|
 | Spec | this doc |
-| After Plexon Pack CRUD | implement distill helper + publish CTA |
+| Implemented | autosync after research + Re-sync CTA + pack seed on research / personas / target groups |
 | Brandion later | may consume `research_brief`; Audion does not write `brand` |
 
 ## Paths

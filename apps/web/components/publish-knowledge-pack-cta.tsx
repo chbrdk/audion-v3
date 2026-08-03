@@ -36,8 +36,8 @@ export function PublishKnowledgePackCta({ projectId, platformProjectId }: Props)
       setStatus('done')
       setMessage(
         typeof body?.revision === 'number'
-          ? `Published research brief to Collection (rev ${body.revision}).`
-          : 'Published research brief to Collection.',
+          ? `Re-synced research brief to Collection (rev ${body.revision}).`
+          : 'Re-synced research brief to Collection.',
       )
     } catch (e) {
       setStatus('error')
@@ -49,21 +49,17 @@ export function PublishKnowledgePackCta({ projectId, platformProjectId }: Props)
     <div className="audion-knowledge-publish" data-section="publish-knowledge-pack">
       <Text role="meta">
         {bound
-          ? 'Shared · Publish a plain-text research distillate to the Collection Knowledge Pack (not TipTap HTML).'
-          : 'Bind this project to a Plexon Collection to publish a shared research brief.'}
+          ? 'Autosync · Successful research publishes a plain-text brief to the Collection Knowledge Pack. Use re-sync after dossier edits.'
+          : 'Bind this project to a Plexon Collection to autosync research briefs.'}
       </Text>
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        disabled={!bound || status === 'busy' || status === 'done'}
+        disabled={!bound || status === 'busy'}
         onClick={() => void onPublish()}
       >
-        {status === 'busy'
-          ? 'Publishing…'
-          : status === 'done'
-            ? 'Published to Collection'
-            : 'Publish to Collection'}
+        {status === 'busy' ? 'Syncing…' : 'Re-sync to Collection'}
       </Button>
       {message ? <Text role="meta">{message}</Text> : null}
     </div>

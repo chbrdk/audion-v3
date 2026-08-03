@@ -88,6 +88,8 @@ export function scheduleNativeResearchJob(
         projectId,
       })
       storeAppendResearchEvent(runId, 'summary_saved', 'Summary saved')
+      const { scheduleResearchBriefAutosync } = await import('../knowledge-pack-autosync')
+      scheduleResearchBriefAutosync(projectId)
     } catch (error) {
       storeFailResearchRun(
         runId,

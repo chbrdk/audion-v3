@@ -374,6 +374,16 @@ export async function runNativeGeneratePersonas(
   }
   const meta = nativeMeta('generatePersonas', { tgId }, upstreamBody)
   const locale = body.output_locale ?? 'en'
+
+  let packSeed = ''
+  if (tg.projectId) {
+    const project = await storeProjectDetail(tg.projectId)
+    if (project?.platformProjectId) {
+      const { loadPackSeedForPlatformProject } = await import('./plexon-knowledge-pack')
+      packSeed = await loadPackSeedForPlatformProject(project.platformProjectId)
+    }
+  }
+
   const assist = await runAssistJson<{
     personas?: Array<{
       name?: string
@@ -385,7 +395,14 @@ export async function runNativeGeneratePersonas(
   }>('persona.generate_batch', {
     locale,
     max_items: String(count),
-    context: `Name: ${tg.name}\nSegment: ${segment}\nDescription: ${description ?? ''}`,
+    context: [
+      `Name: ${tg.name}`,
+      `Segment: ${segment}`,
+      `Description: ${description ?? ''}`,
+      packSeed,
+    ]
+      .filter(Boolean)
+      .join('\n'),
   })
   if ('error' in assist) return assist
   const drafts = (assist.data.personas ?? []).slice(0, count)
@@ -428,10 +445,23 @@ export async function runNativeSuggestTargetGroups(
     bilingual: body.bilingual ?? false,
   }
   const meta = nativeMeta('suggestTargetGroups', { projectId }, upstreamBody)
+
+  let packSeed = ''
+  if (project.platformProjectId) {
+    const { loadPackSeedForPlatformProject } = await import('./plexon-knowledge-pack')
+    packSeed = await loadPackSeedForPlatformProject(project.platformProjectId)
+  }
+
   const assist = await runAssist('project.suggest_target_groups', {
     locale,
     max_items: String(max),
-    context: `Project: ${project.name}\nDescription: ${project.description ?? ''}`,
+    context: [
+      `Project: ${project.name}`,
+      `Description: ${project.description ?? ''}`,
+      packSeed,
+    ]
+      .filter(Boolean)
+      .join('\n'),
   })
   if ('error' in assist) return assist
   return { ...meta, suggestions: assist.suggestions.slice(0, max) }
@@ -442,7 +472,8 @@ export async function runNativeSuggestPersonas(
   body: SuggestPersonasRequest,
   _authorization?: string | null,
 ): Promise<SuggestPersonasResponse | NativeError> {
-  if (!(await storeProjectDetail(projectId))) return { error: 'Project not found', status: 404 }
+  const project = await storeProjectDetail(projectId)
+  if (!project) return { error: 'Project not found', status: 404 }
   const tgId = body.target_group_id
   const tg = await storeTargetGroupDetail(tgId)
   if (!tg) return { error: 'Target group not found', status: 404 }
@@ -450,10 +481,24 @@ export async function runNativeSuggestPersonas(
   const locale = body.output_locale ?? 'en'
   const upstreamBody = { max_suggestions: max, output_locale: locale }
   const meta = nativeMeta('suggestPersonas', { tgId }, upstreamBody)
+
+  let packSeed = ''
+  if (project.platformProjectId) {
+    const { loadPackSeedForPlatformProject } = await import('./plexon-knowledge-pack')
+    packSeed = await loadPackSeedForPlatformProject(project.platformProjectId)
+  }
+
   const assist = await runAssist('target_group.suggest_personas', {
     locale,
     max_items: String(max),
-    context: `TG: ${tg.name}\nSegment: ${tg.segment}\nDescription: ${tg.description ?? ''}`,
+    context: [
+      `TG: ${tg.name}`,
+      `Segment: ${tg.segment}`,
+      `Description: ${tg.description ?? ''}`,
+      packSeed,
+    ]
+      .filter(Boolean)
+      .join('\n'),
   })
   if ('error' in assist) return assist
   return { ...meta, suggestions: assist.suggestions.slice(0, max) }
@@ -797,15 +842,8 @@ export async function runNativeResearchStart(
   let packContext = ''
   const platformProjectId = project.platformProjectId?.trim()
   if (platformProjectId) {
-    try {
-      const { fetchCollectionKnowledgePack, formatPackSeedContext } = await import(
-        './plexon-knowledge-pack'
-      )
-      const pack = await fetchCollectionKnowledgePack(platformProjectId)
-      packContext = formatPackSeedContext(pack)
-    } catch {
-      /* research proceeds without pack */
-    }
+    const { loadPackSeedForPlatformProject } = await import('./plexon-knowledge-pack')
+    packContext = await loadPackSeedForPlatformProject(platformProjectId)
   }
 
   scheduleNativeResearchJob(jobId, projectId, seedUrl, packContext || undefined)
