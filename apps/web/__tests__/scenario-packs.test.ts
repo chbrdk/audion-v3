@@ -30,9 +30,19 @@ describe('scenario packs + EBM retest', () => {
     expect(resolveScenarioPackUrl('bosch.ebike.home')).toBe(paths.boschEbikeHomeUrl)
   })
 
-  it('seeds Alex/Sam personas for EBM runs', () => {
-    expect(demoPersonaDetail('persona-alex-nachruester')?.name).toContain('Nachrüster')
-    expect(demoPersonaDetail('persona-sam-kaufinteressent')?.name).toContain('Kaufinteressent')
+  it('seeds Alex/Sam personas with full PersonaDetail fields for production build', () => {
+    const alex = demoPersonaDetail('persona-alex-nachruester')
+    const sam = demoPersonaDetail('persona-sam-kaufinteressent')
+    expect(alex?.name).toContain('Nachrüster')
+    expect(sam?.name).toContain('Kaufinteressent')
+    for (const p of [alex, sam]) {
+      expect(p).toMatchObject({
+        visuals: null,
+        profileDe: null,
+        knowledgeEntries: [],
+        documents: [],
+      })
+    }
   })
 
   it('creates study + draft wave from EBM pack', async () => {

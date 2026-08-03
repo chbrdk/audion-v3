@@ -365,6 +365,10 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     ]),
     channels: ['Service-Seiten', 'YouTube'],
     sections: [],
+    visuals: null,
+    profileDe: null,
+    knowledgeEntries: [],
+    documents: [],
     headlineDe: 'Besitzt ein eBike und prüft Upgrades für Display/Akku/Bedieneinheit',
     journeyBehavior: {
       dimensionOverrides: {
@@ -437,6 +441,10 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     ]),
     channels: ['Produktseiten', 'YouTube'],
     sections: [],
+    visuals: null,
+    profileDe: null,
+    knowledgeEntries: [],
+    documents: [],
     headlineDe: 'Plant eBike-Kauf in den nächsten 6 Monaten und prüft Systemkompatibilität',
     journeyBehavior: {
       dimensionOverrides: {
