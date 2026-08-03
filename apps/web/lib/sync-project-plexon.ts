@@ -9,7 +9,7 @@ import {
   storeProjectDetail,
 } from './fixtures/project-store'
 import { getPlexonProfile } from './plexon-auth'
-import { registerAudionProjectOnPlexon } from './plexon-project-origin'
+import { registerAudionProjectOnPlexonDetailed } from './plexon-project-origin'
 import { isPlexonAuthConfigured } from './runtime-config'
 
 export type SyncProjectToPlexonInput = {
@@ -68,7 +68,7 @@ export async function syncProjectToPlexon(
     platformCompanyId = profile?.default_platform_company_id?.trim() || ''
   }
 
-  const origin = await registerAudionProjectOnPlexon({
+  const origin = await registerAudionProjectOnPlexonDetailed({
     audionProjectId: project.id,
     name: project.name,
     domain: input.domain?.trim() || null,
@@ -76,12 +76,15 @@ export async function syncProjectToPlexon(
     platformCompanyId: platformCompanyId || null,
   })
 
-  if (!origin?.platformProjectId) {
+  if (!origin || !('platformProjectId' in origin)) {
     return {
       ok: false,
-      status: 502,
+      status: origin && 'status' in origin ? origin.status : 502,
       error: 'plexon_origin_failed',
-      detail: 'Plexon audion-project-origin did not return platformProjectId',
+      detail:
+        origin && 'detail' in origin
+          ? origin.detail
+          : 'Plexon audion-project-origin did not return platformProjectId',
     }
   }
 

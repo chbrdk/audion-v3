@@ -221,7 +221,8 @@ describe('registerAudionProjectOnPlexon', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ platformProjectId: 'pp-1', platformCompanyId: 'c1' }),
+        text: async () =>
+          JSON.stringify({ platformProjectId: 'pp-1', platformCompanyId: 'c1' }),
       }),
     )
     const { registerAudionProjectOnPlexon } = await import('../lib/plexon-project-origin')
@@ -236,6 +237,7 @@ describe('registerAudionProjectOnPlexon', () => {
       platformProjectId: 'pp-1',
       checkionProjectId: undefined,
       platformCompanyId: 'c1',
+      ownerPlexonUserId: undefined,
     })
   })
 })

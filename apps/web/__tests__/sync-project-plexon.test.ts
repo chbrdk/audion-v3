@@ -17,6 +17,11 @@ vi.mock('../lib/plexon-project-origin', () => ({
     checkionProjectId: 'chk-bosch-1',
     platformCompanyId: 'co-1',
   })),
+  registerAudionProjectOnPlexonDetailed: vi.fn(async () => ({
+    platformProjectId: 'pp-bosch-1',
+    checkionProjectId: 'chk-bosch-1',
+    platformCompanyId: 'co-1',
+  })),
 }))
 
 vi.mock('../lib/runtime-config', async () => {

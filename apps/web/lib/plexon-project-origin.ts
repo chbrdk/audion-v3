@@ -12,10 +12,15 @@ export type AudionProjectOriginResult = {
   ownerPlexonUserId?: string
 }
 
+export type AudionProjectOriginFailure = {
+  ok: false
+  status: number
+  detail: string
+}
+
 /**
  * Register an AUDION-origin project on the Plexon control plane.
  * Owner/company optional — Plexon auto-resolves when omitted (service secret).
- * Returns null when not configured or on failure (caller must not block create).
  */
 export async function registerAudionProjectOnPlexon(params: {
   audionProjectId: string
@@ -24,6 +29,18 @@ export async function registerAudionProjectOnPlexon(params: {
   ownerPlexonUserId?: string | null
   platformCompanyId?: string | null
 }): Promise<AudionProjectOriginResult | null> {
+  const result = await registerAudionProjectOnPlexonDetailed(params)
+  return result && 'platformProjectId' in result ? result : null
+}
+
+/** Same as registerAudionProjectOnPlexon but returns upstream error detail. */
+export async function registerAudionProjectOnPlexonDetailed(params: {
+  audionProjectId: string
+  name: string
+  domain?: string | null
+  ownerPlexonUserId?: string | null
+  platformCompanyId?: string | null
+}): Promise<AudionProjectOriginResult | AudionProjectOriginFailure | null> {
   if (!isPlexonAuthConfigured()) return null
   const base = getPlexonAuthUrl().replace(/\/$/, '')
   const secret = getPlexonServiceSecret()
@@ -48,14 +65,20 @@ export async function registerAudionProjectOnPlexon(params: {
       },
       body: JSON.stringify(body),
     })
+    const text = await res.text().catch(() => '')
     if (!res.ok) {
-      console.warn('[AUDION-v3] audion-project-origin failed:', res.status, await res.text().catch(() => ''))
-      return null
+      console.warn('[AUDION-v3] audion-project-origin failed:', res.status, text)
+      return { ok: false, status: res.status, detail: text.slice(0, 800) || res.statusText }
     }
-    const data = (await res.json()) as Partial<AudionProjectOriginResult>
+    let data: Partial<AudionProjectOriginResult> = {}
+    try {
+      data = text ? (JSON.parse(text) as Partial<AudionProjectOriginResult>) : {}
+    } catch {
+      return { ok: false, status: 502, detail: `Invalid JSON from Plexon: ${text.slice(0, 200)}` }
+    }
     if (typeof data.platformProjectId !== 'string' || !data.platformProjectId.trim()) {
       console.warn('[AUDION-v3] audion-project-origin missing platformProjectId')
-      return null
+      return { ok: false, status: 502, detail: 'Plexon response missing platformProjectId' }
     }
     return {
       platformProjectId: data.platformProjectId,
@@ -67,7 +90,8 @@ export async function registerAudionProjectOnPlexon(params: {
         typeof data.ownerPlexonUserId === 'string' ? data.ownerPlexonUserId : undefined,
     }
   } catch (e) {
-    console.warn('[AUDION-v3] audion-project-origin error:', e instanceof Error ? e.message : e)
-    return null
+    const msg = e instanceof Error ? e.message : String(e)
+    console.warn('[AUDION-v3] audion-project-origin error:', msg)
+    return { ok: false, status: 502, detail: msg }
   }
 }
