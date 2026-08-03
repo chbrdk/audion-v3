@@ -88,6 +88,49 @@ function thinkAloudHasSubstance(thinkAloud: Record<string, unknown> | null | und
   return false
 }
 
+/**
+ * Prefer agent summary; if empty (common on forced abandon), use done-step result
+ * or the richest step reasoning so Soft-Q / correlator see Think-Aloud cues.
+ */
+export function resolveFindingFromAgentResult(input: {
+  summary?: string | null
+  error?: string | null
+  steps?: UxJourneyAgentStep[]
+  cancelled?: boolean
+  agentSuccess?: boolean
+  priorFinding?: string | null
+}): string {
+  const summary = (input.summary || '').trim()
+  if (summary.length >= 40 && !GENERIC_FINDING_RES.some((re) => re.test(summary))) {
+    return summary
+  }
+  const steps = input.steps ?? []
+  const done = [...steps]
+    .reverse()
+    .find((s) => String(s.action || '').toLowerCase() === 'done')
+  const doneText = String(done?.result || '').trim()
+  if (doneText.length >= 40) return doneText
+
+  let best = ''
+  for (const step of steps) {
+    const reasoning = String(step.reasoning || '').trim()
+    if (reasoning.length > best.length) best = reasoning
+    if (thinkAloudHasSubstance(step.thinkAloud ?? null)) {
+      const parts = Object.values(step.thinkAloud ?? {})
+        .map((v) => (typeof v === 'string' ? v : ''))
+        .filter((t) => t.trim().length >= 20)
+      const joined = parts.join(' ').trim()
+      if (joined.length > best.length) best = joined
+    }
+  }
+  if (best.length >= 40) return best
+  if (summary) return summary
+  if (input.priorFinding?.trim()) return input.priorFinding.trim()
+  if (input.cancelled) return 'Run was cancelled before completion.'
+  if (input.agentSuccess) return 'Browser agent completed run.'
+  return input.error?.trim() || 'Agent error'
+}
+
 /** True when the run has persona-facing UX substance (Think-Aloud / done / notes). */
 export function hasUsableUxSubstance(input: {
   summary?: string | null
@@ -284,14 +327,14 @@ export function mapAgentResultToWaveRun(
       ? sc.personaFitScore
       : run.personaFitScore ?? null
 
-  const finding =
-    status.result?.summary ||
-    run.finding ||
-    (cancelled
-      ? 'Run was cancelled before completion.'
-      : agentSuccess
-        ? 'Browser agent completed run.'
-        : status.error || status.result?.error || 'Agent error')
+  const finding = resolveFindingFromAgentResult({
+    summary: status.result?.summary,
+    error: status.error ?? status.result?.error,
+    steps,
+    cancelled,
+    agentSuccess,
+    priorFinding: run.finding,
+  })
 
   return {
     ...run,

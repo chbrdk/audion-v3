@@ -206,5 +206,40 @@ describe('ux-wave-scorecard', () => {
     expect(mapped.goalReached).toBe(false)
     expect(hasUsableUxSubstance({ steps: status.result?.steps, confusionTagCount: 2 })).toBe(true)
     expect(mapped.validEvidence).toBe(true)
+    expect(mapped.finding).toMatch(/grau|abbrechen/i)
+  })
+
+  it('uses done-step result as finding when summary is empty', () => {
+    const status: UxJourneyAgentJobStatus = {
+      jobId: 'job-empty-summary',
+      status: 'complete',
+      result: {
+        success: true,
+        summary: '',
+        steps: [
+          {
+            step: 1,
+            action: 'scroll',
+            reasoning: 'Displays wirken grau ohne Erklärung — Filterursache unklar.',
+          },
+          {
+            step: 2,
+            action: 'done',
+            result:
+              'Abbruch: Matrix zeigt Optionen grau/ausgeblendet; keine sichere Display-Antwort für F3.1.',
+          },
+        ],
+        scorecard: {
+          frictionScore: 9,
+          personaFitScore: 2,
+          coverage: { goalReached: false },
+          confusion: { tagCount: 2 },
+        },
+      },
+    }
+    const mapped = mapAgentResultToWaveRun(baseRun({ runKey: 'B-aufgabe1-nachruesten' }), status)
+    expect(mapped.finding).toMatch(/grau|Matrix|Abbruch/i)
+    expect(mapped.finding).not.toMatch(/Browser agent completed run/i)
+    expect(mapped.validEvidence).toBe(true)
   })
 })
