@@ -22,8 +22,8 @@ import {
   RankedList,
   RankedRow,
   SectionChrome,
-  StatLede,
-  StatLedeGroup,
+  Lede,
+  LedeStrip,
   StatusDot,
   StatusMeterPanel,
   Text,
@@ -169,12 +169,12 @@ function SoftQBoard({
                     </p>
                   </div>
                   <div className="audion-journey-slide-section">
-                    <StatLedeGroup
+                    <LedeStrip
                       columns={2}
                       className="audion-soft-q-lede-stats"
                       aria-label={`${qId} score`}
                     >
-                      <StatLede
+                      <Lede
                         value={score.text}
                         label={
                           score.kind === 'text'
@@ -190,13 +190,13 @@ function SoftQBoard({
                               : 'low'
                         }
                       />
-                      <StatLede
+                      <Lede
                         value={(e.confidence * 100).toFixed(0)}
                         unit="%"
                         label="Confidence"
                         tone={e.confidence >= 0.5 ? 'pos' : 'low'}
                       />
-                    </StatLedeGroup>
+                    </LedeStrip>
                   </div>
                   <div className="audion-journey-slide-section audion-soft-q-edit-row">
                     <Field label="Value" size="sm" htmlFor={`soft-value-${key}`}>
@@ -718,6 +718,7 @@ export function WaveDetailPanel({
   const [exportMd, setExportMd] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [startOpen, setStartOpen] = useState(false)
+  const [startHint, setStartHint] = useState<string | null>(null)
   const [compareOpen, setCompareOpen] = useState(false)
   const [compareOtherId, setCompareOtherId] = useState(
     () => study.waves.find((w) => w.id !== wave.id)?.id ?? wave.id,
@@ -802,14 +803,35 @@ export function WaveDetailPanel({
   async function onStartConfirm() {
     setStartOpen(false)
     setBusy(true)
+    setStartHint(null)
     try {
+      const needsRestart =
+        liveWave.status === 'complete' ||
+        liveWave.runs.every((r) => r.agentStatus === 'complete') ||
+        ((liveWave.validEvidenceCount ?? 0) === 0 &&
+          liveWave.runs.some((r) => r.agentStatus === 'complete'))
+      const force = needsRestart
       const res = await fetch(paths.routes.apiStudyWaveStart(study.id, liveWave.id), {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force }),
       })
       if (!res.ok) throw new Error('Start failed')
-      const data = (await res.json()) as { wave?: UxWaveDetail }
+      const data = (await res.json()) as {
+        wave?: UxWaveDetail
+        started?: Array<{ runKey: string; skipped?: boolean }>
+      }
       if (data.wave) setLiveWave(data.wave)
       else router.refresh()
+      const started = data.started ?? []
+      const skipped = started.filter((s) => s.skipped).length
+      if (started.length > 0 && skipped === started.length) {
+        setStartHint(
+          'Alle Runs waren bereits complete — nichts neu gestartet. Nochmal mit Restart versuchen.',
+        )
+      } else if (force) {
+        setStartHint('Wave neu gestartet — Agent-Jobs laufen.')
+      }
     } finally {
       setBusy(false)
     }
@@ -877,7 +899,10 @@ export function WaveDetailPanel({
             onClick={() => setStartOpen(true)}
             disabled={busy || liveWave.status === 'running'}
           >
-            Start agent
+            {liveWave.status === 'complete' ||
+            liveWave.runs.every((r) => r.agentStatus === 'complete')
+              ? 'Restart agent'
+              : 'Start agent'}
           </Button>
           <Button type="button" variant="primary" size="sm" onClick={onEvaluate} disabled={busy}>
             Evaluate
@@ -896,6 +921,7 @@ export function WaveDetailPanel({
           </Button>
         </div>
       </div>
+      {startHint ? <Hint>{startHint}</Hint> : null}
 
       {liveWave.status === 'running' ? (
         <StatusMeterPanel
@@ -950,26 +976,26 @@ export function WaveDetailPanel({
           className="audion-wave-lede audion-magazine-lede ds-motion-reveal"
           aria-label="Wave evaluation summary"
         >
-          <StatLedeGroup columns={3} className="audion-wave-lede-stats" aria-label="Wave rates">
-            <StatLede
+          <LedeStrip columns={3} className="audion-wave-lede-stats" aria-label="Wave rates">
+            <Lede
               value={(agg.taskCompletionRate * 100).toFixed(0)}
               unit="%"
               label="Task completion"
               tone={agg.taskCompletionRate >= 0.5 ? 'pos' : 'low'}
             />
-            <StatLede
+            <Lede
               value={(agg.validEvidenceRate * 100).toFixed(0)}
               unit="%"
               label="Valid evidence"
               tone={agg.validEvidenceRate >= 0.5 ? 'pos' : 'low'}
             />
-            <StatLede
+            <Lede
               value={(agg.infrastructureBlockRate * 100).toFixed(0)}
               unit="%"
               label="Infrastructure block"
               tone={agg.infrastructureBlockRate >= 0.5 ? 'neg' : 'ok'}
             />
-          </StatLedeGroup>
+          </LedeStrip>
         </div>
       ) : (
         <p className="audion-magazine-lede audion-wave-lede--empty ds-motion-reveal">
@@ -1156,7 +1182,7 @@ export function WaveDetailPanel({
           >
             <SectionChrome quiet role="ops" title="Compare" meta="delta" metaTone="accent" as="h3" />
             <Hint panel>{compare.summary}</Hint>
-            <StatLedeGroup
+            <LedeStrip
               columns={3}
               className="audion-wave-lede-stats"
               aria-label="Compare aggregate deltas"
@@ -1164,7 +1190,7 @@ export function WaveDetailPanel({
               {Object.entries(compare.aggregateDelta)
                 .slice(0, 3)
                 .map(([k, row]) => (
-                  <StatLede
+                  <Lede
                     key={k}
                     value={
                       row.delta == null
@@ -1186,7 +1212,7 @@ export function WaveDetailPanel({
                     }
                   />
                 ))}
-            </StatLedeGroup>
+            </LedeStrip>
             <RankedList>
               {compare.hypothesisDelta.map((row, i) => (
                 <RankedRow
@@ -1223,17 +1249,35 @@ export function WaveDetailPanel({
       {startOpen ? (
         <ConfirmDialog
           open
-          title="Start UX Journey Agent?"
-          confirmLabel="Start"
+          title={
+            liveWave.status === 'complete' ||
+            liveWave.runs.every((r) => r.agentStatus === 'complete')
+              ? 'Restart UX Journey Agent?'
+              : 'Start UX Journey Agent?'
+          }
+          confirmLabel={
+            liveWave.status === 'complete' ||
+            liveWave.runs.every((r) => r.agentStatus === 'complete')
+              ? 'Restart'
+              : 'Start'
+          }
           onClose={() => setStartOpen(false)}
           onConfirm={() => void onStartConfirm()}
         >
           <p>
-            Start the <strong>UX Journey Agent</strong> for wave{' '}
-            <strong>{liveWave.waveKey}</strong>? This is the official agent entry in audion-v3
-            (no separate Agent page). Fixtures simulate progress via Sync polling;{' '}
-            <code>NEXT_PERSONA_DATA_SOURCE=api</code> proxies to v2 <code>/ux-studies/…/start</code>{' '}
-            and Sync.
+            {liveWave.status === 'complete' ||
+            liveWave.runs.every((r) => r.agentStatus === 'complete') ? (
+              <>
+                Wave <strong>{liveWave.waveKey}</strong> is already complete (often with no valid
+                evidence after CloudFront 403). Restart clears run results and queues new agent jobs.
+              </>
+            ) : (
+              <>
+                Start the <strong>UX Journey Agent</strong> for wave{' '}
+                <strong>{liveWave.waveKey}</strong>? This is the official agent entry in audion-v3
+                (no separate Agent page).
+              </>
+            )}
           </p>
         </ConfirmDialog>
       ) : null}

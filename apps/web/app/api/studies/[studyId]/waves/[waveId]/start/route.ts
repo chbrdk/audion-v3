@@ -13,7 +13,14 @@ export async function POST(
     return proxyUxStudiesRequest(request)
   }
   const { studyId, waveId } = await context.params
-  const wave = await startUxWaveNativeOrFixture(studyId, waveId)
+  let force = false
+  try {
+    const body = (await request.json()) as { force?: boolean }
+    force = Boolean(body?.force)
+  } catch {
+    force = false
+  }
+  const wave = await startUxWaveNativeOrFixture(studyId, waveId, { force })
   if (!wave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({
     studyId,

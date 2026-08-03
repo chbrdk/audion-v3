@@ -25,8 +25,42 @@ import { mapAgentResultToWaveRun } from './ux-wave-scorecard'
 export async function startUxWaveNativeOrFixture(
   studyId: string,
   waveId: string,
+  opts?: { force?: boolean },
 ): Promise<UxWaveDetail | null> {
-  const wave = await storeStartUxWave(studyId, waveId)
+  const force = Boolean(opts?.force)
+  let wave = await storeUxWaveDetail(studyId, waveId)
+  if (!wave) return null
+
+  if (force) {
+    const resetRuns: UxWaveRunItem[] = wave.runs.map((run) => {
+      const shouldReset =
+        run.agentStatus === 'complete' ||
+        run.agentStatus === 'running' ||
+        run.agentStatus === 'error' ||
+        Boolean(run.jobId)
+      if (!shouldReset) return run
+      return {
+        ...run,
+        jobId: null,
+        agentStatus: null,
+        agentSuccess: null,
+        taskCompleted: null,
+        validEvidence: null,
+        validEvidenceCaveat: null,
+        goalReached: null,
+        finding: null,
+        blockers: [],
+        steps: null,
+        categories: {},
+      }
+    })
+    wave =
+      (await storePatchUxWaveRuns(studyId, waveId, resetRuns)) ??
+      (await storeStartUxWave(studyId, waveId))
+    if (!wave) return null
+  }
+
+  wave = await storeStartUxWave(studyId, waveId)
   if (!wave || !isUxJourneyAgentConfigured()) return wave
 
   const study = await storeUxStudyDetail(studyId)
