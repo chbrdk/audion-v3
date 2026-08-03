@@ -107,4 +107,24 @@ describe('ux-wave-scorecard', () => {
     expect(mapped.validEvidence).toBe(false)
     expect(mapped.blockers).toContain('cloudfront_403')
   })
+
+  it('uses result.summary / result.error instead of opaque Agent error', () => {
+    const status: UxJourneyAgentJobStatus = {
+      jobId: 'job-2',
+      status: 'complete',
+      result: {
+        success: false,
+        summary: 'Agent stopped after 7 steps (6 failed). Last error: Could not parse response',
+        error: 'Could not parse response',
+        steps: [
+          { step: 1, action: 'navigate', result: 'ok' },
+          { step: 2, action: 'error', result: 'Could not parse response' },
+        ],
+      },
+    }
+    const mapped = mapAgentResultToWaveRun(baseRun(), status)
+    expect(mapped.agentSuccess).toBe(false)
+    expect(mapped.finding).toContain('Could not parse response')
+    expect(mapped.finding).not.toBe('Agent error')
+  })
 })

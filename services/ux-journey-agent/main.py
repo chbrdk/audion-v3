@@ -909,15 +909,40 @@ def _get_model_thoughts(history: Any) -> list[dict[str, Any]]:
     return out
 
 
+def _history_step_errors(history: Any) -> list[str | None]:
+    """Per-step error strings from browser-use history (None when step had no error)."""
+    try:
+        if hasattr(history, "errors") and callable(history.errors):
+            return list(history.errors())
+    except Exception:
+        pass
+    return []
+
+
 def _history_to_steps(history: Any) -> list[dict[str, Any]]:
-    """Map browser-use action_history to AUDION steps (readable labels, target, result, reasoning)."""
+    """Map browser-use action_history to AUDION steps (readable labels, target, result, reasoning).
+
+    When a step has ``model_output=None`` (LLM/parse/timeout failure), browser-use still
+    appends an empty action list. Surface the step error so callers don't see opaque ``[]``.
+    """
     steps: list[dict[str, Any]] = []
     try:
         actions = list(history.action_history()) if hasattr(history, "action_history") and callable(history.action_history) else []
         thoughts = _get_model_thoughts(history)
+        step_errors = _history_step_errors(history)
         for i, action_item in enumerate(actions):
             step_num = i + 1
             action_label, target, result = _normalize_action_entry(action_item)
+            err = step_errors[i] if i < len(step_errors) else None
+            # Empty action lists mean the step never got a model_output — replace "[]" with error.
+            if err and (
+                not action_item
+                or action_label in ("[]", "step")
+                or (isinstance(action_item, (list, tuple)) and len(action_item) == 0)
+            ):
+                action_label = "error"
+                target = None
+                result = _smart_trim(str(err), limit=480)
             step_entry: dict[str, Any] = {
                 "step": step_num,
                 "action": action_label,
@@ -925,6 +950,8 @@ def _history_to_steps(history: Any) -> list[dict[str, Any]]:
                 "result": result or None,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
+            if err and action_label == "error":
+                step_entry["error"] = _smart_trim(str(err), limit=800)
             if i < len(thoughts):
                 thinking = str(thoughts[i].get("thinking") or "").strip()
                 structured = thoughts[i].get("structured")
@@ -992,6 +1019,26 @@ def _history_to_steps(history: Any) -> list[dict[str, Any]]:
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }]
     return steps
+
+
+def _failure_summary_from_history(history: Any, steps: list[dict[str, Any]]) -> tuple[str | None, str | None]:
+    """Build (error, summary) when the agent did not finish successfully."""
+    errs = [e for e in _history_step_errors(history) if e]
+    emptyish = sum(
+        1
+        for s in steps
+        if str(s.get("action") or "") in ("[]", "error", "step") and not s.get("thinkAloud")
+    )
+    if not errs and emptyish == 0:
+        return None, None
+    last = str(errs[-1]) if errs else "Repeated empty/failed model steps after navigation"
+    error = _smart_trim(last, limit=800)
+    summary = _smart_trim(
+        f"Agent stopped after {len(steps)} steps "
+        f"({len(errs) or emptyish} failed). Last error: {last}",
+        limit=600,
+    )
+    return error, summary
 
 
 def _history_success(history: Any) -> bool:
@@ -2929,14 +2976,16 @@ async def run_agent(
         # can read the canonical PersonaPolicy that the fork derived (instead
         # of re-deriving it locally). See _log_persona_snapshot() below.
         # Allow operators to widen browser-use's default retry budget for
-        # transient AgentOutput validation hiccups (default 6). Useful when
-        # the primary occasionally serialises `action` as a JSON-string for
-        # one or two consecutive calls but recovers on its own.
+        # transient AgentOutput validation hiccups. Default **10** (was env-only /
+        # upstream 5) so a few bad structured-output turns after navigate don't
+        # abort the whole lab/wave run — especially when Anthropic fallback is off.
         try:
-            max_failures_env = int(os.environ.get("UX_JOURNEY_MAX_FAILURES", "0"))
+            max_failures_env = int(os.environ.get("UX_JOURNEY_MAX_FAILURES", "10"))
         except ValueError:
-            max_failures_env = 0
-        if max_failures_env > 0 and _agent_init_accepts_named_arg(sig, "max_failures"):
+            max_failures_env = 10
+        if max_failures_env < 1:
+            max_failures_env = 1
+        if _agent_init_accepts_named_arg(sig, "max_failures"):
             agent_kw["max_failures"] = max_failures_env
         if "initial_url" in sig.parameters:
             agent_kw["initial_url"] = url
@@ -3028,11 +3077,21 @@ async def run_agent(
             print(f"ux-journey: job={job_id} persona logging failed: {exc!r}", flush=True)
         # Some browser-use builds only expose max_failures as an attribute,
         # not a constructor kwarg — set it after construction as a fallback.
-        if max_failures_env > 0 and hasattr(agent, "max_failures"):
+        if hasattr(agent, "max_failures"):
             try:
                 agent.max_failures = max_failures_env
             except Exception:  # pragma: no cover - defensive
                 pass
+        if hasattr(agent, "settings") and hasattr(getattr(agent, "settings", None), "max_failures"):
+            try:
+                agent.settings.max_failures = max_failures_env
+            except Exception:  # pragma: no cover - defensive
+                pass
+        print(
+            f"ux-journey: job={job_id} max_failures={max_failures_env} "
+            f"(set UX_JOURNEY_MAX_FAILURES to override)",
+            flush=True,
+        )
 
         # Step pacing is now first-class in audion-agent (Phase 4) — see
         # `Agent(step_pacing_seconds=..., action_slowdown_factor=...)` set on
@@ -3169,6 +3228,14 @@ async def run_agent(
         _annotate_steps_with_video_offsets(job_id, steps)
         success = _history_success(history)
         screenshots = _history_screenshots(history)
+        fail_error, fail_summary = (None, None)
+        if not success:
+            fail_error, fail_summary = _failure_summary_from_history(history, steps)
+            if fail_error:
+                print(
+                    f"ux-journey: job={job_id} failure_summary={fail_summary!r}",
+                    flush=True,
+                )
 
         # Journey scorecard (per-category aggregation + optional end-of-run
         # LLM call for friction/persona-fit/coverage). Best-effort: never
@@ -3323,6 +3390,10 @@ async def run_agent(
                 "useJudge": _env_truthy("AUDION_AGENT_USE_JUDGE", "0"),
             },
         }
+        if fail_summary:
+            result["summary"] = fail_summary
+        if fail_error:
+            result["error"] = fail_error
         if persona and isinstance(persona, dict):
             result["persona"] = {
                 "id": persona.get("id"),

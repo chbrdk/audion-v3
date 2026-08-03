@@ -161,6 +161,8 @@ export function mapAgentResultToWaveRun(
     finding:
       status.result?.summary ||
       run.finding ||
-      (agentSuccess ? 'Browser agent completed run.' : status.error || 'Agent error'),
+      (agentSuccess
+        ? 'Browser agent completed run.'
+        : status.error || status.result?.error || 'Agent error'),
   }
 }
