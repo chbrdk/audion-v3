@@ -47,6 +47,8 @@ Caps: follow plexon API size budgets (`research_brief` ≤ 64 KiB). Prefer ≤ 8
 | Trigger | Behaviour |
 |---------|-----------|
 | After research success | **Autosync** distill → `research_brief` (soft-skip if unbound / plexon down) |
+| After Collection bind (`sync-plexon` / create origin) | **Autosync** — backfills pack when research/dossier already existed unbound |
+| After “Add to project knowledge” | **Autosync** — dossier change → Collection |
 | Project magazine — “Re-sync to Collection” | Manual re-publish after dossier edits or failed autosync |
 | Kill-switch | `KNOWLEDGE_PACK_AUTOSYNC=0` |
 

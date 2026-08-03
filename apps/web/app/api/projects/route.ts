@@ -47,6 +47,10 @@ export async function POST(request: Request) {
           platformCompanyId: origin.platformCompanyId ?? platformCompanyId,
           ownerPlexonUserId: origin.ownerPlexonUserId ?? ownerPlexonUserId,
         })) ?? project
+      const { scheduleResearchBriefAutosync } = await import(
+        '../../../lib/knowledge-pack-autosync'
+      )
+      scheduleResearchBriefAutosync(project.id)
     }
   }
 

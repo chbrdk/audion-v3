@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   applyLatestResearchToProjectKnowledge,
   mergeResearchChaptersIntoKnowledge,
@@ -17,10 +17,15 @@ import {
   storeMarkResearchRunning,
 } from '../lib/fixtures/research-runs'
 
+vi.mock('../lib/knowledge-pack-autosync', () => ({
+  scheduleResearchBriefAutosync: vi.fn(),
+}))
+
 describe('research to project knowledge', () => {
   afterEach(() => {
     resetResearchRuns()
     resetProjectStore()
+    vi.clearAllMocks()
   })
 
   it('maps summary sections to ch-research-* chapters', () => {
@@ -48,7 +53,8 @@ describe('research to project knowledge', () => {
     expect(merged.map((c) => c.id)).toEqual(['ch-brand', `${RESEARCH_CHAPTER_ID_PREFIX}new`])
   })
 
-  it('applies latest research onto project knowledge dossier', async () => {
+  it('applies latest research onto project knowledge dossier and schedules pack sync', async () => {
+    const { scheduleResearchBriefAutosync } = await import('../lib/knowledge-pack-autosync')
     const project = await storeCreateProject({
       name: 'Bosch eBike',
       knowledgeChapters: [{ id: 'ch-brand', title: 'Brand', body: '<p>Existing</p>' }],
@@ -72,6 +78,7 @@ describe('research to project knowledge', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.chaptersAdded).toBe(2)
+    expect(scheduleResearchBriefAutosync).toHaveBeenCalledWith(project.id)
 
     const detail = await storeProjectDetail(project.id)
     expect(detail?.knowledgeChapters.some((c) => c.id === 'ch-brand')).toBe(true)

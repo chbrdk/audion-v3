@@ -1,6 +1,7 @@
 /**
  * Register an existing AUDION project on Plexon (Collection + CHECKION mirror).
  * Owner/company optional — Plexon auto-resolves when omitted.
+ * After bind (or re-sync when already bound), schedules Knowledge Pack autosync.
  */
 
 import { auth } from '../auth'
@@ -8,6 +9,7 @@ import {
   storeApplyPlatformBinding,
   storeProjectDetail,
 } from './fixtures/project-store'
+import { scheduleResearchBriefAutosync } from './knowledge-pack-autosync'
 import { getPlexonProfile } from './plexon-auth'
 import { registerAudionProjectOnPlexonDetailed } from './plexon-project-origin'
 import { isPlexonAuthConfigured } from './runtime-config'
@@ -26,6 +28,8 @@ export type SyncProjectToPlexonResult =
       checkionProjectId: string | null
       platformCompanyId: string | null
       alreadyBound: boolean
+      /** Soft knowledge-pack publish was scheduled after bind / re-sync. */
+      knowledgeAutosyncScheduled: boolean
     }
   | { ok: false; status: number; error: string; detail?: string }
 
@@ -43,6 +47,8 @@ export async function syncProjectToPlexon(
   }
 
   if (project.platformProjectId?.trim()) {
+    // Late-bind / re-sync: push local dossier + research distillate into Collection pack.
+    scheduleResearchBriefAutosync(projectId)
     return {
       ok: true,
       projectId: project.id,
@@ -50,6 +56,7 @@ export async function syncProjectToPlexon(
       checkionProjectId: project.checkionProjectId ?? null,
       platformCompanyId: project.platformCompanyId ?? null,
       alreadyBound: true,
+      knowledgeAutosyncScheduled: true,
     }
   }
 
@@ -99,6 +106,8 @@ export async function syncProjectToPlexon(
     return { ok: false, status: 500, error: 'binding_persist_failed' }
   }
 
+  scheduleResearchBriefAutosync(bound.id)
+
   return {
     ok: true,
     projectId: bound.id,
@@ -106,5 +115,6 @@ export async function syncProjectToPlexon(
     checkionProjectId: bound.checkionProjectId ?? null,
     platformCompanyId: bound.platformCompanyId ?? null,
     alreadyBound: false,
+    knowledgeAutosyncScheduled: true,
   }
 }

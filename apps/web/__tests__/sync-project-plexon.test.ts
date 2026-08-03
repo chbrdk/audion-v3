@@ -36,13 +36,18 @@ vi.mock('../lib/runtime-config', async () => {
   }
 })
 
+vi.mock('../lib/knowledge-pack-autosync', () => ({
+  scheduleResearchBriefAutosync: vi.fn(),
+}))
+
 describe('syncProjectToPlexon', () => {
   afterEach(() => {
     resetProjectStore()
     vi.clearAllMocks()
   })
 
-  it('returns alreadyBound when platformProjectId set', async () => {
+  it('returns alreadyBound when platformProjectId set and schedules knowledge autosync', async () => {
+    const { scheduleResearchBriefAutosync } = await import('../lib/knowledge-pack-autosync')
     const project = await storeCreateProject({ name: 'Bound' })
     await storeApplyPlatformBinding(project.id, {
       platformProjectId: 'pp-existing',
@@ -53,9 +58,12 @@ describe('syncProjectToPlexon', () => {
     if (!result.ok) return
     expect(result.alreadyBound).toBe(true)
     expect(result.platformProjectId).toBe('pp-existing')
+    expect(result.knowledgeAutosyncScheduled).toBe(true)
+    expect(scheduleResearchBriefAutosync).toHaveBeenCalledWith(project.id)
   })
 
-  it('registers unbound project via origin + persists binding', async () => {
+  it('registers unbound project via origin + persists binding + schedules knowledge', async () => {
+    const { scheduleResearchBriefAutosync } = await import('../lib/knowledge-pack-autosync')
     const project = await storeCreateProject({ name: 'Bosch eBike' })
     const result = await syncProjectToPlexon(project.id)
     expect(result.ok).toBe(true)
@@ -63,6 +71,8 @@ describe('syncProjectToPlexon', () => {
     expect(result.alreadyBound).toBe(false)
     expect(result.platformProjectId).toBe('pp-bosch-1')
     expect(result.checkionProjectId).toBe('chk-bosch-1')
+    expect(result.knowledgeAutosyncScheduled).toBe(true)
+    expect(scheduleResearchBriefAutosync).toHaveBeenCalledWith(project.id)
 
     const detail = await storeProjectDetail(project.id)
     expect(detail?.platformProjectId).toBe('pp-bosch-1')

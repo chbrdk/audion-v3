@@ -92,6 +92,10 @@ export async function applyLatestResearchToProjectKnowledge(
     return { ok: false, status: 500, error: 'Failed to update project knowledge' }
   }
 
+  // Keep Collection research_brief in sync when project is bound.
+  const { scheduleResearchBriefAutosync } = await import('./knowledge-pack-autosync')
+  scheduleResearchBriefAutosync(projectId)
+
   return {
     ok: true,
     project: patched,

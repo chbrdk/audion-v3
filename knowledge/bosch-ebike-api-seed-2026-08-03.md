@@ -91,7 +91,9 @@ fetch("https://audion-v3.projects-a.plygrnd.tech/api/projects/proj-bosch-ebike-m
 
 Plexon Collection: https://plexon-v3.projects-a.plygrnd.tech/projects/7efa3e75-f28f-4600-9f2e-6a7d1cdbd5d5
 
-See `plexon-v3/knowledge/product-origin-owner-resolution.md`.
+**Knowledge pack:** published 2026-08-03 via `POST …/knowledge-pack/publish` → `research_brief` revision **2**, **8 sections** (dossier chapters). Autosync after bind/apply-knowledge ships in subsequent commit so late-bound projects backfill automatically.
+
+See `plexon-v3/knowledge/product-origin-owner-resolution.md` · `specs/domain/knowledge-pack-publish.md`.
 
 ## Related
 

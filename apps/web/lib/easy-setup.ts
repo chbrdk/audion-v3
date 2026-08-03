@@ -180,6 +180,8 @@ export async function runEasySetup(
           ownerPlexonUserId:
             origin.ownerPlexonUserId ?? owner.ownerPlexonUserId ?? null,
         })) ?? project
+      const { scheduleResearchBriefAutosync } = await import('./knowledge-pack-autosync')
+      scheduleResearchBriefAutosync(project.id)
     }
   }
 
