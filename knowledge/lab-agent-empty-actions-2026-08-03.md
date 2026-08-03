@@ -12,4 +12,6 @@
 
 **Ops:** Redeploy **ux-journey-agent** (and web). Prefer setting `ANTHROPIC_API_KEY` on the agent for cross-provider `fallback_llm`.
 
+**Lab L1 (local, 2026-08-03):** `_apply_persona_step_budget` — `time_pressure >= 0.75` clamps to `UX_JOURNEY_IMPATIENT_MAX_STEPS` (default 10) and drops `min_steps` to 3; result exposes `stepBudget`. Retest job `536c4b2c…`: request 40 → budget 10, finished in 6 steps, friction 8, goal false, correlate closer.
+
 **Retest:** Force-restart `wave-persona-lab-b-l0-msdfdbll` after deploy; correlate again.

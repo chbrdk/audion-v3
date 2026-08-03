@@ -29,7 +29,7 @@ task = (
 print(json.dumps({
   "url": "https://www.bosch-ebike.com/de/service/produktkombinationen",
   "task": task,
-  "max_steps": 15,
+  "max_steps": 40,
   "persona": {
     "id": "persona-alex-lab-impatient",
     "name": "Alex Lab Ungeduldig",

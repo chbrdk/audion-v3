@@ -723,6 +723,68 @@ def _persona_policy_dump(agent: Any) -> dict[str, Any] | None:
         return None
 
 
+def _persona_time_pressure(persona: dict[str, Any] | None) -> float | None:
+    """Resolve time_pressure in [0, 1] from overrides, else derive_policy keywords."""
+    if not isinstance(persona, dict):
+        return None
+    overrides = persona.get("dimensionOverrides") or persona.get("dimension_overrides")
+    if isinstance(overrides, dict):
+        for key in ("time_pressure", "timePressure"):
+            raw = overrides.get(key)
+            if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+                return max(0.0, min(1.0, float(raw)))
+    try:
+        from audion_agent.agent.persona import PersonaContext, derive_policy
+
+        ctx = PersonaContext.coerce(persona)
+        if ctx is not None:
+            return float(derive_policy(ctx).dimensions.time_pressure)
+    except Exception:
+        pass
+    return None
+
+
+def _apply_persona_step_budget(
+    base_max_steps: int,
+    persona: dict[str, Any] | None,
+) -> tuple[int, int, float | None]:
+    """Clamp max/min steps from persona time_pressure (Lab L1).
+
+    - ``time_pressure >= 0.75`` → impatient: ``max_steps = min(base, UX_JOURNEY_IMPATIENT_MAX_STEPS)``
+      (default **10**) and ``min_steps`` drops to **3** so early abandon is allowed.
+    - ``time_pressure <= 0.34`` → patient: keep base max; default min_steps.
+    - else / unknown → base unchanged.
+
+    Returns ``(max_steps, min_steps, time_pressure_or_none)``.
+    """
+    try:
+        impatient_cap = int(os.environ.get("UX_JOURNEY_IMPATIENT_MAX_STEPS", "10"))
+    except ValueError:
+        impatient_cap = 10
+    impatient_cap = max(3, impatient_cap)
+    try:
+        default_min = int(os.environ.get("UX_JOURNEY_MIN_STEPS", "6"))
+    except ValueError:
+        default_min = 6
+    default_min = max(1, default_min)
+
+    base = max(3, int(base_max_steps))
+    tp = _persona_time_pressure(persona)
+    max_steps = base
+    min_steps = default_min
+    if tp is not None and tp >= 0.75:
+        max_steps = min(base, impatient_cap)
+        min_steps = min(default_min, 3)
+    elif tp is not None and tp <= 0.34:
+        max_steps = base
+        min_steps = default_min
+    if max_steps <= 1:
+        min_steps = 1
+    else:
+        min_steps = max(1, min(min_steps, max_steps - 1))
+    return max_steps, min_steps, tp
+
+
 def _smart_trim(text: str, *, limit: int, soft_floor_ratio: float = 0.6) -> str:
     """
     Hard-cap a user-facing reasoning snippet at `limit` chars without breaking
@@ -2739,9 +2801,38 @@ async def run_agent(
         _recording_mono[job_id] = time.monotonic()
         # Prefer initial_url if supported; else bake URL into task. Instruct model to output reasoning in German.
         sig = inspect.signature(Agent.__init__)
-        # Prompt-shaping to reduce premature "done" decisions.
-        # Note: max_steps only sets an upper bound; the agent can still stop early if it thinks it's done.
-        min_steps = int(os.environ.get("UX_JOURNEY_MIN_STEPS", "6"))
+        # Per-request override (from chat-api / direct callers) wins over the
+        # process-wide env default. Hard cap is configurable via
+        # ``UX_JOURNEY_MAX_STEPS_CAP`` (default 150) so deep journeys don't
+        # silently get clipped to a tiny window. Lower bound of 3 keeps a
+        # confused LLM from triggering a 1-step run.
+        try:
+            env_default_max_steps = int(os.environ.get("UX_JOURNEY_MAX_STEPS", "50"))
+        except ValueError:
+            env_default_max_steps = 50
+        try:
+            max_steps_cap = int(os.environ.get("UX_JOURNEY_MAX_STEPS_CAP", "150"))
+        except ValueError:
+            max_steps_cap = 150
+        if max_steps_cap < 3:
+            max_steps_cap = 3
+        if isinstance(max_steps_override, int) and max_steps_override > 0:
+            base_max_steps = max(3, min(max_steps_cap, max_steps_override))
+        else:
+            base_max_steps = max(3, min(max_steps_cap, env_default_max_steps))
+        # Lab L1: impatient personas get a hard step budget (and lower min_steps).
+        max_steps, min_steps, persona_tp = _apply_persona_step_budget(base_max_steps, persona)
+        step_budget = {
+            "baseMaxSteps": base_max_steps,
+            "maxSteps": max_steps,
+            "minSteps": min_steps,
+            "timePressure": persona_tp,
+            "impatientApplied": bool(persona_tp is not None and persona_tp >= 0.75 and max_steps < base_max_steps),
+        }
+        print(
+            f"ux-journey: job={job_id} step_budget={step_budget}",
+            flush=True,
+        )
         # AUDION reasoning extension. With audion-agent Phase 3:
         # - language is set via `Agent(reasoning_language='de')` — clean,
         #   one-line block injected into the system prompt by the fork.
@@ -2751,6 +2842,23 @@ async def run_agent(
         #   (sent every step, naturally cached) instead of the user message.
         # The persona block is automatically rendered last by the fork via
         # `Agent(persona=persona_dict)` — see audion-agent CHANGELOG Phase 2.
+        if persona_tp is not None and persona_tp >= 0.75:
+            completion_block = (
+                "AUDION_COMPLETION:\n"
+                f"Persona time_pressure={persona_tp:.2f} — Step-Budget eng "
+                f"(max {max_steps}, soft min {min_steps}). "
+                "Wenn Filter/graue Optionen zweimal unerklärt bleiben: sofort done mit Teil-Finding "
+                "(Verwirrung ehrlich benennen). NICHT weiter suchen oder Side-Quests.\n"
+                "Markiere done erst mit verifiziertem Ergebnis ODER ehrlichem Abbruchgrund.\n"
+            )
+        else:
+            completion_block = (
+                "AUDION_COMPLETION:\n"
+                "WICHTIG: Beende die Journey NICHT zu früh. Markiere erst dann als 'done'/'fertig', wenn du das Ziel wirklich erreicht hast "
+                "UND es anhand sichtbarer UI-Indikatoren verifiziert hast (z.B. Bestätigungsseite, eindeutiger State, URL, Erfolgsmeldung). "
+                f"WICHTIG: Beende NICHT vor mindestens {min_steps} Schritten. Wenn das Ziel früher erreicht wirkt, nutze die restlichen Schritte für "
+                "Validierung (zurück/nach vorne, alternative Navigation, erneute Sichtprüfung), statt zu stoppen.\n"
+            )
         audion_brevity_extension = (
             "AUDION_THINK_ALOUD_UND_INTERNES:\n"
             "ROLLENBILD: Du bist die Persona in einem moderierten UX-Research-Interview "
@@ -2783,11 +2891,7 @@ async def run_agent(
             "- 'next_goal': Bot-Stil mit Element + Index/Selektor (Hand-Off, nicht Persona-Text).\n"
             "WICHTIG für 'done.text': Erste Person, max. 4 kurze Sätze — Was nehme ich mit?\n"
             "WICHTIG: Schreibe in ALLEN Feldern vollständige Sätze. Keine '…'/'etc.' als Platzhalter.\n"
-            "AUDION_COMPLETION:\n"
-            "WICHTIG: Beende die Journey NICHT zu früh. Markiere erst dann als 'done'/'fertig', wenn du das Ziel wirklich erreicht hast "
-            "UND es anhand sichtbarer UI-Indikatoren verifiziert hast (z.B. Bestätigungsseite, eindeutiger State, URL, Erfolgsmeldung). "
-            f"WICHTIG: Beende NICHT vor mindestens {min_steps} Schritten. Wenn das Ziel früher erreicht wirkt, nutze die restlichen Schritte für "
-            "Validierung (zurück/nach vorne, alternative Navigation, erneute Sichtprüfung), statt zu stoppen.\n"
+            f"{completion_block}"
             "AUDION_NAVIGATION_ONLY:\n"
             "Nutze keine Websuche und keine Suchmaschinen (kein DuckDuckGo, Google, Bing). "
             "Bleibe auf der im Auftrag genannten Ziel-URL und ihren internen Links — keine generischen Web-Suchen.\n"
@@ -2840,25 +2944,6 @@ async def run_agent(
         # via `reasoning_language='de'`; brevity / completion rules go in
         # via `extend_system_message`; persona via `persona=`.
         task_with_lang = task
-        # Per-request override (from chat-api / direct callers) wins over the
-        # process-wide env default. Hard cap is configurable via
-        # ``UX_JOURNEY_MAX_STEPS_CAP`` (default 150) so deep journeys don't
-        # silently get clipped to a tiny window. Lower bound of 3 keeps a
-        # confused LLM from triggering a 1-step run.
-        try:
-            env_default_max_steps = int(os.environ.get("UX_JOURNEY_MAX_STEPS", "50"))
-        except ValueError:
-            env_default_max_steps = 50
-        try:
-            max_steps_cap = int(os.environ.get("UX_JOURNEY_MAX_STEPS_CAP", "150"))
-        except ValueError:
-            max_steps_cap = 150
-        if max_steps_cap < 3:
-            max_steps_cap = 3
-        if isinstance(max_steps_override, int) and max_steps_override > 0:
-            max_steps = max(3, min(max_steps_cap, max_steps_override))
-        else:
-            max_steps = max(3, min(max_steps_cap, env_default_max_steps))
         agent_kw: dict[str, Any] = {"task": task_with_lang, "llm": llm, "browser": browser}
         # audion-agent Phase 2: hand the typed persona to the Agent. The fork
         # accepts a dict and coerces it via PersonaContext.coerce(); fields it
@@ -3394,6 +3479,7 @@ async def run_agent(
             result["summary"] = fail_summary
         if fail_error:
             result["error"] = fail_error
+        result["stepBudget"] = step_budget
         if persona and isinstance(persona, dict):
             result["persona"] = {
                 "id": persona.get("id"),

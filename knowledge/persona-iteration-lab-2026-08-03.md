@@ -78,6 +78,8 @@ Staging study/wave refs: see `knowledge/paths.md` / Bosch staging IDs in prior n
 |------|--------|-------|----------|--------------------|-----------------|---------|
 | 2026-08-03 L0a | pack lab + fixture id `persona-alex-lab-impatient` | 7 | 11 | no (Agent error) | 0.53 | **Fail** — persona not in staging Postgres → only `{id}` sent → `time_pressure=0.5` |
 | 2026-08-03 L0b | seeded `persona-alex-lab-ungeduldig-msdfje0b`, force restart | 7 | 11 | no (Agent error after navigate) | 0.65→reject after usable_run gate | **Fail as UX sample** — policy OK (`time_pressure=0.9`, heuristics present) but agent dies after first navigation; empty Think-Aloud |
+| 2026-08-03 L0c local | `./scripts/local-lab-run.sh` job `dac8e0af…` · OpenAI+Anthropic · maxFailures 10 | 9 | 7 | ja (grau / Filter nicht erklärt / Abbruch-Persona) | **1.0 closer** | **Pass** — Agent stabil; `time_pressure=0.9`; Confusion im Think-Aloud; fit=4; goal=true |
+| 2026-08-03 L1 local | same lab + `_apply_persona_step_budget` · request max=40 | 6 | 8 | ja (grau/verwirr) · goal=false | **1.0 closer** | **Pass** — `stepBudget.maxSteps=10` (`impatientApplied`); minSteps=3; fit=3 |
 
 **Staging study:** `study-persona-lab-l0-2026-08-03-msdfdbk8` · wave `wave-persona-lab-b-l0-msdfdbll`  
 **Lesson:** Scenario packs must reference **DB persona ids** on staging (or seed fixture ids). Fixture-only ids resolve to `{ id }` and wipe traits.
