@@ -725,7 +725,46 @@ def _is_menu_open_phase(prior_nav_reason: str | None) -> bool:
         "path_open_menu",
         "path_open_hover",
         "nav_dom_menu_wait",
+        "nav_dom_menu_hover",
     )
+
+
+def build_nav_menu_hover_evaluate(open_keys: list[str]) -> dict[str, Any] | None:
+    """
+    Site-agnostic hover-equivalent via ``evaluate`` (0.13.x has no hover tool).
+
+    Dispatches mouseover/mouseenter/pointerover on the first top-chrome control
+    whose visible text matches a task opener keyword.
+    """
+    keys = [str(k).strip().lower() for k in (open_keys or []) if str(k).strip()]
+    if not keys:
+        return None
+    keys_js = json.dumps(keys, ensure_ascii=True)
+    code = (
+        "(function(){try{"
+        f"const keys={keys_js};"
+        "const nodes=Array.from(document.querySelectorAll("
+        "'a,button,[role=menuitem],[role=link],[role=button]'));"
+        "let best=null;"
+        "for(const el of nodes){"
+        "const t=((el.innerText||el.textContent||'')+' '+"
+        "(el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||''))"
+        ".toLowerCase().replace(/\\s+/g,' ').trim();"
+        "if(!keys.some(k=>t.includes(k))) continue;"
+        "const r=el.getBoundingClientRect();"
+        "if(r.width<16||r.height<10||r.top>220||r.bottom<0) continue;"
+        "best=el; break;"
+        "}"
+        "if(!best) return 'nav_hover:no_opener';"
+        "const opts={bubbles:true,cancelable:true,view:window};"
+        "best.dispatchEvent(new MouseEvent('mouseover',opts));"
+        "best.dispatchEvent(new MouseEvent('mouseenter',opts));"
+        "try{best.dispatchEvent(new PointerEvent('pointerover',opts));}catch(_e){}"
+        "try{best.focus({preventScroll:true});}catch(_e2){}"
+        "return 'nav_hover:'+String(best.innerText||best.textContent||'').trim().slice(0,48);"
+        "}catch(e){return 'nav_hover:err:'+e.message}}())"
+    )
+    return {"tool": "evaluate", "code": code}
 
 
 def _nav_open_candidate_score(
@@ -807,15 +846,16 @@ def select_nav_dom_action(
     avoid_coordinates: list[tuple[int, int]] | None = None,
     prior_nav_reason: str | None = None,
     menu_wait_used: bool = False,
+    menu_hover_used: bool = False,
 ) -> tuple[dict[str, Any] | None, str]:
     """
     Deterministically steer brittle home→destination nav using visible DOM nodes.
 
-    Site-agnostic: keywords from the task; no domain allowlist. Never emits
-    ``hover`` — 0.13.x has no hover tool.
+    Site-agnostic: keywords from the task; no domain allowlist. Uses ``evaluate``
+    mouseover as hover-equivalent (0.13.x has no hover tool).
 
-    Two-phase: after ``prior_nav_reason`` was an opener while still on home,
-    prefer target/submenu clicks and shifted opener coords (mega-menu second hop).
+    Two-phase: after opener hover/click/wait while still on home, prefer
+    target/submenu clicks and shifted opener coords (mega-menu second hop).
     """
     if not is_ui_path_finding_task(task):
         return None, "nav_dom_skip_task"
@@ -901,7 +941,13 @@ def select_nav_dom_action(
             )
             if tok in blob
         )
-        if open_keys and len(blob) < text_opener_len and len(blob) <= 120:
+        # Never treat root/home hrefs as the Service opener (logo /de/ loops).
+        if (
+            open_keys
+            and not _is_rootish_href(href)
+            and len(blob) < text_opener_len
+            and len(blob) <= 120
+        ):
             text_opener_len = len(blob)
             text_opener_idx = idx
         rect = _node_bounds(node)
@@ -921,7 +967,8 @@ def select_nav_dom_action(
                 discrete = False
                 if href and not _is_rootish_href(href):
                     discrete = bw < 420 and bh <= 100
-                elif bw < 400 and bh <= 80:
+                elif (not href or href.startswith("#")) and bw < 400 and bh <= 80:
+                    # Mega-menu buttons often have # / empty href — still clickable.
                     discrete = True
                 if discrete and score > opener_click_score:
                     opener_click_score = score
@@ -978,9 +1025,16 @@ def select_nav_dom_action(
         return {"tool": "click", "index": target_idx}, "nav_dom_product_index"
     if submenu_target_idx is not None:
         return {"tool": "click", "index": submenu_target_idx}, "nav_dom_product_index"
-    # Mega-menu may need one paint frame after opener before submenu AX appears.
+
+    # Open mega-menus before the first blind opener click — once per run.
+    if open_keys and not menu_hover_used and not menu_phase and not menu_expanded:
+        hover_action = build_nav_menu_hover_evaluate(open_keys)
+        if hover_action is not None:
+            return hover_action, "nav_dom_menu_hover"
+
+    # Mega-menu may need a paint frame after hover/opener before submenu AX appears.
     if menu_phase and not menu_wait_used and not menu_expanded and target_idx is None:
-        return {"tool": "wait", "seconds": 1}, "nav_dom_menu_wait"
+        return {"tool": "wait", "seconds": 1.5}, "nav_dom_menu_wait"
     if opener_click_idx is not None and not menu_phase:
         return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
     if opener_click_idx is not None and menu_phase:
@@ -1066,7 +1120,7 @@ def prefer_targeted_actions(
         hover_service = [a for a in service if action_tool_name(a) == "hover"]
         if hover_service:
             return hover_service, "path_open_hover"
-        if exploratory_attempts >= 1:
+        if service:
             service = [
                 a
                 for a in service
@@ -1074,16 +1128,21 @@ def prefer_targeted_actions(
                     a, current_url, start_url=start_url, task=task
                 )
             ]
-            if not service:
-                non_loop = [
-                    a
+        if not service:
+            non_loop = [
+                a
+                for a in actions
+                if action_tool_name(a) not in ("done", "complete", "finish")
+                and not _is_home_loop_click(
+                    a, current_url, start_url=start_url, task=task
+                )
+            ]
+            if non_loop and exploratory_attempts >= 0:
+                # Always prefer avoiding home/logo loops while path-finding.
+                if any(
+                    _is_home_loop_click(a, current_url, start_url=start_url, task=task)
                     for a in actions
-                    if action_tool_name(a) not in ("done", "complete", "finish")
-                    and not _is_home_loop_click(
-                        a, current_url, start_url=start_url, task=task
-                    )
-                ]
-                if non_loop:
+                ):
                     return non_loop, "path_avoid_home_loop"
         if service:
             return service, "path_open_menu"
@@ -1447,6 +1506,10 @@ _LAB_B_GOLD_PROMOTE_LABELS = frozenset(
         "Performance Line",
         # "Displays" can indirectly contribute to "Display-Karten grau" wording.
         "Displays",
+        # Filter / unklar warum belong to the destination matrix — inventing them
+        # on home burns try-then-quit via confusion-cue scanners.
+        "Filter",
+        "unklar warum",
     }
 )
 
@@ -1550,8 +1613,20 @@ def scope_nav_home_perception(
     out["taskReminder"] = f"Ich suche den Weg zu {goal}."
     out["intent"] = "Ich suche den sichtbaren Navigations-Einstieg zum Ziel."
     out["why"] = "Auf der Startseite zählt zuerst der Weg zum Ziel, nicht die Ziel-Bedienung."
-    if str(out.get("confusion") or "") == "filter_cause_unknown":
-        out["confusion"] = None
+    # Drop destination-tool confusion / filter hallucinations that burn try budget.
+    out["confusion"] = None
+    out["think"] = (
+        "Ich sehe die Startseite und suche den sichtbaren Menü-Einstieg zum Ziel."
+    )
+    feel = out.get("feel")
+    if isinstance(feel, dict):
+        label = str(feel.get("label") or "").lower()
+        if any(tok in label for tok in ("frustr", "überforder", "ärger")):
+            out["feel"] = {
+                **feel,
+                "label": "vorsichtig ungeduldig",
+                "valence": min(int(feel.get("valence") or -1), -1),
+            }
     return out
 
 

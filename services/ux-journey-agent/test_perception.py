@@ -209,6 +209,7 @@ def test_select_nav_dom_action_prefers_visible_produktkombinationen_index():
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
         exploratory_attempts=1,
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_product_index"
     assert action == {"tool": "click", "index": 7}
@@ -234,6 +235,7 @@ def test_select_nav_dom_action_falls_back_to_service_click_on_home():
             "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_service_click"
     assert action == {"tool": "click", "index": 3}
@@ -262,6 +264,7 @@ def test_select_nav_dom_action_uses_coordinate_click_for_aggregated_nav():
             "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_service_coordinate"
     assert action is not None
@@ -306,6 +309,7 @@ def test_select_nav_dom_action_prefers_top_nav_over_midpage_blob():
             "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_service_coordinate"
     assert action is not None
@@ -342,6 +346,7 @@ def test_select_nav_dom_action_rejects_tall_page_wrapper_coords():
             "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_service_click"
     assert action == {"tool": "click", "index": 42}
@@ -370,6 +375,7 @@ def test_select_nav_dom_action_synthesizes_top_strip_for_tall_menu_wrapper():
             "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_service_coordinate"
     assert action is not None
@@ -406,6 +412,7 @@ def test_select_nav_dom_action_falls_back_to_short_label_when_only_midpage_bound
             "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
+        menu_hover_used=True,
     )
     # Mid-page geometry is filtered; short label without bounds wins via text fallback.
     # Href-only discrete path also wins when present without bounds.
@@ -442,6 +449,7 @@ def test_select_nav_dom_action_prefers_discrete_service_over_coordinate():
             "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_service_click"
     assert action == {"tool": "click", "index": 3}
@@ -1025,6 +1033,7 @@ def test_select_nav_dom_action_works_without_bosch_domain():
         summary,
         current_url="https://www.porsche.com/germany/",
         task=PORSCHE_TASK,
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_service_click"
     assert action == {"tool": "click", "index": 3}
@@ -1069,6 +1078,7 @@ def test_select_nav_dom_action_avoids_repeating_same_coordinates():
         summary,
         current_url="https://www.example.com/de/",
         task=NAV_TASK,
+        menu_hover_used=True,
     )
     assert reason1 == "nav_dom_service_coordinate"
     assert first is not None
@@ -1078,6 +1088,7 @@ def test_select_nav_dom_action_avoids_repeating_same_coordinates():
         current_url="https://www.example.com/de/",
         task=NAV_TASK,
         avoid_coordinates=[xy],
+        menu_hover_used=True,
     )
     assert reason2 == "nav_dom_service_coordinate"
     assert second is not None
@@ -1110,6 +1121,7 @@ def test_select_nav_dom_action_menu_phase_prefers_target_after_opener():
         task=NAV_TASK,
         prior_nav_reason="nav_dom_service_coordinate",
         exploratory_attempts=1,
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_product_index"
     assert action == {"tool": "click", "index": 12}
@@ -1134,9 +1146,10 @@ def test_select_nav_dom_action_menu_phase_waits_once_for_submenu():
         task=NAV_TASK,
         prior_nav_reason="nav_dom_service_click",
         menu_wait_used=False,
+        menu_hover_used=True,
     )
     assert reason == "nav_dom_menu_wait"
-    assert action == {"tool": "wait", "seconds": 1}
+    assert action == {"tool": "wait", "seconds": 1.5}
     # Second call with wait already used falls back to opener re-click.
     action2, reason2 = P.select_nav_dom_action(
         summary,
@@ -1144,6 +1157,67 @@ def test_select_nav_dom_action_menu_phase_waits_once_for_submenu():
         task=NAV_TASK,
         prior_nav_reason="nav_dom_menu_wait",
         menu_wait_used=True,
+        menu_hover_used=True,
     )
     assert reason2 == "nav_dom_service_click"
     assert action2 == {"tool": "click", "index": 3}
+
+def test_build_nav_menu_hover_evaluate_embeds_open_keys():
+    action = P.build_nav_menu_hover_evaluate(["service", "beratung"])
+    assert action is not None
+    assert action["tool"] == "evaluate"
+    assert "service" in action["code"]
+    assert "mouseover" in action["code"]
+    assert "mouseenter" in action["code"]
+
+
+def test_select_nav_dom_action_opens_with_evaluate_hover_first():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                3: {
+                    "is_visible": True,
+                    "bounds": {"x": 500, "y": 40, "width": 160, "height": 40},
+                    "attributes": {"href": "/de/service/"},
+                    "ax_node": {"name": "Service & Beratung", "role": "link"},
+                }
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        menu_hover_used=False,
+    )
+    assert reason == "nav_dom_menu_hover"
+    assert action is not None
+    assert action["tool"] == "evaluate"
+    assert "service" in action["code"].lower()
+
+
+def test_scope_nav_home_scrubs_think_and_blocks_filter_promote():
+    nav_task = NAV_TASK
+    perc = {
+        "taskReminder": "x",
+        "noticed": [{"what": "Startseite", "relevance": "high"}],
+        "think": "Ohne Erklärung zur Ursache bleibe ich unsicher wegen Filter.",
+        "clarity": 0,
+        "feel": {"label": "frustriert", "valence": -2},
+        "confusion": "filter_cause_unknown",
+        "stance": "proceed",
+        "intent": "x",
+        "why": "Filter unklar warum",
+    }
+    scoped = P.scope_nav_home_perception(
+        perc, current_url="https://www.bosch-ebike.com/de/", task=nav_task, budget=3
+    )
+    assert scoped is not None
+    assert scoped["confusion"] is None
+    assert "ohne erklärung" not in scoped["think"].lower()
+    enriched = P.enrich_noticed_from_perception_text(
+        scoped, budget=3, lab_b_gold_context_allowed=False
+    )
+    blob = " ".join(n["what"] for n in enriched["noticed"]).lower()
+    assert "filter" not in blob
+    assert "unklar" not in blob

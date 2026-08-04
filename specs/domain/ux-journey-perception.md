@@ -69,13 +69,15 @@ For tasks that ask the persona to **find a destination via the UI** (start on ho
 1. While the current URL does not yet contain **task-derived target keywords**, treat the problem as **path-finding first**, not destination-tool interpretation.
 2. Keywords (openers + targets) come **only from the task text** (e.g. Service, Beratung, Produktkombinationen). Do not inject brand- or fixture-only defaults.
 3. If a visible selector-map node exposes the target, prefer a direct indexed `click`.
-4. Otherwise prefer opening the nearest matching nav label. Aggregated top-nav nodes use a **coordinate-only** click near the matching label — never `hover` (removed in browser-use 0.13.x) and never index+coords together. Remap viewport CSS coords into LLM screenshot space before click when the runtime scales LLM→viewport.
-5. **Two-phase open→target:** After an opener click (`nav_dom_service_*`) while still on home, the next steer is **menu-open phase** — prefer any newly visible target link (incl. submenu / `aria-expanded` chrome), then a shifted opener coordinate; optional short `wait` once so mega-menus can paint. Do not thrash the same opener coords.
-6. Cookie/consent dismiss clicks take priority over nav DOM steering and over `minSteps` scroll fallbacks.
-7. Self-loop root/home links do not count as progress after the first exploratory try.
-8. **Forbidden while path-finding:** `navigate` / `go_to_url` (or equivalent) whose destination already encodes the target keywords. Initial study start URL load stays allowed. Honest abandon / `done` after try-then-quit remains a valid study outcome.
-9. After a failed coordinate open, prefer a **different** visible control or shifted top-strip click — do not repeat the same coords, then deep-link.
-10. Stop deterministic steering once the target surface is reached (URL matches target keywords) or the exploratory nav budget is spent.
+4. Otherwise prefer opening the nearest matching nav label. Aggregated top-nav nodes use a **coordinate-only** click near the matching label — never the removed 0.13.x `hover` tool and never index+coords together. Remap viewport CSS coords into LLM screenshot space before click when the runtime scales LLM→viewport.
+5. **Menu-open (hover-equivalent):** Before relying on blind opener re-clicks, emit one site-agnostic `evaluate` that dispatches `mouseover`/`mouseenter`/`pointerover` on the visible opener label (task keywords only). Then wait briefly so mega-menus can paint. Opener index clicks must not target rootish `/` / `/de/` home links.
+6. **Two-phase open→target:** After opener hover/click/`menu_wait` while still not on the target URL, prefer any newly visible target link (incl. submenu / `aria-expanded` chrome), then a shifted opener coordinate. Do not thrash the same opener coords.
+7. Cookie/consent dismiss clicks take priority over nav DOM steering and over `minSteps` scroll fallbacks.
+8. Self-loop root/home links never count as path progress — filter them from the first try.
+9. **Path-finding home perception:** Do not invent destination-tool Filter / grau / „unklar warum“ cues while still on home. Confusion-abandon cues from those hallucinations must not burn the try-then-quit budget before real menu attempts.
+10. **Forbidden while path-finding:** `navigate` / `go_to_url` (or equivalent) whose destination already encodes the target keywords. Initial study start URL load stays allowed. Honest abandon / `done` after try-then-quit remains a valid study outcome.
+11. After a failed coordinate open, prefer a **different** visible control or shifted top-strip click — do not repeat the same coords, then deep-link.
+12. Stop deterministic steering once the target surface is reached (URL matches target keywords) or the exploratory nav budget is spent.
 
 ## Step payload
 

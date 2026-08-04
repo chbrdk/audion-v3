@@ -977,12 +977,19 @@ def _update_confusion_abandon_from_steps(
     steps: list[Any],
     *,
     exploratory_attempts: int | None = None,
+    task: str | None = None,
+    current_url: str | None = None,
 ) -> dict[str, Any]:
     """Increment confusion count for newly seen steps; arm forceNext at threshold + try budget."""
     if not state.get("enabled") or state.get("forced"):
         return state
     if exploratory_attempts is not None:
         state["exploratoryAttempts"] = int(exploratory_attempts)
+    # Path-finding on home: hallucinated Filter/unklar cues must not burn the budget.
+    skip_path_home = bool(
+        ux_perception.is_ui_path_finding_task(task)
+        and not ux_perception.lab_b_gold_context_allowed(current_url, task)
+    )
     seen: set[int] = state.setdefault("seenSteps", set())
     cues: list[dict[str, Any]] = state.setdefault("cues", [])
     for raw in steps:
@@ -992,6 +999,8 @@ def _update_confusion_abandon_from_steps(
         if not isinstance(n, int) or n in seen:
             continue
         seen.add(n)
+        if skip_path_home:
+            continue
         if not _step_has_confusion_cue(raw):
             continue
         state["count"] = int(state.get("count") or 0) + 1
@@ -3377,6 +3386,7 @@ async def run_agent(
         felt_state["lastNavCoords"] = []
         felt_state["lastNavReason"] = None
         felt_state["menuWaitUsed"] = False
+        felt_state["menuHoverUsed"] = False
         try_before_n = int(confusion_abandon.get("tryBeforeAbandon") or 1)
         print(
             f"ux-journey: job={job_id} step_budget={step_budget} "
@@ -3706,6 +3716,8 @@ async def run_agent(
                                         break
                 except Exception:
                     current_url = None
+                if current_url:
+                    felt_state["lastObservedUrl"] = current_url
                 lab_b_gold_allowed = ux_perception.lab_b_gold_context_allowed(current_url, task)
 
                 async def _once() -> dict[str, Any] | None:
@@ -3899,6 +3911,7 @@ async def run_agent(
                             str(felt_state.get("lastNavReason") or "") or None
                         ),
                         menu_wait_used=bool(felt_state.get("menuWaitUsed")),
+                        menu_hover_used=bool(felt_state.get("menuHoverUsed")),
                     )
 
                 def _record_nav_steer(dom_reason: str, params: dict[str, Any]) -> None:
@@ -3906,6 +3919,8 @@ async def run_agent(
                         felt_state["lastNavReason"] = dom_reason
                     if dom_reason == "nav_dom_menu_wait":
                         felt_state["menuWaitUsed"] = True
+                    if dom_reason == "nav_dom_menu_hover":
+                        felt_state["menuHoverUsed"] = True
                     if dom_reason in (
                         "nav_dom_service_coordinate",
                         "nav_dom_service_click",
@@ -4577,6 +4592,9 @@ async def run_agent(
                         exploratory_attempts=int(
                             felt_state.get("exploratoryAttempts") or 0
                         ),
+                        task=task,
+                        current_url=str(felt_state.get("lastObservedUrl") or url or "")
+                        or None,
                     )
                     after = int(confusion_abandon.get("count") or 0)
                     if after != before or confusion_abandon.get("forceNext"):
