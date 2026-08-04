@@ -3917,6 +3917,18 @@ async def run_agent(
                         current_url=current_url,
                     )
                     reason_local = targeted_reason
+                    # Drop logo/home self-loops even when the LLM insists.
+                    if ux_perception.is_ui_path_finding_task(task):
+                        non_loop = [
+                            a
+                            for a in filtered_local
+                            if not ux_perception._is_home_loop_click(
+                                a, current_url, start_url=url, task=task
+                            )
+                        ]
+                        if non_loop and len(non_loop) < len(filtered_local):
+                            filtered_local = non_loop
+                            reason_local = "path_avoid_home_loop"
                     if deeplink_reason == "deeplink_blocked":
                         reason_local = "deeplink_blocked"
                         print(
@@ -3931,7 +3943,7 @@ async def run_agent(
                         current_url=current_url,
                         task=task,
                         exploratory_attempts=int(felt_state.get("exploratoryAttempts") or 0),
-                        max_nav_attempts=max(5, int(try_before_n) + 1),
+                        max_nav_attempts=max(8, int(try_before_n) + 3),
                         start_url=url,
                         avoid_coordinates=_nav_avoid_coords(),
                         prior_nav_reason=(
