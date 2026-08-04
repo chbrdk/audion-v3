@@ -1,7 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import type { UxStudyList } from '@audion-v3/contracts'
-import { EmptyState, Panel, Text } from '@msqdx/ui'
+import { EmptyState, Panel, Text, Button } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { StudyCreateButton } from './study-edit-dialog'
 
@@ -14,6 +14,13 @@ export function StudyListPanel({
 }) {
   return (
     <section className="audion-index audion-tg-index">
+      <div className="audion-flow-studies-actions">
+        <Link href={paths.routes.studiesFlows}>
+          <Button type="button" size="sm" variant="subtle">
+            UX Test Flows
+          </Button>
+        </Link>
+      </div>
       <ul className="audion-tg-grid">
         <li>
           <StudyCreateButton variant="card" />

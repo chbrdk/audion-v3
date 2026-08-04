@@ -40,6 +40,7 @@ const PACKS: UxScenarioPack[] = [
 const URL_KEY_REGISTRY: Record<string, string> = {
   'bosch.ebike.home': paths.boschEbikeHomeUrl,
   'bosch.ebike.produktkombinationen': paths.boschEbikeProduktkombinationenUrl,
+  [paths.boschEbikeHaendlersucheUrlKey]: paths.boschEbikeHaendlersucheUrl,
   [paths.labTemplateFindabilityStartUrlKey]: paths.labTemplateFindabilityStartUrl,
   [paths.labTemplateFindabilityTargetUrlKey]: paths.labTemplateFindabilityTargetUrl,
 }

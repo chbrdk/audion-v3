@@ -33,6 +33,7 @@
 - UX Study routes: `/studies`, `/studies/[studyId]`, `/studies/[studyId]/waves/[waveId]` (`paths.routes.studies*`)
 - UX Study API: `/api/studies*` → optional proxy to v2 `/ux-studies` when `NEXT_PERSONA_DATA_SOURCE=api`
 - UX Study from pack: `paths.routes.apiStudiesFromPack` (`/api/studies/from-pack`)
+- UX Test Flows (product templates): `paths.routes.studiesFlows` (`/studies/flows`) · `apiStudiesFromFlow` · lib `paths.uxTestFlowsLibPath` · model `paths.uxTestFlowModelSpecPath` · scenarios `paths.uxTestFlowScenariosSpecPath`
 - UX Study fixtures/store: `apps/web/lib/fixtures/ux-studies.ts` · `ux-study-store.ts`
 - Scenario packs: `apps/web/lib/scenario-packs.ts` · `apps/web/lib/fixtures/scenario-packs/` · `knowledge/scenario-packs.md`
 - UX Lab archetypes: `paths.uxLabArchetypesSpecPath` · correlate `paths.labArchetypeCorrelatePath` · playbook `paths.personaLabMicroLabsKnowledgePath`

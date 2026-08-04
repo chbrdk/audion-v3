@@ -1,16 +1,19 @@
 # UX Test Flow — 10 gängige Szenarien (Bausteinkatalog)
 
-**Status:** Draft (Produkt-Orientierung, noch keine UI-Implementierung)  
+**Status:** Accepted  
+**Flow model (SoT):** [`specs/domain/ux-test-flow-model.md`](ux-test-flow-model.md)  
 **Zweck:** Absolute Standard-Szenarien, bewusst **unterschiedlich** in Triggern, Aktionen, Meldungen und Verzweigungen — als gemeinsame Sprache für Wizard *oder* Board.  
-**Nicht Ziel:** Konkrete Kundenstudien nachbauen (Produktkombinationen / Händlersuche nur als *Beispiele* für Varianz).
+**Nicht Ziel:** Konkrete Kundenstudien 1:1 nachbauen (Produktkombinationen / Händlersuche nur als *Beispiele* für Varianz).
 
-**Verwandt:** `specs/domain/ux-lab-archetypes.md`
+**Verwandt:** `specs/domain/ux-lab-archetypes.md` · UI `/studies/flows`
 
 ---
 
 ## Klartext
 
-Statt hundert spezieller Screens reichen wenige **Knotentypen**. Ein Board (React Flow o.ä.) kann dieselben Knoten wiederverwenden — der Vorteil, den du meintest. Die 10 Szenarien unten prüfen, ob diese Knoten wirklich reichen.
+Statt hundert spezieller Screens reichen wenige **Knotentypen**. Ein Board (React Flow o.ä.) kann dieselben Knoten wiederverwenden. Die 10 Szenarien unten prüfen, ob diese Knoten wirklich reichen.
+
+V1: Vorlagen + Blockliste + Compile → Study. Canvas und Live-Gates = später.
 
 ---
 

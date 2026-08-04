@@ -4349,3 +4349,14 @@ main { min-height: 100vh; }
   display: grid;
   gap: var(--space-2, 0.5rem);
 }
+
+/* UX Test Flows */
+.audion-flow-lede{margin:0 0 1rem;font-size:.9rem}
+.audion-flow-studies-actions{margin:0 0 .75rem}
+.audion-flow-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0 0}
+.audion-flow-block-list{list-style:none;margin:1rem 0 0;padding:0;display:grid;gap:.75rem}
+.audion-flow-block-meta{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 .35rem}
+.audion-flow-block-text{margin:.35rem 0 0;font-size:.9rem}
+.audion-flow-create{margin:0 0 1.25rem}
+.audion-flow-create-hint,.audion-flow-create-error{margin:.35rem 0 0;font-size:.85rem}
+.audion-flow-create-error{color:var(--color-danger,#b00020)}

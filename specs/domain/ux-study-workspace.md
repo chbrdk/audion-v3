@@ -14,6 +14,8 @@ First-class **Study → Wave → Run plan → Start/Sync → Evaluate → Compar
 | Route | Role |
 |-------|------|
 | `/studies` | Study list + **New study** |
+| `/studies/flows` | UX Test Flow template gallery (product layer) |
+| `/studies/flows/[flowId]` | Flow block list + **Create study from flow** |
 | `/studies/[studyId]` | Study detail + wave list + **New wave** |
 | `/studies/[studyId]/waves/[waveId]` | Wave detail: run matrix, Start/Sync, evaluation, compare picker, report edit, F-Fragen → chat |
 
@@ -28,6 +30,8 @@ First-class **Study → Wave → Run plan → Start/Sync → Evaluate → Compar
 | Action | Where |
 |--------|--------|
 | Create / edit Study | Dialog on list/detail |
+| Create from ScenarioPack | Dialog pack select → `POST /api/studies/from-pack` |
+| Create from UX Test Flow | `/studies/flows` → `POST /api/studies/from-flow` |
 | Create Wave (+ seed runs) | Dialog on study detail |
 | Start wave | Wave topbar → `POST …/start` |
 | Sync runs | Poll while running → `POST …/sync` |

@@ -74,6 +74,9 @@ export const paths = {
   labTemplateFindabilityPackId: 'pack-lab-template-findability',
   personaLabMicroLabsKnowledgePath: 'knowledge/persona-lab-micro-labs-2026-08-04.md',
   uxLabArchetypesSpecPath: 'specs/domain/ux-lab-archetypes.md',
+  uxTestFlowScenariosSpecPath: 'specs/domain/ux-test-flow-scenarios.md',
+  uxTestFlowModelSpecPath: 'specs/domain/ux-test-flow-model.md',
+  uxTestFlowsLibPath: 'apps/web/lib/ux-test-flows.ts',
   labArchetypeCorrelatePath: 'apps/web/lib/lab-archetype-correlate.ts',
   personaLabNavCorrelatePath: 'apps/web/lib/persona-lab-nav-correlate.ts',
   personaLabCorrelatePath: 'apps/web/lib/persona-lab-correlate.ts',
@@ -101,6 +104,8 @@ export const paths = {
   boschEbikeProduktkombinationenUrl:
     'https://www.bosch-ebike.com/de/service/produktkombinationen',
   boschEbikeHomeUrl: 'https://www.bosch-ebike.com/de/',
+  boschEbikeHaendlersucheUrl: 'https://www.bosch-ebike.com/de/service/haendlersuche',
+  boschEbikeHaendlersucheUrlKey: 'bosch.ebike.haendlersuche',
   /**
    * Non-product findability template start/target (IANA example domains — stable, no CloudFront).
    * @see pack-lab-template-findability
@@ -187,11 +192,14 @@ export const paths = {
     apiJourneyDetail: (id: string) => `/api/journeys/${id}`,
     apiJourneyFromUxRun: '/api/journeys/from-ux-run',
     studies: '/studies',
+    studiesFlows: '/studies/flows',
+    studiesFlowDetail: (flowId: string) => `/studies/flows/${flowId}`,
     studyDetail: (id: string) => `/studies/${id}`,
     studyWaveDetail: (studyId: string, waveId: string) =>
       `/studies/${studyId}/waves/${waveId}`,
     apiStudies: '/api/studies',
     apiStudiesFromPack: '/api/studies/from-pack',
+    apiStudiesFromFlow: '/api/studies/from-flow',
     apiStudyDetail: (id: string) => `/api/studies/${id}`,
     apiStudyWaves: (studyId: string) => `/api/studies/${studyId}/waves`,
     apiStudyWaveDetail: (studyId: string, waveId: string) =>
