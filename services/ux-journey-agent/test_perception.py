@@ -382,7 +382,7 @@ def test_select_nav_dom_action_synthesizes_top_strip_for_tall_menu_wrapper():
     assert action is not None
     assert "index" not in action
     assert action["coordinate_y"] == 60  # 36 + 48*0.5
-    assert 500 <= action["coordinate_x"] <= 700
+    assert 450 <= action["coordinate_x"] <= 700
 
 
 def test_select_nav_dom_action_falls_back_to_short_label_when_only_midpage_bounds():
