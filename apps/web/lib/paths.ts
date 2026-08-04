@@ -68,6 +68,8 @@ export const paths = {
   personaLabNavPackId: 'pack-ebm-persona-lab-nav',
   personaLabPurchasePackId: 'pack-ebm-persona-lab-purchase',
   personaLabAcPackId: 'pack-ebm-persona-lab-ac',
+  personaLabProduktnahPackId: 'pack-ebm-persona-lab-produktnah',
+  personaLabNextStepPackId: 'pack-ebm-persona-lab-next-step',
   personaLabMicroLabsKnowledgePath: 'knowledge/persona-lab-micro-labs-2026-08-04.md',
   personaLabNavCorrelatePath: 'apps/web/lib/persona-lab-nav-correlate.ts',
   personaLabCorrelatePath: 'apps/web/lib/persona-lab-correlate.ts',

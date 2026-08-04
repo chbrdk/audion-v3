@@ -20,6 +20,8 @@ import { EBM_PERSONA_LAB_B_PACK } from './fixtures/scenario-packs/ebm-persona-la
 import { EBM_PERSONA_LAB_NAV_PACK } from './fixtures/scenario-packs/ebm-persona-lab-nav'
 import { EBM_PERSONA_LAB_PURCHASE_PACK } from './fixtures/scenario-packs/ebm-persona-lab-purchase'
 import { EBM_PERSONA_LAB_AC_PACK } from './fixtures/scenario-packs/ebm-persona-lab-ac'
+import { EBM_PERSONA_LAB_PRODUKTNAH_PACK } from './fixtures/scenario-packs/ebm-persona-lab-produktnah'
+import { EBM_PERSONA_LAB_NEXT_STEP_PACK } from './fixtures/scenario-packs/ebm-persona-lab-next-step'
 import { storeCreateUxStudy, storeCreateUxWave } from './fixtures/ux-study-store'
 
 const PACKS: UxScenarioPack[] = [
@@ -28,6 +30,8 @@ const PACKS: UxScenarioPack[] = [
   EBM_PERSONA_LAB_NAV_PACK,
   EBM_PERSONA_LAB_PURCHASE_PACK,
   EBM_PERSONA_LAB_AC_PACK,
+  EBM_PERSONA_LAB_PRODUKTNAH_PACK,
+  EBM_PERSONA_LAB_NEXT_STEP_PACK,
 ]
 
 export function listScenarioPacks(): UxScenarioPackSummary[] {

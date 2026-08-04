@@ -32,9 +32,9 @@ const SHARED_TASK_CORE = [
 
 export const EBM_PERSONA_LAB_B_PACK: UxScenarioPack = {
   id: paths.personaLabPackId,
-  name: 'Persona Lab · B Aufgabe 1 (Alex + Sam)',
+  name: 'Filter-Matrix: Nachrüsten (ungeduldig + geduldig)',
   description:
-    'Fast iteration unit: dual-persona B-wave (impatient Alex + patient Sam), maxSteps 15. Alex correlates via persona-lab-correlate; Sam enables L4/H5 tempo contrast without PATCH. See knowledge/persona-iteration-lab-2026-08-03.md.',
+    'Matrix-Aufgabe 1 mit zwei Tempi: ungeduldig (Alex) + geduldig (Sam), maxSteps 15. Alex → persona-lab-correlate; Sam → L4/H5 Tempo-Kontrast ohne PATCH. Siehe knowledge/persona-iteration-lab-2026-08-03.md.',
   sourceGuide: 'EBM-Testleitfaden Produktkombinationen-Tool v1.3 — Lab slice Aufgabe 1',
   targetUrlKey: 'bosch.ebike.produktkombinationen',
   projectId: 'proj-audion-core',
@@ -50,7 +50,7 @@ export const EBM_PERSONA_LAB_B_PACK: UxScenarioPack = {
   runs: [
     {
       runKey: 'B-aufgabe1-nachruesten',
-      leitfadenBlock: 'Lab · Aufgabe 1 · impatient persona',
+      leitfadenBlock: 'Filter-Matrix · Aufgabe 1 · ungeduldig (Alex)',
       personaId: paths.personaLabImpatientPersonaId,
       personaName: 'Alex Lab Ungeduldig',
       segment: 'owner_upgrade',
@@ -66,7 +66,7 @@ export const EBM_PERSONA_LAB_B_PACK: UxScenarioPack = {
     },
     {
       runKey: 'B-aufgabe1-nachruesten-patient',
-      leitfadenBlock: 'Lab · Aufgabe 1 · patient persona',
+      leitfadenBlock: 'Filter-Matrix · Aufgabe 1 · geduldig (Sam)',
       personaId: paths.personaLabPatientPersonaId,
       personaName: 'Sam Lab Geduldig',
       segment: 'owner_upgrade',

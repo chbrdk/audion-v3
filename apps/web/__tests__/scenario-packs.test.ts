@@ -21,6 +21,16 @@ describe('scenario packs + EBM retest', () => {
   it('lists EBM pack and resolves URL keys via paths', () => {
     const packs = listScenarioPacks()
     expect(packs.some((p) => p.id === 'pack-ebm-produktkombinationen')).toBe(true)
+    const labIds = [
+      paths.personaLabPackId,
+      paths.personaLabNavPackId,
+      paths.personaLabPurchasePackId,
+      paths.personaLabAcPackId,
+      paths.personaLabProduktnahPackId,
+      paths.personaLabNextStepPackId,
+    ]
+    expect(labIds.every((id) => packs.some((p) => p.id === id))).toBe(true)
+    expect(packs).toHaveLength(7)
     const pack = getScenarioPack('pack-ebm-produktkombinationen')
     expect(pack?.runs.length).toBeGreaterThanOrEqual(5)
     expect(pack?.runs.every((r) => r.maxSteps > 0)).toBe(true)
@@ -28,6 +38,40 @@ describe('scenario packs + EBM retest', () => {
       paths.boschEbikeProduktkombinationenUrl,
     )
     expect(resolveScenarioPackUrl('bosch.ebike.home')).toBe(paths.boschEbikeHomeUrl)
+  })
+
+  it('lab packs expose German display names, stable runKeys, and hypothesis templates', () => {
+    const matrix = getScenarioPack(paths.personaLabPackId)
+    expect(matrix?.name).toBe('Filter-Matrix: Nachrüsten (ungeduldig + geduldig)')
+    expect(matrix?.runs.map((r) => r.runKey)).toEqual([
+      'B-aufgabe1-nachruesten',
+      'B-aufgabe1-nachruesten-patient',
+    ])
+    expect(matrix?.hypothesisTemplates.map((h) => h.id).sort()).toEqual(['H1', 'H2', 'H5'])
+
+    const nav = getScenarioPack(paths.personaLabNavPackId)
+    expect(nav?.name).toBe('Auffindbarkeit: Home → Produktkombinationen')
+    expect(nav?.runs[0]?.runKey).toBe('Nav-home-to-tool')
+
+    const purchase = getScenarioPack(paths.personaLabPurchasePackId)
+    expect(purchase?.name).toBe('Kaufinteressent: passende Displays finden')
+    expect(purchase?.runs[0]?.runKey).toBe('B-aufgabe1-purchase-intent')
+
+    const ac = getScenarioPack(paths.personaLabAcPackId)
+    expect(ac?.name).toBe('Erstkontakt + Kombinationscheck')
+    expect(ac?.runs.map((r) => r.runKey)).toEqual(['A-erstkontakt', 'C-aufgabe2-kombination'])
+
+    const produktnah = getScenarioPack(paths.personaLabProduktnahPackId)
+    expect(produktnah?.name).toBe('Produktnahe Kurzantwort statt Matrix')
+    expect(produktnah?.runs[0]?.runKey).toBe('H4-produktnah-kurzantwort')
+    expect(produktnah?.hypothesisTemplates.map((h) => h.id)).toEqual(['H4'])
+
+    const nextStep = getScenarioPack(paths.personaLabNextStepPackId)
+    expect(nextStep?.name).toBe('Nächster Schritt nach der Prüfung')
+    expect(nextStep?.runs[0]?.runKey).toBe('F38-next-step-after-check')
+    expect(nextStep?.hypothesisTemplates).toHaveLength(1)
+    expect(nextStep?.hypothesisTemplates[0]?.id).toBe('H3')
+    expect(nextStep?.hypothesisTemplates[0]?.statement).toMatch(/F3\.8/)
   })
 
   it('seeds Alex/Sam personas with full PersonaDetail fields for production build', () => {

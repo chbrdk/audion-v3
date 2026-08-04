@@ -21,9 +21,9 @@ const NAV_HYPOTHESES = EBM_HYPOTHESES.filter((h) => h.id === 'H3')
 
 export const EBM_PERSONA_LAB_NAV_PACK: UxScenarioPack = {
   id: paths.personaLabNavPackId,
-  name: 'Persona Lab · Nav proof (H3)',
+  name: 'Auffindbarkeit: Home → Produktkombinationen',
   description:
-    'Micro-lab: start on Bosch home, find Produktkombinationen. Success = final URL/title match tool page (H3 / Q4). Do not mix with Lab B matrix wave. See knowledge/persona-lab-micro-labs-2026-08-04.md.',
+    'Auffindbarkeit (H3/Q4): Start auf Bosch-Home, Weg zum Produktkombinationen-Tool. Erfolg = finale URL/Titel matchen Tool-Seite. Nicht mit Filter-Matrix-Welle mischen. Siehe knowledge/persona-lab-micro-labs-2026-08-04.md.',
   sourceGuide: 'EBM-Testleitfaden Produktkombinationen-Tool v1.3 — Nav slice (H3)',
   targetUrlKey: 'bosch.ebike.home',
   projectId: 'proj-audion-core',
@@ -37,7 +37,7 @@ export const EBM_PERSONA_LAB_NAV_PACK: UxScenarioPack = {
   runs: [
     {
       runKey: 'Nav-home-to-tool',
-      leitfadenBlock: 'Lab · Nav · H3',
+      leitfadenBlock: 'Auffindbarkeit · Home → Tool (H3)',
       personaId: paths.personaLabImpatientPersonaId,
       personaName: 'Alex Lab Ungeduldig',
       segment: 'owner_upgrade',

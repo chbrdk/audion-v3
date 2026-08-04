@@ -22,9 +22,9 @@ const AC_HYPOTHESES = EBM_HYPOTHESES.filter((h) => h.id === 'H1' || h.id === 'H2
 
 export const EBM_PERSONA_LAB_AC_PACK: UxScenarioPack = {
   id: paths.personaLabAcPackId,
-  name: 'Persona Lab · A+C (Erstkontakt + Kombination)',
+  name: 'Erstkontakt + Kombinationscheck',
   description:
-    'Micro-lab: Erstkontakt (A) + Kombination Aufgabe 2 (C), capped maxSteps. Not part of Lab B matrix wave. See knowledge/persona-lab-micro-labs-2026-08-04.md.',
+    'Erstkontakt (A) + Kombinationscheck Aufgabe 2 (C), capped maxSteps. Nicht Teil der Filter-Matrix-Welle. Siehe knowledge/persona-lab-micro-labs-2026-08-04.md.',
   sourceGuide: 'EBM-Testleitfaden Produktkombinationen-Tool v1.3 — A+C slice',
   targetUrlKey: 'bosch.ebike.produktkombinationen',
   projectId: 'proj-audion-core',
@@ -40,7 +40,7 @@ export const EBM_PERSONA_LAB_AC_PACK: UxScenarioPack = {
   runs: [
     {
       runKey: 'A-erstkontakt',
-      leitfadenBlock: 'Lab · A · Erstkontakt',
+      leitfadenBlock: 'Erstkontakt · A · erster Eindruck',
       personaId: paths.personaLabImpatientPersonaId,
       personaName: 'Alex Lab Ungeduldig',
       segment: 'owner_upgrade',
@@ -55,7 +55,7 @@ export const EBM_PERSONA_LAB_AC_PACK: UxScenarioPack = {
     },
     {
       runKey: 'C-aufgabe2-kombination',
-      leitfadenBlock: 'Lab · C · Aufgabe 2',
+      leitfadenBlock: 'Kombinationscheck · C · Aufgabe 2',
       personaId: paths.personaLabPatientPersonaId,
       personaName: 'Sam Lab Geduldig',
       segment: 'purchase_intent',

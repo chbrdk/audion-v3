@@ -22,6 +22,7 @@ Reusable **Leitfaden → Study + Wave** seeds. Structured packs hold runs, Soft-
 | Field | Value |
 |-------|-------|
 | Pack id | `paths.personaLabPackId` → `pack-ebm-persona-lab-b` |
+| Anzeigename | **Filter-Matrix: Nachrüsten (ungeduldig + geduldig)** |
 | Fixture | `apps/web/lib/fixtures/scenario-packs/ebm-persona-lab-b.ts` |
 | Personas | Alex fixture → DB `…ungeduldig…` **+** Sam fixture → DB `…geduldig…` via `lab-persona-resolve` |
 | Runs | **2** × `B-aufgabe1-nachruesten` (Alex) + `B-aufgabe1-nachruesten-patient` (Sam), `maxSteps: 15` |
@@ -30,20 +31,23 @@ Reusable **Leitfaden → Study + Wave** seeds. Structured packs hold runs, Soft-
 | Resolve | `knowledge/persona-lab-persona-resolve-2026-08-04.md` — **no PATCH** for dual-persona |
 
 Default wave enables impatient vs patient contrast (H5/L4) without manual PATCH.
+
 ## Micro-labs (separate from Lab B)
 
-| Pack | Id | Notes |
-|------|-----|-------|
-| Nav H3 | `pack-ebm-persona-lab-nav` | Home → tool; `persona-lab-nav-correlate` |
-| Purchase | `pack-ebm-persona-lab-purchase` | Segment Soft-Q contrast |
-| A+C | `pack-ebm-persona-lab-ac` | Erstkontakt + Kombination, capped |
+| Anzeigename | Pack id | Notes |
+|-------------|---------|-------|
+| Auffindbarkeit: Home → Produktkombinationen | `pack-ebm-persona-lab-nav` | Home → tool; `persona-lab-nav-correlate` |
+| Kaufinteressent: passende Displays finden | `pack-ebm-persona-lab-purchase` | Segment Soft-Q contrast |
+| Erstkontakt + Kombinationscheck | `pack-ebm-persona-lab-ac` | Erstkontakt + Kombination, capped |
+| Produktnahe Kurzantwort statt Matrix | `pack-ebm-persona-lab-produktnah` | H4 / Q5 |
+| Nächster Schritt nach der Prüfung | `pack-ebm-persona-lab-next-step` | F3.8 / F3.9 Next Step |
 
 Playbook: `knowledge/persona-lab-micro-labs-2026-08-04.md`
 
 After Sync, map the wave run with `waveRunToPersonaLabSnapshot` → `correlatePersonaLabRun`. **closer: true** = within human gold band (high friction, confusion named, step budget, not optimistic).
 
 ```bash
-cd apps/web && pnpm exec vitest run __tests__/persona-lab-correlate.test.ts __tests__/lab-persona-resolve.test.ts __tests__/persona-lab-nav-correlate.test.ts
+cd apps/web && pnpm exec vitest run __tests__/persona-lab-correlate.test.ts __tests__/lab-persona-resolve.test.ts __tests__/persona-lab-nav-correlate.test.ts __tests__/scenario-packs.test.ts
 ```
 
 ## How to use
@@ -65,3 +69,4 @@ API: `GET/POST paths.routes.apiStudiesFromPack` (`/api/studies/from-pack`)
 - PDF OCR → pack
 - Statistical n=15 / Testbirds sample
 - MCP `run-ebm-*.py` port
+- Live staging runs of Produktnah / Next-Step (post-deploy)

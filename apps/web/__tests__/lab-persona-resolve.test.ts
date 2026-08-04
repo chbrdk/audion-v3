@@ -62,15 +62,23 @@ describe('lab persona resolve (fixture → DB)', () => {
       paths.personaLabNavPackId,
       paths.personaLabPurchasePackId,
       paths.personaLabAcPackId,
+      paths.personaLabProduktnahPackId,
+      paths.personaLabNextStepPackId,
     ]) {
       expect(getScenarioPack(packId)).not.toBeNull()
     }
     expect(getScenarioPack(paths.personaLabNavPackId)?.runs[0]?.runKey).toBe('Nav-home-to-tool')
     expect(getScenarioPack(paths.personaLabPurchasePackId)?.runs).toHaveLength(1)
     expect(getScenarioPack(paths.personaLabAcPackId)?.runs).toHaveLength(2)
+    expect(getScenarioPack(paths.personaLabProduktnahPackId)?.runs[0]?.runKey).toBe(
+      'H4-produktnah-kurzantwort',
+    )
+    expect(getScenarioPack(paths.personaLabNextStepPackId)?.runs[0]?.runKey).toBe(
+      'F38-next-step-after-check',
+    )
   })
 
-  it('from-pack Nav / Purchase / A+C resolve to DB ids', async () => {
+  it('from-pack Nav / Purchase / A+C / Produktnah / Next-Step resolve to DB ids', async () => {
     const nav = await createStudyFromScenarioPack({
       packId: paths.personaLabNavPackId,
       waveKey: 'nav-resolve',
@@ -91,5 +99,17 @@ describe('lab persona resolve (fixture → DB)', () => {
       paths.personaLabImpatientDbPersonaId,
       paths.personaLabPatientDbPersonaId,
     ])
+
+    const produktnah = await createStudyFromScenarioPack({
+      packId: paths.personaLabProduktnahPackId,
+      waveKey: 'produktnah-resolve',
+    })
+    expect(produktnah!.wave.runs[0]?.personaId).toBe(paths.personaLabImpatientDbPersonaId)
+
+    const nextStep = await createStudyFromScenarioPack({
+      packId: paths.personaLabNextStepPackId,
+      waveKey: 'next-step-resolve',
+    })
+    expect(nextStep!.wave.runs[0]?.personaId).toBe(paths.personaLabPatientDbPersonaId)
   })
 })

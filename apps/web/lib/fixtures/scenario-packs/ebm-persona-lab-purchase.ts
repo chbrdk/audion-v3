@@ -21,9 +21,9 @@ const PURCHASE_HYPOTHESES = EBM_HYPOTHESES.filter((h) => h.id === 'H5' || h.id =
 
 export const EBM_PERSONA_LAB_PURCHASE_PACK: UxScenarioPack = {
   id: paths.personaLabPurchasePackId,
-  name: 'Persona Lab · Purchase intent (B)',
+  name: 'Kaufinteressent: passende Displays finden',
   description:
-    'Micro-lab: Aufgabe 1 from purchase-intent segment (Sam). Soft-Q / segment contrast vs owner Lab B — do not mix into Lab B wave. See knowledge/persona-lab-micro-labs-2026-08-04.md.',
+    'Kaufinteressent (H5): Aufgabe 1 im purchase-intent-Segment (Sam). Soft-Q / Segment-Kontrast zur Owner-Filter-Matrix — nicht in die Matrix-Welle mischen. Siehe knowledge/persona-lab-micro-labs-2026-08-04.md.',
   sourceGuide: 'EBM-Testleitfaden Produktkombinationen-Tool v1.3 — Purchase slice',
   targetUrlKey: 'bosch.ebike.produktkombinationen',
   projectId: 'proj-audion-core',
@@ -37,7 +37,7 @@ export const EBM_PERSONA_LAB_PURCHASE_PACK: UxScenarioPack = {
   runs: [
     {
       runKey: 'B-aufgabe1-purchase-intent',
-      leitfadenBlock: 'Lab · Purchase · Aufgabe 1',
+      leitfadenBlock: 'Kaufinteressent · Aufgabe 1 · passende Displays',
       personaId: paths.personaLabPatientPersonaId,
       personaName: 'Sam Lab Geduldig',
       segment: 'purchase_intent',
