@@ -1,0 +1,85 @@
+import { describe, expect, it } from 'vitest'
+import {
+  correlatePersonaLabNavRun,
+  navGoldSnapshot,
+  navMissedToolSnapshot,
+  toolTitleMatches,
+  toolUrlMatches,
+  waveRunToPersonaLabNavSnapshot,
+  PERSONA_LAB_NAV_GOLD,
+} from '../lib/persona-lab-nav-correlate'
+import { createStudyFromScenarioPack, getScenarioPack } from '../lib/scenario-packs'
+import { paths } from '../lib/paths'
+import { resetUxStudyStore } from '../lib/fixtures/ux-study-store'
+import type { UxWaveRunItem } from '@audion-v3/contracts'
+
+describe('persona lab nav correlator (H3)', () => {
+  it('registers nav pack with home urlKey and capped steps', () => {
+    const pack = getScenarioPack(paths.personaLabNavPackId)
+    expect(pack).not.toBeNull()
+    expect(pack!.targetUrlKey).toBe('bosch.ebike.home')
+    expect(pack!.runs[0]?.urlKey).toBe('bosch.ebike.home')
+    expect(pack!.runs[0]?.maxSteps).toBe(PERSONA_LAB_NAV_GOLD.maxStepsCap)
+  })
+
+  it('matches tool URL/title helpers', () => {
+    expect(toolUrlMatches(paths.boschEbikeProduktkombinationenUrl)).toBe(true)
+    expect(toolUrlMatches(paths.boschEbikeHomeUrl)).toBe(false)
+    expect(toolTitleMatches('Produktkombinationen | Bosch')).toBe(true)
+    expect(toolTitleMatches('Home')).toBe(false)
+  })
+
+  it('correlates gold nav landing as closer', () => {
+    const result = correlatePersonaLabNavRun(navGoldSnapshot())
+    expect(result.closer).toBe(true)
+    expect(result.checks.find((c) => c.id === 'url_matches_tool')?.pass).toBe(true)
+  })
+
+  it('correlates missed-tool snapshot as not closer', () => {
+    const result = correlatePersonaLabNavRun(navMissedToolSnapshot())
+    expect(result.closer).toBe(false)
+    expect(result.checks.find((c) => c.id === 'url_matches_tool')?.pass).toBe(false)
+  })
+
+  it('maps wave run → nav snapshot', () => {
+    const run: UxWaveRunItem = {
+      id: 'run-nav-1',
+      runKey: 'Nav-home-to-tool',
+      leitfadenBlock: 'lab',
+      personaId: paths.personaLabImpatientDbPersonaId,
+      personaName: 'Alex',
+      segment: 'owner_upgrade',
+      url: paths.boschEbikeHomeUrl,
+      task: 'nav',
+      maxSteps: 12,
+      jobId: 'j1',
+      agentStatus: 'complete',
+      agentSuccess: true,
+      taskCompleted: true,
+      validEvidence: true,
+      validEvidenceCaveat: null,
+      blockers: [],
+      steps: 5,
+      frictionScore: 6,
+      personaFitScore: 3,
+      goalReached: true,
+      finding: 'Tool gefunden',
+      categories: {},
+    }
+    const snap = waveRunToPersonaLabNavSnapshot(run, {
+      finalUrl: paths.boschEbikeProduktkombinationenUrl,
+      finalTitle: 'Produktkombinationen',
+    })
+    expect(correlatePersonaLabNavRun(snap).closer).toBe(true)
+  })
+
+  it('seeds study from nav pack', async () => {
+    resetUxStudyStore()
+    const created = await createStudyFromScenarioPack({
+      packId: paths.personaLabNavPackId,
+      waveKey: 'nav-unit',
+    })
+    expect(created!.wave.runs).toHaveLength(1)
+    expect(created!.wave.runs[0]?.url).toBe(paths.boschEbikeHomeUrl)
+  })
+})

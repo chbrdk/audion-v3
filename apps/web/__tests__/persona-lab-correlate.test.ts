@@ -111,6 +111,7 @@ describe('persona lab pack + self-correlation', () => {
     expect(created).not.toBeNull()
     expect(created!.wave.runs).toHaveLength(1)
     expect(created!.wave.runs[0]?.maxSteps).toBe(15)
+    expect(created!.wave.runs[0]?.personaId).toBe(paths.personaLabImpatientDbPersonaId)
     expect(created!.packId).toBe(paths.personaLabPackId)
   })
 })

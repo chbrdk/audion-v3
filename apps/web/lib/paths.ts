@@ -51,18 +51,40 @@ export const paths = {
   uxScenarioPacksPath: 'apps/web/lib/fixtures/scenario-packs',
   /** Fast B-only persona iteration pack — correlate via persona-lab-correlate.ts */
   personaLabPackId: 'pack-ebm-persona-lab-b',
+  /** Logical fixture aliases (personas.ts); from-pack resolves to DB ids below. */
   personaLabImpatientPersonaId: 'persona-alex-lab-impatient',
   personaLabPatientPersonaId: 'persona-sam-lab-patient',
+  /**
+   * Staging Postgres lab personas (seeded). from-pack maps fixture aliases here
+   * unless AUDION_LAB_*_PERSONA_ID overrides. No manual wave PATCH needed.
+   */
+  personaLabImpatientDbPersonaId: 'persona-alex-lab-ungeduldig-msdfje0b',
+  personaLabPatientDbPersonaId: 'persona-sam-lab-geduldig-msdroy3t',
+  envLabAlexPersonaId: 'AUDION_LAB_ALEX_PERSONA_ID',
+  envLabSamPersonaId: 'AUDION_LAB_SAM_PERSONA_ID',
+  labPersonaResolvePath: 'apps/web/lib/lab-persona-resolve.ts',
+  labPersonaResolveKnowledgePath: 'knowledge/persona-lab-persona-resolve-2026-08-04.md',
+  /** Micro-labs (not Lab B matrix) */
+  personaLabNavPackId: 'pack-ebm-persona-lab-nav',
+  personaLabPurchasePackId: 'pack-ebm-persona-lab-purchase',
+  personaLabAcPackId: 'pack-ebm-persona-lab-ac',
+  personaLabMicroLabsKnowledgePath: 'knowledge/persona-lab-micro-labs-2026-08-04.md',
+  personaLabNavCorrelatePath: 'apps/web/lib/persona-lab-nav-correlate.ts',
   personaLabCorrelatePath: 'apps/web/lib/persona-lab-correlate.ts',
   personaLabKnowledgePath: 'knowledge/persona-iteration-lab-2026-08-03.md',
   personaLabTryThenQuitKnowledgePath: 'knowledge/lab-try-then-quit-2026-08-03.md',
+  /**
+   * Impatient floor for exploratory attempts before hard abandon.
+   * Default **3** → Alex typically lands ~4–6 steps (navigate + tries + done).
+   */
   envUxJourneyTryBeforeAbandon: 'UX_JOURNEY_TRY_BEFORE_ABANDON',
+  uxJourneyTryBeforeAbandonDefault: 3,
   /** Soft-Q Think-Aloud draft (Lab L6) — empty keys filled on Evaluate */
   softQDraftPath: 'apps/web/lib/soft-q-draft.ts',
   softQDraftKnowledgePath: 'knowledge/lab-l6-soft-q-draft-2026-08-03.md',
   softQLlmAssistPath: 'apps/web/lib/soft-q-llm-assist.ts',
   softQLlmAssistKnowledgePath: 'knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md',
-  /** Opt-in: Evaluate LLM Soft-Q assist (`1`/`true`). Default off. */
+  /** Opt-in: Evaluate LLM Soft-Q assist (`1`/`true`). Default off in code; staging may enable. */
   envSoftQLlmAssist: 'AUDION_SOFT_Q_LLM_ASSIST',
   /** Perception-in-the-Loop (agent) */
   uxJourneyPerceptionPath: 'services/ux-journey-agent/perception.py',

@@ -50,17 +50,18 @@ Skip L6 until L0–L3 show directional movement.
 
 ## How to run a lab wave (ops)
 
-1. Create study/wave from pack `paths.personaLabPackId` (`pack-ebm-persona-lab-b`) — single B run, `maxSteps: 15`, persona `persona-alex-lab-impatient`.
+1. Create study/wave from pack `paths.personaLabPackId` (`pack-ebm-persona-lab-b`) — single B run, `maxSteps: 15`. Persona fixture alias resolves to staging DB id via `lab-persona-resolve` (**no PATCH**).
 2. Start → Sync (staging or local agent).
 3. Build snapshot: `waveRunToPersonaLabSnapshot(run, { narrativeBlob, timePressure })` then `correlatePersonaLabRun(snap)`.
-4. **Self-check without agent:** `pnpm exec vitest run __tests__/persona-lab-correlate.test.ts` (gold vs optimistic fixtures).
+4. **Self-check without agent:** `pnpm exec vitest run __tests__/persona-lab-correlate.test.ts`
 5. Log one line below under **Lab log**.
 6. Apply next ladder step only if L0 is recorded.
 
 Code SoT:
 - Pack: `apps/web/lib/fixtures/scenario-packs/ebm-persona-lab-b.ts`
+- Resolve: `apps/web/lib/lab-persona-resolve.ts` · `knowledge/persona-lab-persona-resolve-2026-08-04.md`
 - Correlator: `apps/web/lib/persona-lab-correlate.ts`
-- Paths: `paths.personaLabPackId` / `personaLabImpatientPersonaId`
+- Paths: `paths.personaLabPackId` / `personaLabImpatientPersonaId` / `personaLabImpatientDbPersonaId`
 
 Staging study/wave refs: see `knowledge/paths.md` / Bosch staging IDs in prior notes (`study-ebm-produktkombinationen-bosch-ebike-msd6pgrg`).
 
@@ -96,8 +97,9 @@ Staging study/wave refs: see `knowledge/paths.md` / Bosch staging IDs in prior n
 **Next:** Perception-in-the-Loop P0+ shipped — see `knowledge/ux-journey-perception-in-loop.md`.  
 **Try-then-quit (2026-08-03):** `knowledge/lab-try-then-quit-2026-08-03.md` — exploratory hesitate before hard abandon.
 
-### Deferred next (do not mix into this lab unit)
+### Deferred next (do not mix into Lab B unit)
 
-- Full Nav-proof H3 (URL/title must match tool page)
-- Purchase / A+C multi-run waves + segment Soft-Q contrast
-- Routine 2–3 seed variance dashboard (ok as occasional ops check after try-then-quit deploy)
+- Routine 2–3 seed variance dashboard (ok as occasional ops check)
+- Full live purchase / A+C multi-run waves (packs shipped — `knowledge/persona-lab-micro-labs-2026-08-04.md`)
+
+**Shipped 2026-08-04:** fixture→DB resolve · try budget 4–6 · Nav/Purchase/A+C packs · Soft-Q L6b enable path.

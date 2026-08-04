@@ -14,11 +14,21 @@ import type {
   UxWaveWritePayload,
 } from '@audion-v3/contracts'
 import { paths } from './paths'
+import { resolveLabPersonaId } from './lab-persona-resolve'
 import { EBM_PRODUKTKOMBINATIONEN_PACK } from './fixtures/scenario-packs/ebm-produktkombinationen'
 import { EBM_PERSONA_LAB_B_PACK } from './fixtures/scenario-packs/ebm-persona-lab-b'
+import { EBM_PERSONA_LAB_NAV_PACK } from './fixtures/scenario-packs/ebm-persona-lab-nav'
+import { EBM_PERSONA_LAB_PURCHASE_PACK } from './fixtures/scenario-packs/ebm-persona-lab-purchase'
+import { EBM_PERSONA_LAB_AC_PACK } from './fixtures/scenario-packs/ebm-persona-lab-ac'
 import { storeCreateUxStudy, storeCreateUxWave } from './fixtures/ux-study-store'
 
-const PACKS: UxScenarioPack[] = [EBM_PRODUKTKOMBINATIONEN_PACK, EBM_PERSONA_LAB_B_PACK]
+const PACKS: UxScenarioPack[] = [
+  EBM_PRODUKTKOMBINATIONEN_PACK,
+  EBM_PERSONA_LAB_B_PACK,
+  EBM_PERSONA_LAB_NAV_PACK,
+  EBM_PERSONA_LAB_PURCHASE_PACK,
+  EBM_PERSONA_LAB_AC_PACK,
+]
 
 export function listScenarioPacks(): UxScenarioPackSummary[] {
   return PACKS.map((p) => ({
@@ -49,7 +59,8 @@ export function packRunsToWaveRuns(pack: UxScenarioPack): UxWaveRunItem[] {
     id: `run-${r.runKey}-${index}`,
     runKey: r.runKey,
     leitfadenBlock: r.leitfadenBlock,
-    personaId: r.personaId,
+    /** Lab fixture aliases → staging DB ids (env/paths); see lab-persona-resolve. */
+    personaId: resolveLabPersonaId(r.personaId),
     personaName: r.personaName,
     segment: r.segment,
     url: resolveScenarioPackUrl(r.urlKey),

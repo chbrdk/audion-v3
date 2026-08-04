@@ -23,15 +23,26 @@ Reusable **Leitfaden → Study + Wave** seeds. Structured packs hold runs, Soft-
 |-------|-------|
 | Pack id | `paths.personaLabPackId` → `pack-ebm-persona-lab-b` |
 | Fixture | `apps/web/lib/fixtures/scenario-packs/ebm-persona-lab-b.ts` |
-| Persona | `paths.personaLabImpatientPersonaId` → `persona-alex-lab-impatient` |
+| Persona | fixture `persona-alex-lab-impatient` → DB `persona-alex-lab-ungeduldig-msdfje0b` via `lab-persona-resolve` |
 | Runs | **1** × `B-aufgabe1-nachruesten`, `maxSteps: 15` |
 | Correlate | `apps/web/lib/persona-lab-correlate.ts` · tests `__tests__/persona-lab-correlate.test.ts` |
 | Playbook | `knowledge/persona-iteration-lab-2026-08-03.md` |
+| Resolve | `knowledge/persona-lab-persona-resolve-2026-08-04.md` — **no PATCH** |
+
+## Micro-labs (separate from Lab B)
+
+| Pack | Id | Notes |
+|------|-----|-------|
+| Nav H3 | `pack-ebm-persona-lab-nav` | Home → tool; `persona-lab-nav-correlate` |
+| Purchase | `pack-ebm-persona-lab-purchase` | Segment Soft-Q contrast |
+| A+C | `pack-ebm-persona-lab-ac` | Erstkontakt + Kombination, capped |
+
+Playbook: `knowledge/persona-lab-micro-labs-2026-08-04.md`
 
 After Sync, map the wave run with `waveRunToPersonaLabSnapshot` → `correlatePersonaLabRun`. **closer: true** = within human gold band (high friction, confusion named, step budget, not optimistic).
 
 ```bash
-cd apps/web && pnpm exec vitest run __tests__/persona-lab-correlate.test.ts
+cd apps/web && pnpm exec vitest run __tests__/persona-lab-correlate.test.ts __tests__/lab-persona-resolve.test.ts __tests__/persona-lab-nav-correlate.test.ts
 ```
 
 ## How to use
