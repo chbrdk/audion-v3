@@ -804,18 +804,31 @@ def build_nav_menu_hover_evaluate(open_keys: list[str]) -> dict[str, Any] | None
     return {"tool": "evaluate", "code": code}
 
 
-def build_nav_opener_click_evaluate(open_keys: list[str]) -> dict[str, Any] | None:
+def build_nav_opener_click_evaluate(
+    open_keys: list[str],
+    *,
+    point: tuple[float, float] | None = None,
+) -> dict[str, Any] | None:
     """
     Site-agnostic opener activation via ``evaluate`` click on the best
     top-chrome control matching task opener keywords (leaf labels only).
+
+    Optional ``point`` falls back to ``elementFromPoint`` when text scan misses
+    (common with shadow/mega-menu chrome).
     """
     keys = [str(k).strip().lower() for k in (open_keys or []) if str(k).strip()]
     if not keys:
         return None
     keys_js = json.dumps(keys, ensure_ascii=True)
+    point_js = (
+        f"[{float(point[0])},{float(point[1])}]"
+        if point is not None
+        else "null"
+    )
     code = (
         "(function(){try{"
         f"const keys={keys_js};"
+        f"const point={point_js};"
         "const match=t=>keys.some(k=>t.includes(k));"
         "const nodes=Array.from(document.querySelectorAll("
         "'a,button,nav a,header a,[role=menuitem],[role=link],[role=button],"
@@ -827,16 +840,25 @@ def build_nav_opener_click_evaluate(open_keys: list[str]) -> dict[str, Any] | No
         "(el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+href)"
         ".toLowerCase().replace(/\\s+/g,' ').trim();"
         "if(!match(t)) continue;"
-        "if(t.length>56) continue;"
-        "if((t.match(/produkte|ebikes|magazin|business|über uns/g)||[]).length>=2) continue;"
+        "if(t.length>96) continue;"
+        "if((t.match(/produkte|ebikes|magazin|business|über uns/g)||[]).length>=3) continue;"
         "const r=el.getBoundingClientRect();"
-        "if(r.width<8||r.height<8||r.bottom<0||r.top>420) continue;"
+        "if(r.width<8||r.height<8||r.bottom<0||r.top>520) continue;"
         "let score=0;"
         "if(r.top<=160) score+=50; else if(r.top<=280) score+=20;"
         "if(href && href!=='/' && !/^\\/[a-z]{2}\\/?$/.test(href)) score+=25;"
-        "if(t.length<=40) score+=20; else if(t.length<=56) score+=8;"
+        "if(t.length<=48) score+=20; else if(t.length<=96) score+=8;"
         "if(keys.some(k=>t===k||t.startsWith(k+' ')||t.includes('& '+k)||t.includes(k+' &'))) score+=30;"
         "if(score>bestScore){bestScore=score; best=el;}"
+        "}"
+        "if(!best && point){"
+        "const hit=document.elementFromPoint(point[0], point[1]);"
+        "if(hit){"
+        "const el=hit.closest('a,button,[role=menuitem],[role=link],[role=button]')||hit;"
+        "const t=String(el.innerText||el.textContent||el.getAttribute('aria-label')||'')"
+        ".toLowerCase().replace(/\\s+/g,' ').trim();"
+        "if(match(t) || t.length===0) best=el;"
+        "}"
         "}"
         "if(!best) return 'nav_click:no_opener';"
         "best.click();"
@@ -1168,7 +1190,17 @@ def select_nav_dom_action(
             return {"tool": "click", "index": hub_idx}, "nav_dom_service_click"
         # After hover+wait, prefer DOM evaluate click over AX-strip coordinates
         # (wide strips often miss the leaf Service control). Once only.
-        click_eval = build_nav_opener_click_evaluate(open_keys)
+        synth = _synthetic_top_opener_coord(open_keys)
+        point = None
+        if synth is not None:
+            try:
+                point = (
+                    float(synth["coordinate_x"]),
+                    float(synth["coordinate_y"]),
+                )
+            except (KeyError, TypeError, ValueError):
+                point = None
+        click_eval = build_nav_opener_click_evaluate(open_keys, point=point)
         if click_eval is not None:
             return click_eval, "nav_dom_service_click"
 
