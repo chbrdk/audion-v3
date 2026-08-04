@@ -30,6 +30,8 @@ export const EBM_PERSONA_LAB_AC_PACK: UxScenarioPack = {
   projectId: 'proj-audion-core',
   hypothesisTemplates: AC_HYPOTHESES.map((h) => ({ ...h })),
   softScoreKeys: SOFT_KEYS,
+  domainProfileId: 'ebm-produktkombinationen',
+  archetype: 'first_impression',
   fFragenPrompts: [
     'F2.1 Was ist der Zweck dieser Seite?',
     'F2.2 Was fällt dir als Erstes auf?',
@@ -40,6 +42,7 @@ export const EBM_PERSONA_LAB_AC_PACK: UxScenarioPack = {
   runs: [
     {
       runKey: 'A-erstkontakt',
+      archetype: 'first_impression',
       leitfadenBlock: 'Erstkontakt · A · erster Eindruck',
       personaId: paths.personaLabImpatientPersonaId,
       personaName: 'Alex Lab Ungeduldig',
@@ -55,6 +58,7 @@ export const EBM_PERSONA_LAB_AC_PACK: UxScenarioPack = {
     },
     {
       runKey: 'C-aufgabe2-kombination',
+      archetype: 'end_to_end',
       leitfadenBlock: 'Kombinationscheck · C · Aufgabe 2',
       personaId: paths.personaLabPatientPersonaId,
       personaName: 'Sam Lab Geduldig',

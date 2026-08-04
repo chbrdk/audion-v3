@@ -34,6 +34,8 @@ export const EBM_PERSONA_LAB_NEXT_STEP_PACK: UxScenarioPack = {
   projectId: 'proj-audion-core',
   hypothesisTemplates: NEXT_STEP_HYPOTHESES,
   softScoreKeys: SOFT_KEYS,
+  domainProfileId: 'ebm-produktkombinationen',
+  archetype: 'outcome_next_step',
   fFragenPrompts: [
     'F3.8 Was wäre der sinnvolle nächste Schritt für dich (Händler, Kauf, Support)?',
     'F3.9 Bietet die Seite diesen Next Step klar an — oder fehlt er?',

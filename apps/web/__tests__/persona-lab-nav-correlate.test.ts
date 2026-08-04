@@ -15,9 +15,11 @@ import { resetUxStudyStore } from '../lib/fixtures/ux-study-store'
 import type { UxWaveRunItem } from '@audion-v3/contracts'
 
 describe('persona lab nav correlator (H3)', () => {
-  it('registers nav pack with home urlKey and capped steps', () => {
+  it('registers nav pack with home urlKey, capped steps, and findability archetype', () => {
     const pack = getScenarioPack(paths.personaLabNavPackId)
     expect(pack).not.toBeNull()
+    expect(pack!.archetype).toBe('findability')
+    expect(pack!.successCriteria).toEqual({ kind: 'url_match', pattern: 'produktkombinationen' })
     expect(pack!.targetUrlKey).toBe('bosch.ebike.home')
     expect(pack!.runs[0]?.urlKey).toBe('bosch.ebike.home')
     expect(pack!.runs[0]?.maxSteps).toBe(PERSONA_LAB_NAV_GOLD.maxStepsCap)
@@ -68,6 +70,7 @@ describe('persona lab nav correlator (H3)', () => {
       categories: {},
       finalUrl: paths.boschEbikeProduktkombinationenUrl,
       finalTitle: 'Produktkombinationen',
+      deeplinkCheat: false,
     }
     const snap = waveRunToPersonaLabNavSnapshot(run)
     expect(correlatePersonaLabNavRun(snap).closer).toBe(true)
@@ -98,6 +101,7 @@ describe('persona lab nav correlator (H3)', () => {
       finding: 'Tool gefunden',
       categories: {},
       finalUrl: paths.boschEbikeProduktkombinationenUrl,
+      deeplinkCheat: false,
     }
     const out = applyNavH3HypothesisFromRuns(
       [

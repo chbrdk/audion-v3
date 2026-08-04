@@ -15,6 +15,7 @@
 | CHECKION fetch-page research fallback | `specs/domain/checkion-fetch-page-research.md` |
 | UX Study workspace | `specs/domain/ux-study-workspace.md` |
 | UX Study fields | `specs/domain/ux-study-fields.md` |
+| UX Lab archetypes | `specs/domain/ux-lab-archetypes.md` |
 | Chat workspace | `specs/domain/chat-workspace.md` |
 | Chat fields | `specs/domain/chat-fields.md` |
 | Project workspace | `specs/domain/project-workspace.md` |

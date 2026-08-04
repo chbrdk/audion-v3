@@ -14,7 +14,16 @@ export type UxHypothesisTemplate = {
   statement: string
 }
 
-export type SoftScoreKey =
+export type SoftScoreCoreKey =
+  | 'ease'
+  | 'findability'
+  | 'clarity'
+  | 'usefulness'
+  | 'likelihood'
+  | 'overall'
+
+/** Legacy EBM / Testbirds Soft-Q keys — domain profile `ebm-produktkombinationen`. */
+export type SoftScoreEbmKey =
   | 'Q1_nuetzlichkeit'
   | 'Q2_bedienbarkeit'
   | 'Q3_filterlogik'
@@ -23,6 +32,62 @@ export type SoftScoreKey =
   | 'Q6_nutzungswahrscheinlichkeit'
   | 'Q7_gesamteindruck'
 
+export type SoftScoreKey = SoftScoreCoreKey | SoftScoreEbmKey
+
+/** Domain Soft-Q profile id — maps core scales onto product keys. */
+export type SoftScoreDomainProfileId = 'ebm-produktkombinationen' | 'core'
+
+export const SOFT_SCORE_CORE_KEYS: SoftScoreCoreKey[] = [
+  'ease',
+  'findability',
+  'clarity',
+  'usefulness',
+  'likelihood',
+  'overall',
+]
+
+export const SOFT_SCORE_EBM_KEYS: SoftScoreEbmKey[] = [
+  'Q1_nuetzlichkeit',
+  'Q2_bedienbarkeit',
+  'Q3_filterlogik',
+  'Q4_auffindbarkeit',
+  'Q5_produktnah_vs_tool',
+  'Q6_nutzungswahrscheinlichkeit',
+  'Q7_gesamteindruck',
+]
+
+/** Core → EBM Soft-Q alias (profile `ebm-produktkombinationen`). */
+export const SOFT_SCORE_CORE_TO_EBM: Record<SoftScoreCoreKey, SoftScoreEbmKey> = {
+  usefulness: 'Q1_nuetzlichkeit',
+  ease: 'Q2_bedienbarkeit',
+  clarity: 'Q3_filterlogik',
+  findability: 'Q4_auffindbarkeit',
+  // Q5 is choice-scale product-near; map overall preference pressure to usefulness band
+  likelihood: 'Q6_nutzungswahrscheinlichkeit',
+  overall: 'Q7_gesamteindruck',
+}
+
+export type UxLabArchetype =
+  | 'first_impression'
+  | 'findability'
+  | 'task_goal'
+  | 'comprehension'
+  | 'segment_contrast'
+  | 'outcome_next_step'
+  | 'recovery'
+  | 'end_to_end'
+
+export type UxSuccessCriteriaKind =
+  | 'url_match'
+  | 'title_match'
+  | 'goal_text'
+  | 'honest_abandon'
+
+export type UxSuccessCriteria = {
+  kind: UxSuccessCriteriaKind
+  /** Regex source for url/title/goal_text matches. */
+  pattern?: string | null
+}
 export type UxStudySummary = {
   id: string
   name: string
@@ -220,10 +285,14 @@ export type UxScenarioPackRun = {
   personaId: string
   personaName: string | null
   segment: string | null
-  /** paths key: bosch.ebike.produktkombinationen | bosch.ebike.home */
+  /** Opaque URL key resolved via registry (`paths` / resolveScenarioPackUrl). */
   urlKey: string
   task: string
   maxSteps: number
+  /** Optional per-run success criteria (overrides pack-level when set). */
+  successCriteria?: UxSuccessCriteria | null
+  /** Optional per-run archetype when pack has mixed slices (e.g. A+C). */
+  archetype?: UxLabArchetype | null
 }
 
 export type UxScenarioPack = {
@@ -235,6 +304,12 @@ export type UxScenarioPack = {
   projectId: string | null
   hypothesisTemplates: UxHypothesisTemplate[]
   softScoreKeys: SoftScoreKey[]
+  /** Soft-Q domain profile; EBM packs use `ebm-produktkombinationen`. */
+  domainProfileId?: SoftScoreDomainProfileId | null
+  /** Primary lab archetype for this pack. */
+  archetype?: UxLabArchetype | null
+  /** Default success criteria (findability URL pattern, etc.). */
+  successCriteria?: UxSuccessCriteria | null
   fFragenPrompts: string[]
   defaultWaveKey: string
   runs: UxScenarioPackRun[]
@@ -246,6 +321,7 @@ export type UxScenarioPackSummary = {
   sourceGuide: string | null
   targetUrlKey: string
   runCount: number
+  archetype?: UxLabArchetype | null
 }
 
 export type UxStudyFromPackPayload = {

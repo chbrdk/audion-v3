@@ -1,17 +1,21 @@
 # Scenario packs (UX Studies)
 
-**Date:** 2026-08-03  
-**Product home:** UX Studies (`/studies`) — not a separate evaluation module
+**Date:** 2026-08-04  
+**Product home:** UX Studies (`/studies`) — not a separate evaluation module  
+**Archetypes SoT:** [`specs/domain/ux-lab-archetypes.md`](../specs/domain/ux-lab-archetypes.md)
 
 ## Purpose
 
-Reusable **Leitfaden → Study + Wave** seeds. Structured packs hold runs, Soft-Q keys, hypotheses, and F-Fragen prompts. PDFs stay reference sources; packs are the machine-readable SoT.
+Reusable **Leitfaden → Study + Wave** seeds. Structured packs hold runs, Soft-Q keys, hypotheses, F-Fragen prompts, **`archetype`**, and optional **`successCriteria`**. PDFs stay reference sources; packs are the machine-readable SoT.
+
+Bosch/EBM packs are a **reference family**, not the product boundary. URL keys resolve via a registry in `resolveScenarioPackUrl` (unknown keys throw; absolute `https` is an escape hatch).
 
 ## EBM pack (first)
 
 | Field | Value |
 |-------|-------|
 | Pack id | `pack-ebm-produktkombinationen` |
+| Archetype | `end_to_end` (full Leitfaden scaffold) |
 | Fixture | `apps/web/lib/fixtures/scenario-packs/ebm-produktkombinationen.ts` |
 | Personas | `persona-alex-nachruester`, `persona-sam-kaufinteressent` |
 | Target URL key | `bosch.ebike.produktkombinationen` → `paths.boschEbikeProduktkombinationenUrl` |
@@ -22,6 +26,7 @@ Reusable **Leitfaden → Study + Wave** seeds. Structured packs hold runs, Soft-
 | Field | Value |
 |-------|-------|
 | Pack id | `paths.personaLabPackId` → `pack-ebm-persona-lab-b` |
+| Archetype | `task_goal` |
 | Anzeigename | **Filter-Matrix: Nachrüsten (ungeduldig + geduldig)** |
 | Fixture | `apps/web/lib/fixtures/scenario-packs/ebm-persona-lab-b.ts` |
 | Personas | Alex fixture → DB `…ungeduldig…` **+** Sam fixture → DB `…geduldig…` via `lab-persona-resolve` |
@@ -34,21 +39,32 @@ Default wave enables impatient vs patient contrast (H5/L4) without manual PATCH.
 
 ## Micro-labs (separate from Lab B)
 
-| Anzeigename | Pack id | Notes |
-|-------------|---------|-------|
-| Auffindbarkeit: Home → Produktkombinationen | `pack-ebm-persona-lab-nav` | Home → tool; `persona-lab-nav-correlate` |
-| Kaufinteressent: passende Displays finden | `pack-ebm-persona-lab-purchase` | Segment Soft-Q contrast |
-| Erstkontakt + Kombinationscheck | `pack-ebm-persona-lab-ac` | Erstkontakt + Kombination, capped |
-| Produktnahe Kurzantwort statt Matrix | `pack-ebm-persona-lab-produktnah` | H4 / Q5 |
-| Nächster Schritt nach der Prüfung | `pack-ebm-persona-lab-next-step` | F3.8 / F3.9 Next Step |
+| Anzeigename | Pack id | Archetype | Notes |
+|-------------|---------|-----------|-------|
+| Auffindbarkeit: Home → Produktkombinationen | `pack-ebm-persona-lab-nav` | `findability` | Home → tool; Nav wraps `lab-archetype-correlate` |
+| Kaufinteressent: passende Displays finden | `pack-ebm-persona-lab-purchase` | `segment_contrast` | Segment Soft-Q contrast |
+| Erstkontakt + Kombinationscheck | `pack-ebm-persona-lab-ac` | `first_impression` + `end_to_end` | Erstkontakt + Kombination, capped |
+| Produktnahe Kurzantwort statt Matrix | `pack-ebm-persona-lab-produktnah` | `comprehension` | H4 / Q5 |
+| Nächster Schritt nach der Prüfung | `pack-ebm-persona-lab-next-step` | `outcome_next_step` | F3.8 / F3.9 Next Step |
 
 Playbook: `knowledge/persona-lab-micro-labs-2026-08-04.md`
 
-After Sync, map the wave run with `waveRunToPersonaLabSnapshot` → `correlatePersonaLabRun`. **closer: true** = within human gold band (high friction, confusion named, step budget, not optimistic).
+## Template pack (non-Bosch)
+
+| Field | Value |
+|-------|-------|
+| Pack id | `paths.labTemplateFindabilityPackId` → `pack-lab-template-findability` |
+| Archetype | `findability` |
+| Soft-Q | Core keys (`domainProfileId: core`) |
+| URL keys | `lab.template.findability.start` → example.org · target pattern `example.com` |
+| Correlate | `lab-archetype-correlate.ts` |
+
+After Sync, map the wave run with `waveRunToPersonaLabSnapshot` → `correlatePersonaLabRun`. **closer: true** = within human gold band (high friction, confusion named, step budget, not optimistic). Findability: `correlateFindabilityRun` / Nav wrapper.
 
 ```bash
-cd apps/web && pnpm exec vitest run __tests__/persona-lab-correlate.test.ts __tests__/lab-persona-resolve.test.ts __tests__/persona-lab-nav-correlate.test.ts __tests__/scenario-packs.test.ts
+cd apps/web && pnpm exec vitest run __tests__/persona-lab-correlate.test.ts __tests__/lab-persona-resolve.test.ts __tests__/persona-lab-nav-correlate.test.ts __tests__/lab-archetype-correlate.test.ts __tests__/scenario-packs.test.ts
 ```
+
 
 ## How to use
 
@@ -62,11 +78,11 @@ API: `GET/POST paths.routes.apiStudiesFromPack` (`/api/studies/from-pack`)
 
 ## Contracts
 
-`UxScenarioPack`, `UxStudyFromPackPayload`, `UxStudyFromPackResult` in `packages/contracts/src/ux-studies.ts`
+`UxScenarioPack`, `UxLabArchetype`, `UxSuccessCriteria`, Soft-Q core + `domainProfileId`, `UxStudyFromPackPayload`, `UxStudyFromPackResult` in `packages/contracts/src/ux-studies.ts`
 
 ## Out of scope (this slice)
 
 - PDF OCR → pack
 - Statistical n=15 / Testbirds sample
 - MCP `run-ebm-*.py` port
-- Live staging runs of Produktnah / Next-Step (post-deploy)
+- Live staging runs of Produktnah / Next-Step / template pack (post-deploy)

@@ -22,6 +22,7 @@ import { EBM_PERSONA_LAB_PURCHASE_PACK } from './fixtures/scenario-packs/ebm-per
 import { EBM_PERSONA_LAB_AC_PACK } from './fixtures/scenario-packs/ebm-persona-lab-ac'
 import { EBM_PERSONA_LAB_PRODUKTNAH_PACK } from './fixtures/scenario-packs/ebm-persona-lab-produktnah'
 import { EBM_PERSONA_LAB_NEXT_STEP_PACK } from './fixtures/scenario-packs/ebm-persona-lab-next-step'
+import { LAB_TEMPLATE_FINDABILITY_PACK } from './fixtures/scenario-packs/lab-template-findability'
 import { storeCreateUxStudy, storeCreateUxWave } from './fixtures/ux-study-store'
 
 const PACKS: UxScenarioPack[] = [
@@ -32,7 +33,16 @@ const PACKS: UxScenarioPack[] = [
   EBM_PERSONA_LAB_AC_PACK,
   EBM_PERSONA_LAB_PRODUKTNAH_PACK,
   EBM_PERSONA_LAB_NEXT_STEP_PACK,
+  LAB_TEMPLATE_FINDABILITY_PACK,
 ]
+
+/** Opaque urlKey → absolute URL. Unknown keys throw (no silent Bosch fallback). */
+const URL_KEY_REGISTRY: Record<string, string> = {
+  'bosch.ebike.home': paths.boschEbikeHomeUrl,
+  'bosch.ebike.produktkombinationen': paths.boschEbikeProduktkombinationenUrl,
+  [paths.labTemplateFindabilityStartUrlKey]: paths.labTemplateFindabilityStartUrl,
+  [paths.labTemplateFindabilityTargetUrlKey]: paths.labTemplateFindabilityTargetUrl,
+}
 
 export function listScenarioPacks(): UxScenarioPackSummary[] {
   return PACKS.map((p) => ({
@@ -41,6 +51,7 @@ export function listScenarioPacks(): UxScenarioPackSummary[] {
     sourceGuide: p.sourceGuide,
     targetUrlKey: p.targetUrlKey,
     runCount: p.runs.length,
+    archetype: p.archetype ?? null,
   }))
 }
 
@@ -49,13 +60,12 @@ export function getScenarioPack(packId: string): UxScenarioPack | null {
 }
 
 export function resolveScenarioPackUrl(urlKey: string): string {
-  if (urlKey === 'bosch.ebike.home') return paths.boschEbikeHomeUrl
-  if (urlKey === 'bosch.ebike.produktkombinationen') {
-    return paths.boschEbikeProduktkombinationenUrl
-  }
-  // Fallback: treat as absolute URL only when it looks like one (still prefer keys)
+  const mapped = URL_KEY_REGISTRY[urlKey]
+  if (mapped) return mapped
   if (/^https?:\/\//i.test(urlKey)) return urlKey
-  return paths.boschEbikeProduktkombinationenUrl
+  throw new Error(
+    `Unknown scenario pack urlKey "${urlKey}". Register it in resolveScenarioPackUrl / paths, or pass an absolute https URL.`,
+  )
 }
 
 export function packRunsToWaveRuns(pack: UxScenarioPack): UxWaveRunItem[] {
@@ -90,11 +100,17 @@ export function packRunsToWaveRuns(pack: UxScenarioPack): UxWaveRunItem[] {
 }
 
 export function emptySoftScoreShell(keys: SoftScoreKey[]) {
-  const soft: Partial<Record<SoftScoreKey, { scale: string; value: null; confidence: number; rationale: string }>> =
-    {}
+  const soft: Partial<
+    Record<SoftScoreKey, { scale: string; value: null; confidence: number; rationale: string }>
+  > = {}
   for (const key of keys) {
     soft[key] = {
-      scale: key === 'Q7_gesamteindruck' ? '1-6_schulnote' : key === 'Q5_produktnah_vs_tool' ? 'choice' : '1-5',
+      scale:
+        key === 'Q7_gesamteindruck' || key === 'overall'
+          ? '1-6_schulnote'
+          : key === 'Q5_produktnah_vs_tool'
+            ? 'choice'
+            : '1-5',
       value: null,
       confidence: 0,
       rationale: '',

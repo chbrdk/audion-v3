@@ -29,6 +29,9 @@ export const EBM_PERSONA_LAB_NAV_PACK: UxScenarioPack = {
   projectId: 'proj-audion-core',
   hypothesisTemplates: NAV_HYPOTHESES.map((h) => ({ ...h })),
   softScoreKeys: SOFT_KEYS,
+  domainProfileId: 'ebm-produktkombinationen',
+  archetype: 'findability',
+  successCriteria: { kind: 'url_match', pattern: 'produktkombinationen' },
   fFragenPrompts: [
     'F4.2 Wie leicht findest du den Einstieg zum Produktkombinationen-Tool?',
     'F4.4 Gab es einen natürlichen Next Step vom Produkt-/Service-Kontext zum Tool?',

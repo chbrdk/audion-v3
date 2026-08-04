@@ -28,9 +28,10 @@ describe('scenario packs + EBM retest', () => {
       paths.personaLabAcPackId,
       paths.personaLabProduktnahPackId,
       paths.personaLabNextStepPackId,
+      paths.labTemplateFindabilityPackId,
     ]
     expect(labIds.every((id) => packs.some((p) => p.id === id))).toBe(true)
-    expect(packs).toHaveLength(7)
+    expect(packs).toHaveLength(8)
     const pack = getScenarioPack('pack-ebm-produktkombinationen')
     expect(pack?.runs.length).toBeGreaterThanOrEqual(5)
     expect(pack?.runs.every((r) => r.maxSteps > 0)).toBe(true)
@@ -38,6 +39,27 @@ describe('scenario packs + EBM retest', () => {
       paths.boschEbikeProduktkombinationenUrl,
     )
     expect(resolveScenarioPackUrl('bosch.ebike.home')).toBe(paths.boschEbikeHomeUrl)
+    expect(() => resolveScenarioPackUrl('unknown.product.key')).toThrow(/Unknown scenario pack urlKey/)
+  })
+
+  it('annotates packs with archetype (Bosch = reference family)', () => {
+    const expected: Record<string, string> = {
+      'pack-ebm-produktkombinationen': 'end_to_end',
+      [paths.personaLabPackId]: 'task_goal',
+      [paths.personaLabNavPackId]: 'findability',
+      [paths.personaLabPurchasePackId]: 'segment_contrast',
+      [paths.personaLabAcPackId]: 'first_impression',
+      [paths.personaLabProduktnahPackId]: 'comprehension',
+      [paths.personaLabNextStepPackId]: 'outcome_next_step',
+      [paths.labTemplateFindabilityPackId]: 'findability',
+    }
+    for (const [id, archetype] of Object.entries(expected)) {
+      const summary = listScenarioPacks().find((p) => p.id === id)
+      expect(summary?.archetype).toBe(archetype)
+      expect(getScenarioPack(id)?.archetype).toBe(archetype)
+    }
+    const ac = getScenarioPack(paths.personaLabAcPackId)
+    expect(ac?.runs.map((r) => r.archetype)).toEqual(['first_impression', 'end_to_end'])
   })
 
   it('lab packs expose German display names, stable runKeys, and hypothesis templates', () => {

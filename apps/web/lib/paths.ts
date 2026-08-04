@@ -70,7 +70,11 @@ export const paths = {
   personaLabAcPackId: 'pack-ebm-persona-lab-ac',
   personaLabProduktnahPackId: 'pack-ebm-persona-lab-produktnah',
   personaLabNextStepPackId: 'pack-ebm-persona-lab-next-step',
+  /** Non-Bosch findability template (example.org). */
+  labTemplateFindabilityPackId: 'pack-lab-template-findability',
   personaLabMicroLabsKnowledgePath: 'knowledge/persona-lab-micro-labs-2026-08-04.md',
+  uxLabArchetypesSpecPath: 'specs/domain/ux-lab-archetypes.md',
+  labArchetypeCorrelatePath: 'apps/web/lib/lab-archetype-correlate.ts',
   personaLabNavCorrelatePath: 'apps/web/lib/persona-lab-nav-correlate.ts',
   personaLabCorrelatePath: 'apps/web/lib/persona-lab-correlate.ts',
   personaLabKnowledgePath: 'knowledge/persona-iteration-lab-2026-08-03.md',
@@ -97,6 +101,14 @@ export const paths = {
   boschEbikeProduktkombinationenUrl:
     'https://www.bosch-ebike.com/de/service/produktkombinationen',
   boschEbikeHomeUrl: 'https://www.bosch-ebike.com/de/',
+  /**
+   * Non-product findability template start/target (IANA example domains — stable, no CloudFront).
+   * @see pack-lab-template-findability
+   */
+  labTemplateFindabilityStartUrl: 'https://example.org/',
+  labTemplateFindabilityTargetUrl: 'https://example.com/',
+  labTemplateFindabilityStartUrlKey: 'lab.template.findability.start',
+  labTemplateFindabilityTargetUrlKey: 'lab.template.findability.target',
   /** Official press release (accessible when CloudFront blocks bot UAs on bosch-ebike.com). */
   boschEbikePressHubMotorUrl:
     'https://www.bosch-presse.de/pressportal/de/de/das-warten-hat-sich-gelohnt-bosch-ebike-systems-bringt-ersten-nabenmotor-283392.html',

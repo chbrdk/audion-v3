@@ -30,6 +30,8 @@ export const EBM_PERSONA_LAB_PRODUKTNAH_PACK: UxScenarioPack = {
   projectId: 'proj-audion-core',
   hypothesisTemplates: PRODUKTNAH_HYPOTHESES.map((h) => ({ ...h })),
   softScoreKeys: SOFT_KEYS,
+  domainProfileId: 'ebm-produktkombinationen',
+  archetype: 'comprehension',
   fFragenPrompts: [
     'F3.1 Wie einfach/schwer war die Antwort zu finden?',
     'F3.4 Hast du das Gefühl, deine Frage beantwortet bekommen zu haben – was fehlte?',

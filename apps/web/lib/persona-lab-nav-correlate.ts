@@ -1,12 +1,18 @@
 /**
- * Persona Lab Nav correlator — H3: final URL/title must match Produktkombinationen tool.
- * Pure / fixture-friendly. Use after Sync or with synthetic snapshots.
+ * Persona Lab Nav correlator — EBM findability wrapper over generic archetype correlate.
+ * Success pattern defaults to Produktkombinationen; prefer pack successCriteria when present.
  *
+ * @see specs/domain/ux-lab-archetypes.md
  * @see knowledge/persona-lab-micro-labs-2026-08-04.md
  */
 
 import type { UxHypothesisResult, UxWaveRunItem } from '@audion-v3/contracts'
 import { paths } from './paths'
+import {
+  correlateFindabilityRun,
+  matchesSuccessPattern,
+  type FindabilitySnapshot,
+} from './lab-archetype-correlate'
 
 const TOOL_URL_RE = /produktkombinationen/i
 const TOOL_TITLE_RES: RegExp[] = [
@@ -14,6 +20,11 @@ const TOOL_TITLE_RES: RegExp[] = [
   /product\s*combinati/i,
   /kompatibilit/i,
 ]
+
+export const EBM_FINDABILITY_SUCCESS = {
+  kind: 'url_match' as const,
+  pattern: 'produktkombinationen',
+}
 
 export type PersonaLabNavGold = {
   packId: string
@@ -33,14 +44,14 @@ export type PersonaLabNavSnapshot = {
   runKey: string
   steps: number | null
   maxSteps: number | null
-  /** Final page URL from agent job / run extras. */
   finalUrl: string | null
-  /** Final document title when available. */
   finalTitle: string | null
   finding: string | null
   narrativeBlob: string
   goalReached: boolean | null
   blockers: string[]
+  deeplinkCheat?: boolean | null
+  startUrl?: string | null
 }
 
 export type PersonaLabNavCheckId =
@@ -51,6 +62,7 @@ export type PersonaLabNavCheckId =
   | 'url_matches_tool'
   | 'title_or_narrative_tool'
   | 'started_not_on_tool'
+  | 'no_deeplink_cheat'
 
 export type PersonaLabNavCheck = {
   id: PersonaLabNavCheckId
@@ -69,8 +81,7 @@ export type PersonaLabNavCorrelateResult = {
 }
 
 export function toolUrlMatches(url: string | null | undefined): boolean {
-  if (!url?.trim()) return false
-  return TOOL_URL_RE.test(url)
+  return matchesSuccessPattern(EBM_FINDABILITY_SUCCESS, { url })
 }
 
 export function toolTitleMatches(title: string | null | undefined): boolean {
@@ -98,6 +109,8 @@ export function waveRunToPersonaLabNavSnapshot(
       [run.finding, run.validEvidenceCaveat, run.task].filter(Boolean).join('\n'),
     goalReached: run.goalReached,
     blockers: run.blockers ?? [],
+    deeplinkCheat: run.deeplinkCheat ?? null,
+    startUrl: run.url ?? null,
   }
 }
 
@@ -181,81 +194,61 @@ export function applyNavH3HypothesisFromRuns(
   }
 }
 
+const CHECK_ID_MAP: Record<string, PersonaLabNavCheckId> = {
+  run_key: 'run_key',
+  infra_clean: 'infra_clean',
+  usable_run: 'usable_run',
+  step_budget: 'step_budget',
+  url_matches: 'url_matches_tool',
+  title_or_narrative: 'title_or_narrative_tool',
+  started_off_target: 'started_not_on_tool',
+  no_deeplink_cheat: 'no_deeplink_cheat',
+}
+
 export function correlatePersonaLabNavRun(
   snap: PersonaLabNavSnapshot,
   gold: PersonaLabNavGold = PERSONA_LAB_NAV_GOLD,
 ): PersonaLabNavCorrelateResult {
-  const blob = `${snap.narrativeBlob}\n${snap.finding ?? ''}`
-  const infraClean = !(snap.blockers || []).some((b) =>
-    /cloudfront|403|infra/i.test(b),
-  )
-  const usable =
-    (snap.steps ?? 0) > 0 &&
-    !/agent error|cancelled|empty summary/i.test(snap.finding ?? '')
-  const urlOk = toolUrlMatches(snap.finalUrl)
-  const titleOk =
-    toolTitleMatches(snap.finalTitle) || TOOL_URL_RE.test(blob) || TOOL_TITLE_RES.some((re) => re.test(blob))
-  const startedOffTool = !toolUrlMatches(paths.boschEbikeHomeUrl) // home is never tool
-  const withinBudget =
-    snap.steps == null ||
-    (snap.steps <= (snap.maxSteps ?? gold.maxStepsCap) && snap.steps <= gold.maxStepsCap)
-
-  const checks: PersonaLabNavCheck[] = [
-    {
-      id: 'run_key',
-      label: 'Nav run key',
-      pass: snap.runKey === gold.runKey,
-      weight: 1,
-      detail: snap.runKey,
-    },
-    {
-      id: 'infra_clean',
-      label: 'No infra blocker',
-      pass: infraClean,
-      weight: 2,
-      detail: (snap.blockers || []).join(',') || 'ok',
-    },
-    {
-      id: 'usable_run',
-      label: 'Usable agent run',
-      pass: usable,
-      weight: 2,
-      detail: `steps=${snap.steps} finding=${snap.finding ?? ''}`,
-    },
-    {
-      id: 'step_budget',
-      label: 'Within step budget',
-      pass: withinBudget,
-      weight: 1,
-      detail: `steps=${snap.steps} cap=${gold.maxStepsCap}`,
-    },
-    {
-      id: 'url_matches_tool',
-      label: 'Final URL is Produktkombinationen',
-      pass: urlOk,
-      weight: 3,
-      detail: snap.finalUrl ?? '(missing)',
-    },
-    {
-      id: 'title_or_narrative_tool',
-      label: 'Title or narrative names tool page',
-      pass: titleOk,
-      weight: 2,
-      detail: snap.finalTitle ?? clip(blob, 80),
-    },
-    {
-      id: 'started_not_on_tool',
-      label: 'Pack starts on home (not tool)',
-      pass: startedOffTool,
-      weight: 1,
-      detail: paths.boschEbikeHomeUrl,
-    },
-  ]
-
+  const findSnap: FindabilitySnapshot = {
+    runKey: snap.runKey,
+    steps: snap.steps,
+    maxSteps: snap.maxSteps,
+    finalUrl: snap.finalUrl,
+    finalTitle: snap.finalTitle,
+    finding: snap.finding,
+    narrativeBlob: snap.narrativeBlob,
+    goalReached: snap.goalReached,
+    blockers: snap.blockers,
+    deeplinkCheat: snap.deeplinkCheat ?? false,
+    startUrl: snap.startUrl ?? paths.boschEbikeHomeUrl,
+  }
+  const result = correlateFindabilityRun(findSnap, {
+    runKey: gold.runKey,
+    maxStepsCap: gold.maxStepsCap,
+    closerScoreThreshold: gold.closerScoreThreshold,
+    successCriteria: EBM_FINDABILITY_SUCCESS,
+    requireStartedOffTarget: true,
+  })
+  const titleExtra =
+    toolTitleMatches(snap.finalTitle) ||
+    TOOL_URL_RE.test(snap.narrativeBlob) ||
+    TOOL_TITLE_RES.some((re) => re.test(snap.narrativeBlob))
+  const checks: PersonaLabNavCheck[] = result.checks.map((c) => ({
+    id: CHECK_ID_MAP[c.id] ?? (c.id as PersonaLabNavCheckId),
+    label: c.id === 'url_matches' ? 'Final URL is Produktkombinationen' : c.label,
+    pass: c.id === 'title_or_narrative' ? c.pass || titleExtra : c.pass,
+    weight: c.weight,
+    detail: c.detail,
+  }))
   const weightSum = checks.reduce((s, c) => s + c.weight, 0)
   const earned = checks.reduce((s, c) => s + (c.pass ? c.weight : 0), 0)
   const score = weightSum > 0 ? earned / weightSum : 0
-  const closer = score >= gold.closerScoreThreshold && urlOk && infraClean && usable
+  const urlOk = Boolean(checks.find((c) => c.id === 'url_matches_tool')?.pass)
+  const infraClean = Boolean(checks.find((c) => c.id === 'infra_clean')?.pass)
+  const usable = Boolean(checks.find((c) => c.id === 'usable_run')?.pass)
+  const noCheat = Boolean(checks.find((c) => c.id === 'no_deeplink_cheat')?.pass)
+  const closer =
+    score >= gold.closerScoreThreshold && urlOk && infraClean && usable && noCheat
 
   return {
     closer,
@@ -266,11 +259,6 @@ export function correlatePersonaLabNavRun(
       : 'gap — missing tool URL/title or unusable run',
     gold,
   }
-}
-
-function clip(text: string, n: number): string {
-  const t = text.replace(/\s+/g, ' ').trim()
-  return t.length <= n ? t : `${t.slice(0, n - 1)}…`
 }
 
 /** Synthetic pass fixture for unit tests. */
@@ -285,6 +273,8 @@ export function navGoldSnapshot(): PersonaLabNavSnapshot {
     narrativeBlob: 'Von Home über Service zu Produktkombinationen navigiert.',
     goalReached: true,
     blockers: [],
+    deeplinkCheat: false,
+    startUrl: paths.boschEbikeHomeUrl,
   }
 }
 
@@ -300,5 +290,7 @@ export function navMissedToolSnapshot(): PersonaLabNavSnapshot {
     narrativeBlob: 'Auf der Startseite geblieben, Tool nicht gefunden.',
     goalReached: false,
     blockers: [],
+    deeplinkCheat: false,
+    startUrl: paths.boschEbikeHomeUrl,
   }
 }

@@ -26,6 +26,9 @@ export const EBM_PRODUKTKOMBINATIONEN_PACK: UxScenarioPack = {
   projectId: 'proj-audion-core',
   hypothesisTemplates: EBM_HYPOTHESES.map((h) => ({ ...h })),
   softScoreKeys: SOFT_KEYS,
+  domainProfileId: 'ebm-produktkombinationen',
+  /** Full Leitfaden pack spans multiple slices; primary = end-to-end study scaffold. */
+  archetype: 'end_to_end',
   fFragenPrompts: [
     'F2.1 Was ist der Zweck dieser Seite?',
     'F2.2 Was fällt dir als Erstes auf?',

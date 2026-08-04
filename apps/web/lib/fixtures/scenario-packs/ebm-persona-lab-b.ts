@@ -40,6 +40,8 @@ export const EBM_PERSONA_LAB_B_PACK: UxScenarioPack = {
   projectId: 'proj-audion-core',
   hypothesisTemplates: LAB_HYPOTHESES.map((h) => ({ ...h })),
   softScoreKeys: SOFT_KEYS,
+  domainProfileId: 'ebm-produktkombinationen',
+  archetype: 'task_goal',
   fFragenPrompts: [
     'F3.1 Wie einfach/schwer war die Antwort zu finden?',
     'F3.2 Hat sich das Tool wie erwartet verhalten – was hat überrascht?',
