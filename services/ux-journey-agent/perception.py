@@ -403,23 +403,24 @@ def try_before_abandon_required(
     """
     Min exploratory actions after the first confusion cue before hard abandon / L2 force.
 
-    Env ``UX_JOURNEY_TRY_BEFORE_ABANDON`` (default **1**) is the impatient floor.
-    Patient / low time_pressure and high exploration raise the budget (satisficing).
+    Env ``UX_JOURNEY_TRY_BEFORE_ABANDON`` (default **3**) is the impatient floor —
+    targets ~4–6 steps for impatient Alex (navigate + tries + done) while patient
+    personas still get a higher budget (Sam contrast).
     """
-    raw = (os.environ.get("UX_JOURNEY_TRY_BEFORE_ABANDON") or "1").strip()
+    raw = (os.environ.get("UX_JOURNEY_TRY_BEFORE_ABANDON") or "3").strip()
     try:
         base = int(raw)
     except ValueError:
-        base = 1
-    base = max(0, min(base, 5))
+        base = 3
+    base = max(0, min(base, 6))
     tp = 0.5 if time_pressure is None else float(time_pressure)
     if tp <= 0.35:
         # Patient / satisficing: try more before quit
-        base = min(5, max(base, base + 2))
+        base = min(6, max(base, base + 2))
     elif tp < 0.75:
-        base = min(5, max(base, base + 1))
+        base = min(6, max(base, base + 1))
     if exploration is not None and float(exploration) >= 0.65:
-        base = min(5, base + 1)
+        base = min(6, base + 1)
     return base
 
 

@@ -73,6 +73,7 @@ def test_counter_arms_force_after_threshold(monkeypatch):
 
 def test_public_snapshot_is_json_safe(monkeypatch):
     monkeypatch.setenv("UX_JOURNEY_CONFUSION_ABANDON", "1")
+    monkeypatch.setenv("UX_JOURNEY_TRY_BEFORE_ABANDON", "3")
     state = ux_main._new_confusion_abandon_state(0.9)
     state["seenSteps"].add(1)
     state["count"] = 1
@@ -80,7 +81,7 @@ def test_public_snapshot_is_json_safe(monkeypatch):
     pub = ux_main._confusion_abandon_public(state)
     assert pub["enabled"] is True
     assert pub["count"] == 1
-    assert pub["tryBeforeAbandon"] == 1
+    assert pub["tryBeforeAbandon"] == 3
     assert pub["cues"][0]["step"] == 1
     assert "seenSteps" not in pub
 

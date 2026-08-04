@@ -2,21 +2,21 @@
 
 **Date:** 2026-08-03  
 **Code:** `services/ux-journey-agent/perception.py` · L2 gate in `main.py`  
-**Env:** `UX_JOURNEY_TRY_BEFORE_ABANDON` (default **1**)  
+**Env:** `UX_JOURNEY_TRY_BEFORE_ABANDON` (default **3**)  
 **Tests:** `test_perception.py` (`test_try_then_quit_*`, satisficing budget) · `test_confusion_abandon.py`
 
 ## Why
 
-Humans with high time pressure still **try 1–2 interactions** (scroll / probe click) before quitting. Lab B smoke with hard abandon often exited at step 2 with immediate `stance=abandon` — too abrupt vs EBM owner behaviour.
+Humans with high time pressure still **try several interactions** (scroll / probe click) before quitting. Early hard abandon exited at ~2–3 steps — too abrupt vs EBM owner behaviour. Default try floor **3** targets impatient Alex in the **4–6** step band (see `knowledge/lab-try-budget-4-6-2026-08-04.md`).
 
 ## Behaviour
 
 | Persona | Try budget (default) |
 |---------|----------------------|
-| Impatient `time_pressure ≥ 0.75` | env base (**1**) |
+| Impatient `time_pressure ≥ 0.75` | env base (**3**) |
 | Mid pressure | base + 1 |
 | Patient `≤ 0.35` | base + 2 (satisficing) |
-| High `exploration ≥ 0.65` | +1 (cap 5) |
+| High `exploration ≥ 0.65` | +1 (cap 6) |
 
 After the first confusion / grey-filter cue:
 
@@ -46,10 +46,11 @@ cd services/ux-journey-agent
 python3 -m pytest test_perception.py test_confusion_abandon.py -q
 ```
 
-Staging expect after deploy: Alex steps typically **3–8** (not always 2), friction 7–10, Soft-Q≈2, abandon still named after try.
+Staging expect after deploy: Alex steps typically **4–6**, friction 7–10, Soft-Q≈2, abandon still named after try. Sam steps **> Alex**.
 
-**Staging smoke 2026-08-03:** Alex seeds **3**+**3** steps, fric 8, Soft-Q 2/2; Sam patient **6** steps — `knowledge/lab-staging-smoke-try-then-quit-2026-08-03.md`.
+**Staging smoke 2026-08-03:** Alex seeds **3**+**3** steps (try floor was 1) — see `lab-staging-smoke-try-then-quit-2026-08-03.md`.  
+**2026-08-04:** default try floor raised to **3** — `knowledge/lab-try-budget-4-6-2026-08-04.md`.
 
 ## Next (out of scope here)
 
-Full Nav-proof H3 / purchase / A+C multi-run waves — see `knowledge/persona-iteration-lab-2026-08-03.md` Extra levers.
+Nav / Purchase / A+C micro-labs — `knowledge/persona-lab-micro-labs-2026-08-04.md`.

@@ -66,7 +66,7 @@ See `knowledge/lab-try-then-quit-2026-08-03.md`.
 
 | Lever | Behavior |
 |-------|----------|
-| `UX_JOURNEY_TRY_BEFORE_ABANDON` | Default **1** exploratory action after first confusion before hard abandon / L2 force |
+| `UX_JOURNEY_TRY_BEFORE_ABANDON` | Default **3** exploratory actions after first confusion before hard abandon / L2 force (Alex ~4–6 steps) |
 | Soften | First confused step → `hesitate` (`stanceSoftened`) even if model said abandon |
 | Hard upgrade | After try budget + persistent cues / low clarity → `stance=abandon` |
 | Satisficing | Patient / low tp / high exploration → higher try budget |
@@ -77,7 +77,7 @@ Staging expect: Alex steps **3–8** (not always 2), friction 7–10, Soft-Q Q2/
 
 ## Soft-Q L6b
 
-Leave **OFF** on staging (`AUDION_SOFT_Q_LLM_ASSIST` unset). Enable only after try-then-quit smokes show stable Soft-Q drift needing rationale polish — see `knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md`.
+Leave Soft-Q L6b **ON** on staging when clamp-safe (`AUDION_SOFT_Q_LLM_ASSIST=1`) — see `knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md`. Rule draft still floors Q2/Q3≈2 for Lab B.
 
 ## Human gold (P3)
 

@@ -214,12 +214,31 @@ def test_try_then_quit_softens_first_confused_step():
 
 def test_try_before_abandon_satisficing_budget(monkeypatch):
     monkeypatch.delenv("UX_JOURNEY_TRY_BEFORE_ABANDON", raising=False)
-    assert P.try_before_abandon_required(0.9) == 1
-    assert P.try_before_abandon_required(0.5) == 2
-    assert P.try_before_abandon_required(0.2) == 3
-    assert P.try_before_abandon_required(0.9, exploration=0.8) == 2
+    # Default impatient floor 3 → Alex ~4–6 steps; patient still higher.
+    assert P.try_before_abandon_required(0.9) == 3
+    assert P.try_before_abandon_required(0.5) == 4
+    assert P.try_before_abandon_required(0.2) == 5
+    assert P.try_before_abandon_required(0.9, exploration=0.8) == 4
+    assert P.try_before_abandon_required(0.2) > P.try_before_abandon_required(0.9)
     monkeypatch.setenv("UX_JOURNEY_TRY_BEFORE_ABANDON", "0")
     assert P.try_before_abandon_required(0.9) == 0
+    monkeypatch.setenv("UX_JOURNEY_TRY_BEFORE_ABANDON", "2")
+    assert P.try_before_abandon_required(0.9) == 2
+    assert P.try_before_abandon_required(0.2) == 4
+
+
+def test_try_before_abandon_impatient_band_for_4_to_6_steps(monkeypatch):
+    """Impatient try budget of 3 implies navigate + tries + done ≈ 4–6 steps."""
+    monkeypatch.delenv("UX_JOURNEY_TRY_BEFORE_ABANDON", raising=False)
+    impatient_tries = P.try_before_abandon_required(0.9)
+    patient_tries = P.try_before_abandon_required(0.2)
+    assert 3 <= impatient_tries <= 4
+    # Rough step band: 1 navigate + tries + 1 done
+    alex_steps_est = 1 + impatient_tries + 1
+    assert 4 <= alex_steps_est <= 6
+    assert patient_tries > impatient_tries
+    sam_steps_est = 1 + patient_tries + 1
+    assert sam_steps_est > alex_steps_est
 
 
 def test_felt_state_counts_exploratory_and_persist_low_clarity():
