@@ -4048,19 +4048,35 @@ async def run_agent(
                         felt_state["menuWaitUsed"] = True
                     if dom_reason == "nav_dom_menu_hover":
                         felt_state["menuHoverUsed"] = True
+                    if dom_reason == "nav_dom_service_cdp_click":
+                        felt_state["menuClickUsed"] = True
+                        # Allow one post-click paint wait before opener_spent.
+                        felt_state["menuWaitUsed"] = False
                     if dom_reason in (
                         "nav_dom_service_coordinate",
                         "nav_dom_service_click",
                         "nav_dom_service_cdp_click",
                         "nav_dom_product_index",
                     ):
-                        felt_state["menuClickUsed"] = True
+                        if dom_reason != "nav_dom_service_cdp_click":
+                            felt_state["menuClickUsed"] = True
                         _record_nav_coord(
                             {
                                 "coordinate_x": params.get("coordinate_x"),
                                 "coordinate_y": params.get("coordinate_y"),
                             }
                         )
+                    if dom_reason == "nav_dom_menu_hover":
+                        _record_nav_coord(
+                            {
+                                "coordinate_x": params.get("coordinate_x"),
+                                "coordinate_y": params.get("coordinate_y"),
+                            }
+                        )
+                        felt_state["menuHoverCoords"] = {
+                            "coordinate_x": params.get("coordinate_x"),
+                            "coordinate_y": params.get("coordinate_y"),
+                        }
 
                 async def _force_done_schema(reason: str) -> None:
                     """Last-resort done (stance abandon / empty filter) — still needs PERCEPTION."""
@@ -4353,11 +4369,22 @@ async def run_agent(
                     if dom_reason == "nav_dom_service_cdp_click":
                         vx = dom_action.get("coordinate_x")
                         vy = dom_action.get("coordinate_y")
+                        # Prefer the same coords that already hovered the opener.
+                        hover_c = felt_state.get("menuHoverCoords") or {}
+                        if isinstance(hover_c.get("coordinate_x"), (int, float)):
+                            vx = hover_c["coordinate_x"]
+                        if isinstance(hover_c.get("coordinate_y"), (int, float)):
+                            vy = hover_c["coordinate_y"]
                         if isinstance(vx, (int, float)) and isinstance(vy, (int, float)):
-                            clicked = await _cdp_mouse_click(agent, float(vx), float(vy))
+                            # Sweep nearby X — synthetic ordinal can miss the Service cell.
+                            oks = []
+                            for dx in (0, -100, 100, -180, 180):
+                                cx = max(40, min(1200, float(vx) + dx))
+                                ok = await _cdp_mouse_click(agent, cx, float(vy))
+                                oks.append((int(cx), ok))
                             print(
-                                f"ux-journey: job={job_id} cdp_click "
-                                f"({int(vx)},{int(vy)}) ok={clicked}",
+                                f"ux-journey: job={job_id} cdp_click_sweep "
+                                f"y={int(vy)} hits={oks}",
                                 flush=True,
                             )
                             felt_state["menuClickUsed"] = True
