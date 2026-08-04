@@ -1,6 +1,6 @@
-"""Cloud browser service integration for browser-use.
+"""Cloud browser service integration for audion-agent.
 
-This module provides integration with the browser-use cloud browser service.
+This module provides integration with the audion-agent cloud browser service.
 When cloud_browser=True, it automatically creates a cloud browser instance
 and returns the CDP URL for connection.
 """
@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class CloudBrowserClient:
-	"""Client for browser-use cloud browser service."""
+	"""Client for audion-agent cloud browser service."""
 
-	def __init__(self, api_base_url: str = 'https://api.browser-use.com'):
+	def __init__(self, api_base_url: str = 'https://api.audion-agent.com'):
 		self.api_base_url = api_base_url
 		self.client = httpx.AsyncClient(timeout=30.0)
 		self.current_session_id: str | None = None
@@ -27,7 +27,7 @@ class CloudBrowserClient:
 	async def create_browser(
 		self, request: CreateBrowserRequest, extra_headers: dict[str, str] | None = None
 	) -> CloudBrowserResponse:
-		"""Create a new cloud browser instance. For full docs refer to https://docs.cloud.browser-use.com/api-reference/v-2-api-current/browsers/create-browser-session-browsers-post
+		"""Create a new cloud browser instance. For full docs refer to https://docs.cloud.audion-agent.com/api-reference/v-2-api-current/browsers/create-browser-session-browsers-post
 
 		Args:
 			request: CreateBrowserRequest object containing browser creation parameters
@@ -50,7 +50,8 @@ class CloudBrowserClient:
 
 		if not api_token:
 			raise CloudBrowserAuthError(
-				'No authentication token found. Please set BROWSER_USE_API_KEY environment variable to authenticate with the cloud service. You can also create an API key at https://cloud.browser-use.com/new-api-key'
+				'BROWSER_USE_API_KEY is not set. To use cloud browsers, get a key at:\n'
+				'https://cloud.audion-agent.com/new-api-key?utm_source=oss&utm_medium=use_cloud'
 			)
 
 		headers = {'X-Browser-Use-API-Key': api_token, 'Content-Type': 'application/json', **(extra_headers or {})}
@@ -65,10 +66,11 @@ class CloudBrowserClient:
 
 			if response.status_code == 401:
 				raise CloudBrowserAuthError(
-					'Authentication failed. Please make sure you have set BROWSER_USE_API_KEY environment variable to authenticate with the cloud service. You can also create an API key at https://cloud.browser-use.com/new-api-key'
+					'BROWSER_USE_API_KEY is invalid. Get a new key at:\n'
+					'https://cloud.audion-agent.com/new-api-key?utm_source=oss&utm_medium=use_cloud'
 				)
 			elif response.status_code == 403:
-				raise CloudBrowserAuthError('Access forbidden. Please check your browser-use cloud subscription status.')
+				raise CloudBrowserAuthError('Access forbidden. Please check your audion-agent cloud subscription status.')
 			elif not response.is_success:
 				error_msg = f'Failed to create cloud browser: HTTP {response.status_code}'
 				try:
@@ -137,7 +139,8 @@ class CloudBrowserClient:
 
 		if not api_token:
 			raise CloudBrowserAuthError(
-				'No authentication token found. Please set BROWSER_USE_API_KEY environment variable to authenticate with the cloud service. You can also create an API key at https://cloud.browser-use.com/new-api-key'
+				'BROWSER_USE_API_KEY is not set. To use cloud browsers, get a key at:\n'
+				'https://cloud.audion-agent.com/new-api-key?utm_source=oss&utm_medium=use_cloud'
 			)
 
 		headers = {'X-Browser-Use-API-Key': api_token, 'Content-Type': 'application/json', **(extra_headers or {})}

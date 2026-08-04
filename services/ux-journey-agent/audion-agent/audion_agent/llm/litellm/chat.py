@@ -4,7 +4,7 @@ ChatLiteLLM - LiteLLM chat model wrapper.
 Requires the `litellm` package to be installed separately:
     pip install litellm
 
-Note: litellm is NOT included as a dependency of browser-use.
+Note: litellm is NOT included as a dependency of audion-agent.
 """
 
 import logging

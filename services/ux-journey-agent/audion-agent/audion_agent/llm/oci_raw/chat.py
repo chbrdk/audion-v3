@@ -1,5 +1,5 @@
 """
-OCI Raw API chat model integration for browser-use.
+OCI Raw API chat model integration for audion-agent.
 
 This module provides direct integration with Oracle Cloud Infrastructure's
 Generative AI service using raw API calls without Langchain dependencies.
@@ -35,9 +35,9 @@ T = TypeVar('T', bound=BaseModel)
 @dataclass
 class ChatOCIRaw(BaseChatModel):
 	"""
-	A direct OCI Raw API integration for browser-use that bypasses Langchain.
+	A direct OCI Raw API integration for audion-agent that bypasses Langchain.
 
-	This class provides a browser-use compatible interface for OCI GenAI models
+	This class provides a audion-agent compatible interface for OCI GenAI models
 	using direct API calls to Oracle Cloud Infrastructure.
 
 	Args:

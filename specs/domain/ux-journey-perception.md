@@ -61,6 +61,20 @@ Extra −1 when `detail_orientation` < 0.35 (min 2). Extra +1 when ≥ 0.75 (max
 7. L2 regex confusion-abandon remains safety net — also gated on try-then-quit exploratory budget.  
 8. Felt-state continuity: `clarityTrend` / `exploratoryAttempts` injected next step; prefer abandon when clarity stays low across steps after try budget.
 
+## UI path-finding (site-agnostic)
+
+For tasks that ask the persona to **find a destination via the UI** (start on home / “finde den Weg” / “nicht direkt im Tool”), runtime steers like a real user: visible labels and menus only — no site allowlists, no invented deep links.
+
+1. While the current URL does not yet contain **task-derived target keywords**, treat the problem as **path-finding first**, not destination-tool interpretation.
+2. Keywords (openers + targets) come **only from the task text** (e.g. Service, Beratung, Produktkombinationen). Do not inject brand- or fixture-only defaults.
+3. If a visible selector-map node exposes the target, prefer a direct indexed `click`.
+4. Otherwise prefer opening the nearest matching nav label. Aggregated top-nav nodes use a **coordinate-only** click near the matching label — never `hover` (removed in browser-use 0.13.x) and never index+coords together. Remap viewport CSS coords into LLM screenshot space before click when the runtime scales LLM→viewport.
+5. Cookie/consent dismiss clicks take priority over nav DOM steering and over `minSteps` scroll fallbacks.
+6. Self-loop root/home links do not count as progress after the first exploratory try.
+7. **Forbidden while path-finding:** `navigate` / `go_to_url` (or equivalent) whose destination already encodes the target keywords. Initial study start URL load stays allowed. Honest abandon / `done` after try-then-quit remains a valid study outcome.
+8. After a failed coordinate open, prefer a **different** visible control or shifted top-strip click — do not repeat the same coords, then deep-link.
+9. Stop deterministic steering once the target surface is reached (URL matches target keywords) or the exploratory nav budget is spent.
+
 ## Step payload
 
 ```ts

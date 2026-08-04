@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 	from audion_agent.telemetry.service import ProductTelemetry
 	from audion_agent.telemetry.views import (
 		BaseTelemetryEvent,
-		CLITelemetryEvent,
 		MCPClientTelemetryEvent,
 		MCPServerTelemetryEvent,
 	)
@@ -18,7 +17,6 @@ if TYPE_CHECKING:
 _LAZY_IMPORTS = {
 	'ProductTelemetry': ('audion_agent.telemetry.service', 'ProductTelemetry'),
 	'BaseTelemetryEvent': ('audion_agent.telemetry.views', 'BaseTelemetryEvent'),
-	'CLITelemetryEvent': ('audion_agent.telemetry.views', 'CLITelemetryEvent'),
 	'MCPClientTelemetryEvent': ('audion_agent.telemetry.views', 'MCPClientTelemetryEvent'),
 	'MCPServerTelemetryEvent': ('audion_agent.telemetry.views', 'MCPServerTelemetryEvent'),
 }
@@ -45,7 +43,6 @@ def __getattr__(name: str):
 __all__ = [
 	'BaseTelemetryEvent',
 	'ProductTelemetry',
-	'CLITelemetryEvent',
 	'MCPClientTelemetryEvent',
 	'MCPServerTelemetryEvent',
 ]

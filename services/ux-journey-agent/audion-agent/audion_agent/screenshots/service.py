@@ -1,5 +1,5 @@
 """
-Screenshot storage service for browser-use agents.
+Screenshot storage service for audion-agent agents.
 """
 
 import base64

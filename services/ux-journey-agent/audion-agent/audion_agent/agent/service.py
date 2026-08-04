@@ -26,7 +26,7 @@ from audion_agent.agent.cloud_events import (
 from audion_agent.agent.audion_feature_flags import web_search_enabled
 from audion_agent.agent.message_manager.utils import save_conversation
 from audion_agent.llm.base import BaseChatModel
-from audion_agent.llm.exceptions import ModelProviderError, ModelRateLimitError
+from audion_agent.llm.exceptions import ModelOutputTruncatedError, ModelProviderError, ModelRateLimitError
 from audion_agent.llm.messages import BaseMessage, ContentPartImageParam, ContentPartTextParam, UserMessage
 from audion_agent.tokens.service import TokenCost
 
@@ -85,6 +85,8 @@ from audion_agent.utils import (
 	_log_pretty_path,
 	check_latest_audion_agent_version,
 	get_audion_agent_version,
+	is_placeholder_url,
+	sanitize_url_candidate,
 	time_execution_async,
 	time_execution_sync,
 )
@@ -177,58 +179,15 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		max_failures: int = 5,
 		override_system_message: str | None = None,
 		extend_system_message: str | None = None,
-		# CHECKION-fork patch: typed persona payload. When set, a persona block
-		# (PERSONA_CONTEXT + PERSONA_BEHAVIOR_POLICY + INSTRUCTION) is rendered
-		# from the structured fields and merged into `extend_system_message`,
-		# so the persona is in the *system* prompt — present at every step,
-		# rather than once in the initial task. See `audion_agent.agent.persona`.
-		# Accepts a `PersonaContext`, a plain `dict`, or `None`.
 		persona: PersonaContext | dict[str, Any] | None = None,
-		# CHECKION-fork patch (Phase 3): pin the language used for the
-		# AgentOutput reasoning fields (`thinking`, `evaluation_previous_goal`,
-		# `memory`, `next_goal`, `done.text`). Renders a small system-prompt
-		# block; selectors / URLs / quoted page content stay in their
-		# original language. ISO-639 codes (`'de'`, `'en'`, `'fr'`, ...) and
-		# human names (`'German'`) are both accepted. ``None`` (default) =
-		# upstream behaviour (model picks the language).
 		reasoning_language: str | None = None,
-		# CHECKION-fork patch (Phase 4): step pacing for video / live-stream
-		# capture. When > 0, `step_pacing_seconds * action_slowdown_factor`
-		# seconds are slept at the *start* of each step (before context
-		# preparation) so the screen recorder always sees the current state
-		# before the next action runs. Both default to 0 / 1.0 = no pacing,
-		# upstream-equivalent behaviour.
 		step_pacing_seconds: float = 0.0,
 		action_slowdown_factor: float = 1.0,
-		# CHECKION-fork patch (Phase 4): screenshot hook. Fires after each
-		# per-step screenshot is captured (right after `get_browser_state_summary`).
-		# The callback receives the agent and the base64-encoded screenshot string
-		# (same format as `BrowserStateSummary.screenshot`). Sync or async.
-		# Replaces the polling loop AUDION used to run separately.
 		on_screenshot: (
 			Callable[['Agent', str], Awaitable[None]]
 			| Callable[['Agent', str], None]
 			| None
 		) = None,
-		# CHECKION-fork patch (Phase 6): per-action hooks. `on_action_start`
-		# fires *before* an action is dispatched to `tools.act`, `on_action_end`
-		# fires *after* the action completed (success OR failure — when the
-		# action raises, `on_action_end` is skipped and the exception
-		# propagates as before, which keeps multi_act's existing failure
-		# semantics intact).
-		#
-		# Callback signatures:
-		#   on_action_start(agent, action_name, action_params)
-		#   on_action_end(agent, action_name, action_params, result)
-		#
-		# Where `action_name` is the registered tool name (e.g. `'click_element_by_index'`,
-		# `'scroll'`, `'go_to_url'`), `action_params` is the matching sub-dict
-		# from the AgentOutput (e.g. `{'index': 5}` or `{'down': True, 'amount': 100}`),
-		# and `result` is the `ActionResult` from `tools.act`.
-		#
-		# Both sync and async bodies are supported. Hook errors are caught
-		# and logged at debug — they never break a run, mirroring the
-		# `on_screenshot` contract.
 		on_action_start: (
 			Callable[['Agent', str, dict[str, Any]], Awaitable[None]]
 			| Callable[['Agent', str, dict[str, Any]], None]
@@ -302,17 +261,18 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 				llm = ChatBrowserUse()
 
 		# set flashmode = True if llm is ChatBrowserUse
-		if llm.provider == 'browser-use':
+		if llm.provider == 'audion-agent':
 			flash_mode = True
 
 		# Flash mode strips plan fields from the output schema, so planning is structurally impossible
 		if flash_mode:
 			enable_planning = False
 
-		# Auto-configure llm_screenshot_size for Claude Sonnet models
+		# Auto-configure llm_screenshot_size for Claude Sonnet, including gateway ids like
+		# 'anthropic/claude-sonnet-4-6' (rsplit drops the provider prefix before matching).
 		if llm_screenshot_size is None:
 			model_name = getattr(llm, 'model', '')
-			if isinstance(model_name, str) and model_name.startswith('claude-sonnet'):
+			if isinstance(model_name, str) and model_name.rsplit('/', 1)[-1].startswith('claude-sonnet'):
 				llm_screenshot_size = (1400, 850)
 				logger.info('🖼️  Auto-configured LLM screenshot size for Claude Sonnet: 1400x850')
 
@@ -389,17 +349,14 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		if use_vision != 'auto':
 			self.tools.exclude_action('screenshot')
 
-		# CHECKION-fork: DuckDuckGo / Google / Bing web search is disabled by default.
-		# The ``search`` tool navigates to third-party search engines — incompatible
-		# with reproducible UX audits on a fixed origin. Operators enable upstream
-		# behaviour with AUDION_AGENT_WEB_SEARCH=1 (tests, integrations).
 		if not web_search_enabled():
 			self.tools.exclude_action('search')
 
 		# Enable coordinate clicking for models that support it
 		model_name = getattr(llm, 'model', '').lower()
 		supports_coordinate_clicking = any(
-			pattern in model_name for pattern in ['claude-sonnet-4', 'claude-opus-4', 'gemini-3-pro', 'browser-use/']
+			pattern in model_name
+			for pattern in ['claude-sonnet-4', 'claude-opus-4', 'claude-fable-5', 'gemini-3-pro', 'audion-agent/']
 		)
 		if supports_coordinate_clicking:
 			self.tools.set_coordinate_clicking(True)
@@ -435,10 +392,12 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		if self.output_model_schema is not None:
 			self.tools.use_structured_output_action(self.output_model_schema)
 
-		# Extraction schema: explicit param takes priority, otherwise auto-bridge from output_model_schema
+		# Per-page extract uses a schema only when the caller explicitly asks for one.
+		# It must NOT inherit output_model_schema: that describes the final task result
+		# (e.g. {summary, step_results}), which is the wrong shape for a single-page
+		# extraction and, on the audion-agent gateway, routes extract into the agent
+		# action protocol and breaks it.
 		self.extraction_schema = extraction_schema
-		if self.extraction_schema is None and self.output_model_schema is not None:
-			self.extraction_schema = self.output_model_schema.model_json_schema()
 
 		# Core components - task enhancement now has access to output_model_schema from tools
 		self.task = self._enhance_task_with_schema(task, output_model_schema)
@@ -460,23 +419,10 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		if isinstance(message_compaction, bool):
 			message_compaction = MessageCompactionSettings(enabled=message_compaction)
 
-		# CHECKION-fork patch: assemble the system-prompt extension in this fixed
-		# order, so the prefix stays cacheable (Anthropic's prompt cache hashes
-		# the prefix character-by-character):
-		#
-		#   1. caller-supplied `extend_system_message` (free-form, may change per call)
-		#   2. reasoning_language block (small, stable per persona/run)
-		#   3. persona block (large, stable per persona)
-		#
-		# `self.persona` and `self.persona_policy` stay accessible for telemetry /
-		# UI consumers that want to surface the derived dimensions.
 		self.persona: PersonaContext | None = PersonaContext.coerce(persona)
 		self.persona_policy: PersonaPolicy = _derive_persona_policy(self.persona)
 		self.reasoning_language: str | None = reasoning_language
 
-		# Phase 4: pacing & screenshot hook. Clamp pacing values defensively
-		# (negative durations would silently turn into a no-op anyway, but the
-		# explicit max() makes the contract obvious to readers).
 		try:
 			self.step_pacing_seconds: float = max(0.0, float(step_pacing_seconds))
 		except (TypeError, ValueError):
@@ -486,11 +432,6 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		except (TypeError, ValueError):
 			self.action_slowdown_factor = 1.0
 		self.on_screenshot = on_screenshot
-		# Phase 6: per-action hooks. Stored verbatim — sync / async tolerated
-		# at fire time via `inspect.iscoroutine`. We deliberately don't merge
-		# them into a single hook-list because callers typically only want
-		# one of the two (e.g. AUDION uses on_action_end exclusively to
-		# replay clicks / scrolls in the recording).
 		self.on_action_start = on_action_start
 		self.on_action_end = on_action_end
 
@@ -613,8 +554,8 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 
 		is_anthropic = isinstance(self.llm, ChatAnthropic)
 
-		# Check if model is a browser-use fine-tuned model (uses simplified prompts)
-		is_audion_agent_model = 'browser-use/' in self.llm.model.lower()
+		# Check if model is a audion-agent fine-tuned model (uses simplified prompts)
+		is_audion_agent_model = 'audion-agent/' in self.llm.model.lower()
 
 		# Initialize message manager with state
 		# Initial system prompt with all actions - will be updated during each step
@@ -865,7 +806,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 			raise ValueError('File system is not set up. Cannot save state.')
 
 	def _set_audion_agent_version_and_source(self, source_override: str | None = None) -> None:
-		"""Get the version from pyproject.toml and determine the source of the browser-use package"""
+		"""Get the version from pyproject.toml and determine the source of the audion-agent package"""
 		# Use the helper function for version detection
 		version = get_audion_agent_version()
 
@@ -1144,11 +1085,6 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 	@time_execution_async('--step')
 	async def step(self, step_info: AgentStepInfo | None = None) -> None:
 		"""Execute one step of the task"""
-		# CHECKION-fork patch (Phase 4): step pacing. Sleep BEFORE timing /
-		# context prep so the recorder captures the current state with a
-		# stable freeze-frame before the next action perturbs the DOM. We
-		# deliberately don't bill this against `step_timeout` — it's wall-
-		# clock instrumentation, not actual agent work.
 		effective_pacing = self.step_pacing_seconds * self.action_slowdown_factor
 		if effective_pacing > 0:
 			try:
@@ -1223,11 +1159,6 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		)
 		if browser_state_summary.screenshot:
 			self.logger.debug(f'📸 Got browser state WITH screenshot, length: {len(browser_state_summary.screenshot)}')
-			# CHECKION-fork patch (Phase 4): fire the on_screenshot callback
-			# right after capture so callers can stream frames to a UI / file
-			# without polling. Errors in the callback never break the run —
-			# we want the agent to keep moving even if e.g. a websocket is
-			# closed or a downstream encoder is overloaded.
 			if self.on_screenshot is not None:
 				try:
 					result = self.on_screenshot(self, browser_state_summary.screenshot)
@@ -1750,8 +1681,9 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		kwargs: dict = {'output_format': JudgementResult}
 
 		# Only pass request_type for ChatBrowserUse (other providers don't support it)
-		if self.judge_llm.provider == 'browser-use':
+		if self.judge_llm.provider == 'audion-agent':
 			kwargs['request_type'] = 'judge'
+			kwargs['session_id'] = self.session_id
 
 		try:
 			response = await self.judge_llm.ainvoke(input_messages, **kwargs)
@@ -1797,8 +1729,10 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 				if judgement.failure_reason:
 					judge_log += f'   Failure Reason: {judgement.failure_reason}\n'
 				if judgement.reached_captcha:
-					judge_log += '   🤖 Captcha Detected: Agent encountered captcha challenges\n'
-					judge_log += '   👉 🥷 Use Browser Use Cloud for the most stealth browser infra: https://docs.browser-use.com/customize/browser/remote\n'
+					self.logger.warning(
+						'Agent was blocked by a captcha. Cloud browsers include stealth fingerprinting and proxy rotation to avoid this.\n'
+						'         Try: Browser(use_cloud=True)  |  Get an API key: https://cloud.audion-agent.com?utm_source=oss&utm_medium=captcha_nudge'
+					)
 				judge_log += f'   {judgement.reasoning}\n'
 				self.logger.info(judge_log)
 
@@ -2134,8 +2068,9 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		# 402: Insufficient credits/payment required - fallback to different provider
 		# 429: Rate limit exceeded
 		# 500, 502, 503, 504: Server errors
+		# ModelOutputTruncatedError: not retryable on the same model, but a fallback may have a higher cap
 		retryable_status_codes = {401, 402, 429, 500, 502, 503, 504}
-		is_retryable = isinstance(error, ModelRateLimitError) or (
+		is_retryable = isinstance(error, (ModelRateLimitError, ModelOutputTruncatedError)) or (
 			hasattr(error, 'status_code') and error.status_code in retryable_status_codes
 		)
 
@@ -2182,14 +2117,14 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 			latest_version = await check_latest_audion_agent_version()
 			if latest_version and latest_version != self.version:
 				self.logger.info(
-					f'📦 Newer version available: {latest_version} (current: {self.version}). Upgrade with: uv add browser-use=={latest_version}'
+					f'📦 Newer version available: {latest_version} (current: {self.version}). Upgrade with: uv add audion-agent=={latest_version}'
 				)
 
 	def _log_first_step_startup(self) -> None:
 		"""Log startup message only on the first step"""
 		if len(self.history.history) == 0:
 			self.logger.info(
-				f'Starting a browser-use agent with version {self.version}, with provider={self.llm.provider} and model={self.llm.model}'
+				f'Starting a audion-agent agent with version {self.version}, with provider={self.llm.provider} and model={self.llm.model}'
 			)
 
 	def _log_step_context(self, browser_state_summary: BrowserStateSummary) -> None:
@@ -2310,16 +2245,15 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 			has_captcha_issue = any(keyword in final_result_str for keyword in captcha_keywords)
 
 			if has_captcha_issue:
-				# Suggest use_cloud=True for captcha/cloudflare issues
-				task_preview = self.task[:10] if len(self.task) > 10 else self.task
-				self.logger.info('')
-				self.logger.info('Failed because of CAPTCHA? For better browser stealth, try:')
-				self.logger.info(f'   agent = Agent(task="{task_preview}...", browser=Browser(use_cloud=True))')
+				self.logger.warning(
+					'Agent was blocked by a captcha. Cloud browsers include stealth fingerprinting and proxy rotation to avoid this.\n'
+					'         Try: Browser(use_cloud=True)  |  Get an API key: https://cloud.audion-agent.com?utm_source=oss&utm_medium=captcha_nudge'
+				)
 
 			# General failure message
 			self.logger.info('')
 			self.logger.info('Did the Agent not work as expected? Let us fix this!')
-			self.logger.info('   Open a short issue on GitHub: https://github.com/browser-use/browser-use/issues')
+			self.logger.info('   Open a short issue on GitHub: https://github.com/audion-agent/audion-agent/issues')
 
 	def _log_agent_event(self, max_steps: int, agent_run_error: str | None = None) -> None:
 		"""Sent the agent event for this run to telemetry"""
@@ -2431,7 +2365,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 
 		# Look for common URL patterns
 		patterns = [
-			r'https?://[^\s<>"\']+',  # Full URLs with http/https
+			r'(?:https?|file)://[^\s<>"\']+',  # Full URLs
 			r'(?:www\.)?[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}(?:/[^\s<>"\']*)?',  # Domain names with subdomains and optional paths
 		]
 
@@ -2516,22 +2450,37 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		}
 
 		found_urls = []
+		matched_spans: list[tuple[int, int]] = []
 		for pattern in patterns:
 			matches = re.finditer(pattern, task_without_emails)
 			for match in matches:
 				url = match.group(0)
 				original_position = match.start()  # Store original position before URL modification
 
-				# Remove trailing punctuation that's not part of URLs
-				url = re.sub(r'[.,;:!?()\[\]]+$', '', url)
+				# Skip fragments of URLs already matched by earlier pattern
+				if any(match.start() < end and match.end() > start for start, end in matched_spans):
+					continue
+				matched_spans.append((match.start(), match.end()))
 
-				# Check if URL ends with a file extension that should be excluded
+				# Remove trailing punctuation that's not part of URLs
+				url = sanitize_url_candidate(url)
+
+				if is_placeholder_url(url):
+					self.logger.debug(f'Excluding placeholder URL from auto-navigation: {url}')
+					continue
+
 				url_lower = url.lower()
+				has_scheme = url_lower.startswith(('http://', 'https://', 'file://'))
+
+				# Check if URL ends with file extension
 				should_exclude = False
-				for ext in excluded_extensions:
-					if f'.{ext}' in url_lower:
+				if not url_lower.startswith('file://'):
+					for ext in excluded_extensions:
+						if f'.{ext}' in url_lower:
+							should_exclude = True
+							break
+					if not has_scheme and '.htm' in url_lower:
 						should_exclude = True
-						break
 
 				if should_exclude:
 					self.logger.debug(f'Excluding URL with file extension from auto-navigation: {url}')
@@ -2547,7 +2496,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 					continue
 
 				# Add https:// if missing (after excluded words check to avoid position calculation issues)
-				if not url.startswith(('http://', 'https://')):
+				if not has_scheme:
 					url = 'https://' + url
 
 				found_urls.append(url)
@@ -2701,11 +2650,25 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 			# Register skills as actions if SkillService is configured
 			await self._register_skills_as_actions()
 
-			# Normally there was no try catch here but the callback can raise an InterruptedError
+			# Normally there was no try catch here but the callback can raise an InterruptedError.
+			# Wrap with step_timeout so initial actions (usually a single URL navigate) can't
+			# hang indefinitely on a silent CDP WebSocket — without this the agent would take
+			# zero steps and return with an empty history while any outer watchdog waits.
 			try:
-				await self._execute_initial_actions()
+				await asyncio.wait_for(
+					self._execute_initial_actions(),
+					timeout=self.settings.step_timeout,
+				)
 			except InterruptedError:
 				pass
+			except TimeoutError:
+				initial_timeout_msg = (
+					f'Initial actions timed out after {self.settings.step_timeout}s '
+					f'(browser may be unresponsive). Proceeding to main execution loop.'
+				)
+				self.logger.error(f'⏰ {initial_timeout_msg}')
+				self.state.last_result = [ActionResult(error=initial_timeout_msg)]
+				self.state.consecutive_failures += 1
 			except Exception as e:
 				raise e
 
@@ -2842,13 +2805,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 
 	@observe_debug(ignore_input=True, ignore_output=True)
 	async def _fire_action_hook(self, hook: Any, *args: Any) -> None:
-		"""Phase 6: dispatch a per-action hook (sync or async) defensively.
-
-		Centralised so `multi_act` carries no try/except boilerplate around
-		each fire site. Errors in the hook are caught and logged at debug
-		level so a misbehaving hook can never abort the run; an explicit
-		``asyncio.CancelledError`` still propagates so a hot-cancel works.
-		"""
+		"""Dispatch a per-action hook without letting hook failures break the run."""
 		if hook is None:
 			return
 		try:
@@ -2857,9 +2814,10 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 				await result
 		except asyncio.CancelledError:
 			raise
-		except Exception as exc:  # pragma: no cover - defensive
+		except Exception as exc:
 			self.logger.debug(f'action hook raised (non-fatal): {exc!r}')
 
+	@observe_debug(ignore_input=True, ignore_output=True)
 	@time_execution_async('--multi_act')
 	async def multi_act(self, actions: list[ActionModel]) -> list[ActionResult]:
 		"""Execute multiple actions with page-change guards.
@@ -2913,10 +2871,6 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 				pre_action_url = await self.browser_session.get_current_page_url()
 				pre_action_focus = self.browser_session.agent_focus_target_id
 
-				# CHECKION-fork patch (Phase 6): action_params is the sub-dict
-				# the registered tool receives (e.g. {'index': 5}). Unknown
-				# action shapes fall back to the full action_data so callers
-				# always have *something* to inspect.
 				action_params = action_data.get(action_name) if isinstance(action_data, dict) else None
 				if not isinstance(action_params, dict):
 					action_params = action_data if isinstance(action_data, dict) else {}
@@ -2931,10 +2885,6 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 					available_file_paths=self.available_file_paths,
 					extraction_schema=self.extraction_schema,
 				)
-
-				# CHECKION-fork patch (Phase 6): fire on_action_end *after*
-				# tools.act returns, regardless of result.error. Hook receives
-				# the ActionResult so it can branch on success/error/done.
 				await self._fire_action_hook(self.on_action_end, self, action_name, action_params, result)
 
 				if result.error:
@@ -2976,6 +2926,12 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 					break
 
 			except Exception as e:
+				# Re-raise InterruptedError so _check_stop_or_pause's stop/pause signal still propagates
+				if isinstance(e, InterruptedError):
+					raise
+				# Re-raise browser/connection errors so _handle_step_error can handle reconnect/shutdown
+				if self._is_connection_like_error(e):
+					raise
 				# Handle any exceptions during action execution
 				self.logger.error(f'❌ Executing action {i + 1} failed -> {type(e).__name__}: {e}')
 				await self._demo_mode_log(
@@ -2983,7 +2939,9 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 					'error',
 					{'action': action_name, 'step': self.state.n_steps},
 				)
-				raise e
+				# Preserve partial results so the agent knows which actions succeeded before the failure
+				results.append(ActionResult(error=f'{type(e).__name__}: {e}'))
+				return results
 
 		return results
 
@@ -3687,6 +3645,15 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 			return action
 
 		selector_map = browser_state_summary.dom_state.selector_map
+		selector_items = list(selector_map.items())
+		if historical_element.frame_id:
+			same_frame_items = [
+				(index, element) for index, element in selector_items if element.frame_id == historical_element.frame_id
+			]
+			if same_frame_items:
+				selector_items = same_frame_items + [
+					(index, element) for index, element in selector_items if element.frame_id != historical_element.frame_id
+				]
 		highlight_index: int | None = None
 		match_level: MatchLevel | None = None
 
@@ -3700,7 +3667,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 			hist_name = historical_element.node_name.lower()
 			matching_nodes = [
 				(idx, elem.node_name, elem.attributes.get('name') if elem.attributes else None)
-				for idx, elem in selector_map.items()
+				for idx, elem in selector_items
 				if elem.node_name.lower() == hist_name
 			]
 			self.logger.info(
@@ -3709,7 +3676,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 			)
 
 		# Level 1: EXACT hash match
-		for idx, elem in selector_map.items():
+		for idx, elem in selector_items:
 			if elem.element_hash == historical_element.element_hash:
 				highlight_index = idx
 				match_level = MatchLevel.EXACT
@@ -3721,7 +3688,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		# Level 2: STABLE hash match (dynamic classes filtered)
 		# Use stored stable_hash (computed at save time from EnhancedDOMTreeNode - single source of truth)
 		if highlight_index is None and historical_element.stable_hash is not None:
-			for idx, elem in selector_map.items():
+			for idx, elem in selector_items:
 				if elem.compute_stable_hash() == historical_element.stable_hash:
 					highlight_index = idx
 					match_level = MatchLevel.STABLE
@@ -3734,7 +3701,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 
 		# Level 3: XPATH match
 		if highlight_index is None and historical_element.x_path:
-			for idx, elem in selector_map.items():
+			for idx, elem in selector_items:
 				if elem.xpath == historical_element.x_path:
 					highlight_index = idx
 					match_level = MatchLevel.XPATH
@@ -3749,7 +3716,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		if highlight_index is None and historical_element.ax_name:
 			hist_name = historical_element.node_name.lower()
 			hist_ax_name = historical_element.ax_name
-			for idx, elem in selector_map.items():
+			for idx, elem in selector_items:
 				# Match by node type and accessible name
 				elem_ax_name = elem.ax_node.name if elem.ax_node else None
 				if elem.node_name.lower() == hist_name and elem_ax_name == hist_ax_name:
@@ -3761,7 +3728,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 				# Log available ax_names for debugging
 				same_type_ax_names = [
 					(idx, elem.ax_node.name if elem.ax_node else None)
-					for idx, elem in selector_map.items()
+					for idx, elem in selector_items
 					if elem.node_name.lower() == hist_name and elem.ax_node and elem.ax_node.name
 				]
 				self.logger.debug(
@@ -3778,7 +3745,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 			# Try matching by unique identifiers: name, id, or aria-label
 			for attr_key in ['name', 'id', 'aria-label']:
 				if attr_key in hist_attrs and hist_attrs[attr_key]:
-					for idx, elem in selector_map.items():
+					for idx, elem in selector_items:
 						if (
 							elem.node_name.lower() == hist_name
 							and elem.attributes
@@ -3796,7 +3763,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 				# Log what was tried and what's available on the page for debugging
 				same_node_elements = [
 					(idx, elem.attributes.get('aria-label') or elem.attributes.get('id') or elem.attributes.get('name'))
-					for idx, elem in selector_map.items()
+					for idx, elem in selector_items
 					if elem.node_name.lower() == hist_name and elem.attributes
 				]
 				self.logger.info(
@@ -4289,3 +4256,6 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 					elif isinstance(item, dict):
 						count += self._substitute_in_dict(item, replacements)
 		return count
+
+
+_PythonAgent = Agent

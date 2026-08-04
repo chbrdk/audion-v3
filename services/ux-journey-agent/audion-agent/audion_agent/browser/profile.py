@@ -3,6 +3,7 @@ import sys
 import tempfile
 from collections.abc import Iterable
 from enum import Enum
+from fnmatch import fnmatch
 from functools import cache
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self
@@ -26,6 +27,13 @@ def _get_enable_default_extensions_default() -> bool:
 
 CHROME_DEBUG_PORT = 9242  # use a non-default port to avoid conflicts with other tools / devs using 9222
 DOMAIN_OPTIMIZATION_THRESHOLD = 100  # Convert domain lists to sets for O(1) lookup when >= this size
+CHROME_PROFILE_TRANSIENT_FILE_PATTERNS = (
+	'Singleton*',
+	'*.lock',
+	'*-journal',
+	'LOCK',
+	'LOCKFILE',
+)
 CHROME_DISABLED_COMPONENTS = [
 	# Playwright defaults: https://github.com/microsoft/playwright/blob/41008eeddd020e2dee1c540f7c0cdfa337e99637/packages/playwright-core/src/server/chromium/chromiumSwitches.ts#L76
 	# AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DeferRendererTasksAfterInput,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate
@@ -76,6 +84,34 @@ CHROME_DISABLED_COMPONENTS = [
 	'ExtensionDisableUnsupportedDeveloper',
 	'ExtensionManifestV2Unsupported',
 ]
+
+
+def _ignore_chrome_profile_transient_files(_src: str, names: list[str]) -> set[str]:
+	"""Skip Chrome lock/journal files that should not be copied into a temp profile."""
+	return {name for name in names if any(fnmatch(name, pattern) for pattern in CHROME_PROFILE_TRANSIENT_FILE_PATTERNS)}
+
+
+def _is_chrome_profile_lock_error(error: BaseException) -> bool:
+	"""Detect Windows sharing violations or permission errors raised while copying a Chrome profile."""
+	if isinstance(error, PermissionError):
+		return True
+
+	if getattr(error, 'winerror', None) == 32:
+		return True
+
+	# shutil.Error stores copy failures as (src, dst, message/exception) triples.
+	for arg in getattr(error, 'args', ()):
+		if isinstance(arg, (list, tuple)):
+			for item in arg:
+				if isinstance(item, (list, tuple)) and item:
+					detail = item[-1]
+					if isinstance(detail, BaseException) and _is_chrome_profile_lock_error(detail):
+						return True
+					if 'WinError 32' in str(detail) or 'being used by another process' in str(detail):
+						return True
+
+	return False
+
 
 CHROME_HEADLESS_ARGS = [
 	'--headless=new',
@@ -432,12 +468,12 @@ class BrowserLaunchArgs(BaseModel):
 
 			# Create unique directory in system temp folder for downloads
 			unique_id = str(uuid.uuid4())[:8]  # 8 characters
-			downloads_path = Path(tempfile.gettempdir()) / f'browser-use-downloads-{unique_id}'
+			downloads_path = Path(tempfile.gettempdir()) / f'audion-agent-downloads-{unique_id}'
 
 			# Ensure path doesn't already exist (extremely unlikely but possible)
 			while downloads_path.exists():
 				unique_id = str(uuid.uuid4())[:8]
-				downloads_path = Path(tempfile.gettempdir()) / f'browser-use-downloads-{unique_id}'
+				downloads_path = Path(tempfile.gettempdir()) / f'audion-agent-downloads-{unique_id}'
 
 			self.downloads_path = downloads_path
 			self.downloads_path.mkdir(parents=True, exist_ok=True)
@@ -514,7 +550,7 @@ class BrowserLaunchPersistentContextArgs(BrowserLaunchArgs, BrowserContextArgs):
 	def validate_user_data_dir(cls, v: str | Path | None) -> str | Path:
 		"""Validate user data dir is set to a non-default path."""
 		if v is None:
-			return tempfile.mkdtemp(prefix='browser-use-user-data-dir-')
+			return tempfile.mkdtemp(prefix='audion-agent-user-data-dir-')
 		return Path(v).expanduser().resolve()
 
 
@@ -563,7 +599,7 @@ class BrowserProfile(BrowserConnectArgs, BrowserLaunchPersistentContextArgs, Bro
 	is_local: bool = Field(default=False, description='Whether this is a local browser instance')
 	use_cloud: bool = Field(
 		default=False,
-		description='Use browser-use cloud browser service instead of local browser',
+		description='Use audion-agent cloud browser service instead of local browser',
 	)
 
 	@property
@@ -805,7 +841,7 @@ class BrowserProfile(BrowserConnectArgs, BrowserLaunchPersistentContextArgs, Bro
 			return
 
 		user_data_str = str(self.user_data_dir)
-		if 'browser-use-user-data-dir-' in user_data_str.lower():
+		if 'audion-agent-user-data-dir-' in user_data_str.lower():
 			# Already using a temp directory, no need to copy
 			return
 
@@ -819,7 +855,7 @@ class BrowserProfile(BrowserConnectArgs, BrowserLaunchPersistentContextArgs, Bro
 		if not is_chrome:
 			return
 
-		temp_dir = tempfile.mkdtemp(prefix='browser-use-user-data-dir-')
+		temp_dir = tempfile.mkdtemp(prefix='audion-agent-user-data-dir-')
 		path_original_user_data = Path(self.user_data_dir)
 		path_original_profile = path_original_user_data / self.profile_directory
 		path_temp_profile = Path(temp_dir) / self.profile_directory
@@ -827,7 +863,22 @@ class BrowserProfile(BrowserConnectArgs, BrowserLaunchPersistentContextArgs, Bro
 		if path_original_profile.exists():
 			import shutil
 
-			shutil.copytree(path_original_profile, path_temp_profile)
+			try:
+				shutil.copytree(
+					path_original_profile,
+					path_temp_profile,
+					ignore=_ignore_chrome_profile_transient_files,
+				)
+			except (OSError, shutil.Error) as error:
+				if not _is_chrome_profile_lock_error(error):
+					raise
+
+				shutil.rmtree(temp_dir, ignore_errors=True)
+				raise RuntimeError(
+					f'Unable to copy Chrome profile "{self.profile_directory}" because one or more files are locked. '
+					'Close any Chrome windows using this profile, or start audion-agent with --cdp-url to connect to '
+					'an already-running browser instead of copying the profile.'
+				) from error
 			local_state_src = path_original_user_data / 'Local State'
 			local_state_dst = Path(temp_dir) / 'Local State'
 			if local_state_src.exists():

@@ -3374,6 +3374,7 @@ async def run_agent(
             exploration=persona_dims.get("exploration"),
         )
         felt_state = ux_perception.new_felt_state()
+        felt_state["lastNavCoords"] = []
         try_before_n = int(confusion_abandon.get("tryBeforeAbandon") or 1)
         print(
             f"ux-journey: job={job_id} step_budget={step_budget} "
@@ -3392,21 +3393,15 @@ async def run_agent(
         # The persona block is automatically rendered last by the fork via
         # `Agent(persona=persona_dict)` — see audion-agent CHANGELOG Phase 2.
         nav_home_rule = ""
-        if (
-            "Starte auf der Bosch eBike Startseite" in str(task)
-            and "Produktkombinationen" in str(task)
-        ):
-            # Nav pack scoping: encourage at least one navigation click toward
-            # Service/Produktkombinationen before abandoning, when the try budget
-            # is still available.
+        if ux_perception.is_ui_path_finding_task(task):
+            # Path-finding: try visible nav before abandon; never invent deep URLs.
             nav_home_rule = (
-                "NAV-REGEL: Nav-Home: bevor du abbrichst/done wählst, "
-                "klicke (mindestens einmal) auf einen Navigation-Link in Richtung "
-                "Service/Produktkombinationen, sofern dein Try-Budget noch nicht "
-                "erschöpft ist. Wenn ein Service-Menü sichtbar ist, öffne es notfalls "
-                "per Hover/Klick und verfolge dann den Unterpunkt zu "
-                "Produktkombinationen. Wenn diese Navigation trotz echten Versuchs "
-                "keine Wirkung zeigt, darfst du ehrlich abbrechen.\n"
+                "PATH-REGEL: Finde das Ziel über sichtbare Navigation (Klicks/Menüs). "
+                "Bevor du abbrichst/done wählst, versuche mindestens einen sichtbaren "
+                "Navigations-Einstieg aus der Aufgabe, sofern dein Try-Budget noch nicht "
+                "erschöpft ist. Keine geratene Deep-URL zum Ziel tippen/navigieren — "
+                "wenn die UI-Navigation trotz echten Versuchs keine Wirkung zeigt, "
+                "darfst du ehrlich abbrechen.\n"
             )
         if persona_tp is not None and persona_tp >= 0.75:
             abandon_n = int(confusion_abandon.get("threshold") or 2)
@@ -3607,6 +3602,26 @@ async def run_agent(
         if _agent_init_accepts_named_arg(sig, "use_judge"):
             agent_kw["use_judge"] = _env_truthy("AUDION_AGENT_USE_JUDGE", "0")
         agent = Agent(**agent_kw)
+        # Always enable coordinate clicking for DOM-steered menu opens.
+        # Upstream only auto-enables for a few Claude/Gemini model ids; Luna
+        # fallback runs would otherwise reject coordinate-only click payloads.
+        try:
+            tools_obj = getattr(agent, "tools", None)
+            if tools_obj is not None and hasattr(tools_obj, "set_coordinate_clicking"):
+                tools_obj.set_coordinate_clicking(True)
+                # Refresh ActionModel so click accepts coordinate_x/y.
+                reg = getattr(tools_obj, "registry", None)
+                if reg is not None and hasattr(reg, "create_action_model"):
+                    agent.ActionModel = reg.create_action_model()
+                print(
+                    f"ux-journey: job={job_id} coordinate_clicking=enabled",
+                    flush=True,
+                )
+        except Exception as exc:
+            print(
+                f"ux-journey: job={job_id} coordinate_clicking enable failed: {exc!r}",
+                flush=True,
+            )
         # Some deployments swallow unknown kwargs; ensure fallback actually landed.
         if fallback_llm_obj is not None and getattr(agent, "_fallback_llm", None) is None:
             try:
@@ -3758,6 +3773,127 @@ async def run_agent(
                         except Exception:
                             pass
                     return []
+
+                def _typed_action(tool_name: str, params: dict[str, Any]) -> list[Any]:
+                    action_model = getattr(agent, "ActionModel", None)
+                    # 0.13.x has no hover tool — degrade to click when we only have an index.
+                    tool = str(tool_name or "")
+                    payload_params = dict(params or {})
+                    if tool == "hover":
+                        tool = "click"
+                    # Coordinate path must omit index or runtime still hits the aggregated node.
+                    if (
+                        payload_params.get("coordinate_x") is not None
+                        and payload_params.get("coordinate_y") is not None
+                    ):
+                        payload_params.pop("index", None)
+                    payload = {tool: payload_params}
+                    if action_model is not None and hasattr(action_model, "model_validate"):
+                        try:
+                            return [action_model.model_validate(payload)]
+                        except Exception as exc:
+                            print(
+                                f"ux-journey: job={job_id} typed_action validate failed "
+                                f"tool={tool} params={payload_params} err={exc}",
+                                flush=True,
+                            )
+                    return []
+
+                def _viewport_coords_to_llm_space(params: dict[str, Any]) -> dict[str, Any]:
+                    """
+                    DOM absolute_position is viewport CSS pixels. browser-use click
+                    then scales LLM-screenshot coords → viewport. Invert so a
+                    DOM-steered click lands on the intended pixel.
+                    """
+                    out = dict(params)
+                    cox = out.get("coordinate_x")
+                    coy = out.get("coordinate_y")
+                    if not isinstance(cox, (int, float)) or not isinstance(coy, (int, float)):
+                        return out
+                    bs = getattr(agent, "browser_session", None) or getattr(agent, "browser", None)
+                    llm_size = getattr(bs, "llm_screenshot_size", None) if bs is not None else None
+                    orig = getattr(bs, "_original_viewport_size", None) if bs is not None else None
+                    if not llm_size or not orig:
+                        return out
+                    try:
+                        llm_w, llm_h = float(llm_size[0]), float(llm_size[1])
+                        orig_w, orig_h = float(orig[0]), float(orig[1])
+                        if llm_w <= 0 or llm_h <= 0 or orig_w <= 0 or orig_h <= 0:
+                            return out
+                        mapped_x = int(round((float(cox) / orig_w) * llm_w))
+                        mapped_y = int(round((float(coy) / orig_h) * llm_h))
+                        print(
+                            f"ux-journey: job={job_id} dom_coords viewport→llm "
+                            f"({int(cox)},{int(coy)})@{int(orig_w)}x{int(orig_h)} → "
+                            f"({mapped_x},{mapped_y})@{int(llm_w)}x{int(llm_h)}",
+                            flush=True,
+                        )
+                        out["coordinate_x"] = mapped_x
+                        out["coordinate_y"] = mapped_y
+                    except Exception as exc:
+                        print(
+                            f"ux-journey: job={job_id} dom_coords remap failed: {exc!r}",
+                            flush=True,
+                        )
+                    return out
+
+                def _nav_avoid_coords() -> list[tuple[int, int]]:
+                    raw = felt_state.get("lastNavCoords") or []
+                    out: list[tuple[int, int]] = []
+                    for item in raw:
+                        if (
+                            isinstance(item, (list, tuple))
+                            and len(item) >= 2
+                            and isinstance(item[0], (int, float))
+                            and isinstance(item[1], (int, float))
+                        ):
+                            out.append((int(item[0]), int(item[1])))
+                    return out
+
+                def _record_nav_coord(params: dict[str, Any]) -> None:
+                    x, y = params.get("coordinate_x"), params.get("coordinate_y")
+                    if isinstance(x, (int, float)) and isinstance(y, (int, float)):
+                        hist = list(felt_state.get("lastNavCoords") or [])
+                        hist.append((int(x), int(y)))
+                        felt_state["lastNavCoords"] = hist[-6:]
+
+                def _apply_path_finding_action_filters(
+                    acts: list[Any],
+                    *,
+                    perc_local: dict[str, Any] | None,
+                ) -> tuple[list[Any], str]:
+                    filtered_local, targeted_reason = ux_perception.prefer_targeted_actions(
+                        acts,
+                        task=task,
+                        current_url=current_url,
+                        perception=perc_local,
+                        exploratory_attempts=int(felt_state.get("exploratoryAttempts") or 0),
+                        start_url=url,
+                    )
+                    filtered_local, deeplink_reason = ux_perception.filter_path_finding_deeplinks(
+                        filtered_local,
+                        task=task,
+                        current_url=current_url,
+                    )
+                    reason_local = targeted_reason
+                    if deeplink_reason == "deeplink_blocked":
+                        reason_local = "deeplink_blocked"
+                        print(
+                            f"ux-journey: job={job_id} path-finding deeplink blocked",
+                            flush=True,
+                        )
+                    return filtered_local, reason_local
+
+                def _pick_nav_dom_action() -> tuple[dict[str, Any] | None, str]:
+                    return ux_perception.select_nav_dom_action(
+                        browser_state_summary,
+                        current_url=current_url,
+                        task=task,
+                        exploratory_attempts=int(felt_state.get("exploratoryAttempts") or 0),
+                        max_nav_attempts=max(4, int(try_before_n) + 1),
+                        start_url=url,
+                        avoid_coordinates=_nav_avoid_coords(),
+                    )
 
                 async def _force_done_schema(reason: str) -> None:
                     """Last-resort done (stance abandon / empty filter) — still needs PERCEPTION."""
@@ -4003,15 +4139,55 @@ async def run_agent(
                                         filtered, perc
                                     )
 
-                filtered, targeted_reason = ux_perception.prefer_targeted_actions(
-                    filtered,
-                    task=task,
+                filtered, targeted_reason = _apply_path_finding_action_filters(
+                    filtered, perc_local=perc
+                )
+                if targeted_reason not in (
+                    "targeted_passthrough",
+                    "deeplink_skip",
+                    "deeplink_passthrough",
+                    "deeplink_already_there",
+                ):
+                    reason = targeted_reason
+                dom_action, dom_reason = ux_perception.select_cookie_banner_action(
+                    browser_state_summary,
                     current_url=current_url,
                     perception=perc,
-                    exploratory_attempts=int(felt_state.get("exploratoryAttempts") or 0),
                 )
-                if targeted_reason != "targeted_passthrough":
-                    reason = targeted_reason
+                if dom_action is None:
+                    dom_action, dom_reason = _pick_nav_dom_action()
+                if dom_action is not None:
+                    dom_params = _viewport_coords_to_llm_space(
+                        {
+                            k: v
+                            for k, v in dom_action.items()
+                            if k != "tool" and v is not None
+                        }
+                    )
+                    print(
+                        f"ux-journey: job={job_id} dom_steer reason={dom_reason} "
+                        f"tool={dom_action.get('tool')} params={dom_params}",
+                        flush=True,
+                    )
+                    dom_filtered = _typed_action(
+                        str(dom_action.get("tool") or ""),
+                        dom_params,
+                    )
+                    if dom_filtered:
+                        filtered = dom_filtered
+                        reason = dom_reason
+                        if dom_reason == "nav_dom_service_coordinate":
+                            _record_nav_coord(dom_action)
+                elif dom_reason not in (
+                    "cookie_dom_none",
+                    "nav_dom_skip_task",
+                    "nav_dom_skip_url",
+                    "nav_dom_no_keywords",
+                ):
+                    print(
+                        f"ux-journey: job={job_id} dom_steer miss reason={dom_reason}",
+                        flush=True,
+                    )
 
                 # Lab L1/L5: enforce minSteps before allowing a model-proposed
                 # done/complete/finish on patient-like flows (unless the stance
@@ -4067,23 +4243,76 @@ async def run_agent(
                                     for a in (filtered or [])
                                     if ux_perception.action_tool_name(a) not in done_names
                                 ]
-                                filtered, targeted_reason = ux_perception.prefer_targeted_actions(
-                                    filtered,
-                                    task=task,
+                                filtered, targeted_reason = _apply_path_finding_action_filters(
+                                    filtered, perc_local=perc
+                                )
+                                dom_action, dom_reason = ux_perception.select_cookie_banner_action(
+                                    browser_state_summary,
                                     current_url=current_url,
                                     perception=perc,
-                                    exploratory_attempts=int(
-                                        felt_state.get("exploratoryAttempts") or 0
-                                    ),
                                 )
-                                reason = (
-                                    f"min_steps_done_retry_{targeted_reason}"
-                                    if targeted_reason != "targeted_passthrough"
-                                    else "min_steps_done_retry"
-                                )
+                                if dom_action is None:
+                                    dom_action, dom_reason = _pick_nav_dom_action()
+                                if dom_action is not None:
+                                    dom_params = _viewport_coords_to_llm_space({
+                                        k: v
+                                        for k, v in dom_action.items()
+                                        if k != "tool" and v is not None
+                                        })
+                                    dom_filtered = _typed_action(
+                                        str(dom_action.get("tool") or ""),
+                                        dom_params,
+                                    )
+                                    if dom_filtered:
+                                        filtered = dom_filtered
+                                        reason = f"min_steps_done_retry_{dom_reason}"
+                                        if dom_reason == "nav_dom_service_coordinate":
+                                            _record_nav_coord(dom_action)
+                                    else:
+                                        reason = (
+                                            f"min_steps_done_retry_{targeted_reason}"
+                                            if targeted_reason != "targeted_passthrough"
+                                            else "min_steps_done_retry"
+                                        )
+                                else:
+                                    reason = (
+                                        f"min_steps_done_retry_{targeted_reason}"
+                                        if targeted_reason
+                                        not in (
+                                            "targeted_passthrough",
+                                            "deeplink_skip",
+                                            "deeplink_passthrough",
+                                            "deeplink_already_there",
+                                        )
+                                        else "min_steps_done_retry"
+                                    )
                             if not filtered:
-                                filtered = _typed_scroll_fallback()
-                                reason = "min_steps_done_blocked_scroll"
+                                dom_action, dom_reason = ux_perception.select_cookie_banner_action(
+                                    browser_state_summary,
+                                    current_url=current_url,
+                                    perception=perc,
+                                )
+                                if dom_action is None:
+                                    dom_action, dom_reason = _pick_nav_dom_action()
+                                if dom_action is not None:
+                                    dom_params = _viewport_coords_to_llm_space({
+                                        k: v
+                                        for k, v in dom_action.items()
+                                        if k != "tool" and v is not None
+                                        })
+                                    filtered = _typed_action(
+                                        str(dom_action.get("tool") or ""),
+                                        dom_params,
+                                    )
+                                    reason = f"min_steps_done_blocked_{dom_reason}"
+                                    if (
+                                        filtered
+                                        and dom_reason == "nav_dom_service_coordinate"
+                                    ):
+                                        _record_nav_coord(dom_action)
+                                if not filtered:
+                                    filtered = _typed_scroll_fallback()
+                                    reason = "min_steps_done_blocked_scroll"
 
                 if not filtered:
                     if perc and perc.get("stanceSoftened"):
@@ -4135,11 +4364,8 @@ async def run_agent(
                                 if ux_perception.action_tool_name(a)
                                 not in ("done", "complete", "finish")
                             ]
-                            filtered, targeted_reason = ux_perception.prefer_targeted_actions(
-                                filtered,
-                                task=task,
-                                current_url=current_url,
-                                perception=perc,
+                            filtered, targeted_reason = _apply_path_finding_action_filters(
+                                filtered, perc_local=perc
                             )
                             if filtered:
                                 await _apply_actions(filtered)
@@ -4153,6 +4379,41 @@ async def run_agent(
                                     flush=True,
                                 )
                                 return
+                            dom_action, dom_reason = ux_perception.select_cookie_banner_action(
+                                browser_state_summary,
+                                current_url=current_url,
+                                perception=perc,
+                            )
+                            if dom_action is None:
+                                dom_action, dom_reason = _pick_nav_dom_action()
+                            if dom_action is not None:
+                                dom_params = _viewport_coords_to_llm_space({
+                                    k: v
+                                    for k, v in dom_action.items()
+                                    if k != "tool" and v is not None
+                                    })
+                                filtered = _typed_action(
+                                    str(dom_action.get("tool") or ""),
+                                    dom_params,
+                                )
+                                if filtered:
+                                    reason = f"min_steps_empty_retry_{dom_reason}"
+                                    if dom_reason == "nav_dom_service_coordinate":
+                                        _record_nav_coord(dom_action)
+                                    print(
+                                        f"ux-journey: job={job_id} min_steps empty filtered → {dom_reason}",
+                                        flush=True,
+                                    )
+                                    await _apply_actions(filtered)
+                                    ux_perception.update_felt_state(felt_state, perc)
+                                    print(
+                                        f"ux-journey: job={job_id} perception stance={perc.get('stance')} "
+                                        f"noticed={perc.get('noticedUsed')}/{perc.get('salienceBudget')} "
+                                        f"gate={reason} upgraded={bool(perc.get('stanceUpgraded'))} "
+                                        f"softened={bool(perc.get('stanceSoftened'))}",
+                                        flush=True,
+                                    )
+                                    return
                         filtered = _typed_scroll_fallback()
                         reason = "min_steps_empty_retry_scroll"
                         print(

@@ -14,13 +14,13 @@ from audion_agent.browser.session import BrowserSession
 _DEMO_PANEL_SCRIPT = r"""(function () {
   // SESSION_ID_PLACEHOLDER will be replaced by DemoMode with actual session ID
   const SESSION_ID = '__BROWSER_USE_SESSION_ID_PLACEHOLDER__';
-  const EXCLUDE_ATTR = 'data-browser-use-exclude-' + SESSION_ID;
-  const PANEL_ID = 'browser-use-demo-panel';
-  const STYLE_ID = 'browser-use-demo-panel-style';
+  const EXCLUDE_ATTR = 'data-audion-agent-exclude-' + SESSION_ID;
+  const PANEL_ID = 'audion-agent-demo-panel';
+  const STYLE_ID = 'audion-agent-demo-panel-style';
   const STORAGE_KEY = '__browserUseDemoLogs__';
   const STORAGE_HTML_KEY = '__browserUseDemoLogsHTML__';
   const PANEL_STATE_KEY = '__browserUseDemoPanelState__';
-  const TOGGLE_BUTTON_ID = 'browser-use-demo-toggle';
+  const TOGGLE_BUTTON_ID = 'audion-agent-demo-toggle';
   const MAX_MESSAGES = 100;
   const EXPANDED_IDS_KEY = '__browserUseExpandedEntries__';
   const LEVEL_ICONS = {
@@ -69,7 +69,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
     appendToHost(state.toggleButton);
     const savedWidth = loadPanelWidth();
     if (savedWidth) {
-      document.documentElement.style.setProperty('--browser-use-demo-panel-width', `${savedWidth}px`);
+      document.documentElement.style.setProperty('--audion-agent-demo-panel-width', `${savedWidth}px`);
     }
 
     if (!hydrateFromStoredMarkup()) {
@@ -120,7 +120,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         position: fixed;
         top: 0;
         right: 0;
-        width: var(--browser-use-demo-panel-width, 340px);
+        width: var(--audion-agent-demo-panel-width, 340px);
         max-width: calc(100vw - 64px);
         height: 100vh;
         display: flex;
@@ -146,7 +146,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         pointer-events: none;
       }
 
-      #${PANEL_ID} .browser-use-demo-header {
+      #${PANEL_ID} .audion-agent-demo-header {
         padding: 16px 18px 12px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.14);
         display: flex;
@@ -156,7 +156,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         flex-wrap: wrap;
       }
 
-      #${PANEL_ID} .browser-use-demo-header h1 {
+      #${PANEL_ID} .audion-agent-demo-header h1 {
         font-size: 15px;
         text-transform: uppercase;
         letter-spacing: 0.12em;
@@ -164,7 +164,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         color: #f8f9ff;
       }
 
-      #${PANEL_ID} .browser-use-badge {
+      #${PANEL_ID} .audion-agent-badge {
         font-size: 11px;
         padding: 2px 10px;
         border-radius: 999px;
@@ -174,18 +174,18 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         color: #f8f9ff;
       }
 
-      #${PANEL_ID} .browser-use-logo img {
+      #${PANEL_ID} .audion-agent-logo img {
         height: 36px;
       }
 
-      #${PANEL_ID} .browser-use-header-actions {
+      #${PANEL_ID} .audion-agent-header-actions {
         margin-left: auto;
         display: flex;
         align-items: center;
         gap: 8px;
       }
 
-      #${PANEL_ID} .browser-use-close-btn {
+      #${PANEL_ID} .audion-agent-close-btn {
         width: 28px;
         height: 28px;
         border-radius: 50%;
@@ -201,12 +201,12 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         transition: background 0.2s ease, border 0.2s ease;
       }
 
-      #${PANEL_ID} .browser-use-close-btn:hover {
+      #${PANEL_ID} .audion-agent-close-btn:hover {
         background: rgba(255, 255, 255, 0.15);
         border-color: rgba(255, 255, 255, 0.35);
       }
 
-      #${PANEL_ID} .browser-use-demo-body {
+      #${PANEL_ID} .audion-agent-demo-body {
         flex: 1;
         overflow-y: auto;
         scrollbar-width: thin;
@@ -214,41 +214,41 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         padding: 8px 0 12px;
       }
 
-      #${PANEL_ID} .browser-use-demo-body::-webkit-scrollbar {
+      #${PANEL_ID} .audion-agent-demo-body::-webkit-scrollbar {
         width: 8px;
       }
 
-      #${PANEL_ID} .browser-use-demo-body::-webkit-scrollbar-thumb {
+      #${PANEL_ID} .audion-agent-demo-body::-webkit-scrollbar-thumb {
         background: rgba(255, 255, 255, 0.25);
         border-radius: 999px;
       }
 
-      .browser-use-demo-entry {
+      .audion-agent-demo-entry {
         display: flex;
         gap: 12px;
         padding: 10px 18px;
         border-left: 2px solid transparent;
         border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        animation: browser-use-fade-in 0.25s ease;
+        animation: audion-agent-fade-in 0.25s ease;
         background: #000000;
       }
 
-      .browser-use-demo-entry:last-child {
+      .audion-agent-demo-entry:last-child {
         border-bottom-color: transparent;
       }
 
-      .browser-use-entry-icon {
+      .audion-agent-entry-icon {
         font-size: 16px;
         line-height: 1.2;
         width: 20px;
       }
 
-      .browser-use-entry-content {
+      .audion-agent-entry-content {
         flex: 1;
         min-width: 0;
       }
 
-      .browser-use-entry-meta {
+      .audion-agent-entry-meta {
         font-size: 11px;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -259,7 +259,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         gap: 12px;
       }
 
-      .browser-use-entry-message {
+      .audion-agent-entry-message {
         margin: 0;
         word-break: break-word;
         font-size: 12px;
@@ -269,40 +269,40 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         gap: 6px;
       }
 
-      .browser-use-markdown-content {
+      .audion-agent-markdown-content {
         margin: 0;
         line-height: 1.5;
       }
 
-      .browser-use-markdown-content p {
+      .audion-agent-markdown-content p {
         margin: 0 0 8px 0;
       }
 
-      .browser-use-markdown-content p:last-child {
+      .audion-agent-markdown-content p:last-child {
         margin-bottom: 0;
       }
 
-      .browser-use-markdown-content h1,
-      .browser-use-markdown-content h2,
-      .browser-use-markdown-content h3 {
+      .audion-agent-markdown-content h1,
+      .audion-agent-markdown-content h2,
+      .audion-agent-markdown-content h3 {
         margin: 8px 0 4px 0;
         font-weight: 600;
         color: #f8f9ff;
       }
 
-      .browser-use-markdown-content h1 {
+      .audion-agent-markdown-content h1 {
         font-size: 16px;
       }
 
-      .browser-use-markdown-content h2 {
+      .audion-agent-markdown-content h2 {
         font-size: 14px;
       }
 
-      .browser-use-markdown-content h3 {
+      .audion-agent-markdown-content h3 {
         font-size: 13px;
       }
 
-      .browser-use-markdown-content code {
+      .audion-agent-markdown-content code {
         background: rgba(255, 255, 255, 0.1);
         padding: 2px 6px;
         border-radius: 3px;
@@ -311,7 +311,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         color: #60a5fa;
       }
 
-      .browser-use-markdown-content pre {
+      .audion-agent-markdown-content pre {
         background: rgba(0, 0, 0, 0.3);
         padding: 8px 12px;
         border-radius: 4px;
@@ -320,7 +320,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
 
-      .browser-use-markdown-content pre code {
+      .audion-agent-markdown-content pre code {
         background: transparent;
         padding: 0;
         color: #f8f9ff;
@@ -328,41 +328,41 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         white-space: pre;
       }
 
-      .browser-use-markdown-content ul,
-      .browser-use-markdown-content ol {
+      .audion-agent-markdown-content ul,
+      .audion-agent-markdown-content ol {
         margin: 4px 0 4px 16px;
         padding: 0;
       }
 
-      .browser-use-markdown-content li {
+      .audion-agent-markdown-content li {
         margin: 2px 0;
       }
 
-      .browser-use-markdown-content a {
+      .audion-agent-markdown-content a {
         color: #60a5fa;
         text-decoration: underline;
       }
 
-      .browser-use-markdown-content a:hover {
+      .audion-agent-markdown-content a:hover {
         color: #93c5fd;
       }
 
-      .browser-use-markdown-content strong {
+      .audion-agent-markdown-content strong {
         font-weight: 600;
         color: #f8f9ff;
       }
 
-      .browser-use-markdown-content em {
+      .audion-agent-markdown-content em {
         font-style: italic;
       }
 
-      .browser-use-demo-entry:not(.expanded) .browser-use-markdown-content {
+      .audion-agent-demo-entry:not(.expanded) .audion-agent-markdown-content {
         max-height: 120px;
         overflow: hidden;
         mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
       }
 
-      .browser-use-entry-toggle {
+      .audion-agent-entry-toggle {
         align-self: flex-start;
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
@@ -373,14 +373,14 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         cursor: pointer;
       }
 
-      .browser-use-demo-entry.level-info { border-left-color: #60a5fa; }
-      .browser-use-demo-entry.level-action { border-left-color: #34d399; }
-      .browser-use-demo-entry.level-thought { border-left-color: #f97316; }
-      .browser-use-demo-entry.level-warning { border-left-color: #fbbf24; }
-      .browser-use-demo-entry.level-success { border-left-color: #22c55e; }
-      .browser-use-demo-entry.level-error { border-left-color: #f87171; }
+      .audion-agent-demo-entry.level-info { border-left-color: #60a5fa; }
+      .audion-agent-demo-entry.level-action { border-left-color: #34d399; }
+      .audion-agent-demo-entry.level-thought { border-left-color: #f97316; }
+      .audion-agent-demo-entry.level-warning { border-left-color: #fbbf24; }
+      .audion-agent-demo-entry.level-success { border-left-color: #22c55e; }
+      .audion-agent-demo-entry.level-error { border-left-color: #f87171; }
 
-      @keyframes browser-use-fade-in {
+      @keyframes audion-agent-fade-in {
         from { opacity: 0; transform: translateY(6px); }
         to { opacity: 1; transform: translateY(0); }
       }
@@ -389,7 +389,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
         #${PANEL_ID} {
           font-size: 12px;
         }
-        #${PANEL_ID} .browser-use-demo-header {
+        #${PANEL_ID} .audion-agent-demo-header {
           padding: 12px 16px 10px;
         }
       }
@@ -441,19 +441,19 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
     panel.setAttribute(EXCLUDE_ATTR, 'true');
 
     const header = document.createElement('header');
-    header.className = 'browser-use-demo-header';
+    header.className = 'audion-agent-demo-header';
     const title = document.createElement('div');
-    title.className = 'browser-use-logo';
+    title.className = 'audion-agent-logo';
     const logo = document.createElement('img');
-    logo.src = 'https://raw.githubusercontent.com/browser-use/browser-use/main/static/browser-use-dark.png';
+    logo.src = 'https://raw.githubusercontent.com/audion-agent/audion-agent/main/static/audion-agent-dark.png';
     logo.alt = 'Browser-use';
     logo.loading = 'lazy';
     title.appendChild(logo);
     const actions = document.createElement('div');
-    actions.className = 'browser-use-header-actions';
+    actions.className = 'audion-agent-header-actions';
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
-    closeBtn.className = 'browser-use-close-btn';
+    closeBtn.className = 'audion-agent-close-btn';
     closeBtn.setAttribute(EXCLUDE_ATTR, 'true');
     closeBtn.setAttribute('aria-label', 'Hide demo panel');
     closeBtn.dataset.role = 'close-toggle';
@@ -463,7 +463,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
     header.appendChild(actions);
 
     const body = document.createElement('div');
-    body.className = 'browser-use-demo-body';
+    body.className = 'audion-agent-demo-body';
     body.setAttribute('data-role', 'log-list');
 
     panel.appendChild(header);
@@ -544,7 +544,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
 
   function adjustLayout() {
     const width = computePanelWidth();
-    document.documentElement.style.setProperty('--browser-use-demo-panel-width', `${width}px`);
+    document.documentElement.style.setProperty('--audion-agent-demo-panel-width', `${width}px`);
     if (state.isOpen) {
       document.body.style.marginRight = `${width + 16}px`;
       if (state.toggleButton) {
@@ -608,8 +608,8 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
       const html = sessionStorage.getItem(STORAGE_HTML_KEY);
       if (html) {
         state.list.innerHTML = html;
-        for (const entryNode of state.list.querySelectorAll('.browser-use-demo-entry')) {
-          const toggle = entryNode.querySelector('.browser-use-entry-toggle');
+        for (const entryNode of state.list.querySelectorAll('.audion-agent-demo-entry')) {
+          const toggle = entryNode.querySelector('.audion-agent-entry-toggle');
           if (toggle) {
             toggle.addEventListener('click', () =>
               toggleEntryExpansion(entryNode, toggle, entryNode.getAttribute('data-id'))
@@ -665,35 +665,35 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
 
   function createEntryNode(entry) {
     const row = document.createElement('article');
-    row.className = `browser-use-demo-entry level-${entry.level}`;
+    row.className = `audion-agent-demo-entry level-${entry.level}`;
     row.setAttribute('data-id', entry.id);
 
     const icon = document.createElement('span');
-    icon.className = 'browser-use-entry-icon';
+    icon.className = 'audion-agent-entry-icon';
     icon.textContent = LEVEL_ICONS[entry.level] || LEVEL_ICONS.info;
 
     const content = document.createElement('div');
-    content.className = 'browser-use-entry-content';
+    content.className = 'audion-agent-entry-content';
 
     const meta = document.createElement('div');
-    meta.className = 'browser-use-entry-meta';
+    meta.className = 'audion-agent-entry-meta';
     const time = formatTime(entry.timestamp);
     const label = LEVEL_LABELS[entry.level] || entry.level;
     meta.innerHTML = `<span>${time}</span><span>${label}</span>`;
 
     const messageWrapper = document.createElement('div');
-    messageWrapper.className = 'browser-use-entry-message';
+    messageWrapper.className = 'audion-agent-entry-message';
     const messageText = entry.message.trim();
     const messageHtml = messageText;
     const message = document.createElement('div');
-    message.className = 'browser-use-markdown-content';
+    message.className = 'audion-agent-markdown-content';
     message.textContent = messageHtml;
     messageWrapper.appendChild(message);
 
     if (messageText.length > 160) {
       const toggle = document.createElement('button');
       toggle.type = 'button';
-      toggle.className = 'browser-use-entry-toggle';
+      toggle.className = 'audion-agent-entry-toggle';
       toggle.setAttribute(EXCLUDE_ATTR, 'true');
       toggle.textContent = 'Expand';
       toggle.addEventListener('click', () => toggleEntryExpansion(row, toggle, entry.id));
@@ -716,7 +716,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
       const id = node.getAttribute('data-id');
       if (id && expanded.has(id)) {
         node.classList.add('expanded');
-        const toggle = node.querySelector('.browser-use-entry-toggle');
+        const toggle = node.querySelector('.audion-agent-entry-toggle');
         if (toggle) {
           toggle.textContent = 'Collapse';
         }
@@ -792,7 +792,7 @@ _DEMO_PANEL_SCRIPT = r"""(function () {
   } else {
     boot();
   }
-  window.addEventListener('browser-use-log', handleLogEvent);
+  window.addEventListener('audion-agent-log', handleLogEvent);
 })();
 """
 
@@ -887,7 +887,7 @@ class DemoMode:
 		return f"""
 (() => {{
 	const detail = {payload};
-	const event = new CustomEvent('browser-use-log', {{ detail }});
+	const event = new CustomEvent('audion-agent-log', {{ detail }});
 	window.dispatchEvent(event);
 }})();
 """.strip()

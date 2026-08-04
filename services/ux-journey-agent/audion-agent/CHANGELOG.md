@@ -1,5 +1,19 @@
 # Changelog (AUDION fork)
 
+## `0.13.7+audion.1` (Local spike rebase onto browser-use 0.13.7)
+
+**Upstream baseline:** `browser-use==0.13.7` (commit `f0aa3a8`).
+
+### Changed
+
+- Rebases the vendored `audion-agent` package tree onto upstream `browser-use` `0.13.7` for a local UX Journey Agent spike.
+- Re-applies the minimum AUDION fork surfaces needed by `services/ux-journey-agent/main.py`: typed persona support, reasoning-language prompt block, per-step screenshot hook, per-action hooks, tolerant `AgentOutput` parsing, and the default web-search kill switch.
+- Bumps package metadata and dependency pins to the upstream `0.13.7` baseline while keeping the local package name `audion-agent`.
+
+### Notes
+
+- This entry documents a local spike intended for Nav H3 comparison work, not a production-hardening release.
+
 This file tracks changes made by AUDION on top of the upstream
 [browser-use](https://github.com/browser-use/browser-use) base. Each entry
 identifies the upstream baseline it was applied against so the fork can be

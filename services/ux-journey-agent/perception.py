@@ -397,38 +397,575 @@ def _actions_matching_keywords(
     return out
 
 
-def _nav_h3_is_home_loop_click(action: Any, current_url: str | None) -> bool:
-    """True when a Nav-H3 click only points back to the current home/root URL."""
-    if action_tool_name(action) != "click":
-        return False
-    blob = action_text_blob(action)
-    if "produktkombination" in blob:
-        return False
-    cur = (current_url or "").strip().lower().rstrip("/")
-    home = "https://www.bosch-ebike.com/de"
-    return any(
-        token in blob
-        for token in (
-            '"target": "/de/"',
-            '"target": "https://www.bosch-ebike.com/de/"',
-            '"url": "/de/"',
-            '"url": "https://www.bosch-ebike.com/de/"',
-            home,
-            cur,
+def _selector_map_items(browser_state_summary: Any) -> list[tuple[int, Any]]:
+    try:
+        dom = (
+            browser_state_summary.get("dom_state")
+            if isinstance(browser_state_summary, dict)
+            else getattr(browser_state_summary, "dom_state", None)
+        ) or (
+            browser_state_summary.get("domState")
+            if isinstance(browser_state_summary, dict)
+            else getattr(browser_state_summary, "domState", None)
         )
-        if token
-    )
+        selector_map = (
+            dom.get("selector_map")
+            if isinstance(dom, dict)
+            else getattr(dom, "selector_map", None)
+        )
+        if isinstance(selector_map, dict):
+            return [(int(k), v) for k, v in selector_map.items()]
+    except Exception:
+        pass
+    return []
 
 
-def is_nav_h3_task(task: str | None) -> bool:
+def _node_attr(node: Any, key: str) -> str:
+    attrs = node.get("attributes") if isinstance(node, dict) else getattr(node, "attributes", None)
+    if isinstance(attrs, dict):
+        return str(attrs.get(key) or "")
+    return ""
+
+
+def _node_visible(node: Any) -> bool:
+    val = node.get("is_visible") if isinstance(node, dict) else getattr(node, "is_visible", None)
+    return val is not False
+
+
+def _node_bounds(node: Any) -> tuple[float, float, float, float] | None:
+    """
+    Prefer ``absolute_position`` (frame-offset CSS viewport coords used by
+    upstream click/highlight). Fall back to snapshot bounds / dict fixtures.
+    """
+    candidates: list[Any] = []
+    if isinstance(node, dict):
+        candidates.extend(
+            [
+                node.get("absolute_position"),
+                node.get("bounds"),
+                (node.get("snapshot_node") or {}).get("clientRects")
+                if isinstance(node.get("snapshot_node"), dict)
+                else None,
+                (node.get("snapshot_node") or {}).get("bounds")
+                if isinstance(node.get("snapshot_node"), dict)
+                else None,
+            ]
+        )
+    else:
+        candidates.extend(
+            [
+                getattr(node, "absolute_position", None),
+                getattr(node, "bounds", None),
+            ]
+        )
+        snap = getattr(node, "snapshot_node", None)
+        if snap is not None:
+            candidates.extend(
+                [
+                    getattr(snap, "clientRects", None),
+                    getattr(snap, "bounds", None),
+                ]
+            )
+    for bounds in candidates:
+        if bounds is None:
+            continue
+        if isinstance(bounds, dict):
+            x = bounds.get("x")
+            y = bounds.get("y")
+            w = bounds.get("width")
+            h = bounds.get("height")
+        else:
+            x = getattr(bounds, "x", None)
+            y = getattr(bounds, "y", None)
+            w = getattr(bounds, "width", None)
+            h = getattr(bounds, "height", None)
+        if all(isinstance(v, (int, float)) for v in (x, y, w, h)):
+            return float(x), float(y), float(w), float(h)
+    return None
+
+
+def _node_text_blob(node: Any) -> str:
+    parts: list[str] = []
+    if isinstance(node, dict):
+        for key in ("node_name", "node_value"):
+            parts.append(str(node.get(key) or ""))
+        ax = node.get("ax_node") or {}
+        if isinstance(ax, dict):
+            parts.extend([str(ax.get("name") or ""), str(ax.get("role") or "")])
+    else:
+        parts.extend([str(getattr(node, "node_name", "") or ""), str(getattr(node, "node_value", "") or "")])
+        ax = getattr(node, "ax_node", None)
+        if ax is not None:
+            parts.extend([str(getattr(ax, "name", "") or ""), str(getattr(ax, "role", "") or "")])
+        for meth in ("get_all_children_text", "get_meaningful_text_for_llm"):
+            fn = getattr(node, meth, None)
+            if callable(fn):
+                try:
+                    parts.append(str(fn() or ""))
+                except Exception:
+                    pass
+    for k in ("href", "title", "aria-label", "aria-controls", "aria-expanded"):
+        parts.append(_node_attr(node, k))
+    return " ".join(p for p in parts if p).lower()
+
+
+def _task_nav_open_keywords(task: str | None) -> list[str]:
+    """Opener keywords that appear in the task (path toward the goal)."""
+    t = str(task or "").lower()
+    keys: list[str] = []
+    for tok in (
+        "service",
+        "beratung",
+        "support",
+        "hilfe",
+        "menu",
+        "menü",
+        "navigation",
+        "produkte",
+        "products",
+        "modelle",
+        "models",
+    ):
+        if tok in t and tok not in keys:
+            keys.append(tok)
+    return keys
+
+
+def _task_target_keywords(task: str | None) -> list[str]:
+    """Destination keywords present in the task only — no fixture defaults."""
+    t = str(task or "").lower()
+    keys: list[str] = []
+    for tok in (
+        "produktkombination",
+        "kompatibil",
+        "konfigurator",
+        "probefahrt",
+        "händlerfinder",
+        "haendlerfinder",
+        "dealer",
+        "preislisten",
+        "testfahrt",
+    ):
+        if tok in t and tok not in keys:
+            keys.append(tok)
+    for m in re.finditer(r"([a-zäöü0-9][a-zäöü0-9-]{4,})-(?:tool|seite|page)", t):
+        stem = m.group(1)
+        if stem not in keys:
+            keys.append(stem)
+    return keys
+
+
+def is_ui_path_finding_task(task: str | None) -> bool:
+    """
+    True when the persona must reach a destination via UI path-finding
+    (home / find-the-way / not opening the tool directly).
+    """
     if not task:
         return False
     t = str(task).lower()
-    return (
-        "bosch ebike startseite" in t
-        and "produktkombination" in t
-        and ("service" in t or "beratung" in t)
+    path_cues = (
+        "startseite",
+        "home page",
+        "start page",
+        "starte auf",
+        "finde den weg",
+        "find the way",
+        "nicht direkt",
+        "nicht direkt im tool",
+        "via navigation",
+        "über die navigation",
+        "from the home",
+        "from home",
     )
+    if not any(c in t for c in path_cues):
+        return False
+    if _task_target_keywords(task):
+        return True
+    return any(c in t for c in ("finde", "find ", "suche", "reach", "lande", "landest"))
+
+
+def is_nav_h3_task(task: str | None) -> bool:
+    """Backward-compatible alias for Persona Lab Nav fixtures."""
+    return is_ui_path_finding_task(task)
+
+
+def _is_rootish_href(href: str) -> bool:
+    h = (href or "").strip().lower().rstrip("/")
+    if h in ("", "/", "#"):
+        return True
+    if re.fullmatch(r"https?://[^/]+", h):
+        return True
+    if re.fullmatch(r"https?://[^/]+/[a-z]{2}", h):
+        return True
+    if re.fullmatch(r"/[a-z]{2}", h):
+        return True
+    return False
+
+
+def _url_contains_any(url: str | None, keys: list[str]) -> bool:
+    blob = str(url or "").lower()
+    return bool(keys) and any(k in blob for k in keys)
+
+
+def _coords_too_close(
+    a: tuple[Any, Any] | None,
+    b: tuple[Any, Any] | None,
+    *,
+    tol: int = 48,
+) -> bool:
+    if not a or not b:
+        return False
+    try:
+        ax, ay = float(a[0]), float(a[1])
+        bx, by = float(b[0]), float(b[1])
+    except (TypeError, ValueError):
+        return False
+    return abs(ax - bx) <= tol and abs(ay - by) <= tol
+
+
+def _coord_xy(action: dict[str, Any] | None) -> tuple[int, int] | None:
+    if not action:
+        return None
+    x, y = action.get("coordinate_x"), action.get("coordinate_y")
+    if isinstance(x, (int, float)) and isinstance(y, (int, float)):
+        return int(x), int(y)
+    return None
+
+
+def _coordinate_click_for_label(
+    rect: tuple[float, float, float, float],
+    blob: str,
+    needles: list[str],
+) -> dict[str, Any]:
+    """
+    Click inside a wide aggregated nav node near the matching label.
+
+    Omit ``index`` so runtime uses coordinate clicking. Index+coords still
+    resolves to the whole aggregated link and fails to open the submenu.
+
+    For multi-item top bars, prefer ordinal position among known LTR nav
+    labels — character offsets in concatenated AX text under-estimate how
+    far right later items sit visually.
+    """
+    bx, by, bw, bh = rect
+    frac = 0.5
+    nav_labels = (
+        "produkte",
+        "product",
+        "ebikes",
+        "models",
+        "modelle",
+        "service",
+        "beratung",
+        "magazin",
+        "magazine",
+        "business",
+        "über uns",
+        "about",
+        "support",
+        "hilfe",
+    )
+    synonym_skip = {
+        "beratung": "service",
+        "product": "produkte",
+        "magazine": "magazin",
+        "about": "über uns",
+        "models": "modelle",
+    }
+    hits: list[tuple[int, str]] = []
+    for lab in nav_labels:
+        pos = blob.find(lab)
+        if pos >= 0:
+            hits.append((pos, lab))
+    hits.sort(key=lambda item: item[0])
+    present: list[str] = []
+    for _pos, lab in hits:
+        skip_if = synonym_skip.get(lab)
+        if skip_if and skip_if in present:
+            continue
+        if lab in present:
+            continue
+        present.append(lab)
+        if len(present) >= 7:
+            break
+    target_idx: int | None = None
+    for needle in needles:
+        for i, lab in enumerate(present):
+            if needle in lab or lab in needle:
+                target_idx = i
+                break
+        if target_idx is not None:
+            break
+    if target_idx is not None and present:
+        frac = (float(target_idx) + 0.5) / float(len(present))
+    else:
+        for needle in needles:
+            pos = blob.find(needle)
+            if pos >= 0 and len(blob) > 0:
+                frac = (pos + (len(needle) / 2.0)) / float(len(blob))
+                break
+    frac = max(0.08, min(0.92, frac))
+    return {
+        "tool": "click",
+        "coordinate_x": int(round(bx + (bw * frac))),
+        "coordinate_y": int(round(by + (bh * 0.5))),
+    }
+
+
+def _nav_open_candidate_score(
+    rect: tuple[float, float, float, float],
+    blob: str,
+    menuish: int,
+) -> float:
+    """
+    Prefer top chrome / compact nav bars over mid-page content that happens
+    to mention the same labels (hero, footer, sitemap dumps).
+    """
+    _bx, by, bw, bh = rect
+    score = float(menuish) * 5.0
+    if by <= 140:
+        score += 50.0
+    elif by <= 220:
+        score += 20.0
+    else:
+        score -= 40.0
+    if bh <= 80:
+        score += 30.0
+    elif bh <= 120:
+        score += 15.0
+    else:
+        score -= 25.0
+    if bw >= 400:
+        score += 10.0
+    blob_len = len(blob or "")
+    if blob_len and blob_len < 220:
+        score += 15.0
+    elif blob_len > 800:
+        score -= 25.0
+    return score
+
+
+def select_cookie_banner_action(
+    browser_state_summary: Any,
+    *,
+    current_url: str | None = None,
+    perception: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any] | None, str]:
+    """
+    Prefer an explicit cookie/consent dismiss click when a blocker is visible.
+    """
+    blob = " ".join(
+        bit
+        for bit in (str(current_url or ""), perception_text_blob(perception))
+        if bit
+    ).lower()
+    cookieish = any(tok in blob for tok in ("cookie", "consent", "banner", "ablehnen"))
+    exact_reject_idx: int | None = None
+    generic_reject_idx: int | None = None
+    for idx, node in _selector_map_items(browser_state_summary):
+        if not _node_visible(node):
+            continue
+        node_blob = _node_text_blob(node)
+        if not node_blob:
+            continue
+        if "alles ablehnen" in node_blob:
+            exact_reject_idx = idx
+            break
+        if any(tok in node_blob for tok in ("ablehnen", "reject", "consent")):
+            generic_reject_idx = idx
+    if exact_reject_idx is not None:
+        return {"tool": "click", "index": exact_reject_idx}, "cookie_dom_reject"
+    if cookieish and generic_reject_idx is not None:
+        return {"tool": "click", "index": generic_reject_idx}, "cookie_dom_reject"
+    return None, "cookie_dom_none"
+
+
+def select_nav_dom_action(
+    browser_state_summary: Any,
+    *,
+    current_url: str | None,
+    task: str | None,
+    exploratory_attempts: int = 0,
+    max_nav_attempts: int = 4,
+    start_url: str | None = None,
+    avoid_coordinates: list[tuple[int, int]] | None = None,
+) -> tuple[dict[str, Any] | None, str]:
+    """
+    Deterministically steer brittle home→destination nav using visible DOM nodes.
+
+    Site-agnostic: keywords from the task; no domain allowlist. Never emits
+    ``hover`` — 0.13.x has no hover tool.
+    """
+    if not is_ui_path_finding_task(task):
+        return None, "nav_dom_skip_task"
+    cur = str(current_url or "").lower()
+    target_keys = _task_target_keywords(task)
+    if _url_contains_any(cur, target_keys):
+        return None, "nav_dom_skip_url"
+    if exploratory_attempts >= max_nav_attempts:
+        return None, "nav_dom_budget_spent"
+
+    open_keys = _task_nav_open_keywords(task)
+    if not open_keys and not target_keys:
+        return None, "nav_dom_no_keywords"
+
+    avoid = list(avoid_coordinates or [])
+    target_idx: int | None = None
+    opener_click_idx: int | None = None
+    opener_click_score = float("-inf")
+    best_coord: dict[str, Any] | None = None
+    best_coord_score = float("-inf")
+    text_opener_idx: int | None = None
+    text_opener_len = 10**9
+    strip_coord: dict[str, Any] | None = None
+    strip_score = float("-inf")
+    alt_strip: dict[str, Any] | None = None
+
+    def _accept_coord(action: dict[str, Any] | None) -> bool:
+        xy = _coord_xy(action)
+        if xy is None:
+            return False
+        return not any(_coords_too_close(xy, prev) for prev in avoid)
+
+    for idx, node in _selector_map_items(browser_state_summary):
+        if not _node_visible(node):
+            continue
+        blob = _node_text_blob(node)
+        if not blob:
+            continue
+        href = _node_attr(node, "href").lower()
+        if target_keys and any(k in blob or k in href for k in target_keys):
+            target_idx = idx
+            break
+        if open_keys and not any(k in blob for k in open_keys):
+            continue
+        menuish = sum(
+            1
+            for tok in (
+                "produkte",
+                "product",
+                "ebikes",
+                "models",
+                "modelle",
+                "service",
+                "beratung",
+                "magazin",
+                "magazine",
+                "business",
+                "über uns",
+                "about",
+            )
+            if tok in blob
+        )
+        if open_keys and len(blob) < text_opener_len and len(blob) <= 120:
+            text_opener_len = len(blob)
+            text_opener_idx = idx
+        rect = _node_bounds(node)
+        if rect is not None:
+            bx, by, bw, bh = rect
+            top_chrome = by <= 180 and bh <= 120 and (by + bh) <= 220
+            if top_chrome:
+                score = _nav_open_candidate_score(rect, blob, menuish)
+                coord_eligible = (menuish >= 3) or (menuish >= 2 and bw >= 240 and bh <= 120)
+                if open_keys and coord_eligible:
+                    cand = _coordinate_click_for_label(rect, blob, open_keys)
+                    if _accept_coord(cand) and score > best_coord_score:
+                        best_coord_score = score
+                        best_coord = cand
+                discrete = False
+                if href and not _is_rootish_href(href):
+                    discrete = bw < 420 and bh <= 100
+                elif bw < 400 and bh <= 80:
+                    discrete = True
+                if discrete and score > opener_click_score:
+                    opener_click_score = score
+                    opener_click_idx = idx
+            elif open_keys and menuish >= 3 and bw >= 400:
+                score = float(menuish) * 5.0 + (10.0 if bw >= 800 else 0.0)
+                if by <= 280:
+                    score += 5.0
+                cand = _coordinate_click_for_label(
+                    (bx, 36.0, max(bw, 800.0), 48.0),
+                    blob,
+                    open_keys,
+                )
+                if _accept_coord(cand) and score > strip_score:
+                    strip_score = score
+                    strip_coord = cand
+                elif not _accept_coord(cand) and score >= strip_score:
+                    nudged = dict(cand)
+                    nudged["coordinate_x"] = int(
+                        min(
+                            bx + max(bw, 800.0) * 0.92,
+                            float(cand["coordinate_x"]) + max(80.0, max(bw, 800.0) * 0.12),
+                        )
+                    )
+                    if _accept_coord(nudged):
+                        alt_strip = nudged
+        elif open_keys and menuish >= 3:
+            score = float(menuish) * 5.0
+            cand = _coordinate_click_for_label(
+                (0.0, 36.0, 1400.0, 48.0),
+                blob,
+                open_keys,
+            )
+            if _accept_coord(cand) and score > strip_score:
+                strip_score = score
+                strip_coord = cand
+            elif not _accept_coord(cand):
+                nudged = dict(cand)
+                nudged["coordinate_x"] = int(min(1288, float(cand["coordinate_x"]) + 120))
+                if _accept_coord(nudged):
+                    alt_strip = nudged
+        elif href and not _is_rootish_href(href):
+            if opener_click_idx is None:
+                opener_click_idx = idx
+
+    if target_idx is not None:
+        return {"tool": "click", "index": target_idx}, "nav_dom_product_index"
+    if opener_click_idx is not None:
+        return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
+    if best_coord is not None:
+        return best_coord, "nav_dom_service_coordinate"
+    if strip_coord is not None:
+        return strip_coord, "nav_dom_service_coordinate"
+    if alt_strip is not None:
+        return alt_strip, "nav_dom_service_coordinate"
+    if text_opener_idx is not None:
+        return {"tool": "click", "index": text_opener_idx}, "nav_dom_service_click"
+    _ = start_url
+    return None, "nav_dom_no_candidate"
+
+
+def _is_home_loop_click(
+    action: Any,
+    current_url: str | None,
+    *,
+    start_url: str | None = None,
+    task: str | None = None,
+) -> bool:
+    """True when a path-finding click only points back to the start/root URL."""
+    if action_tool_name(action) != "click":
+        return False
+    blob = action_text_blob(action)
+    target_keys = _task_target_keywords(task)
+    if target_keys and any(k in blob for k in target_keys):
+        return False
+    cur = (current_url or "").strip().lower().rstrip("/")
+    start = (start_url or "").strip().lower().rstrip("/")
+    tokens = [
+        '"target": "/"',
+        '"url": "/"',
+        '"target": "/de/"',
+        '"url": "/de/"',
+        '"target": "/en/"',
+        '"url": "/en/"',
+    ]
+    if cur:
+        tokens.extend([cur, cur + "/"])
+    if start:
+        tokens.extend([start, start + "/"])
+    return any(token and token in blob for token in tokens)
 
 
 def prefer_targeted_actions(
@@ -438,50 +975,57 @@ def prefer_targeted_actions(
     current_url: str | None = None,
     perception: dict[str, Any] | None = None,
     exploratory_attempts: int = 0,
+    start_url: str | None = None,
 ) -> tuple[list[Any], str]:
     """
-    Prefer a higher-signal next step for known brittle flows.
-
-    Current use cases:
-    - Nav H3: once a Produktkombinationen link is visible, prefer it over a
-      generic service/menu retry.
-    - Cookie blocker: prefer the visible reject/dismiss action before generic
-      fallback scrolling or premature done.
+    Prefer a higher-signal next step for brittle path-finding / cookie flows.
     """
     if not actions:
         return actions, "targeted_none"
 
-    if is_nav_h3_task(task):
-        produkt = _actions_matching_keywords(actions, ["produktkombination"])
-        if produkt:
-            return produkt, "nav_h3_produktkombinationen"
+    if is_ui_path_finding_task(task):
+        target_keys = _task_target_keywords(task)
+        if target_keys:
+            produkt = _actions_matching_keywords(actions, target_keys)
+            if produkt:
+                return produkt, "path_target_visible"
+        open_keys = _task_nav_open_keywords(task) or [
+            "service",
+            "beratung",
+            "menu",
+            "menü",
+            "submenu",
+            "navigation",
+        ]
         service = _actions_matching_keywords(
             actions,
-            ["service", "beratung", "menu", "menü", "submenu"],
+            open_keys,
             tool_names=("click", "hover"),
         )
-        hover_service = [
-            a for a in service if action_tool_name(a) == "hover"
-        ]
+        hover_service = [a for a in service if action_tool_name(a) == "hover"]
         if hover_service:
-            return hover_service, "nav_h3_hover_service"
+            return hover_service, "path_open_hover"
         if exploratory_attempts >= 1:
             service = [
                 a
                 for a in service
-                if not _nav_h3_is_home_loop_click(a, current_url)
+                if not _is_home_loop_click(
+                    a, current_url, start_url=start_url, task=task
+                )
             ]
             if not service:
                 non_loop = [
                     a
                     for a in actions
                     if action_tool_name(a) not in ("done", "complete", "finish")
-                    and not _nav_h3_is_home_loop_click(a, current_url)
+                    and not _is_home_loop_click(
+                        a, current_url, start_url=start_url, task=task
+                    )
                 ]
                 if non_loop:
-                    return non_loop, "nav_h3_avoid_home_loop"
+                    return non_loop, "path_avoid_home_loop"
         if service:
-            return service, "nav_h3_service"
+            return service, "path_open_menu"
 
     blob = " ".join(
         bit
@@ -503,6 +1047,38 @@ def prefer_targeted_actions(
     return actions, "targeted_passthrough"
 
 
+def filter_path_finding_deeplinks(
+    actions: list[Any],
+    *,
+    task: str | None,
+    current_url: str | None,
+) -> tuple[list[Any], str]:
+    """
+    Drop navigate/go_to_url shortcuts that jump straight to the task target
+    while the persona is still supposed to find it via the UI.
+    """
+    if not actions or not is_ui_path_finding_task(task):
+        return actions, "deeplink_skip"
+    target_keys = _task_target_keywords(task)
+    if not target_keys:
+        return actions, "deeplink_skip"
+    if _url_contains_any(current_url, target_keys):
+        return actions, "deeplink_already_there"
+    kept: list[Any] = []
+    blocked = 0
+    for action in actions:
+        tool = action_tool_name(action)
+        if tool in ("navigate", "go_to_url", "open_tab"):
+            blob = action_text_blob(action).lower()
+            if any(k in blob for k in target_keys):
+                blocked += 1
+                continue
+        kept.append(action)
+    if blocked:
+        return kept, "deeplink_blocked"
+    return actions, "deeplink_passthrough"
+
+
 def targeted_continue_nudge(
     *,
     task: str | None,
@@ -512,29 +1088,29 @@ def targeted_continue_nudge(
     min_steps: int,
 ) -> str:
     """Targeted no-done retry message for pre-minSteps recovery."""
-    hinted, reason = prefer_targeted_actions(
+    _hinted, reason = prefer_targeted_actions(
         actions,
         task=task,
         current_url=current_url,
         perception=perception,
     )
-    if reason == "nav_h3_produktkombinationen":
+    if reason in ("path_target_visible", "nav_h3_produktkombinationen"):
         return (
             f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
-            "NAV-H3: Wenn der Link/Zielpfad sichtbar ist, klicke jetzt gezielt "
-            "auf Produktkombinationen (oder den direkten Tool-Link) statt erneut nur Service zu wählen."
+            "PATH: Wenn der Ziel-Link sichtbar ist, klicke ihn jetzt gezielt "
+            "statt erneut nur ein Menü zu öffnen oder eine Deep-URL zu raten."
         )
-    if reason == "nav_h3_service":
+    if reason in ("path_open_menu", "nav_h3_service"):
         return (
             f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
-            "NAV-H3: Klicke jetzt auf den sichtbaren Service-/Beratungs-Navigationseintrag, "
-            "um den Pfad zum Produktkombinationen-Tool weiterzuverfolgen."
+            "PATH: Klicke jetzt auf den sichtbaren Navigations-Einstieg aus der Aufgabe, "
+            "um den Weg zum Ziel weiterzuverfolgen — keine Direkt-URL."
         )
-    if reason == "nav_h3_hover_service":
+    if reason in ("path_open_hover", "nav_h3_hover_service"):
         return (
             f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
-            "NAV-H3: Öffne jetzt zuerst das sichtbare Service-/Beratungs-Menü "
-            "(hover/menü öffnen), dann den Unterpunkt zum Produktkombinationen-Tool."
+            "PATH: Öffne jetzt zuerst das sichtbare Menü (Klick; hover gibt es nicht), "
+            "dann den Unterpunkt zum Ziel."
         )
     if reason == "cookie_reject":
         return (
@@ -544,8 +1120,10 @@ def targeted_continue_nudge(
         )
     return (
         f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
-        "Bitte liefere einen sichtbaren nächsten Schritt (passender Klick/Scroll), kein done."
+        "Bitte liefere einen sichtbaren nächsten Schritt (passender Klick/Scroll), kein done "
+        "und keine geratene Deep-URL zum Ziel."
     )
+
 
 
 _GREY_FILTER_CUES = (
@@ -832,17 +1410,20 @@ def is_lab_b_matrix_task(task: str | None) -> bool:
 
 def lab_b_gold_context_allowed(current_url: str | None, task: str | None) -> bool:
     """
-    When False: disable Lab-B gold enrich/prompt bias so Nav-home can't invent
-    "grau/disabled Displays" or "Performance Line".
+    When False: disable Lab-B gold enrich/prompt bias so path-finding home
+    can't invent destination-tool filter state.
 
     Allowed when:
-    - we're on the Produktkombinationen tool URL, OR
-    - the current task is the Lab B matrix run.
+    - the current task is the Lab B matrix run, OR
+    - current URL already contains task target keywords (on the destination).
     """
     if is_lab_b_matrix_task(task):
         return True
     if not current_url:
         return False
+    keys = _task_target_keywords(task)
+    if keys:
+        return _url_contains_any(current_url, keys)
     return "produktkombinationen" in str(current_url).lower()
 
 
@@ -854,38 +1435,42 @@ def scope_nav_home_perception(
     budget: int,
 ) -> dict[str, Any] | None:
     """
-    Keep Nav-H3 on the *path-finding* problem while still on Bosch home.
+    Keep path-finding tasks on the *path* problem while not yet on the target URL.
 
-    Without this, the model can hallucinate matrix/filter state from the target
-    task and abandon before it has actually reached the Produktkombinationen
-    surface.
+    Without this, the model can hallucinate destination-tool state from the task
+    and abandon before it has actually reached the target surface.
     """
-    if not perception or not is_nav_h3_task(task):
+    if not perception or not is_ui_path_finding_task(task):
         return perception
     if lab_b_gold_context_allowed(current_url, task):
+        return perception
+    target_keys = _task_target_keywords(task)
+    if _url_contains_any(current_url, target_keys):
         return perception
 
     out = dict(perception)
     blob = perception_text_blob(out)
+    open_keys = _task_nav_open_keywords(task)
     noticed: list[dict[str, Any]] = [
         {
-            "what": "Bosch eBike Startseite geladen",
+            "what": "Startseite geladen",
             "where": "Home",
             "relevance": "high",
         }
     ]
-    if any(tok in blob for tok in ("service", "beratung")):
+    if open_keys and any(tok in blob for tok in open_keys):
+        label = " / ".join(open_keys[:2])
         noticed.append(
             {
-                "what": "Service & Beratung als möglicher Einstieg",
+                "what": f"{label} als möglicher Einstieg",
                 "where": "Navigation",
                 "relevance": "high",
             }
         )
-    if "produktkombination" in blob:
+    if target_keys and any(tok in blob for tok in target_keys):
         noticed.append(
             {
-                "what": "Produktkombinationen noch nicht verifiziert",
+                "what": f"{target_keys[0]} noch nicht verifiziert",
                 "where": "Zielpfad",
                 "relevance": "high",
             }
@@ -893,15 +1478,16 @@ def scope_nav_home_perception(
     if len(noticed) == 1:
         noticed.append(
             {
-                "what": "Direkter Tool-Einstieg noch nicht sichtbar",
+                "what": "Direkter Ziel-Einstieg noch nicht sichtbar",
                 "where": "Startseite",
                 "relevance": "high",
             }
         )
     out["noticed"] = noticed[: max(2, budget)]
-    out["taskReminder"] = "Ich suche den Weg zum Produktkombinationen-Tool."
-    out["intent"] = "Ich suche den sichtbaren Service-/Produktkombinationen-Einstieg."
-    out["why"] = "Auf der Startseite zählt zuerst der Weg zum Tool, nicht die Tool-Bedienung."
+    goal = target_keys[0] if target_keys else "Ziel"
+    out["taskReminder"] = f"Ich suche den Weg zu {goal}."
+    out["intent"] = "Ich suche den sichtbaren Navigations-Einstieg zum Ziel."
+    out["why"] = "Auf der Startseite zählt zuerst der Weg zum Ziel, nicht die Ziel-Bedienung."
     if str(out.get("confusion") or "") == "filter_cause_unknown":
         out["confusion"] = None
     return out

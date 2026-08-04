@@ -28,6 +28,7 @@ from audion_agent.filesystem.file_system import FileSystemState
 from audion_agent.llm.base import BaseChatModel
 from audion_agent.tokens.views import UsageSummary
 from audion_agent.tools.registry.views import ActionModel
+from audion_agent.utils import collect_sensitive_data_values, redact_sensitive_string
 
 logger = logging.getLogger(__name__)
 
@@ -401,14 +402,7 @@ class AgentOutput(BaseModel):
 
 	@model_validator(mode='before')
 	@classmethod
-	def _checkion_coerce_action(cls, data: Any) -> Any:
-		# CHECKION-fork patch (vs. upstream browser-use 0.12.6).
-		# Several models occasionally emit ``action`` as a JSON-encoded string or
-		# as a single dict instead of a list — see _tolerant_parsing.coerce_action_field
-		# for the full failure-mode catalogue. Coerce here, before the standard
-		# list-of-ActionModel validator runs, so we never raise list_type for the
-		# known shapes. Strict upstream behaviour can be restored with
-		# AUDION_AGENT_TOLERANT_PARSING=0.
+	def _audion_coerce_action(cls, data: Any) -> Any:
 		if not isinstance(data, dict):
 			return data
 		if not tolerant_parsing_enabled():
@@ -529,29 +523,13 @@ class AgentHistory(BaseModel):
 		if not sensitive_data:
 			return value
 
-		# Collect all sensitive values, immediately converting old format to new format
-		sensitive_values: dict[str, str] = {}
-
-		# Process all sensitive data entries
-		for key_or_domain, content in sensitive_data.items():
-			if isinstance(content, dict):
-				# Already in new format: {domain: {key: value}}
-				for key, val in content.items():
-					if val:  # Skip empty values
-						sensitive_values[key] = val
-			elif content:  # Old format: {key: value} - convert to new format internally
-				# We treat this as if it was {'http*://*': {key_or_domain: content}}
-				sensitive_values[key_or_domain] = content
+		sensitive_values = collect_sensitive_data_values(sensitive_data)
 
 		# If there are no valid sensitive data entries, just return the original value
 		if not sensitive_values:
 			return value
 
-		# Replace all valid sensitive data values with their placeholder tags
-		for key, val in sensitive_values.items():
-			value = value.replace(val, f'<secret>{key}</secret>')
-
-		return value
+		return redact_sensitive_string(value, sensitive_values)
 
 	def _filter_sensitive_data_from_dict(
 		self, data: dict[str, Any], sensitive_data: dict[str, str | dict[str, str]] | None
@@ -707,14 +685,18 @@ class AgentHistoryList(BaseModel, Generic[AgentStructuredOutput]):
 	@classmethod
 	def load_from_dict(cls, data: dict[str, Any], output_model: type[AgentOutput]) -> AgentHistoryList:
 		# loop through history and validate output_model actions to enrich with custom actions
-		for h in data['history']:
-			if h['model_output']:
-				if isinstance(h['model_output'], dict):
-					h['model_output'] = output_model.model_validate(h['model_output'])
+		for h in data.get('history', []):
+			# Use .get() to avoid KeyError on incomplete or legacy history entries
+			model_output = h.get('model_output')
+			if model_output:
+				if isinstance(model_output, dict):
+					h['model_output'] = output_model.model_validate(model_output)
 				else:
 					h['model_output'] = None
-			if 'interacted_element' not in h['state']:
-				h['state']['interacted_element'] = None
+			state = h.get('state') or {}
+			if 'interacted_element' not in state:
+				state['interacted_element'] = None
+				h['state'] = state
 
 		history = cls.model_validate(data)
 		return history
@@ -744,8 +726,10 @@ class AgentHistoryList(BaseModel, Generic[AgentStructuredOutput]):
 
 	def final_result(self) -> None | str:
 		"""Final result from history"""
-		if self.history and self.history[-1].result[-1].extracted_content:
-			return self.history[-1].result[-1].extracted_content
+		if self.history and len(self.history[-1].result) > 0:
+			last_result = self.history[-1].result[-1]
+			if last_result.extracted_content:
+				return last_result.extracted_content
 		return None
 
 	def is_done(self) -> bool:

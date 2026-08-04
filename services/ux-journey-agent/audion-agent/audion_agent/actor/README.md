@@ -1,12 +1,12 @@
 # Browser Actor
 
-Browser Actor is a web automation library built on CDP (Chrome DevTools Protocol) that provides low-level browser automation capabilities within the browser-use ecosystem.
+Browser Actor is a web automation library built on CDP (Chrome DevTools Protocol) that provides low-level browser automation capabilities within the audion-agent ecosystem.
 
 ## Usage
 
 ### Integrated with Browser (Recommended)
 ```python
-from browser_use import Browser  # Alias for BrowserSession
+from audion_agent import Browser  # Alias for BrowserSession
 
 # Create and start browser session
 browser = Browser()
@@ -20,7 +20,7 @@ current_page = await browser.get_current_page()
 
 ### Direct Page Access (Advanced)
 ```python
-from browser_use.actor import Page, Element, Mouse
+from audion_agent.actor import Page, Element, Mouse
 
 # Create page with existing browser session
 page = Page(browser_session, target_id, session_id)
@@ -224,7 +224,7 @@ class ElementInfo(TypedDict):
 
 ## Important Usage Notes
 
-**This is browser-use actor, NOT Playwright or Selenium.** Only use the methods documented above.
+**This is audion-agent actor, NOT Playwright or Selenium.** Only use the methods documented above.
 
 ### Critical JavaScript Rules
 - `page.evaluate()` and `element.evaluate()` MUST use `(...args) => {}` arrow function format

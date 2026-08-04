@@ -11,13 +11,9 @@ from openai.types.shared_params.reasoning_effort import ReasoningEffort
 from openai.types.shared_params.response_format_json_schema import JSONSchema, ResponseFormatJSONSchema
 from pydantic import BaseModel
 
-from audion_agent.agent._tolerant_parsing import (
-	coerce_action_field,
-	parse_json_with_recovery,
-	tolerant_parsing_enabled,
-)
+from audion_agent.agent._tolerant_parsing import coerce_action_field, parse_json_with_recovery, tolerant_parsing_enabled
 from audion_agent.llm.base import BaseChatModel
-from audion_agent.llm.exceptions import ModelProviderError, ModelRateLimitError
+from audion_agent.llm.exceptions import ModelOutputTruncatedError, ModelProviderError, ModelRateLimitError
 from audion_agent.llm.messages import BaseMessage
 from audion_agent.llm.openai.serializer import OpenAIMessageSerializer
 from audion_agent.llm.schema import SchemaOptimizer
@@ -277,6 +273,23 @@ class ChatOpenAI(BaseChatModel):
 						model=self.name,
 					)
 
+				# before the content-None guard: reasoning models can burn the whole budget
+				# on hidden reasoning, leaving finish_reason='length' with content=None
+				if choice.finish_reason == 'length':
+					cap = (
+						f'max_completion_tokens={self.max_completion_tokens}'
+						if self.max_completion_tokens is not None
+						else "the model's output token limit"
+					)
+					raise ModelOutputTruncatedError(
+						message=(
+							f'Model output was truncated at {cap};'
+							' the structured output is incomplete. Increase max_completion_tokens or request'
+							' shorter output.'
+						),
+						model=self.name,
+					)
+
 				if choice.message.content is None:
 					raise ModelProviderError(
 						message='Failed to parse structured output from model response',
@@ -289,14 +302,6 @@ class ChatOpenAI(BaseChatModel):
 				try:
 					parsed = output_format.model_validate_json(choice.message.content)
 				except Exception as primary_exc:
-					# CHECKION-fork patch (vs. upstream browser-use 0.12.6).
-					# Some OpenAI variants occasionally emit JSON with markdown
-					# preamble or trailing characters after the closing brace,
-					# which `model_validate_json` rejects via Pydantic's
-					# `json_invalid` / `trailing characters`. Try to recover the
-					# first balanced `{...}` substring, then explicitly run
-					# action-field coercion (handles JSON-string action with
-					# raw \n / \t inside multi-line markdown text).
 					if not tolerant_parsing_enabled():
 						raise
 					recovered = parse_json_with_recovery(choice.message.content)

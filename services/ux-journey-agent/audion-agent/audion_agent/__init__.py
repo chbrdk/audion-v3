@@ -47,8 +47,6 @@ base_subprocess.BaseSubprocessTransport.__del__ = _patched_del
 if TYPE_CHECKING:
 	from audion_agent.agent.prompts import SystemPrompt
 	from audion_agent.agent.service import Agent
-
-	# from audion_agent.agent.service import Agent
 	from audion_agent.agent.views import ActionModel, ActionResult, AgentHistoryList
 	from audion_agent.browser import BrowserProfile, BrowserSession
 	from audion_agent.browser import BrowserSession as Browser
@@ -71,7 +69,6 @@ if TYPE_CHECKING:
 	# Lazy imports mapping - only import when actually accessed
 _LAZY_IMPORTS = {
 	# Agent service (heavy due to dependencies)
-	# 'Agent': ('audion_agent.agent.service', 'Agent'),
 	'Agent': ('audion_agent.agent.service', 'Agent'),
 	# System prompt (moderate weight due to agent.views imports)
 	'SystemPrompt': ('audion_agent.agent.prompts', 'SystemPrompt'),

@@ -1,8 +1,8 @@
 """
-Standalone init command for browser-use template generation.
+Standalone init command for audion-agent template generation.
 
 This module provides a minimal command-line interface for generating
-browser-use templates without requiring heavy TUI dependencies.
+audion-agent templates without requiring heavy TUI dependencies.
 """
 
 import json
@@ -25,7 +25,7 @@ from rich.text import Text
 console = Console()
 
 # GitHub template repository URL (for runtime fetching)
-TEMPLATE_REPO_URL = 'https://raw.githubusercontent.com/browser-use/template-library/main'
+TEMPLATE_REPO_URL = 'https://raw.githubusercontent.com/audion-agent/template-library/main'
 
 # Export for backward compatibility with cli.py
 # Templates are fetched at runtime via _get_template_list()
@@ -101,7 +101,7 @@ def _get_template_content(file_path: str) -> str:
 	raise FileNotFoundError(f'Could not fetch template from GitHub: {file_path}')
 
 
-# InquirerPy style for template selection (browser-use orange theme)
+# InquirerPy style for template selection (audion-agent orange theme)
 inquirer_style = InquirerPyStyle(
 	{
 		'pointer': '#fe750e bold',
@@ -188,7 +188,7 @@ def _write_init_file(output_path: Path, content: str, force: bool = False) -> bo
 		return False
 
 
-@click.command('browser-use-init')
+@click.command('audion-agent-init')
 @click.option(
 	'--template',
 	'-t',
@@ -221,26 +221,26 @@ def main(
 	list_templates: bool,
 ):
 	"""
-	Generate a browser-use template file to get started quickly.
+	Generate a audion-agent template file to get started quickly.
 
 	Examples:
 
 	\b
 	# Interactive mode - prompts for template selection
-	uvx browser-use init
-	uvx browser-use init --template
+	uvx audion-agent init
+	uvx audion-agent init --template
 
 	\b
 	# Generate default template
-	uvx browser-use init --template default
+	uvx audion-agent init --template default
 
 	\b
 	# Generate advanced template with custom filename
-	uvx browser-use init --template advanced --output my_script.py
+	uvx audion-agent init --template advanced --output my_script.py
 
 	\b
 	# List available templates
-	uvx browser-use init --list
+	uvx audion-agent init --list
 	"""
 
 	# Fetch template list at runtime
@@ -423,12 +423,12 @@ def main(
 			next_steps.append(f'   cd {template}\n\n', style='dim')
 			next_steps.append('2. Initialize uv project:\n', style='bold')
 			next_steps.append('   uv init\n\n', style='dim')
-			next_steps.append('3. Install browser-use:\n', style='bold')
-			next_steps.append('   uv add browser-use\n\n', style='dim')
+			next_steps.append('3. Install audion-agent:\n', style='bold')
+			next_steps.append('   uv add audion-agent\n\n', style='dim')
 			next_steps.append('4. Set up your API key in .env file or environment:\n', style='bold')
 			next_steps.append('   BROWSER_USE_API_KEY=your-key\n', style='dim')
 			next_steps.append(
-				'   (Get your key at https://cloud.browser-use.com/dashboard/settings?tab=api-keys&new)\n\n',
+				'   (Get your key at https://cloud.audion-agent.com/dashboard/settings?tab=api-keys&new&utm_source=oss&utm_medium=cli)\n\n',
 				style='dim italic',
 			)
 			next_steps.append('5. Run your script:\n', style='bold')

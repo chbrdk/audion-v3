@@ -241,7 +241,7 @@ def sandbox(
 	    cloud_profile_id: The ID of the profile to use for the browser session
 	    cloud_proxy_country_code: Country code for proxy location (e.g., 'us', 'uk', 'fr')
 	    cloud_timeout: The timeout for the browser session in minutes (max 240 = 4 hours)
-	    server_url: Sandbox server URL (defaults to https://sandbox.api.browser-use.com/sandbox-stream)
+	    server_url: Sandbox server URL (defaults to https://sandbox.api.audion-agent.com/sandbox-stream)
 	    log_level: Logging level (INFO, DEBUG, WARNING, ERROR)
 	    quiet: Suppress console output
 	    headers: Additional HTTP headers to send with the request
@@ -363,7 +363,7 @@ async def run(browser):
 			if cloud_timeout is not None:
 				payload['cloud_timeout'] = cloud_timeout
 
-			url = server_url or 'https://sandbox.api.browser-use.com/sandbox-stream'
+			url = server_url or 'https://sandbox.api.audion-agent.com/sandbox-stream'
 
 			request_headers = {'X-API-Key': api_key}
 			if headers:

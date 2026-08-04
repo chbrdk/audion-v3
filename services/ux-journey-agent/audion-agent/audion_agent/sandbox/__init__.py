@@ -1,4 +1,4 @@
-"""Sandbox execution package for browser-use
+"""Sandbox execution package for audion-agent
 
 This package provides type-safe sandbox code execution with SSE streaming.
 

@@ -60,7 +60,10 @@ def persona_instructions_enabled() -> bool:
 	Useful when the caller wants to construct the system-prompt extension
 	themselves and pass it via the upstream ``extend_system_message``.
 	"""
-	v = (os.environ.get('AUDION_AGENT_PERSONA_INSTRUCTIONS') or '1').strip().lower()
+	raw = os.environ.get('AUDION_AGENT_PERSONA_INSTRUCTIONS')
+	if raw is None:
+		raw = '1'
+	v = raw.strip().lower()
 	return v in ('1', 'true', 'yes', 'on')
 
 
@@ -77,7 +80,7 @@ class PersonaProfile(BaseModel):
 	upstream consumers can extend the profile without a schema change.
 	"""
 
-	model_config = ConfigDict(extra='allow')
+	model_config = ConfigDict(extra='allow', populate_by_name=True)
 
 	bio: str | None = None
 	location: str | None = None
@@ -156,6 +159,8 @@ class PersonaContext(BaseModel):
 		if isinstance(value, cls):
 			return value
 		if isinstance(value, Mapping):
+			if not value:
+				return None
 			try:
 				return cls.model_validate(value)
 			except Exception as exc:  # pragma: no cover — defensive
@@ -501,6 +506,7 @@ def render_system_prompt_block(persona: PersonaContext | None) -> str:
 			profile_json = json.dumps(
 				persona.profile.model_dump(by_alias=True, exclude_none=True),
 				ensure_ascii=False,
+				sort_keys=True,
 			)[:_MAX_PROFILE_JSON_CHARS]
 		except (TypeError, ValueError) as exc:  # pragma: no cover — defensive
 			logger.debug('render_system_prompt_block: profile JSON dump failed (%r)', exc)

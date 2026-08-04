@@ -1,4 +1,4 @@
-"""MCP Server for browser-use - exposes browser automation capabilities via Model Context Protocol.
+"""MCP Server for audion-agent - exposes browser automation capabilities via Model Context Protocol.
 
 This server provides tools for:
 - Running autonomous browser tasks with an AI agent
@@ -7,14 +7,14 @@ This server provides tools for:
 - File system operations
 
 Usage:
-    uvx browser-use --mcp
+    uvx audion-agent --mcp
 
 Or as an MCP server in Claude Desktop or other MCP clients:
     {
         "mcpServers": {
-            "browser-use": {
+            "audion-agent": {
                 "command": "uvx",
-                "args": ["browser-use[cli]", "--mcp"],
+                "args": ["audion-agent[cli]", "--mcp"],
                 "env": {
                     "OPENAI_API_KEY": "sk-proj-1234567890",
                 }
@@ -51,7 +51,7 @@ try:
 except ImportError:
 	PSUTIL_AVAILABLE = False
 
-# Add browser-use to path if running from source
+# Add audion-agent to path if running from source
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import and configure logging to use stderr before other imports
@@ -60,7 +60,7 @@ from audion_agent.logging_config import setup_logging
 
 def _configure_mcp_server_logging():
 	"""Configure logging for MCP server mode - redirect all logs to stderr to prevent JSON RPC interference."""
-	# Set environment to suppress browser-use logging during server mode
+	# Set environment to suppress audion-agent logging during server mode
 	os.environ['BROWSER_USE_LOGGING_LEVEL'] = 'warning'
 	os.environ['BROWSER_USE_SETUP_LOGGING'] = 'false'  # Prevent automatic logging setup
 
@@ -185,13 +185,13 @@ def get_parent_process_cmdline() -> str | None:
 
 
 class BrowserUseServer:
-	"""MCP Server for browser-use capabilities."""
+	"""MCP Server for audion-agent capabilities."""
 
 	def __init__(self, session_timeout_minutes: int = 10):
 		# Ensure all logging goes to stderr (in case new loggers were created)
 		_ensure_all_loggers_use_stderr()
 
-		self.server = Server('browser-use')
+		self.server = Server('audion-agent')
 		self.config = load_audion_agent_config()
 		self.agent: Agent | None = None
 		self.browser_session: BrowserSession | None = None
@@ -214,7 +214,7 @@ class BrowserUseServer:
 
 		@self.server.list_tools()
 		async def handle_list_tools() -> list[types.Tool]:
-			"""List all available browser-use tools."""
+			"""List all available audion-agent tools."""
 			return [
 				# Agent tools
 				# Direct browser control tools
@@ -258,7 +258,7 @@ class BrowserUseServer:
 				),
 				types.Tool(
 					name='browser_type',
-					description='Type text into an input field',
+					description='Type text into an input field. Clears existing text by default; pass text="" to clear only.',
 					inputSchema={
 						'type': 'object',
 						'properties': {
@@ -266,7 +266,10 @@ class BrowserUseServer:
 								'type': 'integer',
 								'description': 'The index of the input element (from browser_get_state)',
 							},
-							'text': {'type': 'string', 'description': 'The text to type'},
+							'text': {
+								'type': 'string',
+								'description': 'The text to type. Pass an empty string ("") to clear the field without typing.',
+							},
 						},
 						'required': ['index', 'text'],
 					},
@@ -380,7 +383,7 @@ class BrowserUseServer:
 				# ),
 				types.Tool(
 					name='retry_with_audion_agent_agent',
-					description='Retry a task using the browser-use agent. Only use this as a last resort if you fail to interact with a page multiple times.',
+					description='Retry a task using the audion-agent agent. Only use this as a last resort if you fail to interact with a page multiple times.',
 					inputSchema={
 						'type': 'object',
 						'properties': {
@@ -400,8 +403,12 @@ class BrowserUseServer:
 							'allowed_domains': {
 								'type': 'array',
 								'items': {'type': 'string'},
-								'description': 'List of domains the agent is allowed to visit (security feature)',
-								'default': [],
+								'description': (
+									'List of domains the agent is allowed to visit (security feature). '
+									'Omit to use the server-configured profile defaults. '
+									'An empty list is treated the same as omitting the argument and '
+									'will NOT disable server-configured restrictions.'
+								),
 							},
 							'use_vision': {
 								'type': 'boolean',
@@ -441,12 +448,12 @@ class BrowserUseServer:
 
 		@self.server.list_resources()
 		async def handle_list_resources() -> list[types.Resource]:
-			"""List available resources (none for browser-use)."""
+			"""List available resources (none for audion-agent)."""
 			return []
 
 		@self.server.list_prompts()
 		async def handle_list_prompts() -> list[types.Prompt]:
-			"""List available prompts (none for browser-use)."""
+			"""List available prompts (none for audion-agent)."""
 			return []
 
 		@self.server.call_tool()
@@ -479,7 +486,7 @@ class BrowserUseServer:
 	async def _execute_tool(
 		self, tool_name: str, arguments: dict[str, Any]
 	) -> str | list[types.TextContent | types.ImageContent]:
-		"""Execute a browser-use tool. Returns str for most tools, or a content list for tools with image output."""
+		"""Execute a audion-agent tool. Returns str for most tools, or a content list for tools with image output."""
 
 		# Agent-based tools
 		if tool_name == 'retry_with_audion_agent_agent':
@@ -487,7 +494,7 @@ class BrowserUseServer:
 				task=arguments['task'],
 				max_steps=arguments.get('max_steps', 100),
 				model=arguments.get('model'),
-				allowed_domains=arguments.get('allowed_domains', []),
+				allowed_domains=arguments.get('allowed_domains'),
 				use_vision=arguments.get('use_vision', True),
 			)
 
@@ -576,7 +583,7 @@ class BrowserUseServer:
 
 		# Merge profile config with defaults and overrides
 		profile_data = {
-			'downloads_path': str(Path.home() / 'Downloads' / 'browser-use-mcp'),
+			'downloads_path': str(Path.home() / 'Downloads' / 'audion-agent-mcp'),
 			'wait_between_actions': 0.5,
 			'keep_alive': True,
 			'user_data_dir': '~/.config/browseruse/profiles/default',
@@ -622,7 +629,7 @@ class BrowserUseServer:
 			)
 
 		# Initialize FileSystem for extraction actions
-		file_system_path = profile_config.get('file_system_path', '~/.browser-use-mcp')
+		file_system_path = profile_config.get('file_system_path', '~/.audion-agent-mcp')
 		self.file_system = FileSystem(base_dir=Path(file_system_path).expanduser())
 
 		logger.debug('Browser session initialized')
@@ -678,8 +685,11 @@ class BrowserUseServer:
 		# Get profile config and merge with tool parameters
 		profile_config = get_default_profile(self.config)
 
-		# Override allowed_domains if provided in tool call
-		if allowed_domains is not None:
+		# Override allowed_domains only when the client supplied a non-empty list.
+		# Treating an empty list as an override would silently disable any
+		# admin-configured allowlist on the default profile, since
+		# SecurityWatchdog interprets allowed_domains=[] as "no restrictions".
+		if allowed_domains:
 			profile_config['allowed_domains'] = allowed_domains
 
 		# Create browser profile using config
@@ -1223,19 +1233,25 @@ class BrowserUseServer:
 		# Start the cleanup task
 		await self._start_cleanup_task()
 
+		if sys.stdin is None:
+			raise RuntimeError('MCP stdio transport requires stdin, but this process was launched without one.')
+
 		async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-			await self.server.run(
-				read_stream,
-				write_stream,
-				InitializationOptions(
-					server_name='browser-use',
-					server_version='0.1.0',
-					capabilities=self.server.get_capabilities(
-						notification_options=NotificationOptions(),
-						experimental_capabilities={},
+			try:
+				await self.server.run(
+					read_stream,
+					write_stream,
+					InitializationOptions(
+						server_name='audion-agent',
+						server_version='0.1.0',
+						capabilities=self.server.get_capabilities(
+							notification_options=NotificationOptions(),
+							experimental_capabilities={},
+						),
 					),
-				),
-			)
+				)
+			except BrokenPipeError:
+				logger.warning('MCP client disconnected while writing to stdio; shutting down server cleanly.')
 
 
 async def main(session_timeout_minutes: int = 10):

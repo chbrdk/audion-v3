@@ -1,7 +1,7 @@
 """
-ChatBrowserUse - Client for browser-use cloud API
+ChatBrowserUse - Client for audion-agent cloud API
 
-This wraps the BaseChatModel protocol and sends requests to the browser-use cloud API
+This wraps the BaseChatModel protocol and sends requests to the audion-agent cloud API
 for optimized browser automation LLM inference.
 """
 
@@ -30,21 +30,21 @@ RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
 class ChatBrowserUse(BaseChatModel):
 	"""
-	Client for browser-use cloud API.
+	Client for audion-agent cloud API.
 
-	This sends requests to the browser-use cloud API which uses optimized models
+	This sends requests to the audion-agent cloud API which uses optimized models
 	and prompts for browser automation tasks.
 
 	Usage:
 		agent = Agent(
-			task="Find the number of stars of the browser-use repo",
-			llm=ChatBrowserUse(model='bu-latest'),
+			task="Find the number of stars of the audion-agent repo",
+			llm=ChatBrowserUse(model='openai/gpt-5.5'),
 		)
 	"""
 
 	def __init__(
 		self,
-		model: str = 'bu-latest',
+		model: str = 'bu-2-0',
 		api_key: str | None = None,
 		base_url: str | None = None,
 		timeout: float = 120.0,
@@ -58,31 +58,39 @@ class ChatBrowserUse(BaseChatModel):
 
 		Args:
 			model: Model name to use. Options:
-				- 'bu-latest' or 'bu-1-0': Default model
-				- 'bu-2-0': Latest premium model
-				- 'browser-use/bu-30b-a3b-preview': Browser Use Open Source Model
-			api_key: API key for browser-use cloud. Defaults to BROWSER_USE_API_KEY env var.
+				- 'bu-2-0' or 'bu-latest': Default model (latest premium)
+				- 'bu-1-0': Previous generation model
+				- 'bu-qa-1': Website QA model (tests a site and scores functionality/aesthetics)
+				- 'audion-agent/bu-30b-a3b-preview': Browser Use Open Source Model
+				- Provider-prefixed ids resolved by the gateway, e.g. 'anthropic/claude-sonnet-4-6',
+				  'openai/gpt-5.5', 'google/gemini-3-pro'.
+			api_key: API key for audion-agent cloud. Defaults to BROWSER_USE_API_KEY env var.
 			base_url: Base URL for the API. Defaults to BROWSER_USE_LLM_URL env var or production URL.
 			timeout: Request timeout in seconds.
 			max_retries: Maximum number of retries for transient errors (default: 5).
 			retry_base_delay: Base delay in seconds for exponential backoff (default: 1.0).
 			retry_max_delay: Maximum delay in seconds between retries (default: 60.0).
 		"""
-		# Validate model name - allow bu-* and browser-use/* patterns
-		valid_models = ['bu-latest', 'bu-1-0', 'bu-2-0']
-		is_valid = model in valid_models or model.startswith('browser-use/')
+		# Accept 'bu-*' aliases and any provider-prefixed id; the gateway resolves the
+		# latter (anthropic/*, openai/*, google/*, audion-agent/*), so we don't enumerate them.
+		bu_aliases = ['bu-latest', 'bu-1-0', 'bu-2-0', 'bu-qa-1']
+		is_valid = model in bu_aliases or '/' in model
 		if not is_valid:
-			raise ValueError(f"Invalid model: '{model}'. Must be one of {valid_models} or start with 'browser-use/'")
+			raise ValueError(
+				f"Invalid model: '{model}'. Use a 'bu-*' alias ({', '.join(bu_aliases)}) "
+				"or a provider-prefixed id like 'anthropic/claude-sonnet-4-6', "
+				"'openai/gpt-5.5', or 'google/gemini-3-pro'."
+			)
 
-		# Normalize bu-latest to bu-1-0 for default models
+		# Normalize bu-latest to the current latest model
 		if model == 'bu-latest':
-			self.model = 'bu-1-0'
+			self.model = 'bu-2-0'
 		else:
 			self.model = model
 
 		self.fast = False
 		self.api_key = api_key or os.getenv('BROWSER_USE_API_KEY')
-		self.base_url = base_url or os.getenv('BROWSER_USE_LLM_URL', 'https://llm.api.browser-use.com')
+		self.base_url = base_url or os.getenv('BROWSER_USE_LLM_URL', 'https://llm.api.audion-agent.com')
 		self.timeout = timeout
 		self.max_retries = max_retries
 		self.retry_base_delay = retry_base_delay
@@ -90,13 +98,13 @@ class ChatBrowserUse(BaseChatModel):
 
 		if not self.api_key:
 			raise ValueError(
-				'You need to set the BROWSER_USE_API_KEY environment variable. '
-				'Get your key at https://cloud.browser-use.com/new-api-key'
+				'BROWSER_USE_API_KEY is not set. To use ChatBrowserUse, get a key at:\n'
+				'https://cloud.audion-agent.com/new-api-key?utm_source=oss&utm_medium=chat_audion_agent'
 			)
 
 	@property
 	def provider(self) -> str:
-		return 'browser-use'
+		return 'audion-agent'
 
 	@property
 	def name(self) -> str:
@@ -121,7 +129,7 @@ class ChatBrowserUse(BaseChatModel):
 		**kwargs: Any,
 	) -> ChatInvokeCompletion[T] | ChatInvokeCompletion[str]:
 		"""
-		Send request to browser-use cloud API.
+		Send request to audion-agent cloud API.
 
 		Args:
 			messages: List of messages to send
@@ -200,10 +208,10 @@ class ChatBrowserUse(BaseChatModel):
 				# Exhausted retries
 				if isinstance(e, httpx.TimeoutException):
 					raise ValueError(f'Request timed out after {self.timeout}s (retried {self.max_retries} times)')
-				raise ValueError(f'Failed to connect to browser-use API after {self.max_retries} attempts: {e}')
+				raise ValueError(f'Failed to connect to audion-agent API after {self.max_retries} attempts: {e}')
 
 			except Exception as e:
-				raise ValueError(f'Failed to connect to browser-use API: {e}')
+				raise ValueError(f'Failed to connect to audion-agent API: {e}')
 		else:
 			# Loop completed without break (all retries exhausted)
 			if last_error is not None:
@@ -275,9 +283,17 @@ class ChatBrowserUse(BaseChatModel):
 		status_code = e.response.status_code
 
 		if status_code == 401:
-			raise ModelProviderError(message=f'Invalid API key. {error_detail}', status_code=401, model=self.name)
+			raise ModelProviderError(
+				message=f'BROWSER_USE_API_KEY is invalid. Get a new key at:\nhttps://cloud.audion-agent.com/new-api-key?utm_source=oss&utm_medium=chat_audion_agent\n{error_detail}',
+				status_code=401,
+				model=self.name,
+			)
 		elif status_code == 402:
-			raise ModelProviderError(message=f'Insufficient credits. {error_detail}', status_code=402, model=self.name)
+			raise ModelProviderError(
+				message=f'Browser Use credits exhausted. Add more at:\nhttps://cloud.audion-agent.com/billing?utm_source=oss&utm_medium=chat_audion_agent\n{error_detail}',
+				status_code=402,
+				model=self.name,
+			)
 		elif status_code == 429:
 			raise ModelRateLimitError(message=f'Rate limit exceeded. {error_detail}', status_code=429, model=self.name)
 		elif status_code in {500, 502, 503, 504}:

@@ -43,7 +43,10 @@ def tolerant_parsing_enabled() -> bool:
 	against vanilla browser-use 0.12.6 or for triaging whether a model failure
 	is masked by the patch.
 	"""
-	v = (os.environ.get('AUDION_AGENT_TOLERANT_PARSING') or '1').strip().lower()
+	raw = os.environ.get('AUDION_AGENT_TOLERANT_PARSING')
+	if raw is None:
+		raw = '1'
+	v = raw.strip().lower()
 	return v in ('1', 'true', 'yes', 'on')
 
 

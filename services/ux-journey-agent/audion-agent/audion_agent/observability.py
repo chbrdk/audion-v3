@@ -1,6 +1,6 @@
-# @file purpose: Observability module for browser-use that handles optional lmnr integration with debug mode support
+# @file purpose: Observability module for audion-agent that handles optional lmnr integration with debug mode support
 """
-Observability module for browser-use
+Observability module for audion-agent
 
 This module provides observability decorators that optionally integrate with lmnr (Laminar) for tracing.
 If lmnr is not installed, it provides no-op wrappers that accept the same parameters.
@@ -49,7 +49,7 @@ try:
 	if os.environ.get('BROWSER_USE_VERBOSE_OBSERVABILITY', 'false').lower() == 'true':
 		logger.debug('Lmnr is available for observability')
 	_LMNR_AVAILABLE = True
-except ImportError:
+except (ImportError, TypeError):
 	if os.environ.get('BROWSER_USE_VERBOSE_OBSERVABILITY', 'false').lower() == 'true':
 		logger.debug('Lmnr is not available for observability')
 	_LMNR_AVAILABLE = False

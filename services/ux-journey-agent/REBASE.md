@@ -1,7 +1,7 @@
 # AUDION soft-fork rebase notes
 
-**Current vendored baseline:** `browser-use` **0.12.6** → package version `0.12.6+audion.7`  
-**Target baseline (state of the art):** `browser-use` **0.13.7** → `0.13.7+audion.1`
+**Current vendored baseline:** `browser-use` **0.13.7** → package version `0.13.7+audion.1`  
+**Previous baseline:** `0.12.6+audion.8`
 
 ## Why not a blind swap
 
@@ -18,8 +18,8 @@ live in the Python agent path and must be re-applied after each upstream bump.
 5. Run `audion-agent/tests` + `test_security.py` + a headless smoke `/run`.
 6. Bump `pyproject.toml` version to `0.13.7+audion.1`.
 
-## Interim policy
+## Policy
 
-Ship the hardened 0.12.6+audion fork in V3 Coolify first (auth + SSRF).  
-Complete the 0.13.7 rebase in-tree before marking Studies Wave Start “production-complete”.
+`0.13.7+audion.1` is the local/development baseline for further UX Journey work.
 Do **not** default to `browser_use.beta` (Rust) until recording/persona hooks are ported.
+Keep Coolify deploys explicit until the Nav H3 / Studies smoke gate is green on this baseline.

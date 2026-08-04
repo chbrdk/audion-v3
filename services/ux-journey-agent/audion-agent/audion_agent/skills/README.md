@@ -6,7 +6,7 @@ The Skills module provides integration with the Browser Use API to fetch and exe
 
 ```python
 import asyncio
-from browser_use.skills import SkillService
+from audion_agent.skills import SkillService
 
 async def main():
     skill_ids = ['skill-id-1', 'skill-id-2']

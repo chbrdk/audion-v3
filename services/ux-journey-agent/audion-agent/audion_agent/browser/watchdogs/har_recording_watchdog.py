@@ -635,7 +635,7 @@ class HarRecordingWatchdog(BaseWatchdog):
 
 		# Try to include our library version in creator
 		try:
-			bu_version = importlib_metadata.version('browser-use')
+			bu_version = importlib_metadata.version('audion-agent')
 		except Exception:
 			# Fallback when running from source without installed package metadata
 			bu_version = 'dev'
@@ -643,7 +643,7 @@ class HarRecordingWatchdog(BaseWatchdog):
 		har_obj = {
 			'log': {
 				'version': '1.2',
-				'creator': {'name': 'browser-use', 'version': bu_version},
+				'creator': {'name': 'audion-agent', 'version': bu_version},
 				'browser': {'name': self._browser_name, 'version': self._browser_version},
 				'pages': [
 					{

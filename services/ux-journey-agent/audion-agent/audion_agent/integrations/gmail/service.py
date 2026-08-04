@@ -46,10 +46,10 @@ class GmailService:
 		Args:
 		    credentials_file: Path to OAuth credentials JSON from Google Cloud Console
 		    token_file: Path to store/load access tokens
-		    config_dir: Directory to store config files (defaults to browser-use config directory)
+		    config_dir: Directory to store config files (defaults to audion-agent config directory)
 		    access_token: Direct access token (skips file-based auth if provided)
 		"""
-		# Set up configuration directory using browser-use's config system
+		# Set up configuration directory using audion-agent's config system
 		if config_dir is None:
 			self.config_dir = CONFIG.BROWSER_USE_CONFIG_DIR
 		else:

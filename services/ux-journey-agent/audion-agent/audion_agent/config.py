@@ -1,4 +1,4 @@
-"""Configuration system for browser-use with automatic migration support."""
+"""Configuration system for audion-agent with automatic migration support."""
 
 import json
 import logging
@@ -64,7 +64,7 @@ class OldConfig:
 
 	@property
 	def BROWSER_USE_CLOUD_API_URL(self) -> str:
-		url = os.getenv('BROWSER_USE_CLOUD_API_URL', 'https://api.browser-use.com')
+		url = os.getenv('BROWSER_USE_CLOUD_API_URL', 'https://api.audion-agent.com')
 		assert '://' in url, 'BROWSER_USE_CLOUD_API_URL must be a valid URL'
 		return url
 
@@ -200,7 +200,7 @@ class FlatEnvConfig(BaseSettings):
 	BROWSER_USE_INFO_LOG_FILE: str | None = Field(default=None)
 	ANONYMIZED_TELEMETRY: bool = Field(default=True)
 	BROWSER_USE_CLOUD_SYNC: bool | None = Field(default=None)
-	BROWSER_USE_CLOUD_API_URL: str = Field(default='https://api.browser-use.com')
+	BROWSER_USE_CLOUD_API_URL: str = Field(default='https://api.audion-agent.com')
 	BROWSER_USE_CLOUD_UI_URL: str = Field(default='')
 	BROWSER_USE_MODEL_PRICING_URL: str = Field(default='')
 
@@ -511,7 +511,7 @@ CONFIG = Config()
 
 # Helper functions for MCP components
 def load_audion_agent_config() -> dict[str, Any]:
-	"""Load browser-use configuration for MCP components."""
+	"""Load audion-agent configuration for MCP components."""
 	return CONFIG.load_config()
 
 

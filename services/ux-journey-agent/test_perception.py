@@ -140,7 +140,7 @@ def test_prefer_targeted_actions_nav_h3_prefers_produktkombinationen():
         ),
         current_url="https://www.bosch-ebike.com/de/service/",
     )
-    assert reason == "nav_h3_produktkombinationen"
+    assert reason == "path_target_visible"
     assert len(kept) == 1
     assert "produktkombination" in P.action_text_blob(kept[0])
 
@@ -160,7 +160,7 @@ def test_prefer_targeted_actions_nav_h3_avoids_home_loop_click_after_try():
         current_url="https://www.bosch-ebike.com/de/",
         exploratory_attempts=1,
     )
-    assert reason == "nav_h3_avoid_home_loop"
+    assert reason == "path_avoid_home_loop"
     assert len(kept) == 1
     assert P.action_tool_name(kept[0]) == "scroll"
 
@@ -179,9 +179,319 @@ def test_prefer_targeted_actions_nav_h3_prefers_hover_menu_when_available():
         ),
         current_url="https://www.bosch-ebike.com/de/",
     )
-    assert reason == "nav_h3_hover_service"
+    assert reason == "path_open_hover"
     assert len(kept) == 1
     assert P.action_tool_name(kept[0]) == "hover"
+
+
+def test_select_nav_dom_action_prefers_visible_produktkombinationen_index():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                7: {
+                    "is_visible": True,
+                    "attributes": {"href": "/de/service/produktkombinationen"},
+                    "ax_node": {"name": "Produktkombinationen", "role": "link"},
+                },
+                3: {
+                    "is_visible": True,
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {"name": "Service & Beratung", "role": "link"},
+                },
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+        exploratory_attempts=1,
+    )
+    assert reason == "nav_dom_product_index"
+    assert action == {"tool": "click", "index": 7}
+
+
+def test_select_nav_dom_action_falls_back_to_service_click_on_home():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                3: {
+                    "is_visible": True,
+                    "bounds": {"x": 500, "y": 40, "width": 160, "height": 40},
+                    "attributes": {"href": "/de/service/", "aria-expanded": "false"},
+                    "ax_node": {"name": "Service & Beratung", "role": "link"},
+                }
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+    )
+    assert reason == "nav_dom_service_click"
+    assert action == {"tool": "click", "index": 3}
+
+
+def test_select_nav_dom_action_uses_coordinate_click_for_aggregated_nav():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                361: {
+                    "is_visible": True,
+                    "bounds": {"x": 100, "y": 50, "width": 1200, "height": 50},
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {
+                        "name": "Produkte eBikes Service & Beratung Magazin Über uns Business",
+                        "role": "link",
+                    },
+                }
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+    )
+    assert reason == "nav_dom_service_coordinate"
+    assert action is not None
+    assert action["tool"] == "click"
+    assert "index" not in action
+    assert action["coordinate_x"] == 600
+    assert action["coordinate_y"] == 75
+
+
+def test_select_nav_dom_action_prefers_top_nav_over_midpage_blob():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                10: {
+                    "is_visible": True,
+                    "bounds": {"x": 0, "y": 280, "width": 1400, "height": 400},
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {
+                        "name": (
+                            "Footer Produkte eBikes Service Beratung Magazin Business "
+                            "Apps & Services Support"
+                        ),
+                        "role": "link",
+                    },
+                },
+                361: {
+                    "is_visible": True,
+                    "bounds": {"x": 100, "y": 50, "width": 1200, "height": 50},
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {
+                        "name": "Produkte eBikes Service & Beratung Magazin Über uns Business",
+                        "role": "link",
+                    },
+                },
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+    )
+    assert reason == "nav_dom_service_coordinate"
+    assert action is not None
+    assert action["coordinate_y"] == 75
+    assert action["coordinate_x"] == 600
+
+
+def test_select_nav_dom_action_rejects_tall_page_wrapper_coords():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                99: {
+                    "is_visible": True,
+                    # Tall wrapper: by=0 passes a naive top filter but centers at y=321.
+                    "bounds": {"x": 0, "y": 0, "width": 1400, "height": 642},
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {
+                        "name": "Produkte eBikes Service & Beratung Magazin Über uns Business",
+                        "role": "link",
+                    },
+                },
+                42: {
+                    "is_visible": True,
+                    "attributes": {"href": "/de/service/"},
+                    "ax_node": {"name": "Service & Beratung", "role": "link"},
+                },
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+    )
+    assert reason == "nav_dom_service_click"
+    assert action == {"tool": "click", "index": 42}
+
+
+def test_select_nav_dom_action_synthesizes_top_strip_for_tall_menu_wrapper():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                99: {
+                    "is_visible": True,
+                    "bounds": {"x": 0, "y": 0, "width": 1400, "height": 642},
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {
+                        "name": "Produkte eBikes Service & Beratung Magazin Über uns Business",
+                        "role": "link",
+                    },
+                }
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+    )
+    assert reason == "nav_dom_service_coordinate"
+    assert action is not None
+    assert "index" not in action
+    assert action["coordinate_y"] == 60  # 36 + 48*0.5
+    assert 500 <= action["coordinate_x"] <= 700
+
+
+def test_select_nav_dom_action_falls_back_to_short_label_when_only_midpage_bounds():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                10: {
+                    "is_visible": True,
+                    "bounds": {"x": 0, "y": 280, "width": 1400, "height": 400},
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {
+                        "name": "Footer Produkte eBikes Service Beratung Magazin",
+                        "role": "link",
+                    },
+                },
+                42: {
+                    "is_visible": True,
+                    "attributes": {"href": "/de/service/"},
+                    "ax_node": {"name": "Service & Beratung", "role": "link"},
+                },
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+    )
+    # Mid-page geometry is filtered; short label without bounds wins via text fallback.
+    # Href-only discrete path also wins when present without bounds.
+    assert reason == "nav_dom_service_click"
+    assert action == {"tool": "click", "index": 42}
+
+
+def test_select_nav_dom_action_prefers_discrete_service_over_coordinate():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                361: {
+                    "is_visible": True,
+                    "bounds": {"x": 100, "y": 50, "width": 1200, "height": 50},
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {
+                        "name": "Produkte eBikes Service & Beratung Magazin Über uns Business",
+                        "role": "link",
+                    },
+                },
+                3: {
+                    "is_visible": True,
+                    "bounds": {"x": 500, "y": 40, "width": 160, "height": 40},
+                    "attributes": {"href": "/de/service/", "aria-expanded": "false"},
+                    "ax_node": {"name": "Service & Beratung", "role": "link"},
+                },
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+    )
+    assert reason == "nav_dom_service_click"
+    assert action == {"tool": "click", "index": 3}
+
+
+def test_select_cookie_banner_action_prefers_exact_reject_button():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                3647: {
+                    "is_visible": True,
+                    "attributes": {"aria-label": "Alles ablehnen"},
+                    "ax_node": {"name": "Alles ablehnen", "role": "button"},
+                },
+                830: {
+                    "is_visible": True,
+                    "attributes": {"href": "/de/connected-biking"},
+                    "ax_node": {"name": "Apps & Services", "role": "link"},
+                },
+            }
+        }
+    }
+    action, reason = P.select_cookie_banner_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        perception={"noticed": [{"what": "Cookie-Banner", "relevance": "high"}]},
+    )
+    assert reason == "cookie_dom_reject"
+    assert action == {"tool": "click", "index": 3647}
+
+
+def test_select_cookie_banner_action_returns_none_without_banner_signal():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                830: {
+                    "is_visible": True,
+                    "attributes": {"href": "/de/connected-biking"},
+                    "ax_node": {"name": "Apps & Services", "role": "link"},
+                }
+            }
+        }
+    }
+    action, reason = P.select_cookie_banner_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        perception={"noticed": [{"what": "Service Navigation", "relevance": "high"}]},
+    )
+    assert reason == "cookie_dom_none"
+    assert action is None
 
 
 def test_prefer_targeted_actions_cookie_prefers_reject_click():
@@ -581,11 +891,12 @@ def test_scope_nav_home_perception_rewrites_tool_bias_on_home():
         budget=3,
     )
     assert out is not None
-    assert out["taskReminder"] == "Ich suche den Weg zum Produktkombinationen-Tool."
+    assert out["taskReminder"] == "Ich suche den Weg zu produktkombination."
     assert out["confusion"] is None
     joined = " ".join(n.get("what") for n in out["noticed"] if isinstance(n, dict)).lower()
     assert "startseite" in joined
     assert "filter" not in joined
+    assert "bosch" not in joined
 
 
 def test_scope_nav_home_perception_skips_on_tool_url():
@@ -669,3 +980,105 @@ def test_min_steps_done_gate_blocks_before_min_steps():
 def test_min_steps_done_gate_allows_abandon_early():
     assert P.min_steps_blocks_done(1, 6, stance="abandon") is False
     assert P.min_steps_blocks_done(2, 6, stance="abandon") is False
+
+
+NAV_TASK = (
+    "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+    "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+)
+
+PORSCHE_TASK = (
+    "Starte auf der Porsche Startseite (nicht direkt). "
+    "Finde den Weg zum Konfigurator über Modelle/Navigation. "
+    "Erfolg = du landest auf der Konfigurator-Seite."
+)
+
+
+def test_is_ui_path_finding_task_generic_and_bosch_alias():
+    assert P.is_ui_path_finding_task(NAV_TASK) is True
+    assert P.is_nav_h3_task(NAV_TASK) is True
+    assert P.is_ui_path_finding_task(PORSCHE_TASK) is True
+    assert P.is_ui_path_finding_task("Nutze das Produktkombinationen-Tool direkt.") is False
+
+
+def test_task_keywords_only_from_task_text():
+    assert "produktkombination" in P._task_target_keywords(NAV_TASK)
+    assert P._task_target_keywords(PORSCHE_TASK) == ["konfigurator"]
+    assert P._task_target_keywords("Bitte die Startseite anschauen.") == []
+    assert "modelle" in P._task_nav_open_keywords(PORSCHE_TASK)
+
+
+def test_select_nav_dom_action_works_without_bosch_domain():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                3: {
+                    "is_visible": True,
+                    "bounds": {"x": 500, "y": 40, "width": 160, "height": 40},
+                    "attributes": {"href": "/deutschland/modelle/"},
+                    "ax_node": {"name": "Modelle", "role": "link"},
+                }
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.porsche.com/germany/",
+        task=PORSCHE_TASK,
+    )
+    assert reason == "nav_dom_service_click"
+    assert action == {"tool": "click", "index": 3}
+
+
+def test_filter_path_finding_deeplinks_blocks_target_navigate():
+    class Nav:
+        def model_dump(self, exclude_none=True):
+            return {"navigate": {"url": "https://www.example.com/de/service/produktkombinationen"}}
+
+    class Click:
+        def model_dump(self, exclude_none=True):
+            return {"click": {"index": 12}}
+
+    kept, reason = P.filter_path_finding_deeplinks(
+        [Nav(), Click()],
+        task=NAV_TASK,
+        current_url="https://www.example.com/de/",
+    )
+    assert reason == "deeplink_blocked"
+    assert len(kept) == 1
+    assert P.action_tool_name(kept[0]) == "click"
+
+
+def test_select_nav_dom_action_avoids_repeating_same_coordinates():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                99: {
+                    "is_visible": True,
+                    "bounds": {"x": 0, "y": 0, "width": 1400, "height": 642},
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {
+                        "name": "Produkte eBikes Service & Beratung Magazin Über uns Business",
+                        "role": "link",
+                    },
+                }
+            }
+        }
+    }
+    first, reason1 = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.example.com/de/",
+        task=NAV_TASK,
+    )
+    assert reason1 == "nav_dom_service_coordinate"
+    assert first is not None
+    xy = (first["coordinate_x"], first["coordinate_y"])
+    second, reason2 = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.example.com/de/",
+        task=NAV_TASK,
+        avoid_coordinates=[xy],
+    )
+    assert reason2 == "nav_dom_service_coordinate"
+    assert second is not None
+    assert (second["coordinate_x"], second["coordinate_y"]) != xy

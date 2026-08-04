@@ -1,4 +1,4 @@
-"""Judge system for evaluating browser-use agent execution traces."""
+"""Judge system for evaluating audion-agent agent execution traces."""
 
 import base64
 import logging
