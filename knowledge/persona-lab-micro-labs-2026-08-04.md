@@ -29,7 +29,9 @@ cd apps/web && pnpm exec vitest run __tests__/persona-lab-nav-correlate.test.ts 
 ### Purchase / A+C
 
 Same from-pack flow with `pack-ebm-persona-lab-purchase` or `pack-ebm-persona-lab-ac`.  
-Full live purchase / C smokes are optional (heavy); packs + correlator/unit coverage ship first.
+
+**Live staging (2026-08-04):** `knowledge/lab-staging-smoke-micro-labs-live-2026-08-04.md`  
+— Nav H3 fail (home abandon); Purchase/C short; A + Sam Lab B pass; Soft-Q 2/2.
 
 ## Paths
 

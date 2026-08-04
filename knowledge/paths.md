@@ -114,7 +114,7 @@
 - Soft-Q L6b LLM assist: prefer **ON** on staging after clamp-safe unit tests · `AUDION_SOFT_Q_LLM_ASSIST` · `knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md`
 - Lab persona resolve (fixture→DB): `apps/web/lib/lab-persona-resolve.ts` · env `AUDION_LAB_ALEX_PERSONA_ID` / `AUDION_LAB_SAM_PERSONA_ID` · `knowledge/persona-lab-persona-resolve-2026-08-04.md`
 - Lab DB personas (staging): impatient Alex `persona-alex-lab-ungeduldig-msdfje0b` · patient Sam `persona-sam-lab-geduldig-msdroy3t` (tp 0.2) · fixture aliases `paths.personaLabImpatientPersonaId` / `personaLabPatientPersonaId`
-- Persona Lab micro-labs (Nav / Purchase / A+C): `paths.personaLabNavPackId` · `personaLabPurchasePackId` · `personaLabAcPackId` · `knowledge/persona-lab-micro-labs-2026-08-04.md` · nav correlate `persona-lab-nav-correlate.ts`
+- Persona Lab micro-labs (Nav / Purchase / A+C): `paths.personaLabNavPackId` · `personaLabPurchasePackId` · `personaLabAcPackId` · `knowledge/persona-lab-micro-labs-2026-08-04.md` · nav correlate `persona-lab-nav-correlate.ts` · live smokes `knowledge/lab-staging-smoke-micro-labs-live-2026-08-04.md`
 - Persona Lab study/wave smoke: `study-persona-lab-l2-l6b-deploy-smoke-2026-08-03-msdm3k8z` / `wave-persona-lab-b-deploy-smoke-msdm3k9g` · project `proj-bosch-ebike-msd3hwtv`
 - Explore-budget + resolve + Soft-Q L6b staging smoke (2026-08-04): `knowledge/lab-staging-smoke-explore-budget-2026-08-04.md` · study `study-persona-lab-b-explore-budget-smoke-2026-08-04-mse9c85z`
 - Try-then-quit staging smoke: `knowledge/lab-staging-smoke-try-then-quit-2026-08-03.md` · Sam study `study-persona-lab-sam-patient-db-2026-08-03-msds5ghc`
