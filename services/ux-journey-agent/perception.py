@@ -1123,6 +1123,10 @@ def _is_home_loop_click(
         '"url": "/de/"',
         '"target": "/en/"',
         '"url": "/en/"',
+        "target=/de/",
+        " /de/ ",
+        "'/de/'",
+        '"/de/"',
     ]
     if cur:
         tokens.extend([cur, cur + "/"])
