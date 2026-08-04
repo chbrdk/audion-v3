@@ -9,39 +9,43 @@
 
 | Lab | Job(s) | Steps | Friction | Soft-Q Q2/Q3 | Verdict |
 |-----|--------|-------|----------|--------------|---------|
-| **Nav H3** | `9c368462…` | 4 | 8 | 2/2 | **Fail H3** — stayed on home; no `produktkombinationen` URL |
-| **Purchase** | `22e1278f…` | 2 | 7 | 2/2 | **Partial** — Sam policy OK; too short vs minSteps 6 |
+| **Nav H3** | `9c368462…` → `2ad95280…` | 4 → 4 | 8 → 8 | 2/2 | **Still fail H3** — now clicks `Service & Beratung`, but still no verified tool URL |
+| **Purchase** | `22e1278f…` → `4047747e…` | 2 → **8** | 7 → **8** | 2/2 | **Pass after minSteps gate** |
 | **A Erstkontakt** | `1a875c23…` | 5 | 8 | 2/2 (wave) | **Pass** — try-then-quit → forced abandon |
-| **C Kombination** | `c2bb058b…` | 3 | 8 | 2/2 (wave) | **Partial** — short for Aufgabe 2 |
+| **C Kombination** | `c2bb058b…` → `c7fcf51f…` | 3 → 2 | 8 → invalid | 2/2 (wave) | **Fail rerun** — job errored / `validEvidence=false` |
 | **Sam Lab B** | `25353178…` | **8** | 8 | 2/2 | **Pass** — contrast vs Alex explore-budget **5** |
 
-All runs: `validEvidence=true`, no infra blockers. Personas auto-resolved (Sam Lab B used one PATCH override on Lab B pack).
+First smoke set had `validEvidence=true`, no infra blockers. Rerun after fix commit `612db69` improved Purchase, partially improved Nav, and regressed C (`validEvidence=false`). Personas auto-resolved (Sam Lab B used one PATCH override on Lab B pack).
 
 ## Nav H3 (`pack-ebm-persona-lab-nav`)
 
 - Study/wave: `study-persona-lab-nav-live-smoke-2026-08-04-mseboo33` / `wave-…mseboo3o`
 - Start URL: `https://www.bosch-ebike.com/de/`
-- Path: navigate → scroll → scroll → done (abandon)
-- Saw “Service & Beratung”; never clicked into tool
-- Nav correlate: **closer=false** (`url_matches_tool` fail); score 0.75
-- Issue: Lab-B gold salience (`Display-Karten grau`, Performance Line) leaked into done-step `noticed` on **home** — matrix enrich/prompt not task-scoped
+- First run (`9c368462…`): navigate → scroll → scroll → done; stayed on home
+- Rerun (`2ad95280…`, after `612db69`): clicked **Service & Beratung** twice before done; no verified `produktkombinationen` URL
+- Nav correlate still **closer=false** (`url_matches_tool` fail)
+- Improvement: Lab-B matrix leak reduced — no fake `Performance Line` / `Display-Karten grau` on home; remaining wording is generic `Filter/Ursache prüfen`
 
-**Follow-up:** Scope P5 gold enrich + impatient matrix prompt to tool URL / Lab B runKey; Nav should prefer click Service → Produktkombinationen before abandon.
+**Status:** Gold scoping + Nav click bias landed, but H3 still needs stronger route-following after first Service click (likely submenu / next-step targeting rather than generic retry).
 
 ## Purchase (`pack-ebm-persona-lab-purchase`)
 
 - Study/wave: `study-…msebs50j` / `wave-…msebs50p`
 - Persona: `persona-sam-lab-geduldig-msdroy3t` (resolve, no PATCH)
 - `impatientApplied=false`, `tryBeforeAbandon=6`, abandon **off**
-- Steps **2** despite `minSteps=6` — early done undercuts patient explore intent
+- First run (`22e1278f…`): steps **2** despite `minSteps=6`
+- Rerun (`4047747e…`, after `612db69`): steps **8**, friction **8**, patient hesitation visible through steps 3–8, ends with honest abandon
 
-**Follow-up:** Enforce minSteps before accepting `done` for patient / purchase packs.
+**Status:** **Fixed** by minSteps done gate.
 
 ## A+C (`pack-ebm-persona-lab-ac`)
 
 - Study/wave: `study-…msebt3wz` / `wave-…msebt3x6`
 - **A** Alex: 5 steps, explor 3/3, `forced=true` abandon — OK for Erstkontakt
-- **C** Sam: 3 steps, abandon off — short for full Kombination; Soft-Q still 2/2 from wave aggregate
+- **C** first run (`c2bb058b…`): 3 steps, abandon off — short for full Kombination
+- **C** rerun (`c7fcf51f…`): **error / invalidEvidence=false** after 2 steps; finding stuck at `Scrolled down 1080px`
+
+**Status:** still open; rerun exposed a separate stability issue, not just early `done`.
 
 ## Sam Lab B contrast
 
@@ -53,3 +57,8 @@ All runs: `validEvidence=true`, no infra blockers. Personas auto-resolved (Sam L
 ## Soft-Q
 
 L6b assist present (`LLM-assist:` rationales). Q2/Q3 stayed ~2 across waves. Q4 often null (nav/findability not auto-filled strongly).
+
+## Fix rerun note
+
+Fix commit: `612db69` — gold scoping off-tool, minSteps done gate, Nav click priority.  
+Rerun studies: Nav `study-persona-lab-nav-rerun-2026-08-04-mseco1uu`, Purchase `study-persona-lab-purchase-rerun-2026-08-04-msecqpdp`, A+C `study-persona-lab-ac-rerun-2026-08-04-msecue1h`.
