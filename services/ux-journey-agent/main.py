@@ -1298,6 +1298,7 @@ def _apply_persona_perception_finalize(
     time_pressure: float | None,
     budget: int,
     exploration: float | None = None,
+    lab_b_gold_context_allowed: bool = True,
 ) -> list[dict[str, Any]]:
     """Re-apply enrich + try-then-quit / impatient abandon so stored steps match the live gate."""
     confusion_so_far = 0
@@ -1321,6 +1322,7 @@ def _apply_persona_perception_finalize(
             try_before_abandon=try_before,
             exploration=exploration,
             clarity_trend=list(clarity_trend),
+            lab_b_gold_context_allowed=lab_b_gold_context_allowed,
         )
         if finalized:
             step["perception"] = finalized
@@ -3362,6 +3364,21 @@ async def run_agent(
         #   (sent every step, naturally cached) instead of the user message.
         # The persona block is automatically rendered last by the fork via
         # `Agent(persona=persona_dict)` — see audion-agent CHANGELOG Phase 2.
+        nav_home_rule = ""
+        if (
+            "Starte auf der Bosch eBike Startseite" in str(task)
+            and "Produktkombinationen" in str(task)
+        ):
+            # Nav pack scoping: encourage at least one navigation click toward
+            # Service/Produktkombinationen before abandoning, when the try budget
+            # is still available.
+            nav_home_rule = (
+                "NAV-REGEL: Nav-Home: bevor du abbrichst/done wählst, "
+                "klicke (mindestens einmal) auf einen Navigation-Link in Richtung "
+                "Service/Produktkombinationen, sofern dein Try-Budget noch nicht "
+                "erschöpft ist. Wenn du diese Navigation trotz echten Versuchs nicht "
+                "findest oder sie keine Wirkung zeigt, darfst du ehrlich abbrechen.\n"
+            )
         if persona_tp is not None and persona_tp >= 0.75:
             abandon_n = int(confusion_abandon.get("threshold") or 2)
             completion_block = (
@@ -3375,6 +3392,7 @@ async def run_agent(
                 "sofort done mit Teil-Finding (Verwirrung ehrlich benennen). "
                 "Runtime erzwingt Abbruch — NICHT endlos suchen oder Side-Quests.\n"
                 "Markiere done erst mit verifiziertem Ergebnis ODER ehrlichem Abbruchgrund.\n"
+                f"{nav_home_rule}"
             )
         else:
             completion_block = (
@@ -3391,6 +3409,7 @@ async def run_agent(
             trust_skepticism=persona_dims.get("trust_skepticism"),
             felt_state=None,  # live updates via felt-state context messages
             completion_block=completion_block,
+            lab_b_gold_context_allowed=ux_perception.lab_b_gold_context_allowed(url, task),
         )
         # Keep optional OBSERVATIONS for scorecard research flags (max 2).
         audion_brevity_extension += (
@@ -3606,6 +3625,43 @@ async def run_agent(
             )
 
             async def _get_next_action_with_perception(browser_state_summary: Any) -> None:
+                # Per-step scoping: Lab-B "human gold" enrich must be allowed only
+                # when we're on the Produktkombinationen tool URL or when the
+                # current task is the Lab B matrix run.
+                current_url: str | None = None
+                try:
+                    if isinstance(browser_state_summary, dict):
+                        for k in ("url", "current_url", "currentUrl", "page_url", "pageUrl"):
+                            v = browser_state_summary.get(k)
+                            if isinstance(v, str) and v.startswith("http"):
+                                current_url = v
+                                break
+                        if not current_url:
+                            dom = browser_state_summary.get("dom_state") or browser_state_summary.get("domState")
+                            if isinstance(dom, dict):
+                                for k in ("url", "current_url", "page_url"):
+                                    v = dom.get(k)
+                                    if isinstance(v, str) and v.startswith("http"):
+                                        current_url = v
+                                        break
+                    else:
+                        for k in ("url", "current_url", "currentUrl", "page_url", "pageUrl"):
+                            v = getattr(browser_state_summary, k, None)
+                            if isinstance(v, str) and v.startswith("http"):
+                                current_url = v
+                                break
+                        if not current_url:
+                            dom = getattr(browser_state_summary, "dom_state", None) or getattr(browser_state_summary, "domState", None)
+                            if dom is not None:
+                                for k in ("url", "current_url", "page_url"):
+                                    v = getattr(dom, k, None)
+                                    if isinstance(v, str) and v.startswith("http"):
+                                        current_url = v
+                                        break
+                except Exception:
+                    current_url = None
+                lab_b_gold_allowed = ux_perception.lab_b_gold_context_allowed(current_url, task)
+
                 async def _once() -> dict[str, Any] | None:
                     await _orig_get_next(browser_state_summary)
                     mo = getattr(getattr(agent, "state", None), "last_model_output", None)
@@ -3624,6 +3680,7 @@ async def run_agent(
                         try_before_abandon=try_before_n,
                         exploration=persona_dims.get("exploration"),
                         clarity_trend=list(felt_state.get("clarityTrend") or []),
+                        lab_b_gold_context_allowed=lab_b_gold_allowed,
                     )
                     if upgraded:
                         print(
@@ -3902,6 +3959,35 @@ async def run_agent(
                                         filtered, perc
                                     )
 
+                # Lab L1/L5: enforce minSteps before allowing a model-proposed
+                # done/complete/finish on patient-like flows (unless the stance
+                # is abandon, i.e. honest early quit).
+                if ux_perception.min_steps_blocks_done(
+                    int(felt_state.get("stepsWithPerception") or 0) + 1,
+                    min_steps,
+                    stance=str(perc.get("stance") or ""),
+                ):
+                    done_names = ("done", "complete", "finish")
+                    has_done = any(
+                        ux_perception.action_tool_name(a) in done_names for a in filtered or []
+                    )
+                    if has_done:
+                        kept = [
+                            a
+                            for a in (filtered or [])
+                            if ux_perception.action_tool_name(a) not in done_names
+                        ]
+                        if kept:
+                            filtered = kept
+                            reason = "min_steps_done_blocked"
+                        else:
+                            await _nudge(
+                                f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
+                                "Bitte liefere einen explorativen Schritt (scroll/klick), kein done."
+                            )
+                            filtered = [{"scroll": {"down": True}}]
+                            reason = "min_steps_done_blocked_scroll"
+
                 if not filtered:
                     if perc and perc.get("stanceSoftened"):
                         await _apply_actions([])
@@ -4164,6 +4250,7 @@ async def run_agent(
                 persona_tp, persona_dims.get("detail_orientation")
             ),
             exploration=persona_dims.get("exploration"),
+            lab_b_gold_context_allowed=ux_perception.lab_b_gold_context_allowed(url, task),
         )
         _annotate_steps_with_video_offsets(job_id, steps)
         success = _history_success(history)

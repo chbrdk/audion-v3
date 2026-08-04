@@ -604,6 +604,72 @@ _CRITICAL_NOTICED_LABELS = frozenset(
     }
 )
 
+# Lab B matrix / "human gold" cues that must not be invented on Nav-home.
+_LAB_B_GOLD_PROMOTE_LABELS = frozenset(
+    {
+        # Explicitly called out in smoke evidence: no "Display-Karten grau" and no
+        # "Performance Line" on the Nav-home path.
+        "grau / disabled",
+        "Performance Line",
+        # "Displays" can indirectly contribute to "Display-Karten grau" wording.
+        "Displays",
+    }
+)
+
+
+def is_lab_b_matrix_task(task: str | None) -> bool:
+    """
+    Best-effort task classifier for the Lab B matrix run.
+
+    We avoid relying on pack/runKey plumbing at the Python layer; instead we
+    match stable German phrases from the scenario-pack fixture.
+    """
+    if not task:
+        return False
+    t = str(task)
+    # Lab B matrix fixture includes explicit "Lab-Persona:" line.
+    if "Lab-Persona:" in t and "Du bist ungeduldig" in t:
+        return True
+    # Also stable: early quit instruction after at most two grey/disabled moments.
+    if "höchstens zwei" in t and "Momenten" in t:
+        return True
+    return False
+
+
+def lab_b_gold_context_allowed(current_url: str | None, task: str | None) -> bool:
+    """
+    When False: disable Lab-B gold enrich/prompt bias so Nav-home can't invent
+    "grau/disabled Displays" or "Performance Line".
+
+    Allowed when:
+    - we're on the Produktkombinationen tool URL, OR
+    - the current task is the Lab B matrix run.
+    """
+    if is_lab_b_matrix_task(task):
+        return True
+    if not current_url:
+        return False
+    return "produktkombinationen" in str(current_url).lower()
+
+
+def min_steps_blocks_done(current_step: int, min_steps: int, *, stance: str) -> bool:
+    """
+    True when "done" should be blocked because we're still below minSteps.
+
+    We explicitly allow abandonment flows (stance=abandon) to finish early.
+    """
+    if str(stance) == "abandon":
+        return False
+    try:
+        cs = int(current_step)
+    except (TypeError, ValueError):
+        cs = 1
+    try:
+        ms = int(min_steps)
+    except (TypeError, ValueError):
+        ms = 1
+    return cs < ms
+
 
 def _noticed_whats_blob(noticed: list[dict[str, Any]]) -> str:
     return normalize_salience_label(
@@ -654,6 +720,8 @@ def _replace_index_for_critical(noticed: list[dict[str, Any]]) -> int | None:
 def enrich_noticed_from_perception_text(
     perception: dict[str, Any] | None,
     budget: int,
+    *,
+    lab_b_gold_context_allowed: bool = True,
 ) -> dict[str, Any] | None:
     """
     Promote cues already written in think/why/intent/noticed into salience slots.
@@ -682,6 +750,8 @@ def enrich_noticed_from_perception_text(
     )
     blob = _noticed_whats_blob(noticed)
     for pattern, label in _SURFACE_PROMOTE_PATTERNS:
+        if not lab_b_gold_context_allowed and label in _LAB_B_GOLD_PROMOTE_LABELS:
+            continue
         if not pattern.search(source):
             continue
         if _label_covered(blob, label):
@@ -719,11 +789,19 @@ def finalize_perception_for_persona(
     try_before_abandon: int | None = None,
     exploration: float | None = None,
     clarity_trend: list[Any] | None = None,
+    lab_b_gold_context_allowed: bool = True,
 ) -> tuple[dict[str, Any] | None, bool]:
     """Enrich noticed from own text, then try-then-quit / hard-upgrade abandon."""
     if perception is None:
         return None, False
-    enriched = enrich_noticed_from_perception_text(perception, budget) or perception
+    enriched = (
+        enrich_noticed_from_perception_text(
+            perception,
+            budget,
+            lab_b_gold_context_allowed=lab_b_gold_context_allowed,
+        )
+        or perception
+    )
     return apply_impatient_abandon_stance(
         enriched,
         time_pressure,
@@ -917,6 +995,7 @@ def perception_prompt_extension(
     trust_skepticism: float | None = None,
     felt_state: dict[str, Any] | None = None,
     completion_block: str = "",
+    lab_b_gold_context_allowed: bool = True,
 ) -> str:
     """System-message block replacing AUDION_THINK_ALOUD for perception-first steps."""
     budget = salience_budget(time_pressure, detail_orientation)
@@ -941,16 +1020,27 @@ def perception_prompt_extension(
             "→ nach dem kurzen Versuch stance=abandon (ehrlicher Abbruch, kein Weiteroptimieren)."
         )
         persona_lines.append("- ignoredGuess ist bei dir erwartet (Tunnelblick OK).")
-        persona_lines.append(
-            f"- Nutze das Budget ({budget}): bei grau/disabled Displays noticed MUSS "
-            "die Aspekte trennen — wörtlich sinnvoll: (1) grau/disabled Zustand, "
-            "(2) „Filter“ / Kompatibilitätsfilter, (3) „unklar warum“ die Ursache fehlt "
-            "(plus Performance Line wenn sichtbar). Keine bloße Umschreibung ohne diese Worte."
-        )
-        persona_lines.append(
-            "- Bei unerklärtem Grau: confusion=disabled_option_unexplained oder "
-            "filter_cause_unknown setzen und in think/why „unklar warum“ sagen."
-        )
+        if lab_b_gold_context_allowed:
+            persona_lines.append(
+                f"- Nutze das Budget ({budget}): bei grau/disabled Displays noticed MUSS "
+                "die Aspekte trennen — wörtlich sinnvoll: (1) grau/disabled Zustand, "
+                "(2) „Filter“ / Kompatibilitätsfilter, (3) „unklar warum“ die Ursache fehlt "
+                "(plus Performance Line wenn sichtbar). Keine bloße Umschreibung ohne diese Worte."
+            )
+            persona_lines.append(
+                "- Bei unerklärtem Grau: confusion=disabled_option_unexplained oder "
+                "filter_cause_unknown setzen und in think/why „unklar warum“ sagen."
+            )
+        else:
+            persona_lines.append(
+                f"- Nutze das Budget ({budget}): trenne Filter-/Ursache-Teile und nutze "
+                "die Wörter „Filter“ und „unklar warum“, erfinde aber keine Lab-B Goldwörter "
+                "(z.B. „Performance Line“ oder „grau/disabled Displays“)."
+            )
+            persona_lines.append(
+                "- Wenn Filter-/Ursache unklar bleibt: confusion=filter_cause_unknown setzen "
+                "und in think/why „unklar warum“ sagen."
+            )
         if felt_state and clarity_persistently_low(felt_state.get("clarityTrend"), min_steps=2):
             persona_lines.append(
                 "- Felt-State: Klarheit bleibt niedrig — Abbruch ist wahrscheinlicher als Optimieren."
@@ -977,6 +1067,44 @@ def perception_prompt_extension(
     felt = felt_state_prompt_block(felt_state)
     felt_section = f"{felt}\n" if felt else ""
 
+    if lab_b_gold_context_allowed:
+        sample_perception_block = (
+            "<<PERCEPTION>>{"
+            '"taskReminder":"Ich will kompatible Displays finden",'
+            '"noticed":['
+            '{"what":"Display-Karten grau/disabled","where":"rechts","relevance":"high"},'
+            '{"what":"Filter-Ursache unklar warum","where":"Kompatibilitätswahl","relevance":"high"},'
+            '{"what":"Performance Line Karte","where":"Drive Unit","relevance":"med"}'
+            '],'
+            '"ignoredGuess":"Feine Tooltips und Footer lese ich nicht",'
+            '"think":"Ohne Erklärung warum grau komme ich nicht weiter.",'
+            '"clarity":0,'
+            '"feel":{"label":"frustriert","valence":-2},'
+            '"confusion":"disabled_option_unexplained",'
+            '"stance":"abandon",'
+            '"intent":"Ich breche ab und sage ehrlich, dass ich keine sichere Antwort habe.",'
+            '"why":"Unerklärte graue Display-Optionen — keine sichere Antwort."'
+            "}<</PERCEPTION>>\n"
+        )
+    else:
+        sample_perception_block = (
+            "<<PERCEPTION>>{"
+            '"taskReminder":"Ich will kompatible Displays finden",'
+            '"noticed":['
+            '{"what":"Filter/Ursache prüfen","where":"Tool","relevance":"high"},'
+            '{"what":"Filter-Ursache unklar warum","where":"Kompatibilitätswahl","relevance":"high"}'
+            '],'
+            '"ignoredGuess":"Feine Tooltips und Footer lese ich nicht",'
+            '"think":"Ohne Erklärung zur Ursache bleibe ich unsicher.",'
+            '"clarity":0,'
+            '"feel":{"label":"frustriert","valence":-2},'
+            '"confusion":"filter_cause_unknown",'
+            '"stance":"abandon",'
+            '"intent":"Ich breche ab und sage ehrlich, dass ich keine sichere Antwort habe.",'
+            '"why":"Filter-Ursache unklar — keine sichere Antwort."'
+            "}<</PERCEPTION>>\n"
+        )
+
     return (
         "AUDION_PERCEPTION:\n"
         "ROLLENBILD: Du bist die Persona. Reihenfolge PFLICHT: erst wahrnehmen & bewerten, "
@@ -986,23 +1114,8 @@ def perception_prompt_extension(
         + "\n".join(persona_lines)
         + "\n"
         "PFLICHT: Hänge an 'thinking' diesen Block an (wird aus dem VO entfernt):\n"
-        "<<PERCEPTION>>{"
-        '"taskReminder":"Ich will kompatible Displays finden",'
-        '"noticed":['
-        '{"what":"Display-Karten grau/disabled","where":"rechts","relevance":"high"},'
-        '{"what":"Filter-Ursache unklar warum","where":"Kompatibilitätswahl","relevance":"high"},'
-        '{"what":"Performance Line Karte","where":"Drive Unit","relevance":"med"}'
-        '],'
-        '"ignoredGuess":"Feine Tooltips und Footer lese ich nicht",'
-        '"think":"Ohne Erklärung warum grau komme ich nicht weiter.",'
-        '"clarity":0,'
-        '"feel":{"label":"frustriert","valence":-2},'
-        '"confusion":"disabled_option_unexplained",'
-        '"stance":"abandon",'
-        '"intent":"Ich breche ab und sage ehrlich, dass ich keine sichere Antwort habe.",'
-        '"why":"Unerklärte graue Display-Optionen — keine sichere Antwort."'
-        "}<</PERCEPTION>>\n"
-        "Felder: taskReminder, noticed[{what,where?,relevance:high|med|low}], ignoredGuess, "
+        + sample_perception_block
+        + "Felder: taskReminder, noticed[{what,where?,relevance:high|med|low}], ignoredGuess, "
         "think, clarity 0-3, feel{label,valence -2..2}, "
         "confusion (disabled_option_unexplained|filter_cause_unknown|selection_order_surprise|null), "
         "stance (proceed|hesitate|abandon), intent, why.\n"

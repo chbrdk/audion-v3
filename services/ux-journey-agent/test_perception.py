@@ -430,3 +430,84 @@ def test_enrich_at_full_budget_promotes_filter_and_cause():
     )
     assert overlap["hits"] >= 4
     assert overlap["score"] >= 0.8
+
+
+def test_lab_b_gold_context_allowed_scopes_nav_home_vs_tool_url():
+    nav_task = (
+        "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+        "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+    )
+    assert P.lab_b_gold_context_allowed("https://www.bosch-ebike.com/de/", nav_task) is False
+    assert (
+        P.lab_b_gold_context_allowed(
+            "https://www.bosch-ebike.com/de/produktkombinationen",
+            nav_task,
+        )
+        is True
+    )
+
+    lab_b_matrix_task = (
+        "Lab-Persona: Du bist ungeduldig (Patient niedrig, time_pressure hoch). "
+        "Wenn Optionen ausgeblendet/grau sind und du nicht verstehst warum: "
+        "benenne das sofort und brich nach höchstens zwei solchen Momenten ab."
+    )
+    # Even when URL doesn't match, Lab B matrix task must allow gold cues.
+    assert P.lab_b_gold_context_allowed("https://www.bosch-ebike.com/de/", lab_b_matrix_task) is True
+
+
+def test_enrich_skips_matrix_gold_when_off_tool():
+    # Full budget scenario: if matrix gold cues were allowed, enrichment could
+    # replace the single noticed slot with "Performance Line" / "grau / disabled".
+    perc = {
+        "taskReminder": "Displays finden",
+        "noticed": [{"what": "Kompatibilitätsfilter Auswahl", "relevance": "high"}],
+        "think": "Performance Line ist zu sehen; die Optionen sind grau und ich weiß nicht warum.",
+        "clarity": 0,
+        "feel": {"label": "frustriert", "valence": -2},
+        "confusion": "disabled_option_unexplained",
+        "stance": "proceed",
+        "intent": "Ich prüfe noch einmal.",
+        "why": "Ohne Ursache bleibt es unklar.",
+    }
+    out = P.enrich_noticed_from_perception_text(
+        perc,
+        budget=1,
+        lab_b_gold_context_allowed=False,
+    )
+    assert out is not None
+    joined = " ".join(n.get("what") for n in out.get("noticed") or [] if isinstance(n, dict)).lower()
+    assert "performance line" not in joined
+    assert "grau" not in joined
+
+
+def test_enrich_still_adds_matrix_gold_on_tool():
+    perc = {
+        "taskReminder": "Displays finden",
+        "noticed": [{"what": "Kompatibilitätsfilter Auswahl", "relevance": "high"}],
+        "think": "Performance Line ist zu sehen; die Optionen sind grau und ich weiß nicht warum.",
+        "clarity": 0,
+        "feel": {"label": "frustriert", "valence": -2},
+        "confusion": "disabled_option_unexplained",
+        "stance": "proceed",
+        "intent": "Ich prüfe noch einmal.",
+        "why": "Ohne Ursache bleibt es unklar.",
+    }
+    out = P.enrich_noticed_from_perception_text(
+        perc,
+        budget=1,
+        lab_b_gold_context_allowed=True,
+    )
+    assert out is not None
+    joined = " ".join(n.get("what") for n in out.get("noticed") or [] if isinstance(n, dict)).lower()
+    assert "performance line" in joined or "grau" in joined
+
+
+def test_min_steps_done_gate_blocks_before_min_steps():
+    assert P.min_steps_blocks_done(1, 6, stance="proceed") is True
+    assert P.min_steps_blocks_done(5, 6, stance="hesitate") is True
+    assert P.min_steps_blocks_done(6, 6, stance="proceed") is False
+
+
+def test_min_steps_done_gate_allows_abandon_early():
+    assert P.min_steps_blocks_done(1, 6, stance="abandon") is False
+    assert P.min_steps_blocks_done(2, 6, stance="abandon") is False
