@@ -28,6 +28,16 @@ Personas auto-resolved (Sam Lab B used one PATCH override on Lab B pack).
 
 **Open:** reliable element targeting for Service → Produktkombinationen (DOM/index selection), not more abandon bias.
 
+### Nav follow-up (same day, later)
+
+- `1c5de2c`: Nav-home Perception scoped to **path-finding** instead of matrix/tool framing
+- `31303a5`: same scope applied to the stored/history parse path
+- New smoke: study `study-persona-lab-nav-history-scope-fix-2026-08-04-msefeckj`, job `7fa6cd9e…`
+- Result: **still fail H3**, but the stored finding/perception is now correct:
+  - `taskReminder`: `Ich suche den Weg zum Produktkombinationen-Tool.`
+  - no fake `Performance Line` / `Display-Karten grau` matrix framing on home
+  - remaining issue is now narrowed to **actual route-following / DOM target selection**
+
 ## Purchase (`pack-ebm-persona-lab-purchase`)
 
 - Rerun after `612db69`: job `4047747e…`, steps **8**, friction **8**, patient, Soft-Q 2/2  
