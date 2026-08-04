@@ -3455,6 +3455,7 @@ async def run_agent(
         felt_state["menuWaitUsed"] = False
         felt_state["menuHoverUsed"] = False
         felt_state["menuClickUsed"] = False
+        felt_state["targetClickUsed"] = False
         try_before_n = int(confusion_abandon.get("tryBeforeAbandon") or 1)
         print(
             f"ux-journey: job={job_id} step_budget={step_budget} "
@@ -4039,6 +4040,7 @@ async def run_agent(
                         menu_wait_used=bool(felt_state.get("menuWaitUsed")),
                         menu_hover_used=bool(felt_state.get("menuHoverUsed")),
                         menu_click_used=bool(felt_state.get("menuClickUsed")),
+                        target_click_used=bool(felt_state.get("targetClickUsed")),
                     )
 
                 def _record_nav_steer(dom_reason: str, params: dict[str, Any]) -> None:
@@ -4048,6 +4050,8 @@ async def run_agent(
                         felt_state["menuWaitUsed"] = True
                     if dom_reason == "nav_dom_menu_hover":
                         felt_state["menuHoverUsed"] = True
+                    if dom_reason == "nav_dom_target_evaluate":
+                        felt_state["targetClickUsed"] = True
                     if dom_reason == "nav_dom_service_cdp_click":
                         felt_state["menuClickUsed"] = True
                         # Allow one post-click paint wait before opener_spent.

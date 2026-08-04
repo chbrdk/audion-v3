@@ -804,6 +804,92 @@ def build_nav_menu_hover_evaluate(open_keys: list[str]) -> dict[str, Any] | None
     return {"tool": "evaluate", "code": code}
 
 
+def build_nav_target_click_evaluate(target_keys: list[str]) -> dict[str, Any] | None:
+    """
+    Click an on-page destination link whose href/text matches task target keywords.
+
+    Walks light DOM + open shadow roots. This is still UI path-finding (follow a
+    real page link) — not ``navigate``/``go_to_url`` deeplink injection.
+    """
+    keys = [str(k).strip().lower() for k in (target_keys or []) if str(k).strip()]
+    if not keys:
+        return None
+    keys_js = json.dumps(keys, ensure_ascii=True)
+    code = (
+        "(function(){try{"
+        f"const keys={keys_js};"
+        "const match=t=>keys.some(k=>t.includes(k));"
+        "function* anchors(root){"
+        "for(const a of root.querySelectorAll('a[href]')) yield a;"
+        "for(const el of root.querySelectorAll('*')){"
+        "if(el.shadowRoot) yield* anchors(el.shadowRoot);"
+        "}"
+        "}"
+        "let best=null; let bestScore=-1e9;"
+        "for(const el of anchors(document)){"
+        "const href=String(el.getAttribute('href')||el.href||'').toLowerCase();"
+        "const t=((el.innerText||el.textContent||'')+' '+"
+        "(el.getAttribute('aria-label')||'')+' '+href)"
+        ".toLowerCase().replace(/\\s+/g,' ').trim();"
+        "if(!match(href) && !match(t)) continue;"
+        "if(href==='/' || /^\\/[a-z]{2}\\/?$/.test(href)) continue;"
+        "let score=0;"
+        "if(match(href)) score+=80;"
+        "if(match(t)) score+=40;"
+        "const r=el.getBoundingClientRect();"
+        "if(r.width>=4 && r.height>=4 && r.top>=0 && r.top<=900) score+=25;"
+        "if(score>bestScore){bestScore=score; best=el;}"
+        "}"
+        "if(!best) return 'nav_target:no_link';"
+        "best.click();"
+        "return 'nav_target:'+String(best.getAttribute('href')||best.href||'').slice(0,120);"
+        "}catch(e){return 'nav_target:err:'+e.message}}())"
+    )
+    return {"tool": "evaluate", "code": code}
+
+
+def build_nav_hub_click_evaluate(open_keys: list[str]) -> dict[str, Any] | None:
+    """
+    Click a non-rootish opener hub link (e.g. ``/…/service/…``) from the live DOM.
+    """
+    keys = [str(k).strip().lower() for k in (open_keys or []) if str(k).strip()]
+    if not keys:
+        return None
+    keys_js = json.dumps(keys, ensure_ascii=True)
+    code = (
+        "(function(){try{"
+        f"const keys={keys_js};"
+        "const match=t=>keys.some(k=>t.includes(k));"
+        "function* anchors(root){"
+        "for(const a of root.querySelectorAll('a[href]')) yield a;"
+        "for(const el of root.querySelectorAll('*')){"
+        "if(el.shadowRoot) yield* anchors(el.shadowRoot);"
+        "}"
+        "}"
+        "let best=null; let bestScore=-1e9;"
+        "for(const el of anchors(document)){"
+        "const href=String(el.getAttribute('href')||el.href||'').toLowerCase();"
+        "if(!href || href==='/' || /^\\/[a-z]{2}\\/?$/.test(href)) continue;"
+        "if(!keys.some(k=>href.includes(k))) continue;"
+        # Prefer compact hub paths (/service/, /service/ebike-beratung) over deep tools.
+        "const depth=(href.match(/\\//g)||[]).length;"
+        "const t=((el.innerText||el.textContent||'')+' '+"
+        "(el.getAttribute('aria-label')||'')).toLowerCase().replace(/\\s+/g,' ').trim();"
+        "let score=40;"
+        "if(match(t) && t.length<=48) score+=30;"
+        "if(depth<=4) score+=20;"
+        "const r=el.getBoundingClientRect();"
+        "if(r.width>=4 && r.height>=4 && r.top>=0 && r.top<=420) score+=25;"
+        "if(score>bestScore){bestScore=score; best=el;}"
+        "}"
+        "if(!best) return 'nav_hub:no_link';"
+        "best.click();"
+        "return 'nav_hub:'+String(best.getAttribute('href')||best.href||'').slice(0,120);"
+        "}catch(e){return 'nav_hub:err:'+e.message}}())"
+    )
+    return {"tool": "evaluate", "code": code}
+
+
 def build_nav_opener_click_evaluate(
     open_keys: list[str],
     *,
@@ -962,6 +1048,7 @@ def select_nav_dom_action(
     menu_wait_used: bool = False,
     menu_hover_used: bool = False,
     menu_click_used: bool = False,
+    target_click_used: bool = False,
 ) -> tuple[dict[str, Any] | None, str]:
     """
     Deterministically steer brittle home→destination nav using visible DOM nodes.
@@ -991,6 +1078,7 @@ def select_nav_dom_action(
 
     avoid = list(avoid_coordinates or [])
     target_idx: int | None = None
+    hidden_target_idx: int | None = None
     submenu_target_idx: int | None = None
     opener_click_idx: int | None = None
     opener_click_score = float("-inf")
@@ -1010,25 +1098,29 @@ def select_nav_dom_action(
         return not any(_coords_too_close(xy, prev) for prev in avoid)
 
     for idx, node in _selector_map_items(browser_state_summary):
-        if not _node_visible(node):
-            continue
-        blob = _node_text_blob(node)
-        if not blob:
-            continue
         href = _node_attr(node, "href").lower()
+        blob = _node_text_blob(node)
+        visible = _node_visible(node)
         expanded = _node_attr(node, "aria-expanded").lower()
         if expanded in ("true", "1"):
             menu_expanded = True
-        if target_keys and any(k in blob or k in href for k in target_keys):
-            # Prefer non-root links; keep first hit as primary, collect submenu-ish later.
+        # Destination hrefs win even when mega-menu AX marks them not visible.
+        if target_keys and any(k in href or k in blob for k in target_keys):
             if href and not _is_rootish_href(href):
-                target_idx = idx
-                break
-            if target_idx is None:
+                if visible:
+                    target_idx = idx
+                    break
+                if hidden_target_idx is None:
+                    hidden_target_idx = idx
+            elif visible and target_idx is None and blob:
                 target_idx = idx
             continue
-        # Soft target stems (e.g. "produktkombinationen" partial in closed submenu labels)
-        if menu_phase and target_keys and href and not _is_rootish_href(href):
+        if not visible:
+            continue
+        if not blob:
+            continue
+        # Soft target stems (e.g. "produktkombinationen" partial in submenu labels)
+        if target_keys and href and not _is_rootish_href(href):
             soft = any(
                 stem[:8] in blob or stem[:8] in href
                 for stem in target_keys
@@ -1138,6 +1230,8 @@ def select_nav_dom_action(
 
     if target_idx is not None:
         return {"tool": "click", "index": target_idx}, "nav_dom_product_index"
+    if hidden_target_idx is not None:
+        return {"tool": "click", "index": hidden_target_idx}, "nav_dom_product_index"
     if submenu_target_idx is not None:
         return {"tool": "click", "index": submenu_target_idx}, "nav_dom_product_index"
 
@@ -1176,9 +1270,15 @@ def select_nav_dom_action(
     if menu_phase and not menu_wait_used and not menu_expanded and target_idx is None:
         return {"tool": "wait", "seconds": 2}, "nav_dom_menu_wait"
 
-    # After hover+wait: CDP click at synthetic Service coords (shadow/AX-proof),
-    # then a short wait — evaluate text scans often miss Bosch mega-menu chrome.
-    if open_keys and (menu_hover_used or menu_phase) and target_idx is None and not menu_click_used:
+    # Follow an on-page destination link (often already in HTML / shadow tree).
+    # Prefer after hover+wait so mega-menus can paint; still ok if hover missed.
+    if target_keys and not target_click_used and (menu_hover_used or menu_phase or menu_click_used):
+        target_eval = build_nav_target_click_evaluate(target_keys)
+        if target_eval is not None:
+            return target_eval, "nav_dom_target_evaluate"
+
+    # After hover+wait: hub index, hub evaluate (/…/service/…), then CDP/coords.
+    if open_keys and (menu_hover_used or menu_phase) and not menu_click_used:
         hub_idx: int | None = None
         hub_score = float("-inf")
         for idx, node in _selector_map_items(browser_state_summary):
@@ -1197,6 +1297,9 @@ def select_nav_dom_action(
                 hub_idx = idx
         if hub_idx is not None:
             return {"tool": "click", "index": hub_idx}, "nav_dom_service_click"
+        hub_eval = build_nav_hub_click_evaluate(open_keys)
+        if hub_eval is not None:
+            return hub_eval, "nav_dom_service_click"
         synth = _synthetic_top_opener_coord(open_keys)
         if synth is not None:
             return {
@@ -1209,6 +1312,12 @@ def select_nav_dom_action(
         if click_eval is not None:
             return click_eval, "nav_dom_service_click"
 
+    # After opener spent: still try destination evaluate once more if not yet.
+    if target_keys and not target_click_used and menu_click_used:
+        target_eval = build_nav_target_click_evaluate(target_keys)
+        if target_eval is not None:
+            return target_eval, "nav_dom_target_evaluate"
+
     if opener_click_idx is not None and not menu_phase and not menu_click_used:
         return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
     if opener_click_idx is not None and menu_phase and not menu_click_used:
@@ -1218,7 +1327,7 @@ def select_nav_dom_action(
         return {"tool": "click", "index": text_opener_idx}, "nav_dom_service_click"
 
     # Opener already activated once — stop thrashing; wait for target AX or LLM.
-    if menu_click_used:
+    if menu_click_used and target_click_used:
         _ = start_url
         return None, "nav_dom_opener_spent"
 
@@ -1230,22 +1339,25 @@ def select_nav_dom_action(
             return None
         return action
 
-    sane_best = _sane_coord(best_coord)
-    if sane_best is not None:
-        return sane_best, "nav_dom_service_coordinate"
-    sane_strip = _sane_coord(strip_coord)
-    if sane_strip is not None:
-        return sane_strip, "nav_dom_service_coordinate"
-    sane_alt = _sane_coord(alt_strip)
-    if sane_alt is not None:
-        return sane_alt, "nav_dom_service_coordinate"
-    if open_keys and (menu_hover_used or menu_phase):
-        synth = _synthetic_top_opener_coord(open_keys)
-        sane_synth = _sane_coord(synth)
-        if sane_synth is not None:
-            return sane_synth, "nav_dom_service_coordinate"
+    if not menu_click_used:
+        sane_best = _sane_coord(best_coord)
+        if sane_best is not None:
+            return sane_best, "nav_dom_service_coordinate"
+        sane_strip = _sane_coord(strip_coord)
+        if sane_strip is not None:
+            return sane_strip, "nav_dom_service_coordinate"
+        sane_alt = _sane_coord(alt_strip)
+        if sane_alt is not None:
+            return sane_alt, "nav_dom_service_coordinate"
+        if open_keys and (menu_hover_used or menu_phase):
+            synth = _synthetic_top_opener_coord(open_keys)
+            sane_synth = _sane_coord(synth)
+            if sane_synth is not None:
+                return sane_synth, "nav_dom_service_coordinate"
     # Never return off-screen strip coords — that only burns the try budget.
     _ = start_url
+    if menu_click_used:
+        return None, "nav_dom_opener_spent"
     return None, "nav_dom_no_candidate"
 
 

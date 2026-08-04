@@ -68,10 +68,10 @@ For tasks that ask the persona to **find a destination via the UI** (start on ho
 
 1. While the current URL does not yet contain **task-derived target keywords**, treat the problem as **path-finding first**, not destination-tool interpretation.
 2. Keywords (openers + targets) come **only from the task text** (e.g. Service, Beratung, Produktkombinationen). Do not inject brand- or fixture-only defaults.
-3. If a visible selector-map node exposes the target, prefer a direct indexed `click`.
+3. If a selector-map node exposes the target (visible preferred; hidden mega-menu href still allowed), prefer a direct indexed `click`.
 4. Otherwise prefer opening the nearest matching nav label. Aggregated top-nav nodes use a **coordinate-only** click near the matching label — never the removed 0.13.x `hover` tool and never index+coords together. Remap viewport CSS coords into LLM screenshot space before click when the runtime scales LLM→viewport.
 5. **Menu-open (hover-equivalent):** Before any LLM click on path-home, emit one CDP `mouseMoved` at opener coords (selector-map bounds, or a synthetic top-strip fallback from task opener keywords). Follow with `wait(2)` whose ActionModel payload is **seconds-only** (coords stay on the CDP call — attaching them to `wait` fails validation and drops the steer). Evaluate `mouseover`/`mouseenter` remains a last resort. Opener index clicks must not target rootish `/` / `/de/` home links.
-6. **Two-phase open→target:** After opener hover/`menu_wait` while still not on the target URL, prefer any newly visible target link, then a non-rootish opener hub (`/…/service/…`), then a shifted opener coordinate. Do not thrash the same opener coords.
+6. **Two-phase open→target:** After opener hover/`menu_wait`, prefer an on-page destination link via `evaluate` click on `a[href*=target]` (incl. shadow roots) — this follows a real page link, not a forbidden `navigate` deeplink. Then hub `/…/service/…`, then CDP/coords. Do not thrash the same opener coords.
 7. Cookie/consent dismiss clicks take priority over nav DOM steering and over `minSteps` scroll fallbacks.
 8. Self-loop root/home links never count as path progress — filter them from the first try, including **index clicks whose selector-map href is rootish** (logo) even when the action JSON has no `/de/` string.
 9. **Path-finding home perception:** Do not invent destination-tool Filter / grau / „unklar warum“ cues while still on home. Confusion-abandon cues from those hallucinations must not burn the try-then-quit budget before real menu attempts.

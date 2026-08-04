@@ -236,6 +236,7 @@ def test_select_nav_dom_action_falls_back_to_service_click_on_home():
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
         menu_hover_used=True,
+        target_click_used=True,
     )
     assert reason == "nav_dom_service_click"
     assert action == {"tool": "click", "index": 3}
@@ -265,11 +266,12 @@ def test_select_nav_dom_action_uses_coordinate_click_for_aggregated_nav():
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
         menu_hover_used=True,
+        target_click_used=True,
     )
-    assert reason == "nav_dom_service_cdp_click"
+    assert reason == "nav_dom_service_click"
     assert action is not None
-    assert action["tool"] == "wait"
-    assert isinstance(action.get("coordinate_x"), int)
+    assert action["tool"] == "evaluate"
+    assert "service" in action["code"].lower()
 
 
 def test_select_nav_dom_action_prefers_top_nav_over_midpage_blob():
@@ -308,10 +310,11 @@ def test_select_nav_dom_action_prefers_top_nav_over_midpage_blob():
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
         menu_hover_used=True,
+        target_click_used=True,
     )
-    assert reason == "nav_dom_service_cdp_click"
+    assert reason == "nav_dom_service_click"
     assert action is not None
-    assert action["tool"] == "wait"
+    assert action["tool"] == "evaluate"
 
 
 def test_select_nav_dom_action_rejects_tall_page_wrapper_coords():
@@ -344,6 +347,7 @@ def test_select_nav_dom_action_rejects_tall_page_wrapper_coords():
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
         menu_hover_used=True,
+        target_click_used=True,
     )
     assert reason == "nav_dom_service_click"
     assert action == {"tool": "click", "index": 42}
@@ -373,10 +377,11 @@ def test_select_nav_dom_action_synthesizes_top_strip_for_tall_menu_wrapper():
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
         menu_hover_used=True,
+        target_click_used=True,
     )
-    assert reason == "nav_dom_service_cdp_click"
+    assert reason == "nav_dom_service_click"
     assert action is not None
-    assert action["tool"] == "wait"
+    assert action["tool"] == "evaluate"
 
 
 def test_select_nav_dom_action_falls_back_to_short_label_when_only_midpage_bounds():
@@ -408,6 +413,7 @@ def test_select_nav_dom_action_falls_back_to_short_label_when_only_midpage_bound
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
         menu_hover_used=True,
+        target_click_used=True,
     )
     # Mid-page geometry is filtered; short label without bounds wins via text fallback.
     # Href-only discrete path also wins when present without bounds.
@@ -445,6 +451,7 @@ def test_select_nav_dom_action_prefers_discrete_service_over_coordinate():
             "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
         ),
         menu_hover_used=True,
+        target_click_used=True,
     )
     assert reason == "nav_dom_service_click"
     assert action == {"tool": "click", "index": 3}
@@ -1029,6 +1036,7 @@ def test_select_nav_dom_action_works_without_bosch_domain():
         current_url="https://www.porsche.com/germany/",
         task=PORSCHE_TASK,
         menu_hover_used=True,
+        target_click_used=True,
     )
     assert reason == "nav_dom_service_click"
     assert action == {"tool": "click", "index": 3}
@@ -1074,17 +1082,19 @@ def test_select_nav_dom_action_avoids_repeating_same_coordinates():
         current_url="https://www.example.com/de/",
         task=NAV_TASK,
         menu_hover_used=True,
+        target_click_used=True,
     )
     # After hover, leaf opener is activated via CDP click + wait.
-    assert reason1 == "nav_dom_service_cdp_click"
+    assert reason1 == "nav_dom_service_click"
     assert first is not None
-    assert first["tool"] == "wait"
+    assert first["tool"] == "evaluate"
     second, reason2 = P.select_nav_dom_action(
         summary,
         current_url="https://www.example.com/de/",
         task=NAV_TASK,
         avoid_coordinates=[(600, 60)],
         menu_hover_used=True,
+        target_click_used=True,
         menu_click_used=True,
     )
     assert reason2 == "nav_dom_opener_spent"
@@ -1143,6 +1153,7 @@ def test_select_nav_dom_action_menu_phase_waits_once_for_submenu():
         prior_nav_reason="nav_dom_service_click",
         menu_wait_used=False,
         menu_hover_used=True,
+        target_click_used=True,
     )
     assert reason == "nav_dom_menu_wait"
     assert action == {"tool": "wait", "seconds": 2}
@@ -1154,6 +1165,7 @@ def test_select_nav_dom_action_menu_phase_waits_once_for_submenu():
         prior_nav_reason="nav_dom_menu_wait",
         menu_wait_used=True,
         menu_hover_used=True,
+        target_click_used=True,
     )
     assert reason2 == "nav_dom_service_click"
     assert action2 == {"tool": "click", "index": 3}
@@ -1191,11 +1203,10 @@ def test_select_nav_dom_action_evaluate_click_after_hover_wait():
         menu_wait_used=True,
         menu_hover_used=True,
     )
-    assert reason == "nav_dom_service_cdp_click"
+    assert reason == "nav_dom_target_evaluate"
     assert action is not None
-    assert action["tool"] == "wait"
-    assert isinstance(action.get("coordinate_x"), int)
-    assert isinstance(action.get("coordinate_y"), int)
+    assert action["tool"] == "evaluate"
+    assert "produktkombination" in action["code"].lower()
 
 
 def test_select_nav_dom_action_opens_with_cdp_hover_wait_first():
@@ -1289,6 +1300,9 @@ def test_select_nav_dom_action_empty_map_still_hovers():
     assert action is not None
     assert action["tool"] == "wait"
     assert isinstance(action.get("coordinate_x"), int)
+
+
+def test_scope_nav_home_scrubs_think_and_blocks_filter_promote():
     nav_task = NAV_TASK
     perc = {
         "taskReminder": "x",
@@ -1313,3 +1327,48 @@ def test_select_nav_dom_action_empty_map_still_hovers():
     blob = " ".join(n["what"] for n in enriched["noticed"]).lower()
     assert "filter" not in blob
     assert "unklar" not in blob
+
+
+def test_build_nav_target_click_evaluate_embeds_keys():
+    action = P.build_nav_target_click_evaluate(["produktkombination"])
+    assert action is not None
+    assert action["tool"] == "evaluate"
+    assert "produktkombination" in action["code"]
+    assert "shadowRoot" in action["code"]
+
+
+def test_select_nav_dom_action_clicks_hidden_target_href():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                9: {
+                    "is_visible": False,
+                    "attributes": {"href": "/de/service/produktkombinationen"},
+                    "ax_node": {"name": "Produktkombinationen", "role": "link"},
+                }
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        menu_hover_used=True,
+        menu_wait_used=True,
+    )
+    assert reason == "nav_dom_product_index"
+    assert action == {"tool": "click", "index": 9}
+
+
+def test_select_nav_dom_action_target_evaluate_after_hover_wait():
+    action, reason = P.select_nav_dom_action(
+        {"dom_state": {"selector_map": {}}},
+        current_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        prior_nav_reason="nav_dom_menu_wait",
+        menu_wait_used=True,
+        menu_hover_used=True,
+    )
+    assert reason == "nav_dom_target_evaluate"
+    assert action is not None
+    assert action["tool"] == "evaluate"
