@@ -18,9 +18,27 @@ export OPENAI_API_KEY=…
 # model: AI_OPENAI_MODEL or paths.aiOpenAiModel (gpt-5.4-nano)
 ```
 
-Default: **off** — Evaluate stays deterministic/fast.
+Default in code: **off** — Evaluate stays deterministic/fast.
 
-**Staging policy (2026-08-03):** Keep **OFF** on Coolify web unless try-then-quit / Luna smokes show Soft-Q rationale drift that needs assist. Rule draft (L6) already lands Q2/Q3≈2 for Lab B.
+### One-command Coolify enable (web)
+
+```bash
+# Token from ~/.cursor/mcp.json coolify Authorization — never commit
+TOKEN=$(python3 -c "import json;from pathlib import Path;d=json.loads(Path.home().joinpath('.cursor/mcp.json').read_text());print(d['mcpServers']['coolify']['headers']['Authorization'].split()[-1])")
+WEB_UUID=putvwgqq1c9yb30tsqosujde
+# Merge env via Coolify UI or PATCH /api/v1/applications/{uuid}/envs — set:
+#   AUDION_SOFT_Q_LLM_ASSIST=1
+# Then redeploy:
+curl -sS -X POST -H "Authorization: Bearer $TOKEN" \
+  "https://coolify.plygrnd.tech/api/v1/deploy?uuid=$WEB_UUID"
+```
+
+## Staging policy (2026-08-04)
+
+**Prefer ON** when unit tests green and ±1 clamp holds (Soft-Q still ~2 for Lab B confusion). Rule draft remains the floor; assist only polishes rationales.  
+If Soft-Q drifts outside human band after enable → set `AUDION_SOFT_Q_LLM_ASSIST=0` and redeploy web.
+
+**Prior (2026-08-03):** left OFF until try-then-quit stable — now stable; enable after deploy smoke.
 
 ## Safety
 
