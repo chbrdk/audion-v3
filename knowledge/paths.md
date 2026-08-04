@@ -123,6 +123,7 @@
 - Template findability non-Bosch smoke (2026-08-04): `knowledge/lab-staging-smoke-template-findability-2026-08-04.md` · web `0e7167b` · study `study-template-findability-smoke-2026-08-04-msezbpwf`
 - Soft-Q core + Nav n=3 repeats (2026-08-04): `knowledge/lab-staging-smoke-softq-core-nav-repeats-2026-08-04.md` · web `28a743e`
 - Filter-Matrix Lab B n=3 repeats (2026-08-04): `knowledge/lab-staging-smoke-lab-b-repeats-2026-08-04.md`
+- EBM AI Auswertung (aktualisiert Abend 2026-08-04): `knowledge/ebm-auswertung-ux-test-ai-2026-08-04.md` (PDF ggf. veraltet — MD ist SoT)
 - EBM AI wave pathfind (2026-08-04): eval JSON `knowledge/ebm-produktkombinationen-evaluation-audion-2026-08-04-pathfind.json` · report MD `knowledge/ebm-produktkombinationen-testing-report-2026-08-04-pathfind.md` · smoke `knowledge/lab-staging-smoke-pathfind-2026-08-04.md` · agent `e56be68`
 - Human-vs-AI roadmap smoke (2026-08-04): `knowledge/lab-staging-smoke-roadmap-2026-08-04.md` · commit `360ecb8` · Coolify `UX_JOURNEY_TRY_BEFORE_ABANDON=4`
 - EBM Auswertung AI (PDF-Spiegel Testbirds): `knowledge/ebm-auswertung-ux-test-ai-2026-08-04.md` · `knowledge/ebm-auswertung-ux-test-ai-2026-08-04.pdf` · Human-PDF Desktop `SCREENS/EBM-Auswertung UX Test 'Produktkombinationen & Nachrüsten'-200726-065814.pdf`
