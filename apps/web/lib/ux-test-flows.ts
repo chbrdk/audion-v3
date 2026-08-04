@@ -5,8 +5,6 @@
 
 import type {
   SoftScoreKey,
-  UxFlowEdge,
-  UxFlowNode,
   UxScenarioPack,
   UxStudyFromFlowPayload,
   UxStudyFromFlowResult,
@@ -23,6 +21,9 @@ import {
 } from './scenario-packs'
 import { storeCreateUxStudy, storeCreateUxWave } from './fixtures/ux-study-store'
 import { paths } from './paths'
+import { flattenFlowBlocks, nodeMap, outs } from './ux-test-flow-graph'
+
+export { flattenFlowBlocks } from './ux-test-flow-graph'
 
 export function listUxTestFlows(): UxTestFlowSummary[] {
   return UX_TEST_FLOWS.map((f) => ({
@@ -69,48 +70,6 @@ export function validateUxTestFlow(flow: UxTestFlow): UxFlowValidation {
     if (!n.gateCondition) errors.push(`Gate ${n.id} missing gateCondition.`)
   }
   return errors.length ? { ok: false, errors } : { ok: true }
-}
-
-function nodeMap(nodes: UxFlowNode[]): Map<string, UxFlowNode> {
-  return new Map(nodes.map((n) => [n.id, n]))
-}
-
-function outs(edges: UxFlowEdge[], from: string, kind?: UxFlowEdge['kind']): UxFlowEdge[] {
-  return edges.filter((e) => e.from === from && (kind ? e.kind === kind : true))
-}
-
-/** Ordered block list for UI: default path with gate branches annotated. */
-export function flattenFlowBlocks(flow: UxTestFlow): Array<{
-  node: UxFlowNode
-  branch?: 'when' | 'otherwise' | 'main'
-  depth: number
-}> {
-  const nodes = flow.nodes ?? []
-  const edges = flow.edges ?? []
-  if (!nodes.length) return []
-  const byId = nodeMap(nodes)
-  const start = nodes.find((n) => n.kind === 'start')
-  if (!start) return []
-  const out: Array<{ node: UxFlowNode; branch?: 'when' | 'otherwise' | 'main'; depth: number }> =
-    []
-  const visit = (id: string, depth: number, branch: 'when' | 'otherwise' | 'main', seen: Set<string>) => {
-    if (seen.has(id)) return
-    seen.add(id)
-    const node = byId.get(id)
-    if (!node) return
-    out.push({ node, branch, depth })
-    if (node.kind === 'gate') {
-      const when = outs(edges, id, 'when')[0]
-      const other = outs(edges, id, 'otherwise')[0]
-      if (when) visit(when.to, depth + 1, 'when', new Set(seen))
-      if (other) visit(other.to, depth + 1, 'otherwise', new Set(seen))
-      return
-    }
-    const next = outs(edges, id, 'then')[0] ?? outs(edges, id).find((e) => e.kind === 'then')
-    if (next) visit(next.to, depth, branch, seen)
-  }
-  visit(start.id, 0, 'main', new Set())
-  return out
 }
 
 function collectSuccessCriteria(flow: UxTestFlow): UxSuccessCriteria | null {

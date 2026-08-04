@@ -11,7 +11,7 @@ import type {
   UxFlowNodeKind,
   UxTestFlow,
 } from '@audion-v3/contracts'
-import { flattenFlowBlocks } from './ux-test-flows'
+import { flattenFlowBlocks } from './ux-test-flow-graph'
 
 export type UxFlowRfNodeData = {
   flowNode: UxFlowNode

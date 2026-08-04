@@ -32,7 +32,7 @@ import {
   type UxFlowRfEdge,
   type UxFlowRfNode,
 } from '../lib/ux-flow-canvas'
-import { flattenFlowBlocks } from '../lib/ux-test-flows'
+import { flattenFlowBlocks } from '../lib/ux-test-flow-graph'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
 import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
 
