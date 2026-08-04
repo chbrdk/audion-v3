@@ -14,13 +14,16 @@ import { resetUxStudyStore } from '../lib/fixtures/ux-study-store'
 import type { UxWaveRunItem } from '@audion-v3/contracts'
 
 describe('persona lab pack + self-correlation', () => {
-  it('registers lab pack with single B run and maxSteps 15', () => {
+  it('registers lab pack with Alex + Sam B runs and maxSteps 15', () => {
     const pack = getScenarioPack(paths.personaLabPackId)
     expect(pack).not.toBeNull()
-    expect(pack!.runs).toHaveLength(1)
+    expect(pack!.runs).toHaveLength(2)
     expect(pack!.runs[0]?.runKey).toBe(PERSONA_LAB_GOLD.runKey)
     expect(pack!.runs[0]?.maxSteps).toBe(PERSONA_LAB_GOLD.maxStepsCap)
     expect(pack!.runs[0]?.personaId).toBe(paths.personaLabImpatientPersonaId)
+    expect(pack!.runs[1]?.runKey).toBe('B-aufgabe1-nachruesten-patient')
+    expect(pack!.runs[1]?.personaId).toBe(paths.personaLabPatientPersonaId)
+    expect(pack!.runs[1]?.maxSteps).toBe(15)
   })
 
   it('lab impatient persona wires timePressure ≥ gold min into agent context', () => {
@@ -101,7 +104,7 @@ describe('persona lab pack + self-correlation', () => {
     expect(result.checks.find((c) => c.id === 'infra_clean')?.pass).toBe(false)
   })
 
-  it('seeds a study from lab pack with one run', async () => {
+  it('seeds a study from lab pack with Alex + Sam runs', async () => {
     resetUxStudyStore()
     const created = await createStudyFromScenarioPack({
       packId: paths.personaLabPackId,
@@ -109,9 +112,10 @@ describe('persona lab pack + self-correlation', () => {
       name: 'Persona Lab smoke',
     })
     expect(created).not.toBeNull()
-    expect(created!.wave.runs).toHaveLength(1)
+    expect(created!.wave.runs).toHaveLength(2)
     expect(created!.wave.runs[0]?.maxSteps).toBe(15)
     expect(created!.wave.runs[0]?.personaId).toBe(paths.personaLabImpatientDbPersonaId)
+    expect(created!.wave.runs[1]?.personaId).toBe(paths.personaLabPatientDbPersonaId)
     expect(created!.packId).toBe(paths.personaLabPackId)
   })
 })

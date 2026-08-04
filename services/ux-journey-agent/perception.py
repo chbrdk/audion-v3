@@ -636,6 +636,8 @@ def _coordinate_click_for_label(
     rect: tuple[float, float, float, float],
     blob: str,
     needles: list[str],
+    *,
+    ordinal_bias: float = 0.5,
 ) -> dict[str, Any]:
     """
     Click inside a wide aggregated nav node near the matching label.
@@ -646,9 +648,13 @@ def _coordinate_click_for_label(
     For multi-item top bars, prefer ordinal position among known LTR nav
     labels — character offsets in concatenated AX text under-estimate how
     far right later items sit visually.
+
+    ``ordinal_bias`` (0–1 within the label cell) shifts the click inside the
+    matched tab — use >0.5 after a missed opener so Service is hit further right.
     """
     bx, by, bw, bh = rect
     frac = 0.5
+    bias = max(0.15, min(0.85, float(ordinal_bias)))
     nav_labels = (
         "produkte",
         "product",
@@ -697,7 +703,7 @@ def _coordinate_click_for_label(
         if target_idx is not None:
             break
     if target_idx is not None and present:
-        frac = (float(target_idx) + 0.5) / float(len(present))
+        frac = (float(target_idx) + bias) / float(len(present))
     else:
         for needle in needles:
             pos = blob.find(needle)
@@ -710,6 +716,16 @@ def _coordinate_click_for_label(
         "coordinate_x": int(round(bx + (bw * frac))),
         "coordinate_y": int(round(by + (bh * 0.5))),
     }
+
+
+def _is_menu_open_phase(prior_nav_reason: str | None) -> bool:
+    """True after an opener steer while still hunting the destination on home."""
+    reason = str(prior_nav_reason or "")
+    return reason.startswith("nav_dom_service") or reason in (
+        "path_open_menu",
+        "path_open_hover",
+        "nav_dom_menu_wait",
+    )
 
 
 def _nav_open_candidate_score(
@@ -789,12 +805,17 @@ def select_nav_dom_action(
     max_nav_attempts: int = 4,
     start_url: str | None = None,
     avoid_coordinates: list[tuple[int, int]] | None = None,
+    prior_nav_reason: str | None = None,
+    menu_wait_used: bool = False,
 ) -> tuple[dict[str, Any] | None, str]:
     """
     Deterministically steer brittle home→destination nav using visible DOM nodes.
 
     Site-agnostic: keywords from the task; no domain allowlist. Never emits
     ``hover`` — 0.13.x has no hover tool.
+
+    Two-phase: after ``prior_nav_reason`` was an opener while still on home,
+    prefer target/submenu clicks and shifted opener coords (mega-menu second hop).
     """
     if not is_ui_path_finding_task(task):
         return None, "nav_dom_skip_task"
@@ -809,8 +830,13 @@ def select_nav_dom_action(
     if not open_keys and not target_keys:
         return None, "nav_dom_no_keywords"
 
+    menu_phase = _is_menu_open_phase(prior_nav_reason)
+    # After a missed Service click, bias further into the label cell / right.
+    ordinal_bias = 0.72 if menu_phase else 0.5
+
     avoid = list(avoid_coordinates or [])
     target_idx: int | None = None
+    submenu_target_idx: int | None = None
     opener_click_idx: int | None = None
     opener_click_score = float("-inf")
     best_coord: dict[str, Any] | None = None
@@ -820,6 +846,7 @@ def select_nav_dom_action(
     strip_coord: dict[str, Any] | None = None
     strip_score = float("-inf")
     alt_strip: dict[str, Any] | None = None
+    menu_expanded = False
 
     def _accept_coord(action: dict[str, Any] | None) -> bool:
         xy = _coord_xy(action)
@@ -834,9 +861,26 @@ def select_nav_dom_action(
         if not blob:
             continue
         href = _node_attr(node, "href").lower()
+        expanded = _node_attr(node, "aria-expanded").lower()
+        if expanded in ("true", "1"):
+            menu_expanded = True
         if target_keys and any(k in blob or k in href for k in target_keys):
-            target_idx = idx
-            break
+            # Prefer non-root links; keep first hit as primary, collect submenu-ish later.
+            if href and not _is_rootish_href(href):
+                target_idx = idx
+                break
+            if target_idx is None:
+                target_idx = idx
+            continue
+        # Soft target stems (e.g. "produktkombinationen" partial in closed submenu labels)
+        if menu_phase and target_keys and href and not _is_rootish_href(href):
+            soft = any(
+                stem[:8] in blob or stem[:8] in href
+                for stem in target_keys
+                if len(stem) >= 8
+            )
+            if soft and submenu_target_idx is None:
+                submenu_target_idx = idx
         if open_keys and not any(k in blob for k in open_keys):
             continue
         menuish = sum(
@@ -868,7 +912,9 @@ def select_nav_dom_action(
                 score = _nav_open_candidate_score(rect, blob, menuish)
                 coord_eligible = (menuish >= 3) or (menuish >= 2 and bw >= 240 and bh <= 120)
                 if open_keys and coord_eligible:
-                    cand = _coordinate_click_for_label(rect, blob, open_keys)
+                    cand = _coordinate_click_for_label(
+                        rect, blob, open_keys, ordinal_bias=ordinal_bias
+                    )
                     if _accept_coord(cand) and score > best_coord_score:
                         best_coord_score = score
                         best_coord = cand
@@ -888,16 +934,20 @@ def select_nav_dom_action(
                     (bx, 36.0, max(bw, 800.0), 48.0),
                     blob,
                     open_keys,
+                    ordinal_bias=ordinal_bias,
                 )
                 if _accept_coord(cand) and score > strip_score:
                     strip_score = score
                     strip_coord = cand
                 elif not _accept_coord(cand) and score >= strip_score:
                     nudged = dict(cand)
+                    shift = max(100.0, max(bw, 800.0) * 0.14) if menu_phase else max(
+                        80.0, max(bw, 800.0) * 0.12
+                    )
                     nudged["coordinate_x"] = int(
                         min(
                             bx + max(bw, 800.0) * 0.92,
-                            float(cand["coordinate_x"]) + max(80.0, max(bw, 800.0) * 0.12),
+                            float(cand["coordinate_x"]) + shift,
                         )
                     )
                     if _accept_coord(nudged):
@@ -908,13 +958,16 @@ def select_nav_dom_action(
                 (0.0, 36.0, 1400.0, 48.0),
                 blob,
                 open_keys,
+                ordinal_bias=ordinal_bias,
             )
             if _accept_coord(cand) and score > strip_score:
                 strip_score = score
                 strip_coord = cand
             elif not _accept_coord(cand):
                 nudged = dict(cand)
-                nudged["coordinate_x"] = int(min(1288, float(cand["coordinate_x"]) + 120))
+                nudged["coordinate_x"] = int(
+                    min(1288, float(cand["coordinate_x"]) + (160 if menu_phase else 120))
+                )
                 if _accept_coord(nudged):
                     alt_strip = nudged
         elif href and not _is_rootish_href(href):
@@ -923,7 +976,15 @@ def select_nav_dom_action(
 
     if target_idx is not None:
         return {"tool": "click", "index": target_idx}, "nav_dom_product_index"
-    if opener_click_idx is not None:
+    if submenu_target_idx is not None:
+        return {"tool": "click", "index": submenu_target_idx}, "nav_dom_product_index"
+    # Mega-menu may need one paint frame after opener before submenu AX appears.
+    if menu_phase and not menu_wait_used and not menu_expanded and target_idx is None:
+        return {"tool": "wait", "seconds": 1}, "nav_dom_menu_wait"
+    if opener_click_idx is not None and not menu_phase:
+        return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
+    if opener_click_idx is not None and menu_phase:
+        # Re-try discrete opener only if we have no better target yet.
         return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
     if best_coord is not None:
         return best_coord, "nav_dom_service_coordinate"
@@ -1175,15 +1236,16 @@ def try_before_abandon_required(
     """
     Min exploratory actions after the first confusion cue before hard abandon / L2 force.
 
-    Env ``UX_JOURNEY_TRY_BEFORE_ABANDON`` (default **3**) is the impatient floor —
-    targets ~4–6 steps for impatient Alex (navigate + tries + done) while patient
+    Env ``UX_JOURNEY_TRY_BEFORE_ABANDON`` (default **4**) is the impatient floor —
+    targets ~5–7 steps for impatient Alex (navigate + tries + done) so the persona
+    fights like the human “kämpfendes Drittel” before honest abandon, while patient
     personas still get a higher budget (Sam contrast).
     """
-    raw = (os.environ.get("UX_JOURNEY_TRY_BEFORE_ABANDON") or "3").strip()
+    raw = (os.environ.get("UX_JOURNEY_TRY_BEFORE_ABANDON") or "4").strip()
     try:
         base = int(raw)
     except ValueError:
-        base = 3
+        base = 4
     base = max(0, min(base, 6))
     tp = 0.5 if time_pressure is None else float(time_pressure)
     if tp <= 0.35:

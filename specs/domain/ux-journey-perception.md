@@ -56,7 +56,8 @@ Extra −1 when `detail_orientation` < 0.35 (min 2). Extra +1 when ≥ 0.75 (max
 2. `stance=abandon` → only `done` allowed (still requires a valid PERCEPTION on that turn).  
 3. `stance=hesitate` → only `scroll` / `wait` / `extract` (no deep `click`/`input`/`navigate`).  
 4. `stance=proceed` → normal actions; soft intent↔target overlap (P2).  
-5. **Impatient upgrade with try-then-quit:** `time_pressure ≥ 0.75` + (`confusion` tag or clarity≤1) + grey/filter signal → prefer abandon, but first require `UX_JOURNEY_TRY_BEFORE_ABANDON` (default **3**) exploratory hesitate/scroll/click (`stanceSoftened`) so impatient runs typically land ~**4–6** steps. After budget + persistent low clarity → force `stance=abandon`. Intent-align thrash upgrades to abandon only after try budget.  
+5. **Impatient upgrade with try-then-quit:** `time_pressure ≥ 0.75` + (`confusion` tag or clarity≤1) + grey/filter signal → prefer abandon, but first require `UX_JOURNEY_TRY_BEFORE_ABANDON` (default **4**) exploratory hesitate/scroll/click (`stanceSoftened`) so impatient runs typically land ~**5–7** steps (human “kämpfendes Drittel” band — not instant 2–3-step quit). After budget + persistent low clarity → force `stance=abandon`. Intent-align thrash upgrades to abandon only after try budget. Patient personas keep a higher try budget (Sam contrast).  
+
 6. Noticed enrich: cues already in perception think/why/intent may be promoted into `noticed[]` up to salience budget (no invented UI, no free-thinking invent).  
 7. L2 regex confusion-abandon remains safety net — also gated on try-then-quit exploratory budget.  
 8. Felt-state continuity: `clarityTrend` / `exploratoryAttempts` injected next step; prefer abandon when clarity stays low across steps after try budget.
@@ -69,11 +70,12 @@ For tasks that ask the persona to **find a destination via the UI** (start on ho
 2. Keywords (openers + targets) come **only from the task text** (e.g. Service, Beratung, Produktkombinationen). Do not inject brand- or fixture-only defaults.
 3. If a visible selector-map node exposes the target, prefer a direct indexed `click`.
 4. Otherwise prefer opening the nearest matching nav label. Aggregated top-nav nodes use a **coordinate-only** click near the matching label — never `hover` (removed in browser-use 0.13.x) and never index+coords together. Remap viewport CSS coords into LLM screenshot space before click when the runtime scales LLM→viewport.
-5. Cookie/consent dismiss clicks take priority over nav DOM steering and over `minSteps` scroll fallbacks.
-6. Self-loop root/home links do not count as progress after the first exploratory try.
-7. **Forbidden while path-finding:** `navigate` / `go_to_url` (or equivalent) whose destination already encodes the target keywords. Initial study start URL load stays allowed. Honest abandon / `done` after try-then-quit remains a valid study outcome.
-8. After a failed coordinate open, prefer a **different** visible control or shifted top-strip click — do not repeat the same coords, then deep-link.
-9. Stop deterministic steering once the target surface is reached (URL matches target keywords) or the exploratory nav budget is spent.
+5. **Two-phase open→target:** After an opener click (`nav_dom_service_*`) while still on home, the next steer is **menu-open phase** — prefer any newly visible target link (incl. submenu / `aria-expanded` chrome), then a shifted opener coordinate; optional short `wait` once so mega-menus can paint. Do not thrash the same opener coords.
+6. Cookie/consent dismiss clicks take priority over nav DOM steering and over `minSteps` scroll fallbacks.
+7. Self-loop root/home links do not count as progress after the first exploratory try.
+8. **Forbidden while path-finding:** `navigate` / `go_to_url` (or equivalent) whose destination already encodes the target keywords. Initial study start URL load stays allowed. Honest abandon / `done` after try-then-quit remains a valid study outcome.
+9. After a failed coordinate open, prefer a **different** visible control or shifted top-strip click — do not repeat the same coords, then deep-link.
+10. Stop deterministic steering once the target surface is reached (URL matches target keywords) or the exploratory nav budget is spent.
 
 ## Step payload
 
@@ -90,4 +92,4 @@ Cross-step digest injected into the next user context:
 
 ## Soft-Q
 
-Evaluate Soft-Q drafts also use perception `confusion` / low clarity / negative valence from validEvidence step blobs when present on the run finding or step trail.
+Evaluate Soft-Q drafts use perception `confusion` / low clarity / negative valence from validEvidence **findings** (and caveats). When the synced finding is generic, Sync must prefer done-step / Think-Aloud / perception markers via `resolveFindingFromAgentResult` so L6 rule draft can fill Q2/Q3. High friction (≥7) alone still drafts Q2≈2 even without an explicit confusion tag. Evaluate must not leave the scenario-pack null Soft-Q shell in place when validEvidence runs exist — merge keeps hand edits only.

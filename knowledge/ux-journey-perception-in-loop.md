@@ -66,7 +66,7 @@ See `knowledge/lab-try-then-quit-2026-08-03.md`.
 
 | Lever | Behavior |
 |-------|----------|
-| `UX_JOURNEY_TRY_BEFORE_ABANDON` | Default **3** exploratory actions after first confusion before hard abandon / L2 force (Alex ~4–6 steps) |
+| `UX_JOURNEY_TRY_BEFORE_ABANDON` | Default **4** exploratory actions after first confusion before hard abandon / L2 force (Alex ~5–7 steps) |
 | Soften | First confused step → `hesitate` (`stanceSoftened`) even if model said abandon |
 | Hard upgrade | After try budget + persistent cues / low clarity → `stance=abandon` |
 | Satisficing | Patient / low tp / high exploration → higher try budget |

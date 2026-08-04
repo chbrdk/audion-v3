@@ -23,12 +23,13 @@ Reusable **Leitfaden → Study + Wave** seeds. Structured packs hold runs, Soft-
 |-------|-------|
 | Pack id | `paths.personaLabPackId` → `pack-ebm-persona-lab-b` |
 | Fixture | `apps/web/lib/fixtures/scenario-packs/ebm-persona-lab-b.ts` |
-| Persona | fixture `persona-alex-lab-impatient` → DB `persona-alex-lab-ungeduldig-msdfje0b` via `lab-persona-resolve` |
-| Runs | **1** × `B-aufgabe1-nachruesten`, `maxSteps: 15` |
-| Correlate | `apps/web/lib/persona-lab-correlate.ts` · tests `__tests__/persona-lab-correlate.test.ts` |
+| Personas | Alex fixture → DB `…ungeduldig…` **+** Sam fixture → DB `…geduldig…` via `lab-persona-resolve` |
+| Runs | **2** × `B-aufgabe1-nachruesten` (Alex) + `B-aufgabe1-nachruesten-patient` (Sam), `maxSteps: 15` |
+| Correlate | Alex: `persona-lab-correlate.ts` · Sam: L4/Soft-Q step contrast |
 | Playbook | `knowledge/persona-iteration-lab-2026-08-03.md` |
-| Resolve | `knowledge/persona-lab-persona-resolve-2026-08-04.md` — **no PATCH** |
+| Resolve | `knowledge/persona-lab-persona-resolve-2026-08-04.md` — **no PATCH** for dual-persona |
 
+Default wave enables impatient vs patient contrast (H5/L4) without manual PATCH.
 ## Micro-labs (separate from Lab B)
 
 | Pack | Id | Notes |
@@ -49,7 +50,7 @@ cd apps/web && pnpm exec vitest run __tests__/persona-lab-correlate.test.ts __te
 
 1. **Browse baseline Auswertung:** `/studies/study-ebm-produktkombinationen/waves/wave-audion-2026-07-30-mcp`
 2. **New study from pack:** Studies → New study → Scenario pack → EBM → Create from pack
-3. **Persona lab (1 run):** Create from pack `pack-ebm-persona-lab-b` → Start → Sync → correlate snapshot
+3. **Persona lab (Alex + Sam):** Create from pack `pack-ebm-persona-lab-b` → Start → Sync → correlate Alex snapshot; compare Sam steps/Soft-Q
 4. **Retest wave on existing study:** `createWaveFromScenarioPack(studyId, packId)` (lib) or New wave with pack runs
 5. Wave **Start → Sync → Evaluate → Compare** vs `audion-2026-07-30-mcp` (full EBM pack)
 

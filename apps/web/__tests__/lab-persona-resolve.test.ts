@@ -44,13 +44,15 @@ describe('lab persona resolve (fixture → DB)', () => {
     expect(resolveLabPersonaId(paths.personaLabImpatientDbPersonaId)).toBe('persona-custom-alex')
   })
 
-  it('from-pack Lab B seeds DB persona id without manual PATCH', async () => {
+  it('from-pack Lab B seeds Alex + Sam DB persona ids without manual PATCH', async () => {
     const created = await createStudyFromScenarioPack({
       packId: paths.personaLabPackId,
       waveKey: 'resolve-smoke',
     })
     expect(created).not.toBeNull()
+    expect(created!.wave.runs).toHaveLength(2)
     expect(created!.wave.runs[0]?.personaId).toBe(paths.personaLabImpatientDbPersonaId)
+    expect(created!.wave.runs[1]?.personaId).toBe(paths.personaLabPatientDbPersonaId)
     const detail = demoPersonaDetail(created!.wave.runs[0]!.personaId!)
     expect(detail?.journeyBehavior?.dimensionOverrides?.timePressure).toBe(0.9)
   })

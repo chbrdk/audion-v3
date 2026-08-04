@@ -1,7 +1,8 @@
 # Persona Lab micro-labs — Nav / Purchase / A+C
 
 **Date:** 2026-08-04  
-**Do not mix into Lab B matrix wave** (`pack-ebm-persona-lab-b`).
+**Lab B** (`pack-ebm-persona-lab-b`) is the matrix dual-persona wave (Alex + Sam, same owner Aufgabe 1).  
+**Do not mix** Nav / Purchase / A+C *tasks* into that matrix wave — keep micro-labs separate.
 
 ## Packs
 

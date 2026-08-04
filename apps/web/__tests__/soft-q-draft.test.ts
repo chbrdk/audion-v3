@@ -107,7 +107,23 @@ describe('soft-q-draft L6', () => {
     const evaluation = evaluateUxWaveFromRuns('study-x', 'wave-x', [validConfusionRun()], null)
     expect(evaluation.softScores.Q2_bedienbarkeit?.value).toBe(2)
     expect(evaluation.softScores.Q3_filterlogik?.value).toBe(2)
-    expect(evaluation.notes.some((n) => /Soft-Q/i.test(n))).toBe(true)
+    expect(evaluation.notes.some((n) => /Soft-Q draft applied/i.test(n))).toBe(true)
+  })
+
+  it('mergeSoftScoreDraft fills null scenario-pack shell', () => {
+    const draft = draftSoftScoresFromValidRuns([validConfusionRun()])
+    const shell = {
+      basis: 'Pending agent runs — Soft-Q filled after Evaluate on validEvidence.',
+      Q1_nuetzlichkeit: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      Q2_bedienbarkeit: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      Q3_filterlogik: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      Q6_nutzungswahrscheinlichkeit: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      Q7_gesamteindruck: { scale: '1-6_schulnote', value: null, confidence: 0, rationale: '' },
+    }
+    const merged = mergeSoftScoreDraft(draft, shell)
+    expect(merged.Q2_bedienbarkeit?.value).toBe(2)
+    expect(merged.Q3_filterlogik?.value).toBe(2)
+    expect(String(merged.basis)).toMatch(/Think-Aloud draft/i)
   })
 
   it('drafts Q2/Q3 ≈ 2 from perception stance/confusion markers in finding', () => {

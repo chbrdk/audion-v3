@@ -96,7 +96,8 @@ export function softScoreLooksHandFilled(entry: SoftScoreEntry | undefined): boo
 
 /**
  * Merge draft Soft-Q under existing evaluation scores.
- * Hand-filled / prior values win; empty keys take the draft.
+ * Hand-filled / prior values win; empty / null shell keys take the draft.
+ * Scenario-pack pending shells (value null, empty rationale) must never block L6 fill.
  */
 export function mergeSoftScoreDraft(
   draft: SoftQDraft,
@@ -106,15 +107,32 @@ export function mergeSoftScoreDraft(
   if (!existing) return out
   for (const [key, entry] of Object.entries(existing)) {
     if (key === 'basis') continue
-    if (softScoreLooksHandFilled(entry as SoftScoreEntry)) {
-      out[key as SoftScoreKey] = entry as SoftScoreEntry
+    const e = entry as SoftScoreEntry
+    if (softScoreLooksHandFilled(e)) {
+      out[key as SoftScoreKey] = e
     }
   }
   out.basis =
-    existing.basis && !/think-aloud draft/i.test(existing.basis)
+    existing.basis && !/think-aloud draft|pending agent|soft-q filled after/i.test(existing.basis)
       ? existing.basis
       : draft.basis ?? existing.basis
   return out
+}
+
+/** True when Soft-Q still looks like an unevaluated null shell. */
+export function softScoresAreEmptyShell(scores: SoftQDraft | null | undefined): boolean {
+  if (!scores) return true
+  const keys: SoftScoreKey[] = [
+    'Q1_nuetzlichkeit',
+    'Q2_bedienbarkeit',
+    'Q3_filterlogik',
+    'Q6_nutzungswahrscheinlichkeit',
+    'Q7_gesamteindruck',
+  ]
+  return keys.every((k) => {
+    const e = scores[k]
+    return !e || e.value === null || e.value === undefined || e.value === ''
+  })
 }
 
 /**

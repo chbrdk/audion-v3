@@ -1,6 +1,7 @@
 /**
- * Persona Lab — single-run pack for fast iteration toward human EBM findings.
- * Only B-aufgabe1 + impatient Alex. Correlate with `persona-lab-correlate.ts`.
+ * Persona Lab — dual-persona pack for Lab B Aufgabe 1 (Alex impatient + Sam patient).
+ * Default wave enables H5/L4 segment+tempo contrast without manual PATCH.
+ * Correlate Alex with `persona-lab-correlate.ts`; Sam contrast via L4 / Soft-Q.
  */
 
 import type { SoftScoreKey, UxScenarioPack } from '@audion-v3/contracts'
@@ -17,14 +18,23 @@ const SOFT_KEYS: SoftScoreKey[] = [
   'Q7_gesamteindruck',
 ]
 
-/** Hypotheses most relevant to this micro-lab (H1/H2 matrix confusion). */
-const LAB_HYPOTHESES = EBM_HYPOTHESES.filter((h) => h.id === 'H1' || h.id === 'H2')
+/** Hypotheses most relevant to this micro-lab (H1/H2 matrix + H5 segment contrast). */
+const LAB_HYPOTHESES = EBM_HYPOTHESES.filter(
+  (h) => h.id === 'H1' || h.id === 'H2' || h.id === 'H5',
+)
+
+const SHARED_TASK_CORE = [
+  'Du hast ein eBike mit Bosch Performance Line und willst kompatible Displays wissen.',
+  'Nutze das Produktkombinationen-Tool. Denke laut auf Deutsch.',
+  'Beantworte F3.1–F3.4. Nenne Displays oder dass du keine sichere Antwort gefunden hast.',
+  'Erfolg für dich = ehrliche UX-Aussage, nicht maximale Seiten-Exploration.',
+]
 
 export const EBM_PERSONA_LAB_B_PACK: UxScenarioPack = {
   id: paths.personaLabPackId,
-  name: 'Persona Lab · B Aufgabe 1 (impatient)',
+  name: 'Persona Lab · B Aufgabe 1 (Alex + Sam)',
   description:
-    'Fast iteration unit: one B-run, maxSteps 15, impatient Alex. Correlate via persona-lab-correlate against human gold band (friction high, confusion named, no optimistic clean success). See knowledge/persona-iteration-lab-2026-08-03.md.',
+    'Fast iteration unit: dual-persona B-wave (impatient Alex + patient Sam), maxSteps 15. Alex correlates via persona-lab-correlate; Sam enables L4/H5 tempo contrast without PATCH. See knowledge/persona-iteration-lab-2026-08-03.md.',
   sourceGuide: 'EBM-Testleitfaden Produktkombinationen-Tool v1.3 — Lab slice Aufgabe 1',
   targetUrlKey: 'bosch.ebike.produktkombinationen',
   projectId: 'proj-audion-core',
@@ -48,11 +58,25 @@ export const EBM_PERSONA_LAB_B_PACK: UxScenarioPack = {
       maxSteps: 15,
       task: [
         'Lab-Persona: Du bist ungeduldig (Patient niedrig, time_pressure hoch).',
-        'Du hast ein eBike mit Bosch Performance Line und willst kompatible Displays wissen.',
-        'Nutze das Produktkombinationen-Tool. Denke laut auf Deutsch.',
-        'Wenn Optionen ausgeblendet/grau sind und du nicht verstehst warum: benenne das sofort und brich nach höchstens zwei solchen Momenten ab — kein langes Weiterprobieren.',
-        'Beantworte F3.1–F3.4. Nenne Displays oder dass du keine sichere Antwort gefunden hast.',
-        'Erfolg für dich = ehrliche UX-Aussage, nicht maximale Seiten-Exploration.',
+        ...SHARED_TASK_CORE.slice(0, 2),
+        'Wenn Optionen ausgeblendet/grau sind und du nicht verstehst warum: benenne das sofort.',
+        'Probiere kurz (scroll/klick/Filter prüfen) — wie ein kämpfendes Drittel — bevor du ehrlich abbrichst; kein Endlos-Weiterprobieren.',
+        ...SHARED_TASK_CORE.slice(2),
+      ].join(' '),
+    },
+    {
+      runKey: 'B-aufgabe1-nachruesten-patient',
+      leitfadenBlock: 'Lab · Aufgabe 1 · patient persona',
+      personaId: paths.personaLabPatientPersonaId,
+      personaName: 'Sam Lab Geduldig',
+      segment: 'owner_upgrade',
+      urlKey: 'bosch.ebike.produktkombinationen',
+      maxSteps: 15,
+      task: [
+        'Lab-Persona: Du bist geduldig (time_pressure niedrig) — nimm dir Zeit, prüfe Filter und Hinweise.',
+        ...SHARED_TASK_CORE.slice(0, 2),
+        'Wenn Optionen ausgeblendet/grau sind: benenne das und untersuche kurz, ob eine Erklärung sichtbar ist, bevor du ggf. abbrichst.',
+        ...SHARED_TASK_CORE.slice(2),
       ].join(' '),
     },
   ],

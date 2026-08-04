@@ -3375,6 +3375,8 @@ async def run_agent(
         )
         felt_state = ux_perception.new_felt_state()
         felt_state["lastNavCoords"] = []
+        felt_state["lastNavReason"] = None
+        felt_state["menuWaitUsed"] = False
         try_before_n = int(confusion_abandon.get("tryBeforeAbandon") or 1)
         print(
             f"ux-journey: job={job_id} step_budget={step_budget} "
@@ -3890,10 +3892,31 @@ async def run_agent(
                         current_url=current_url,
                         task=task,
                         exploratory_attempts=int(felt_state.get("exploratoryAttempts") or 0),
-                        max_nav_attempts=max(4, int(try_before_n) + 1),
+                        max_nav_attempts=max(5, int(try_before_n) + 1),
                         start_url=url,
                         avoid_coordinates=_nav_avoid_coords(),
+                        prior_nav_reason=(
+                            str(felt_state.get("lastNavReason") or "") or None
+                        ),
+                        menu_wait_used=bool(felt_state.get("menuWaitUsed")),
                     )
+
+                def _record_nav_steer(dom_reason: str, params: dict[str, Any]) -> None:
+                    if dom_reason.startswith("nav_dom_") or dom_reason.startswith("path_"):
+                        felt_state["lastNavReason"] = dom_reason
+                    if dom_reason == "nav_dom_menu_wait":
+                        felt_state["menuWaitUsed"] = True
+                    if dom_reason in (
+                        "nav_dom_service_coordinate",
+                        "nav_dom_service_click",
+                        "nav_dom_product_index",
+                    ):
+                        _record_nav_coord(
+                            {
+                                "coordinate_x": params.get("coordinate_x"),
+                                "coordinate_y": params.get("coordinate_y"),
+                            }
+                        )
 
                 async def _force_done_schema(reason: str) -> None:
                     """Last-resort done (stance abandon / empty filter) — still needs PERCEPTION."""
@@ -4176,8 +4199,7 @@ async def run_agent(
                     if dom_filtered:
                         filtered = dom_filtered
                         reason = dom_reason
-                        if dom_reason == "nav_dom_service_coordinate":
-                            _record_nav_coord(dom_action)
+                        _record_nav_steer(dom_reason, dom_params)
                 elif dom_reason not in (
                     "cookie_dom_none",
                     "nav_dom_skip_task",
@@ -4266,8 +4288,7 @@ async def run_agent(
                                     if dom_filtered:
                                         filtered = dom_filtered
                                         reason = f"min_steps_done_retry_{dom_reason}"
-                                        if dom_reason == "nav_dom_service_coordinate":
-                                            _record_nav_coord(dom_action)
+                                        _record_nav_steer(dom_reason, dom_params)
                                     else:
                                         reason = (
                                             f"min_steps_done_retry_{targeted_reason}"
@@ -4305,11 +4326,8 @@ async def run_agent(
                                         dom_params,
                                     )
                                     reason = f"min_steps_done_blocked_{dom_reason}"
-                                    if (
-                                        filtered
-                                        and dom_reason == "nav_dom_service_coordinate"
-                                    ):
-                                        _record_nav_coord(dom_action)
+                                    if filtered:
+                                        _record_nav_steer(dom_reason, dom_params)
                                 if not filtered:
                                     filtered = _typed_scroll_fallback()
                                     reason = "min_steps_done_blocked_scroll"
@@ -4398,8 +4416,7 @@ async def run_agent(
                                 )
                                 if filtered:
                                     reason = f"min_steps_empty_retry_{dom_reason}"
-                                    if dom_reason == "nav_dom_service_coordinate":
-                                        _record_nav_coord(dom_action)
+                                    _record_nav_steer(dom_reason, dom_params)
                                     print(
                                         f"ux-journey: job={job_id} min_steps empty filtered → {dom_reason}",
                                         flush=True,

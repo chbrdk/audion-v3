@@ -213,6 +213,12 @@ export function evaluateUxWaveFromRuns(
 
   // Lab L6: Soft-Q auto-draft from Think-Aloud / findings on validEvidence runs.
   const softDraft = draftSoftScoresFromValidRuns(runs)
+  const softNote =
+    softDraft.Q2_bedienbarkeit?.value != null
+      ? `Soft-Q draft applied (Q2=${String(softDraft.Q2_bedienbarkeit.value)}, Q3=${String(softDraft.Q3_filterlogik?.value ?? '—')}).`
+      : softDraft.basis?.includes('skipped')
+        ? 'Soft-Q draft skipped — no validEvidence runs.'
+        : 'Soft-Q draft produced no Q2 (unexpected).'
 
   return {
     schemaVersion: '1.0.0',
@@ -244,6 +250,7 @@ export function evaluateUxWaveFromRuns(
     notes: [
       'Evaluate aggregates only validEvidence=true runs for friction/fit/goal rates.',
       'Soft-Q: Think-Aloud draft fills empty keys; hand-edited values are preserved on re-evaluate.',
+      softNote,
       'Hypothesis verdicts preserved from prior evaluation when present.',
     ],
   }

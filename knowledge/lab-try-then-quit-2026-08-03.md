@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-03  
 **Code:** `services/ux-journey-agent/perception.py` · L2 gate in `main.py`  
-**Env:** `UX_JOURNEY_TRY_BEFORE_ABANDON` (default **3**)  
+**Env:** `UX_JOURNEY_TRY_BEFORE_ABANDON` (default **4**; was 3 / earlier 1)  
 **Tests:** `test_perception.py` (`test_try_then_quit_*`, satisficing budget) · `test_confusion_abandon.py`
 
 ## Why

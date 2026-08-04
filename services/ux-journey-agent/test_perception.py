@@ -620,11 +620,11 @@ def test_try_then_quit_softens_first_confused_step():
 
 def test_try_before_abandon_satisficing_budget(monkeypatch):
     monkeypatch.delenv("UX_JOURNEY_TRY_BEFORE_ABANDON", raising=False)
-    # Default impatient floor 3 → Alex ~4–6 steps; patient still higher.
-    assert P.try_before_abandon_required(0.9) == 3
-    assert P.try_before_abandon_required(0.5) == 4
-    assert P.try_before_abandon_required(0.2) == 5
-    assert P.try_before_abandon_required(0.9, exploration=0.8) == 4
+    # Default impatient floor 4 → Alex ~5–7 steps; patient still higher.
+    assert P.try_before_abandon_required(0.9) == 4
+    assert P.try_before_abandon_required(0.5) == 5
+    assert P.try_before_abandon_required(0.2) == 6
+    assert P.try_before_abandon_required(0.9, exploration=0.8) == 5
     assert P.try_before_abandon_required(0.2) > P.try_before_abandon_required(0.9)
     monkeypatch.setenv("UX_JOURNEY_TRY_BEFORE_ABANDON", "0")
     assert P.try_before_abandon_required(0.9) == 0
@@ -633,15 +633,15 @@ def test_try_before_abandon_satisficing_budget(monkeypatch):
     assert P.try_before_abandon_required(0.2) == 4
 
 
-def test_try_before_abandon_impatient_band_for_4_to_6_steps(monkeypatch):
-    """Impatient try budget of 3 implies navigate + tries + done ≈ 4–6 steps."""
+def test_try_before_abandon_impatient_band_for_fighting_third(monkeypatch):
+    """Impatient try budget of 4 implies navigate + tries + done ≈ 5–7 steps."""
     monkeypatch.delenv("UX_JOURNEY_TRY_BEFORE_ABANDON", raising=False)
     impatient_tries = P.try_before_abandon_required(0.9)
     patient_tries = P.try_before_abandon_required(0.2)
-    assert 3 <= impatient_tries <= 4
+    assert 4 <= impatient_tries <= 5
     # Rough step band: 1 navigate + tries + 1 done
     alex_steps_est = 1 + impatient_tries + 1
-    assert 4 <= alex_steps_est <= 6
+    assert 5 <= alex_steps_est <= 7
     assert patient_tries > impatient_tries
     sam_steps_est = 1 + patient_tries + 1
     assert sam_steps_est > alex_steps_est
@@ -1082,3 +1082,68 @@ def test_select_nav_dom_action_avoids_repeating_same_coordinates():
     assert reason2 == "nav_dom_service_coordinate"
     assert second is not None
     assert (second["coordinate_x"], second["coordinate_y"]) != xy
+
+
+def test_select_nav_dom_action_menu_phase_prefers_target_after_opener():
+    """Two-hop: after Service opener, prefer Produktkombinationen index on home."""
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                3: {
+                    "is_visible": True,
+                    "bounds": {"x": 500, "y": 40, "width": 160, "height": 40},
+                    "attributes": {"href": "/de/", "aria-expanded": "true"},
+                    "ax_node": {"name": "Service & Beratung", "role": "link"},
+                },
+                12: {
+                    "is_visible": True,
+                    "bounds": {"x": 520, "y": 120, "width": 220, "height": 36},
+                    "attributes": {"href": "/de/service/produktkombinationen"},
+                    "ax_node": {"name": "Produktkombinationen", "role": "link"},
+                },
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        prior_nav_reason="nav_dom_service_coordinate",
+        exploratory_attempts=1,
+    )
+    assert reason == "nav_dom_product_index"
+    assert action == {"tool": "click", "index": 12}
+
+
+def test_select_nav_dom_action_menu_phase_waits_once_for_submenu():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                3: {
+                    "is_visible": True,
+                    "bounds": {"x": 500, "y": 40, "width": 160, "height": 40},
+                    "attributes": {"href": "/de/service/", "aria-expanded": "false"},
+                    "ax_node": {"name": "Service & Beratung", "role": "link"},
+                }
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        prior_nav_reason="nav_dom_service_click",
+        menu_wait_used=False,
+    )
+    assert reason == "nav_dom_menu_wait"
+    assert action == {"tool": "wait", "seconds": 1}
+    # Second call with wait already used falls back to opener re-click.
+    action2, reason2 = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        prior_nav_reason="nav_dom_menu_wait",
+        menu_wait_used=True,
+    )
+    assert reason2 == "nav_dom_service_click"
+    assert action2 == {"tool": "click", "index": 3}
