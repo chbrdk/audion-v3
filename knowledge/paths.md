@@ -121,6 +121,7 @@
 - Persona Lab study/wave smoke: `study-persona-lab-l2-l6b-deploy-smoke-2026-08-03-msdm3k8z` / `wave-persona-lab-b-deploy-smoke-msdm3k9g` · project `proj-bosch-ebike-msd3hwtv`
 - Explore-budget + resolve + Soft-Q L6b staging smoke (2026-08-04): `knowledge/lab-staging-smoke-explore-budget-2026-08-04.md` · study `study-persona-lab-b-explore-budget-smoke-2026-08-04-mse9c85z`
 - Template findability non-Bosch smoke (2026-08-04): `knowledge/lab-staging-smoke-template-findability-2026-08-04.md` · web `0e7167b` · study `study-template-findability-smoke-2026-08-04-msezbpwf`
+- Soft-Q core + Nav n=3 repeats (2026-08-04): `knowledge/lab-staging-smoke-softq-core-nav-repeats-2026-08-04.md` · web `28a743e`
 - EBM AI wave pathfind (2026-08-04): eval JSON `knowledge/ebm-produktkombinationen-evaluation-audion-2026-08-04-pathfind.json` · report MD `knowledge/ebm-produktkombinationen-testing-report-2026-08-04-pathfind.md` · smoke `knowledge/lab-staging-smoke-pathfind-2026-08-04.md` · agent `e56be68`
 - Human-vs-AI roadmap smoke (2026-08-04): `knowledge/lab-staging-smoke-roadmap-2026-08-04.md` · commit `360ecb8` · Coolify `UX_JOURNEY_TRY_BEFORE_ABANDON=4`
 - EBM Auswertung AI (PDF-Spiegel Testbirds): `knowledge/ebm-auswertung-ux-test-ai-2026-08-04.md` · `knowledge/ebm-auswertung-ux-test-ai-2026-08-04.pdf` · Human-PDF Desktop `SCREENS/EBM-Auswertung UX Test 'Produktkombinationen & Nachrüsten'-200726-065814.pdf`
