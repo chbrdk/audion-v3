@@ -25,15 +25,15 @@
 
 | Commit | Job | Pattern | H3 |
 |--------|-----|---------|----|
-| `68d48e6` | `0f453988…` | wait validate fail → scroll → force done | fail |
-| `a703c8e` | `ac2f5daa…` | wait×2 → click@1463 miss | fail |
-| `4d8358a` | `1716b681…` | still off-screen strip via uncapped fallback | fail |
-| `e40ca6f` | `c84e2117…` | evaluate **loop** (cancelled) | fail |
-| `d4eb1d8` | `cea69706…` | wait×2 → `nav_click:no_opener` → scroll → done | fail |
-| `5bf1d65` | `f00789ea…` | wait×2 → `nav_click:` (empty label) → done on `/de/` | fail |
+| `a703c8e` | `ac2f5daa…` | wait ActionModel fixed; click@1463 miss | fail |
+| `d4eb1d8` | `cea69706…` | `nav_click:no_opener` | fail |
+| `5bf1d65` | `f00789ea…` | empty `nav_click:` | fail |
+| `223b830` | `cb50ef4b…` | hub-href still `no_opener` | fail |
+| `dcfb314` | `71eaad70…` | `cdp_click (731,70) ok=True` — still `/de/` | fail |
+| `e001c52` | `154c8dbf…` | wait×4 + CDP sweep — still `/de/` then done | fail |
 
 ## Still open
 
-1. Opener evaluate must land on a real Service control / `/…/service/` hub (not empty `elementFromPoint` hit).
-2. After opener, hunt `produktkombinationen` target AX before honest done.
+1. CDP opener activation at synthetic Service coords does not leave home / open a usable submenu.
+2. Need ground-truth coords or a real hub navigation (`/…/service/…`) that the AX map exposes.
 3. Gate: `finalUrl` contains `produktkombinationen`, `deeplink_cheat=false`.
