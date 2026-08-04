@@ -3,6 +3,8 @@
  * Off by default (`AUDION_SOFT_Q_LLM_ASSIST=1` + OPENAI_API_KEY). Failures fall back
  * to the rule draft. Numeric values stay within ±1 of the rule draft.
  *
+ * Works with EBM Q1–Q7 or core Soft-Q keys present in the rule draft.
+ *
  * @see knowledge/lab-l6b-soft-q-llm-assist-2026-08-03.md
  */
 
@@ -15,7 +17,7 @@ import {
 import { paths } from './paths'
 import type { SoftQDraft } from './soft-q-draft'
 
-const SOFT_KEYS: SoftScoreKey[] = [
+const EBM_KEYS: SoftScoreKey[] = [
   'Q1_nuetzlichkeit',
   'Q2_bedienbarkeit',
   'Q3_filterlogik',
@@ -25,6 +27,15 @@ const SOFT_KEYS: SoftScoreKey[] = [
   'Q7_gesamteindruck',
 ]
 
+const CORE_KEYS: SoftScoreKey[] = [
+  'ease',
+  'findability',
+  'clarity',
+  'usefulness',
+  'likelihood',
+  'overall',
+]
+
 const NUMERIC_KEYS = new Set<SoftScoreKey>([
   'Q1_nuetzlichkeit',
   'Q2_bedienbarkeit',
@@ -32,7 +43,18 @@ const NUMERIC_KEYS = new Set<SoftScoreKey>([
   'Q4_auffindbarkeit',
   'Q6_nutzungswahrscheinlichkeit',
   'Q7_gesamteindruck',
+  'ease',
+  'findability',
+  'clarity',
+  'usefulness',
+  'likelihood',
+  'overall',
 ])
+
+function draftScoreKeys(ruleDraft: SoftQDraft): SoftScoreKey[] {
+  const present = [...EBM_KEYS, ...CORE_KEYS].filter((k) => ruleDraft[k])
+  return present.length ? present : EBM_KEYS
+}
 
 export type SoftQLlmCompleteJson = (args: {
   system: string
@@ -124,12 +146,12 @@ function clampNearRule(
   const rounded = Math.round(proposed)
   const ruleNum = typeof rule?.value === 'number' ? rule.value : null
   if (ruleNum === null) {
-    // Q4 often null — allow LLM fill only if confidence path later; keep null unless 1–6ish
-    if (key === 'Q4_auffindbarkeit') return null
-    const max = key === 'Q7_gesamteindruck' ? 6 : 5
+    // findability / Q4 often null — allow LLM fill only if confidence path later; keep null unless 1–6ish
+    if (key === 'Q4_auffindbarkeit' || key === 'findability') return null
+    const max = key === 'Q7_gesamteindruck' || key === 'overall' ? 6 : 5
     return Math.max(1, Math.min(max, rounded))
   }
-  const max = key === 'Q7_gesamteindruck' ? 6 : 5
+  const max = key === 'Q7_gesamteindruck' || key === 'overall' ? 6 : 5
   const lo = Math.max(1, ruleNum - 1)
   const hi = Math.min(max, ruleNum + 1)
   return Math.max(lo, Math.min(hi, rounded))
@@ -163,7 +185,7 @@ export function mergeLlmSoftScoreSuggestions(
     return ruleDraft
   }
   const out: SoftQDraft = { ...ruleDraft }
-  for (const key of SOFT_KEYS) {
+  for (const key of draftScoreKeys(ruleDraft)) {
     const rule = ruleDraft[key]
     const cell = llm.scores[key]
     if (!cell || !rule) continue
@@ -219,7 +241,8 @@ export async function assistSoftScoresWithLlm(
     }
   }
   const valid = runs.filter((r) => r.validEvidence === true)
-  if (!valid.length || !SOFT_KEYS.some((k) => ruleDraft[k])) {
+  const keys = draftScoreKeys(ruleDraft)
+  if (!valid.length || !keys.some((k) => ruleDraft[k])) {
     return {
       softScores: ruleDraft,
       applied: false,
@@ -227,14 +250,17 @@ export async function assistSoftScoresWithLlm(
     }
   }
 
+  const usesCore = keys.some((k) => CORE_KEYS.includes(k))
   const system = [
-    'You refine Soft-Q UX questionnaire drafts for a German eBike product-combinations tool study.',
+    usesCore
+      ? 'You refine Soft-Q UX questionnaire drafts using core scales (ease, findability, clarity, usefulness, likelihood, overall).'
+      : 'You refine Soft-Q UX questionnaire drafts for a product UX study (EBM Soft-Q keys Q1–Q7).',
     'Use ONLY the Think-Aloud findings. Do not invent UI facts.',
-    'Stay close to the rule draft values (±1 max for 1–5 / Schulnote scales).',
-    'Q7 is German Schulnote 1–6 (higher = worse).',
-    'Q4 may stay null if navigation from home was not tested.',
+    'Stay close to the rule draft values (±1 max for numeric scales).',
+    'overall / Q7 is German Schulnote 1–6 (higher = worse).',
+    'findability / Q4 may stay null if navigation was not tested.',
     'Return JSON: { "basis": string, "scores": { "<SoftScoreKey>": { "value": number|string|null, "confidence": 0-1, "rationale": string } } }',
-    `Keys: ${SOFT_KEYS.join(', ')}`,
+    `Keys: ${keys.join(', ')}`,
     'Rationales: short German, cite a phrase from the findings.',
   ].join(' ')
 

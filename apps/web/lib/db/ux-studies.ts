@@ -462,6 +462,7 @@ export async function dbEvaluateUxWave(
     waveId,
     current.runs,
     current.evaluation?.hypotheses ?? null,
+    { existingSoftScores: current.evaluation?.softScores ?? null },
   )
   const assisted = await assistSoftScoresWithLlm(evaluation.softScores, current.runs)
   evaluation = {
@@ -537,10 +538,18 @@ export async function dbCompareUxWaves(
     'Q3_filterlogik',
     'Q6_nutzungswahrscheinlichkeit',
     'Q7_gesamteindruck',
+    'usefulness',
+    'ease',
+    'clarity',
+    'likelihood',
+    'overall',
   ]
   const softScoreDelta: Record<string, UxCompareAggregateDelta> = {}
   for (const k of softKeys) {
-    softScoreDelta[k] = deltaRow(softNum(baseline.evaluation, k), softNum(current.evaluation, k))
+    const b = softNum(baseline.evaluation, k)
+    const c = softNum(current.evaluation, k)
+    if (b == null && c == null) continue
+    softScoreDelta[k] = deltaRow(b, c)
   }
 
   const bh = new Map((baseline.evaluation?.hypotheses ?? []).map((h) => [h.id, h]))

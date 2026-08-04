@@ -19,7 +19,12 @@ import type {
   UxWaveWritePayload,
 } from '@audion-v3/contracts'
 import { isProjectsDatabaseConfigured } from '../db/config'
-import { draftSoftScoresFromValidRuns, mergeSoftScoreDraft } from '../soft-q-draft'
+import {
+  draftSoftScoresFromValidRuns,
+  mergeSoftScoreDraft,
+  softQDraftNote,
+  type SoftQDraft,
+} from '../soft-q-draft'
 import { applyNavH3HypothesisFromRuns } from '../persona-lab-nav-correlate'
 import { DEMO_UX_STUDIES, DEMO_UX_WAVES } from './ux-studies'
 
@@ -199,6 +204,7 @@ export function evaluateUxWaveFromRuns(
   waveId: string,
   runs: UxWaveRunItem[],
   hypotheses: UxHypothesisResult[] | null,
+  opts?: { existingSoftScores?: SoftQDraft | null },
 ): UxWaveEvaluation {
   const valid = runs.filter((r) => r.validEvidence === true)
   const completed = runs.filter((r) => r.taskCompleted === true)
@@ -215,14 +221,11 @@ export function evaluateUxWaveFromRuns(
       ),
     })) ?? []
 
-  // Lab L6: Soft-Q auto-draft from Think-Aloud / findings on validEvidence runs.
-  const softDraft = draftSoftScoresFromValidRuns(runs)
-  const softNote =
-    softDraft.Q2_bedienbarkeit?.value != null
-      ? `Soft-Q draft applied (Q2=${String(softDraft.Q2_bedienbarkeit.value)}, Q3=${String(softDraft.Q3_filterlogik?.value ?? '—')}, Q4=${String(softDraft.Q4_auffindbarkeit?.value ?? '—')}).`
-      : softDraft.basis?.includes('skipped')
-        ? 'Soft-Q draft skipped — no validEvidence runs.'
-        : 'Soft-Q draft produced no Q2 (unexpected).'
+  // Soft-Q auto-draft: core vs EBM keys from existing pack shell.
+  const softDraft = draftSoftScoresFromValidRuns(runs, {
+    existingSoftScores: opts?.existingSoftScores ?? null,
+  })
+  const softNote = softQDraftNote(softDraft)
 
   const h3 = applyNavH3HypothesisFromRuns(preserved, runs)
 
@@ -466,6 +469,7 @@ async function memoryEvaluateUxWave(
     waveId,
     current.runs,
     current.evaluation?.hypotheses ?? null,
+    { existingSoftScores: current.evaluation?.softScores ?? null },
   )
   const { assistSoftScoresWithLlm } = await import('../soft-q-llm-assist')
   const assisted = await assistSoftScoresWithLlm(evaluation.softScores, current.runs)
@@ -544,13 +548,18 @@ function memoryCompareUxWaves(
     'Q3_filterlogik',
     'Q6_nutzungswahrscheinlichkeit',
     'Q7_gesamteindruck',
+    'usefulness',
+    'ease',
+    'clarity',
+    'likelihood',
+    'overall',
   ]
   const softScoreDelta: Record<string, UxCompareAggregateDelta> = {}
   for (const k of softKeys) {
-    softScoreDelta[k] = deltaRow(
-      softNum(baseline.evaluation, k),
-      softNum(current.evaluation, k),
-    )
+    const b = softNum(baseline.evaluation, k)
+    const c = softNum(current.evaluation, k)
+    if (b == null && c == null) continue
+    softScoreDelta[k] = deltaRow(b, c)
   }
 
   const bh = new Map((baseline.evaluation?.hypotheses ?? []).map((h) => [h.id, h]))

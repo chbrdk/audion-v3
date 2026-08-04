@@ -99,6 +99,46 @@ describe('soft-q-draft L6', () => {
     expect(draft.Q4_auffindbarkeit?.value).toBe(2)
   })
 
+  it('emits core Soft-Q keys when pack shell is domainProfile core', () => {
+    const shell = {
+      basis: 'Pending',
+      ease: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      findability: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      clarity: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      usefulness: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      likelihood: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      overall: { scale: '1-6_schulnote', value: null, confidence: 0, rationale: '' },
+    }
+    const draft = draftSoftScoresFromValidRuns([validConfusionRun()], {
+      existingSoftScores: shell,
+      domainProfileId: 'core',
+    })
+    expect(draft.ease?.value).toBe(2)
+    expect(draft.clarity?.value).toBe(2)
+    expect(draft.Q2_bedienbarkeit).toBeUndefined()
+    expect(draft.basis).toMatch(/core Soft-Q/i)
+  })
+
+  it('evaluateUxWaveFromRuns keeps core keys when existing shell is core', () => {
+    const shell = {
+      ease: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      clarity: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      usefulness: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      findability: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      likelihood: { scale: '1-5', value: null, confidence: 0, rationale: '' },
+      overall: { scale: '1-6_schulnote', value: null, confidence: 0, rationale: '' },
+    }
+    const evaluation = evaluateUxWaveFromRuns(
+      'study-x',
+      'wave-x',
+      [validConfusionRun()],
+      null,
+      { existingSoftScores: shell },
+    )
+    expect(evaluation.softScores.ease?.value).toBe(2)
+    expect(evaluation.softScores.Q2_bedienbarkeit).toBeUndefined()
+  })
+
   it('mergeSoftScoreDraft preserves hand-filled, refreshes auto-draft', () => {
     const draft = draftSoftScoresFromValidRuns([validConfusionRun()])
     const hand = {

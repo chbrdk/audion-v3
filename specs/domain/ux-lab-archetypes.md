@@ -42,6 +42,8 @@ Path-finding honesty: when archetype is `findability`, Sync/Evaluate should pref
 
 **Domain profiles** map core → product keys. Profile `ebm-produktkombinationen` keeps legacy `Q1_nuetzlichkeit`…`Q7_gesamteindruck` (UI/Evaluate unchanged for EBM). New packs may use core keys or a profile.
 
+Evaluate drafts Soft-Q in the **same key shape as the pack shell** (core vs EBM), inferred from existing `softScores` / `domainProfileId`.
+
 ## Pack rules
 
 1. Goal-based tasks; avoid UI label spoilers when testing findability.

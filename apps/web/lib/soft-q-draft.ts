@@ -1,12 +1,23 @@
 /**
- * Lab L6 — draft Soft-Q scores from validEvidence Think-Aloud / findings.
- * Deterministic (no LLM): fills empty Soft-Q keys toward the human EBM band
- * when confusion / high friction shows up in narratives.
+ * Soft-Q draft from validEvidence Think-Aloud / findings.
+ * Computes core scales (ease, findability, …), then emits either core keys
+ * or the EBM domain-profile aliases (Q1–Q7) depending on the wave shell.
  *
+ * @see specs/domain/ux-lab-archetypes.md
  * @see knowledge/lab-l6-soft-q-draft-2026-08-03.md
  */
 
-import type { SoftScoreEntry, SoftScoreKey, UxWaveRunItem } from '@audion-v3/contracts'
+import type {
+  SoftScoreDomainProfileId,
+  SoftScoreEntry,
+  SoftScoreKey,
+  UxWaveRunItem,
+} from '@audion-v3/contracts'
+import {
+  SOFT_SCORE_CORE_KEYS,
+  SOFT_SCORE_CORE_TO_EBM,
+  SOFT_SCORE_EBM_KEYS,
+} from '@audion-v3/contracts'
 import {
   hasConfusionSignal,
   PERSONA_LAB_OPTIMISTIC_RES,
@@ -85,10 +96,29 @@ export type SoftQDraft = Partial<Record<SoftScoreKey, SoftScoreEntry>> & {
   basis?: string
 }
 
+export type SoftQDraftOptions = {
+  /** Prefer pack `domainProfileId`; otherwise inferred from existing softScore keys. */
+  domainProfileId?: SoftScoreDomainProfileId | null
+  /** Existing wave Soft-Q shell (from ScenarioPack) — drives key shape. */
+  existingSoftScores?: SoftQDraft | null
+}
+
+/** Infer Soft-Q profile from shell keys (core vs EBM Q*). Default EBM for backward compat. */
+export function inferSoftScoreDomainProfile(
+  scores: SoftQDraft | null | undefined,
+  explicit?: SoftScoreDomainProfileId | null,
+): SoftScoreDomainProfileId {
+  if (explicit === 'core' || explicit === 'ebm-produktkombinationen') return explicit
+  if (!scores) return 'ebm-produktkombinationen'
+  const hasCore = SOFT_SCORE_CORE_KEYS.some((k) => k in scores && scores[k])
+  const hasEbm = SOFT_SCORE_EBM_KEYS.some((k) => k in scores && scores[k])
+  if (hasCore && !hasEbm) return 'core'
+  return 'ebm-produktkombinationen'
+}
+
 /** True when an existing Soft-Q cell looks hand-filled (preserve on Evaluate). */
 export function softScoreLooksHandFilled(entry: SoftScoreEntry | undefined): boolean {
   if (!entry) return false
-  // Auto-draft / LLM-assist may be refreshed on re-evaluate.
   if (/auto-draft|think-aloud draft|llm-assist/i.test(entry.rationale ?? '')) return false
   if (entry.value !== null && entry.value !== undefined && entry.value !== '') return true
   return Boolean(entry.rationale?.trim())
@@ -97,7 +127,6 @@ export function softScoreLooksHandFilled(entry: SoftScoreEntry | undefined): boo
 /**
  * Merge draft Soft-Q under existing evaluation scores.
  * Hand-filled / prior values win; empty / null shell keys take the draft.
- * Scenario-pack pending shells (value null, empty rationale) must never block L6 fill.
  */
 export function mergeSoftScoreDraft(
   draft: SoftQDraft,
@@ -122,31 +151,67 @@ export function mergeSoftScoreDraft(
 /** True when Soft-Q still looks like an unevaluated null shell. */
 export function softScoresAreEmptyShell(scores: SoftQDraft | null | undefined): boolean {
   if (!scores) return true
-  const keys: SoftScoreKey[] = [
-    'Q1_nuetzlichkeit',
-    'Q2_bedienbarkeit',
-    'Q3_filterlogik',
-    'Q6_nutzungswahrscheinlichkeit',
-    'Q7_gesamteindruck',
-  ]
+  const profile = inferSoftScoreDomainProfile(scores)
+  const keys: SoftScoreKey[] =
+    profile === 'core'
+      ? ['ease', 'clarity', 'likelihood', 'overall', 'usefulness']
+      : [
+          'Q1_nuetzlichkeit',
+          'Q2_bedienbarkeit',
+          'Q3_filterlogik',
+          'Q6_nutzungswahrscheinlichkeit',
+          'Q7_gesamteindruck',
+        ]
   return keys.every((k) => {
     const e = scores[k]
     return !e || e.value === null || e.value === undefined || e.value === ''
   })
 }
 
-/**
- * Draft Soft-Q from validEvidence runs (findings / caveats / friction).
- * Returns `{}` (+ basis note) when no valid runs — Evaluate stays empty then.
- */
-export function draftSoftScoresFromValidRuns(runs: UxWaveRunItem[]): SoftQDraft {
-  const valid = runs.filter((r) => r.validEvidence === true)
-  if (!valid.length) {
-    return {
-      basis: 'No validEvidence runs — Soft-Q draft skipped.',
+function isFindabilityRun(run: UxWaveRunItem): boolean {
+  if (/^Nav-/i.test(run.runKey) || /^Template-findability/i.test(run.runKey)) return true
+  return /finde den weg|find (?:your |the )?way|startseite|nicht direkt im tool|without a deeplink|findability/i.test(
+    run.task || '',
+  )
+}
+
+function findabilityLanded(run: UxWaveRunItem): boolean {
+  if (run.goalReached === true) return true
+  if (/produktkombinationen/i.test(run.finalUrl || '')) return true
+  if (/produktkombinationen/i.test(narrativeFromRun(run))) return true
+  // Generic: final URL left the start host/path and agent claims success cues
+  if (run.finalUrl && run.url && run.finalUrl !== run.url && run.deeplinkCheat === false) {
+    try {
+      const start = new URL(run.url)
+      const end = new URL(run.finalUrl)
+      if (start.hostname !== end.hostname) return true
+    } catch {
+      /* ignore bad URLs */
     }
   }
+  return false
+}
 
+type CoreDraftValues = {
+  ease: number
+  clarity: number
+  usefulness: number
+  findability: number | null
+  findabilityConf: number
+  findabilityRationale: string
+  likelihood: number
+  overall: number
+  preferenceChoice: string | null
+  preferenceConf: number
+  preferenceRationale: string
+  confBase: number
+  quote: string
+  friction: number | null
+  confusion: boolean
+  n: number
+}
+
+function computeCoreValues(valid: UxWaveRunItem[]): CoreDraftValues {
   const blob = valid.map(narrativeFromRun).join('\n')
   const confusion = hasSoftQConfusion(blob)
   const optimistic = anyOptimistic(blob)
@@ -157,115 +222,164 @@ export function draftSoftScoresFromValidRuns(runs: UxWaveRunItem[]): SoftQDraft 
   const n = valid.length
   const confBase = Math.min(0.75, 0.35 + n * 0.12)
 
-  // Q2/Q3: human gold band ~2 when matrix confusion named
-  let q2 = 3
-  let q3 = 3
+  let ease = 3
+  let clarity = 3
   if (confusion) {
-    q2 = 2
-    q3 = 2
+    ease = 2
+    clarity = 2
   } else if (typeof friction === 'number' && friction >= 7) {
-    q2 = 2
-    q3 = 3
+    ease = 2
+    clarity = 3
   } else if (optimistic) {
-    q2 = 4
-    q3 = 4
+    ease = 4
+    clarity = 4
   }
 
-  // Q1 usefulness: answerable but hard → ~3; abandon without answer → ~2
-  let q1 = 3
-  if (goalRate < 0.5 && confusion) q1 = 2
-  else if (goalRate >= 0.8 && !confusion) q1 = 4
-  else if (typeof friction === 'number' && friction >= 8) q1 = 2
+  let usefulness = 3
+  if (goalRate < 0.5 && confusion) usefulness = 2
+  else if (goalRate >= 0.8 && !confusion) usefulness = 4
+  else if (typeof friction === 'number' && friction >= 8) usefulness = 2
 
-  // Q6 return likelihood tracks friction / confusion
-  let q6 = 3
-  if (confusion || (typeof friction === 'number' && friction >= 8)) q6 = 2
-  else if (optimistic && goalRate >= 0.8) q6 = 4
+  let likelihood = 3
+  if (confusion || (typeof friction === 'number' && friction >= 8)) likelihood = 2
+  else if (optimistic && goalRate >= 0.8) likelihood = 4
 
-  // Q7 school grade 1–6 (higher = worse in DE schulnote): confusion → 4
-  let q7 = 3
-  if (confusion || (typeof friction === 'number' && friction >= 8)) q7 = 4
-  else if (optimistic && goalRate >= 0.8) q7 = 2
+  // overall uses DE schulnote 1–6 when mapped to Q7; core overall also 1–6
+  let overall = 3
+  if (confusion || (typeof friction === 'number' && friction >= 8)) overall = 4
+  else if (optimistic && goalRate >= 0.8) overall = 2
 
-  // Q4 Auffindbarkeit: fill when Nav / path-finding runs are in the wave
-  const navRuns = valid.filter(
-    (r) =>
-      /^Nav-/i.test(r.runKey) ||
-      /finde den weg|startseite|nicht direkt im tool/i.test(r.task || ''),
-  )
-  const navLanded = navRuns.filter(
-    (r) =>
-      r.goalReached === true ||
-      /produktkombinationen/i.test(r.finalUrl || '') ||
-      /produktkombinationen/i.test(narrativeFromRun(r)),
-  )
-  let q4: number | null = null
-  let q4Rationale =
-    'Auto-draft: Auffindbarkeit (Nav von Home) in diesem Slice nicht belegt.'
-  let q4Conf = 0
-  if (navRuns.length > 0) {
-    const landRate = navLanded.length / navRuns.length
+  const findRuns = valid.filter(isFindabilityRun)
+  const findLanded = findRuns.filter(findabilityLanded)
+  let findability: number | null = null
+  let findabilityRationale =
+    'Auto-draft: Auffindbarkeit / Findability in diesem Slice nicht belegt.'
+  let findabilityConf = 0
+  if (findRuns.length > 0) {
+    const landRate = findLanded.length / findRuns.length
     if (landRate >= 0.8) {
-      q4 = 4
-      q4Conf = Math.min(0.85, confBase + 0.2)
-      q4Rationale = `Auto-draft: Home→Tool erreicht (goal/finalUrl); n=${navRuns.length}.`
+      findability = 4
+      findabilityConf = Math.min(0.85, confBase + 0.2)
+      findabilityRationale = `Auto-draft: Ziel erreicht (goal/finalUrl); n=${findRuns.length}.`
     } else if (landRate <= 0.2) {
-      q4 = 2
-      q4Conf = Math.min(0.8, confBase + 0.15)
-      q4Rationale = `Auto-draft: Nav von Home scheiterte / Tool-URL fehlt; n=${navRuns.length}.`
+      findability = 2
+      findabilityConf = Math.min(0.8, confBase + 0.15)
+      findabilityRationale = `Auto-draft: Findability scheiterte / Ziel-URL fehlt; n=${findRuns.length}.`
     } else {
-      q4 = 3
-      q4Conf = confBase
-      q4Rationale = `Auto-draft: gemischte Auffindbarkeit (${navLanded.length}/${navRuns.length}).`
+      findability = 3
+      findabilityConf = confBase
+      findabilityRationale = `Auto-draft: gemischte Findability (${findLanded.length}/${findRuns.length}).`
     }
   }
 
-  const draft: SoftQDraft = {
-    basis: `Think-Aloud draft from ${n} validEvidence run(s); not Testbirds n=15.`,
-    Q1_nuetzlichkeit: soft(
+  return {
+    ease: clamp15(ease),
+    clarity: clamp15(clarity),
+    usefulness: clamp15(usefulness),
+    findability,
+    findabilityConf,
+    findabilityRationale,
+    likelihood: clamp15(likelihood),
+    overall,
+    preferenceChoice: confusion ? 'produktseite_bevorzugt_vermutet' : null,
+    preferenceConf: confusion ? 0.4 : 0,
+    preferenceRationale: confusion
+      ? 'Auto-draft: Matrix/Tool-Reibung — einfachere Antwort vermutlich bevorzugt.'
+      : 'Auto-draft: kein Kontrast Produktseite vs Tool ableitbar.',
+    confBase,
+    quote,
+    friction,
+    confusion,
+    n,
+  }
+}
+
+function emitCoreDraft(v: CoreDraftValues): SoftQDraft {
+  return {
+    basis: `Think-Aloud draft (core Soft-Q) from ${v.n} validEvidence run(s); not Testbirds n=15.`,
+    ease: soft(
       SCALE_1_5,
-      clamp15(q1),
-      confBase,
-      `Auto-draft: ${quote}`,
+      v.ease,
+      v.confusion ? Math.min(0.8, v.confBase + 0.15) : v.confBase,
+      v.confusion
+        ? `Auto-draft: Bedienung/Reibung in Think-Aloud — „${v.quote}“`
+        : `Auto-draft: wenig explizite Bedien-Verwirrung; friction=${v.friction ?? '—'}.`,
     ),
-    Q2_bedienbarkeit: soft(
+    clarity: soft(
       SCALE_1_5,
-      clamp15(q2),
-      confusion ? Math.min(0.8, confBase + 0.15) : confBase,
-      confusion
-        ? `Auto-draft: Bedienung/Matrix-Reibung in Think-Aloud — „${quote}“`
-        : `Auto-draft: wenig explizite Bedien-Verwirrung; friction=${friction ?? '—'}.`,
+      v.clarity,
+      v.confusion ? Math.min(0.85, v.confBase + 0.2) : v.confBase,
+      v.confusion
+        ? `Auto-draft: Logik/Filter unklar benannt — „${v.quote}“`
+        : `Auto-draft: keine klaren Klarheits-Cues in Findings.`,
     ),
-    Q3_filterlogik: soft(
+    usefulness: soft(SCALE_1_5, v.usefulness, v.confBase, `Auto-draft: ${v.quote}`),
+    findability: soft(SCALE_1_5, v.findability, v.findabilityConf, v.findabilityRationale),
+    likelihood: soft(
       SCALE_1_5,
-      clamp15(q3),
-      confusion ? Math.min(0.85, confBase + 0.2) : confBase,
-      confusion
-        ? `Auto-draft: Filter/grau/unklar benannt — „${quote}“`
-        : `Auto-draft: keine klaren Filter-Cues in Findings.`,
+      v.likelihood,
+      v.confBase * 0.9,
+      `Auto-draft: Wiederkehr bei friction=${v.friction ?? '—'}, confusion=${v.confusion}.`,
     ),
-    Q4_auffindbarkeit: soft(SCALE_1_5, q4, q4Conf, q4Rationale),
-    Q5_produktnah_vs_tool: soft(
-      SCALE_CHOICE,
-      confusion ? 'produktseite_bevorzugt_vermutet' : null,
-      confusion ? 0.4 : 0,
-      confusion
-        ? 'Auto-draft: Matrix erzeugte Reibung — Produktseite/einfache Antwort vermutlich bevorzugt (H4-Richtung).'
-        : 'Auto-draft: kein Kontrast Produktseite vs Tool ableitbar.',
-    ),
-    Q6_nutzungswahrscheinlichkeit: soft(
-      SCALE_1_5,
-      clamp15(q6),
-      confBase * 0.9,
-      `Auto-draft: Wiederkehr bei friction=${friction ?? '—'}, confusion=${confusion}.`,
-    ),
-    Q7_gesamteindruck: soft(
+    overall: soft(
       SCALE_NOTE,
-      q7,
-      confBase,
-      `Auto-draft: Gesamteindruck (Schulnote) aus validEvidence-Narrativ; n=${n}.`,
+      v.overall,
+      v.confBase,
+      `Auto-draft: Gesamteindruck aus validEvidence-Narrativ; n=${v.n}.`,
     ),
   }
+}
 
+function emitEbmDraft(v: CoreDraftValues): SoftQDraft {
+  const core = emitCoreDraft(v)
+  const draft: SoftQDraft = {
+    basis: `Think-Aloud draft from ${v.n} validEvidence run(s); not Testbirds n=15.`,
+  }
+  for (const coreKey of SOFT_SCORE_CORE_KEYS) {
+    const ebmKey = SOFT_SCORE_CORE_TO_EBM[coreKey]
+    const cell = core[coreKey]
+    if (cell) draft[ebmKey] = cell
+  }
+  // Q5 is EBM-only choice scale (not in core → EBM map)
+  draft.Q5_produktnah_vs_tool = soft(
+    SCALE_CHOICE,
+    v.preferenceChoice,
+    v.preferenceConf,
+    v.preferenceRationale,
+  )
   return draft
+}
+
+/**
+ * Draft Soft-Q from validEvidence runs.
+ * Profile `core` → ease/findability/… ; default / EBM → Q1–Q7 aliases.
+ */
+export function draftSoftScoresFromValidRuns(
+  runs: UxWaveRunItem[],
+  opts?: SoftQDraftOptions,
+): SoftQDraft {
+  const valid = runs.filter((r) => r.validEvidence === true)
+  if (!valid.length) {
+    return {
+      basis: 'No validEvidence runs — Soft-Q draft skipped.',
+    }
+  }
+
+  const profile = inferSoftScoreDomainProfile(opts?.existingSoftScores, opts?.domainProfileId)
+  const values = computeCoreValues(valid)
+  return profile === 'core' ? emitCoreDraft(values) : emitEbmDraft(values)
+}
+
+/** Short note for Evaluate notes[] (works for core or EBM keys). */
+export function softQDraftNote(draft: SoftQDraft): string {
+  if (draft.basis?.includes('skipped')) {
+    return 'Soft-Q draft skipped — no validEvidence runs.'
+  }
+  const ease = draft.ease?.value ?? draft.Q2_bedienbarkeit?.value
+  const clarity = draft.clarity?.value ?? draft.Q3_filterlogik?.value
+  const findability = draft.findability?.value ?? draft.Q4_auffindbarkeit?.value
+  if (ease != null) {
+    return `Soft-Q draft applied (ease/Q2=${String(ease)}, clarity/Q3=${String(clarity ?? '—')}, findability/Q4=${String(findability ?? '—')}).`
+  }
+  return 'Soft-Q draft produced no ease/Q2 (unexpected).'
 }
