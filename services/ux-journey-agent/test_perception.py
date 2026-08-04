@@ -145,6 +145,26 @@ def test_prefer_targeted_actions_nav_h3_prefers_produktkombinationen():
     assert "produktkombination" in P.action_text_blob(kept[0])
 
 
+def test_prefer_targeted_actions_nav_h3_avoids_home_loop_click_after_try():
+    actions = [
+        {"click": {"text": "Service & Beratung", "target": "/de/"}},
+        {"scroll": {"down": True}},
+        {"done": {"text": "Ich bin fertig"}},
+    ]
+    kept, reason = P.prefer_targeted_actions(
+        actions,
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+        current_url="https://www.bosch-ebike.com/de/",
+        exploratory_attempts=1,
+    )
+    assert reason == "nav_h3_avoid_home_loop"
+    assert len(kept) == 1
+    assert P.action_tool_name(kept[0]) == "scroll"
+
+
 def test_prefer_targeted_actions_cookie_prefers_reject_click():
     actions = [
         {"click": {"text": "Alles ablehnen"}},

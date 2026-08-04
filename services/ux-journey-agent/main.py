@@ -3973,6 +3973,7 @@ async def run_agent(
                     task=task,
                     current_url=current_url,
                     perception=perc,
+                    exploratory_attempts=int(felt_state.get("exploratoryAttempts") or 0),
                 )
                 if targeted_reason != "targeted_passthrough":
                     reason = targeted_reason
@@ -4036,6 +4037,9 @@ async def run_agent(
                                     task=task,
                                     current_url=current_url,
                                     perception=perc,
+                                    exploratory_attempts=int(
+                                        felt_state.get("exploratoryAttempts") or 0
+                                    ),
                                 )
                                 reason = (
                                     f"min_steps_done_retry_{targeted_reason}"

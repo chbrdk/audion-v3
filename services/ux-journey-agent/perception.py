@@ -390,6 +390,29 @@ def _actions_matching_keywords(
     return out
 
 
+def _nav_h3_is_home_loop_click(action: Any, current_url: str | None) -> bool:
+    """True when a Nav-H3 click only points back to the current home/root URL."""
+    if action_tool_name(action) != "click":
+        return False
+    blob = action_text_blob(action)
+    if "produktkombination" in blob:
+        return False
+    cur = (current_url or "").strip().lower().rstrip("/")
+    home = "https://www.bosch-ebike.com/de"
+    return any(
+        token in blob
+        for token in (
+            '"target": "/de/"',
+            '"target": "https://www.bosch-ebike.com/de/"',
+            '"url": "/de/"',
+            '"url": "https://www.bosch-ebike.com/de/"',
+            home,
+            cur,
+        )
+        if token
+    )
+
+
 def is_nav_h3_task(task: str | None) -> bool:
     if not task:
         return False
@@ -407,6 +430,7 @@ def prefer_targeted_actions(
     task: str | None = None,
     current_url: str | None = None,
     perception: dict[str, Any] | None = None,
+    exploratory_attempts: int = 0,
 ) -> tuple[list[Any], str]:
     """
     Prefer a higher-signal next step for known brittle flows.
@@ -425,6 +449,21 @@ def prefer_targeted_actions(
         if produkt:
             return produkt, "nav_h3_produktkombinationen"
         service = _actions_matching_keywords(actions, ["service", "beratung"])
+        if exploratory_attempts >= 1:
+            service = [
+                a
+                for a in service
+                if not _nav_h3_is_home_loop_click(a, current_url)
+            ]
+            if not service:
+                non_loop = [
+                    a
+                    for a in actions
+                    if action_tool_name(a) not in ("done", "complete", "finish")
+                    and not _nav_h3_is_home_loop_click(a, current_url)
+                ]
+                if non_loop:
+                    return non_loop, "nav_h3_avoid_home_loop"
         if service:
             return service, "nav_h3_service"
 
