@@ -4712,12 +4712,12 @@ async def run_agent(
                             break
                     blob = f"{raw}\n{extracted}"
                     if "nav_hover:no_opener" in blob or "nav_hover:err:" in blob:
-                        felt_state["menuHoverUsed"] = False
-                        if str(felt_state.get("lastNavReason") or "") == "nav_dom_menu_hover":
-                            felt_state["lastNavReason"] = ""
+                        # One probe is enough — fall through to coordinate opener.
+                        felt_state["menuHoverUsed"] = True
+                        felt_state["menuHoverMiss"] = True
                         print(
                             f"ux-journey: job={job_id} menu hover miss — "
-                            "allow coordinate opener next",
+                            "coordinate opener next",
                             flush=True,
                         )
             except Exception:  # pragma: no cover - hooks must never break runs

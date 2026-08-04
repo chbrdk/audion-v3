@@ -1171,13 +1171,39 @@ def test_build_nav_menu_hover_evaluate_embeds_open_keys():
     assert "mouseenter" in action["code"]
 
 
-def test_select_nav_dom_action_opens_with_evaluate_hover_first():
+def test_select_nav_dom_action_opens_with_cdp_hover_wait_first():
     summary = {
         "dom_state": {
             "selector_map": {
                 3: {
                     "is_visible": True,
                     "bounds": {"x": 500, "y": 40, "width": 160, "height": 40},
+                    "attributes": {"href": "/de/service/"},
+                    "ax_node": {"name": "Service & Beratung", "role": "link"},
+                }
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        menu_hover_used=False,
+    )
+    assert reason == "nav_dom_menu_hover"
+    assert action is not None
+    assert action["tool"] == "wait"
+    assert action["seconds"] == 2
+    assert isinstance(action.get("coordinate_x"), int)
+    assert isinstance(action.get("coordinate_y"), int)
+
+
+def test_select_nav_dom_action_evaluate_hover_without_bounds():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                3: {
+                    "is_visible": True,
                     "attributes": {"href": "/de/service/"},
                     "ax_node": {"name": "Service & Beratung", "role": "link"},
                 }
