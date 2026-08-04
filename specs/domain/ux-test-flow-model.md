@@ -81,6 +81,7 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
 
 - Canvas **Testen** creates a Study+Wave from the current snapshot, starts the wave (agent), and polls `GET /api/ux-journey-agent/run/{jobId}`.
 - Node states overlay: `idle | active | done | skipped | error`.
+- **Inline node output:** active/done/error nodes render the latest mapped agent step (action/target headline, result/think-aloud text, screenshot via BFF proxy).
 - Progress mapper (`ux-flow-run-progress.ts`) preference order:
   1. Optional poll `flowCursor` / `gateEvaluations` when present.
   2. Else evaluate flow gates against agent `gateSignals` (`finalUrl`, `finalTitle`, `frustrationHigh`, `confusionNamed`) + step targets.

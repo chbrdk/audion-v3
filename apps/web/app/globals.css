@@ -4453,6 +4453,12 @@ main { min-height: 100vh; }
   background:color-mix(in srgb,var(--bg0,#111) 90%,var(--ink));
 }
 .audion-flow-rf-node-body{display:grid;gap:.4rem;padding:.5rem .55rem .65rem}
+.audion-flow-rf-node.has-output{width:280px}
+.audion-flow-rf-output{display:grid;gap:.35rem;margin-top:.25rem;padding:.45rem;border-radius:4px;border:1px solid color-mix(in srgb,var(--flow-accent) 35%,transparent);background:color-mix(in srgb,var(--flow-accent) 8%,var(--flow-node-bg,#1f1f1f))}
+.audion-flow-rf-output-label{margin:0;font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;opacity:.7}
+.audion-flow-rf-output-headline{margin:0;font-size:.72rem;font-weight:600;line-height:1.25;word-break:break-word}
+.audion-flow-rf-output-text{margin:0;white-space:pre-wrap;word-break:break-word;font:inherit;font-size:.68rem;line-height:1.35;opacity:.92;max-height:7.5rem;overflow:auto}
+.audion-flow-rf-output-img{display:block;width:100%;height:auto;max-height:120px;object-fit:cover;border-radius:3px;border:1px solid color-mix(in srgb,var(--flow-border,#444) 80%,transparent);background:#0a0a0a}
 .audion-flow-rf-field{display:grid;gap:.15rem;margin:0}
 .audion-flow-rf-field>span{font-size:.62rem;text-transform:uppercase;letter-spacing:.04em;opacity:.65}
 .audion-flow-rf-field--inline{grid-template-columns:1fr auto;align-items:center}

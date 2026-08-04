@@ -12,7 +12,7 @@ import type {
   UxTestFlow,
 } from '@audion-v3/contracts'
 import { flattenFlowBlocks } from './ux-test-flow-graph'
-import type { FlowNodeRunState } from './ux-flow-run-progress'
+import type { FlowNodeRunOutput, FlowNodeRunState } from './ux-flow-run-progress'
 
 export type UxFlowRfNodeData = {
   flowNode: UxFlowNode
@@ -22,6 +22,8 @@ export type UxFlowRfNodeData = {
   runState?: FlowNodeRunState
   /** Optional parallel segment highlight (run B). */
   runStateB?: FlowNodeRunState
+  /** Latest agent step text/image for this node during Testen. */
+  runOutput?: FlowNodeRunOutput | null
 }
 
 export type UxFlowRfEdgeData = {

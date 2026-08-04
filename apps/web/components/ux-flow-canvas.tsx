@@ -36,7 +36,9 @@ import {
   type UxFlowRfNode,
 } from '../lib/ux-flow-canvas'
 import {
+  mapJobToFlowNodeOutputs,
   mapJobToFlowNodeStates,
+  type FlowNodeRunOutput,
   type FlowNodeRunState,
 } from '../lib/ux-flow-run-progress'
 import { flattenFlowBlocks } from '../lib/ux-test-flow-graph'
@@ -57,10 +59,15 @@ type AgentJobPoll = {
   result?: {
     success?: boolean | null
     steps?: Array<{
+      step?: number
       action?: string
       target?: string
       result?: string
+      reasoning?: string | null
+      screenshot?: string | null
+      screenshotUrl?: string | null
       perception?: Record<string, unknown> | null
+      thinkAloud?: Record<string, unknown> | null
     }>
     finalUrl?: string | null
     finalTitle?: string | null
@@ -87,6 +94,7 @@ function FlowCanvasInner({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [runStates, setRunStates] = useState<Record<string, FlowNodeRunState>>({})
   const [runStatesB, setRunStatesB] = useState<Record<string, FlowNodeRunState>>({})
+  const [runOutputs, setRunOutputs] = useState<Record<string, FlowNodeRunOutput>>({})
   const [runBusy, setRunBusy] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [runMeta, setRunMeta] = useState<{
@@ -199,9 +207,10 @@ function FlowCanvasInner({
           onUpdate: onUpdateNode,
           runState: runStates[n.id] ?? 'idle',
           runStateB: runStatesB[n.id] ?? 'idle',
+          runOutput: runOutputs[n.id] ?? null,
         },
       })),
-    [nodes, onUpdateNode, runStates, runStatesB],
+    [nodes, onUpdateNode, runStates, runStatesB, runOutputs],
   )
 
   const getSnapshot = useCallback((): UxTestFlow => {
@@ -219,13 +228,16 @@ function FlowCanvasInner({
       error: job.error ?? job.result?.error,
       gateSignals: signals,
       flowCursor: job.flowCursor ?? null,
+      jobId: job.jobId,
     }
   }, [])
 
   const applyJobsToStates = useCallback(
     (jobA: AgentJobPoll, jobB?: AgentJobPoll | null) => {
       const flow = getSnapshot()
-      setRunStates(mapJobToFlowNodeStates(flow, jobToInput(jobA)))
+      const inputA = jobToInput(jobA)
+      setRunStates(mapJobToFlowNodeStates(flow, inputA))
+      setRunOutputs(mapJobToFlowNodeOutputs(flow, inputA))
       if (jobB) {
         setRunStatesB(mapJobToFlowNodeStates(flow, jobToInput(jobB)))
       } else {
@@ -291,6 +303,7 @@ function FlowCanvasInner({
     stopPolling()
     setRunStates({})
     setRunStatesB({})
+    setRunOutputs({})
     try {
       const flow = getSnapshot()
       const createRes = await fetch(paths.routes.apiStudiesFromFlow, {
@@ -484,6 +497,7 @@ function FlowCanvasInner({
     setSavedId(null)
     setRunStates({})
     setRunStatesB({})
+    setRunOutputs({})
     setSaveMsg(null)
   }, [setNodes, setEdges, pushHistory])
 

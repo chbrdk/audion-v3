@@ -4,6 +4,7 @@ import {
   deriveGateSignalsFromJob,
   evaluateFlowGates,
   extractLastHttpUrl,
+  mapJobToFlowNodeOutputs,
   mapJobToFlowNodeStates,
 } from '../lib/ux-flow-run-progress'
 import { defaultExecutionPath } from '../lib/ux-test-flow-graph'
@@ -143,6 +144,56 @@ describe('ux-flow-run-progress', () => {
     })
     expect(states['n-fail']).toBe('done')
     expect(states['n-ok']).toBe('skipped')
+  })
+
+  it('maps step text and screenshot into node outputs', () => {
+    const flow = getUxTestFlow('flow-feeling-gate')!
+    const outputs = mapJobToFlowNodeOutputs(flow, {
+      status: 'running',
+      jobId: 'job-abc',
+      steps: [
+        {
+          step: 1,
+          action: 'click',
+          target: 'Nav',
+          result: 'opened menu',
+          screenshotUrl: '/run/job-abc/step/1/screenshot',
+        },
+        {
+          step: 2,
+          action: 'type',
+          target: 'search',
+          reasoning: 'looking for CTA',
+          thinkAloud: { now: 'Ich scanne die Seite' },
+        },
+      ],
+    })
+    const values = Object.values(outputs)
+    expect(values.length).toBeGreaterThan(0)
+    const withImg = values.find((o) => o.imageUrl)
+    expect(withImg?.imageUrl).toBe('/api/ux-journey-agent/run/job-abc/step/1/screenshot')
+    const activeOut = Object.entries(mapJobToFlowNodeStates(flow, {
+      status: 'running',
+      steps: [
+        { step: 1, action: 'click', target: 'Nav' },
+        { step: 2, action: 'type', target: 'search', thinkAloud: { now: 'Ich scanne die Seite' } },
+      ],
+    }))
+      .filter(([, s]) => s === 'active')
+      .map(([id]) => outputs[id])
+    expect(activeOut[0]?.text).toMatch(/Ich scanne|looking for CTA|type/i)
+  })
+
+  it('synthesizes screenshot URL from jobId + step when missing', () => {
+    const flow = getUxTestFlow('flow-feeling-gate')!
+    const outputs = mapJobToFlowNodeOutputs(flow, {
+      status: 'running',
+      jobId: 'job-xyz',
+      steps: [{ step: 3, action: 'scroll', result: 'scrolled' }],
+    })
+    const any = Object.values(outputs)[0]
+    expect(any?.imageUrl).toBe('/api/ux-journey-agent/run/job-xyz/step/3/screenshot')
+    expect(any?.label).toMatch(/scroll/i)
   })
 })
 

@@ -15,15 +15,34 @@ import { defaultExecutionPath, whenBranchPath } from './ux-test-flow-graph'
 
 export type FlowNodeRunState = 'idle' | 'active' | 'done' | 'skipped' | 'error'
 
+/** Live agent output attached to a flow node during Testen. */
+export type FlowNodeRunOutput = {
+  step?: number | null
+  label?: string | null
+  text?: string | null
+  imageUrl?: string | null
+}
+
+export type FlowRunProgressStep = {
+  step?: number
+  action?: string
+  target?: string
+  result?: string
+  reasoning?: string | null
+  screenshot?: string | null
+  screenshotUrl?: string | null
+  perception?: Record<string, unknown> | null
+  thinkAloud?: Record<string, unknown> | null
+  reasoningMeta?: {
+    evaluation_previous_goal?: string | null
+    memory?: string | null
+    next_goal?: string | null
+  } | null
+}
+
 export type FlowRunProgressInput = {
   status: 'running' | 'complete' | 'error' | string
-  steps?: Array<{
-    action?: string
-    target?: string
-    result?: string
-    perception?: Record<string, unknown> | null
-    thinkAloud?: Record<string, unknown> | null
-  }> | null
+  steps?: FlowRunProgressStep[] | null
   finalUrl?: string | null
   finalTitle?: string | null
   success?: boolean | null
@@ -32,6 +51,8 @@ export type FlowRunProgressInput = {
   gateSignals?: UxFlowGateSignalBundle | null
   /** Optional agent/BFF cursor; when present, gate branch + active node win over heuristics. */
   flowCursor?: UxFlowCursor | null
+  /** Job id for rewriting relative screenshot paths. */
+  jobId?: string | null
 }
 
 function nodeWeight(n: UxFlowNode): number {
@@ -328,4 +349,121 @@ export function mergeDualRunStates(
   secondary: Record<string, FlowNodeRunState>
 } {
   return { primary: a, secondary: b }
+}
+
+function rewriteScreenshotUrl(
+  url: string | null | undefined,
+  jobId?: string | null,
+  stepNum?: number | null,
+): string | null {
+  if (url?.trim()) {
+    const raw = url.trim()
+    if (raw.startsWith('data:') || raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw
+    }
+    if (raw.startsWith('/api/')) return raw
+    if (raw.startsWith('/run/')) return `/api/ux-journey-agent${raw}`
+    return raw
+  }
+  if (jobId && stepNum != null && stepNum > 0) {
+    return `/api/ux-journey-agent/run/${encodeURIComponent(jobId)}/step/${stepNum}/screenshot`
+  }
+  return null
+}
+
+function stepHeadline(step: FlowRunProgressStep): string {
+  const action = step.action?.trim()
+  const target = step.target?.trim()
+  if (action && target) return `${action}: ${target.slice(0, 80)}`
+  if (action) return action
+  if (target) return target.slice(0, 100)
+  return `Step ${step.step ?? '?'}`
+}
+
+function stepBodyText(step: FlowRunProgressStep): string | null {
+  const parts: string[] = []
+  if (step.result?.trim()) parts.push(step.result.trim())
+  if (step.reasoning?.trim()) parts.push(step.reasoning.trim())
+  const ta = step.thinkAloud
+  if (ta && typeof ta === 'object') {
+    for (const key of ['now', 'next', 'feeling', 'confusion'] as const) {
+      const v = (ta as Record<string, unknown>)[key]
+      if (typeof v === 'string' && v.trim()) parts.push(`${key}: ${v.trim()}`)
+    }
+  }
+  const meta = step.reasoningMeta
+  if (meta?.next_goal?.trim()) parts.push(`next: ${meta.next_goal.trim()}`)
+  if (meta?.memory?.trim()) parts.push(`memory: ${meta.memory.trim()}`)
+  if (!parts.length) return null
+  const joined = parts.join('\n')
+  return joined.length > 420 ? `${joined.slice(0, 419)}…` : joined
+}
+
+function pathIndexForStepBudget(path: UxFlowNode[], stepOrdinal: number): number {
+  // stepOrdinal is 1-based count of steps consumed so far
+  return cursorIndex(path, stepOrdinal)
+}
+
+/**
+ * Attach latest agent step text/image to nodes along the execution path.
+ * Each path node keeps the last step that fell into its budget window;
+ * the active node also receives the overall latest step.
+ */
+export function mapJobToFlowNodeOutputs(
+  flow: UxTestFlow,
+  job: FlowRunProgressInput,
+): Record<string, FlowNodeRunOutput> {
+  const out: Record<string, FlowNodeRunOutput> = {}
+  const steps = job.steps ?? []
+  if (!steps.length) return out
+
+  const signals = deriveGateSignalsFromJob({
+    ...job,
+    finalUrl: job.gateSignals?.finalUrl ?? job.finalUrl,
+    finalTitle: job.gateSignals?.finalTitle ?? job.finalTitle,
+  })
+  const { path } = buildExecPath(flow, signals, job.flowCursor)
+  if (!path.length) return out
+
+  const states = mapJobToFlowNodeStates(flow, job)
+  let activeId =
+    Object.entries(states).find(([, s]) => s === 'active' || s === 'error')?.[0] ?? null
+  if (job.flowCursor?.activeNodeId) activeId = job.flowCursor.activeNodeId
+
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i]
+    const ordinal = i + 1
+    const idx = pathIndexForStepBudget(path, ordinal)
+    const node = path[idx]
+    if (!node) continue
+    const stepNum = step.step ?? ordinal
+    out[node.id] = {
+      step: stepNum,
+      label: stepHeadline(step),
+      text: stepBodyText(step),
+      imageUrl: rewriteScreenshotUrl(
+        step.screenshotUrl ?? step.screenshot,
+        job.jobId,
+        stepNum,
+      ),
+    }
+  }
+
+  // Ensure active node shows the freshest step even if budget lagged.
+  if (activeId && steps.length) {
+    const last = steps[steps.length - 1]
+    const stepNum = last.step ?? steps.length
+    out[activeId] = {
+      step: stepNum,
+      label: stepHeadline(last),
+      text: stepBodyText(last),
+      imageUrl: rewriteScreenshotUrl(
+        last.screenshotUrl ?? last.screenshot,
+        job.jobId,
+        stepNum,
+      ),
+    }
+  }
+
+  return out
 }

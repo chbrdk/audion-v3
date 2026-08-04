@@ -28,6 +28,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
   const onUpdate = data.onUpdate
   const runState = data.runState ?? 'idle'
   const runStateB = data.runStateB ?? 'idle'
+  const runOutput = data.runOutput
   const kind = flowNode.kind
 
   const patch = useCallback(
@@ -59,10 +60,13 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
 
   const runBClass =
     runStateB !== 'idle' ? ` audion-flow-rf-node--run-b-${runStateB}` : ''
+  const showOutput =
+    Boolean(runOutput?.text || runOutput?.imageUrl || runOutput?.label) &&
+    (runState === 'active' || runState === 'done' || runState === 'error')
 
   return (
     <div
-      className={`audion-flow-rf-node audion-flow-rf-node--${kind} audion-flow-rf-node--run-${runState}${runBClass}${selected ? ' is-selected' : ''}`}
+      className={`audion-flow-rf-node audion-flow-rf-node--${kind} audion-flow-rf-node--run-${runState}${runBClass}${showOutput ? ' has-output' : ''}${selected ? ' is-selected' : ''}`}
     >
       <Handle
         type="target"
@@ -159,6 +163,29 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
               placeholder="Instruction / question…"
             />
           </label>
+        ) : null}
+
+        {showOutput ? (
+          <div className="audion-flow-rf-output">
+            <p className="audion-flow-rf-output-label">
+              Output
+              {runOutput?.step != null ? ` · #${runOutput.step}` : ''}
+            </p>
+            {runOutput?.label ? (
+              <p className="audion-flow-rf-output-headline">{runOutput.label}</p>
+            ) : null}
+            {runOutput?.text ? (
+              <pre className="audion-flow-rf-output-text">{runOutput.text}</pre>
+            ) : null}
+            {runOutput?.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className="audion-flow-rf-output-img"
+                src={runOutput.imageUrl}
+                alt={runOutput.label ? `Screenshot: ${runOutput.label}` : 'Step screenshot'}
+              />
+            ) : null}
+          </div>
         ) : null}
       </div>
 
