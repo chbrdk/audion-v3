@@ -91,6 +91,7 @@ export async function startUxWaveNativeOrFixture(
         task: run.task || `Complete study wave task on ${run.url}`,
         persona: persona ?? (run.personaId ? { id: run.personaId } : null),
         maxSteps: run.maxSteps ?? 12,
+        flowGraph: run.flowGraph ?? null,
       })
       await storeUpsertUxJourneyRun({
         personaId: run.personaId || 'unknown',

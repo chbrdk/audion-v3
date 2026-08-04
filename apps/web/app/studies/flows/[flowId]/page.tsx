@@ -7,10 +7,13 @@ import { paths } from '../../../../lib/paths'
 
 export default async function StudiesFlowDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ flowId: string }>
+  searchParams: Promise<{ view?: string }>
 }) {
   const { flowId } = await params
+  const sp = await searchParams
   const flow = getUxTestFlow(flowId)
   if (!flow) {
     return (
@@ -20,6 +23,12 @@ export default async function StudiesFlowDetailPage({
       </AppShell>
     )
   }
+
+  const viewParam = sp.view?.trim()
+  const initialView =
+    viewParam === 'protocol' || viewParam === 'list' || viewParam === 'canvas'
+      ? viewParam
+      : undefined
 
   return (
     <AppShell
@@ -39,9 +48,11 @@ export default async function StudiesFlowDetailPage({
         <Chip size="sm" static>
           {flow.primaryArchetype}
         </Chip>
+        {' · '}
+        <Link href={paths.routes.studiesFlowProtocol(flow.id)}>Protokoll</Link>
       </p>
 
-      <UxFlowDetailClient flow={flow} />
+      <UxFlowDetailClient flow={flow} initialView={initialView} />
     </AppShell>
   )
 }

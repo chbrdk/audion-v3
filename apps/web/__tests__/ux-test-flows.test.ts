@@ -72,6 +72,8 @@ describe('ux-test-flows', () => {
     expect(result!.wave.runs).toHaveLength(1)
     expect(result!.wave.runs[0]?.url).toBe(paths.labTemplateFindabilityStartUrl)
     expect(result!.study.targetUrlKey).toBe(paths.labTemplateFindabilityStartUrlKey)
+    expect(result!.wave.runs[0]?.flowGraph?.id).toBe('flow-findability')
+    expect(result!.wave.runs[0]?.flowGraph?.nodes?.length).toBeGreaterThan(0)
   })
 
   it('compiles segment-contrast into two parallel persona runs', () => {

@@ -1,7 +1,8 @@
 /**
  * UX Test Flow saved-snapshot persistence.
- * Fixture/native in-memory store (same pattern as ux-study-store without Postgres yet).
- * @see specs/domain/ux-test-flow-model.md — Canvas (session edit + persist)
+ * - With DATABASE_URL: Postgres `ux_saved_flows` (drizzle)
+ * - Without: in-memory (local/dev/tests)
+ * @see specs/domain/ux-test-flow-model.md — Persistence — ux_saved_flows
  */
 import type {
   UxSavedFlow,
@@ -9,6 +10,11 @@ import type {
   UxSavedFlowWritePayload,
   UxTestFlow,
 } from '@audion-v3/contracts'
+import { isProjectsDatabaseConfigured } from '../db/config'
+
+async function dbApi() {
+  return import('../db/ux-saved-flows')
+}
 
 let saved: UxSavedFlow[] = []
 
@@ -25,7 +31,7 @@ function toSummary(row: UxSavedFlow): UxSavedFlowSummary {
   }
 }
 
-export function listSavedUxFlows(templateFlowId?: string): UxSavedFlowSummary[] {
+function memoryListSavedUxFlows(templateFlowId?: string): UxSavedFlowSummary[] {
   const rows = templateFlowId
     ? saved.filter((s) => s.templateFlowId === templateFlowId)
     : saved
@@ -35,18 +41,18 @@ export function listSavedUxFlows(templateFlowId?: string): UxSavedFlowSummary[] 
     .map(toSummary)
 }
 
-export function getSavedUxFlow(id: string): UxSavedFlow | null {
+function memoryGetSavedUxFlow(id: string): UxSavedFlow | null {
   return saved.find((s) => s.id === id) ?? null
 }
 
-export function getSavedUxFlowByTemplate(templateFlowId: string): UxSavedFlow | null {
+function memoryGetSavedUxFlowByTemplate(templateFlowId: string): UxSavedFlow | null {
   const matches = saved
     .filter((s) => s.templateFlowId === templateFlowId)
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   return matches[0] ?? null
 }
 
-export function saveUxFlow(payload: UxSavedFlowWritePayload): UxSavedFlow {
+function memorySaveUxFlow(payload: UxSavedFlowWritePayload): UxSavedFlow {
   if (!payload?.templateFlowId?.trim()) {
     throw new Error('templateFlowId is required')
   }
@@ -72,7 +78,7 @@ export function saveUxFlow(payload: UxSavedFlowWritePayload): UxSavedFlow {
     }
   }
 
-  const existing = getSavedUxFlowByTemplate(payload.templateFlowId)
+  const existing = memoryGetSavedUxFlowByTemplate(payload.templateFlowId)
   if (existing && !payload.id) {
     const next: UxSavedFlow = {
       ...existing,
@@ -99,8 +105,79 @@ export function saveUxFlow(payload: UxSavedFlowWritePayload): UxSavedFlow {
   return created
 }
 
-export function deleteSavedUxFlow(id: string): boolean {
+function memoryDeleteSavedUxFlow(id: string): boolean {
   const before = saved.length
   saved = saved.filter((s) => s.id !== id)
   return saved.length < before
+}
+
+/** @deprecated Prefer storeListSavedUxFlows — sync memory helper for tests. */
+export function listSavedUxFlows(templateFlowId?: string): UxSavedFlowSummary[] {
+  return memoryListSavedUxFlows(templateFlowId)
+}
+
+/** @deprecated Prefer storeGetSavedUxFlow — sync memory helper for tests. */
+export function getSavedUxFlow(id: string): UxSavedFlow | null {
+  return memoryGetSavedUxFlow(id)
+}
+
+/** @deprecated Prefer storeGetSavedUxFlowByTemplate — sync memory helper for tests. */
+export function getSavedUxFlowByTemplate(templateFlowId: string): UxSavedFlow | null {
+  return memoryGetSavedUxFlowByTemplate(templateFlowId)
+}
+
+/** @deprecated Prefer storeSaveUxFlow — sync memory helper for tests. */
+export function saveUxFlow(payload: UxSavedFlowWritePayload): UxSavedFlow {
+  return memorySaveUxFlow(payload)
+}
+
+/** @deprecated Prefer storeDeleteSavedUxFlow — sync memory helper for tests. */
+export function deleteSavedUxFlow(id: string): boolean {
+  return memoryDeleteSavedUxFlow(id)
+}
+
+export async function storeListSavedUxFlows(
+  templateFlowId?: string,
+): Promise<UxSavedFlowSummary[]> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbListSavedUxFlows(templateFlowId)
+  }
+  return memoryListSavedUxFlows(templateFlowId)
+}
+
+export async function storeGetSavedUxFlow(id: string): Promise<UxSavedFlow | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbGetSavedUxFlow(id)
+  }
+  return memoryGetSavedUxFlow(id)
+}
+
+export async function storeGetSavedUxFlowByTemplate(
+  templateFlowId: string,
+): Promise<UxSavedFlow | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbGetSavedUxFlowByTemplate(templateFlowId)
+  }
+  return memoryGetSavedUxFlowByTemplate(templateFlowId)
+}
+
+export async function storeSaveUxFlow(
+  payload: UxSavedFlowWritePayload,
+): Promise<UxSavedFlow> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbSaveUxFlow(payload)
+  }
+  return memorySaveUxFlow(payload)
+}
+
+export async function storeDeleteSavedUxFlow(id: string): Promise<boolean> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbDeleteSavedUxFlow(id)
+  }
+  return memoryDeleteSavedUxFlow(id)
 }

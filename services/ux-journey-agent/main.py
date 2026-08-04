@@ -166,6 +166,14 @@ class JobState:
     # internally to compute idle deltas without timezone math. Not exposed
     # over the API.
     last_observed_mono: float | None = None
+    # Optional UX Test Flow graph for mid-run Live-Gate replan
+    # (@see specs/domain/ux-test-flow-model.md — Mid-run agent replan).
+    flow_graph: dict[str, Any] | None = None
+    # Gate node ids already replanned (one-shot per gate).
+    replanned_gate_ids: set[str] = field(default_factory=set)
+    # Last replan event mirrored into flowCursor.replan.
+    last_replan: dict[str, Any] | None = None
+
 
 _jobs: dict[str, JobState] = {}
 _jobs_lock = asyncio.Lock()
@@ -188,6 +196,10 @@ class RunRequest(BaseModel):
     # (or 25). The frontend's `inspect_website` tool definition exposes this to
     # the chat LLM so personas can tighten/loosen the budget per request.
     max_steps: int | None = None
+    # Optional UX Test Flow graph snapshot ({ id, nodes, edges }) for mid-run
+    # Live-Gate replan. Same product model as web canvas — not a second type.
+    flow_graph: dict[str, Any] | None = None
+
 
 class RunResponse(BaseModel):
     jobId: str
@@ -2867,6 +2879,34 @@ async def _publish_partial_steps(
         # Live-Gate mid-run signals (url/title/frustration) for canvas cursor.
         live = _compute_gate_signals(partial)
         partial["gateSignals"] = live["gateSignals"]
+        flow_cursor = dict(live.get("flowCursor") or {})
+        # Mid-run replan onto when-branch when flow_graph is attached.
+        replan_event = _maybe_live_gate_replan(job_id, live.get("gateSignals") or {})
+        if replan_event:
+            flow_cursor["replan"] = replan_event
+            flow_cursor["activeNodeId"] = replan_event.get("gateNodeId")
+            flow_cursor["activeEdgeKind"] = replan_event.get("edgeKind") or "when"
+            if isinstance(replan_event.get("gateNodeId"), str):
+                evals = list(flow_cursor.get("gateEvaluations") or [])
+                evals.append(
+                    {
+                        "condition": replan_event.get("condition"),
+                        "matched": True,
+                        "evidence": "mid_run_replan",
+                        "gateNodeId": replan_event.get("gateNodeId"),
+                    }
+                )
+                flow_cursor["gateEvaluations"] = evals
+        else:
+            async with _jobs_lock:
+                job_snap = _jobs.get(job_id)
+                if job_snap and job_snap.last_replan:
+                    flow_cursor["replan"] = job_snap.last_replan
+                    flow_cursor.setdefault("activeEdgeKind", "when")
+                    flow_cursor.setdefault(
+                        "activeNodeId", job_snap.last_replan.get("gateNodeId")
+                    )
+        partial["flowCursor"] = flow_cursor
         async with _jobs_lock:
             if job_id in _jobs:
                 _jobs[job_id].result = partial
@@ -6785,6 +6825,7 @@ async def start_run(body: RunRequest) -> RunResponse:
     job_id = str(uuid.uuid4())
     now_iso = datetime.now(timezone.utc).isoformat()
     now_mono = time.monotonic()
+    flow_graph = body.flow_graph if isinstance(body.flow_graph, dict) else None
     async with _jobs_lock:
         _jobs[job_id] = JobState(
             job_id=job_id,
@@ -6792,6 +6833,7 @@ async def start_run(body: RunRequest) -> RunResponse:
             url=url,
             task=task,
             persona=body.persona,
+            flow_graph=flow_graph,
             # Seed the heartbeat with creation time so chat-api's stagnation
             # watchdog has a non-null reference point even before the first
             # screenshot / history-watcher tick lands (~1s after start).
@@ -6945,6 +6987,256 @@ def _elapsed_seconds_from_steps(steps: list[Any]) -> float | None:
         return 0.0 if stamps else None
     delta = (max(stamps) - min(stamps)).total_seconds()
     return max(0.0, float(delta))
+
+
+def _flow_outs(
+    edges: list[dict[str, Any]], from_id: str, kind: str | None = None
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for e in edges:
+        if not isinstance(e, dict):
+            continue
+        if e.get("from") != from_id:
+            continue
+        if kind is not None and e.get("kind") != kind:
+            continue
+        out.append(e)
+    return out
+
+
+def _flow_when_branch_path(
+    nodes: list[dict[str, Any]], edges: list[dict[str, Any]], gate_id: str
+) -> list[dict[str, Any]]:
+    by_id = {n["id"]: n for n in nodes if isinstance(n, dict) and n.get("id")}
+    first_edge = _flow_outs(edges, gate_id, "when")
+    if not first_edge:
+        return []
+    first = first_edge[0].get("to")
+    if not isinstance(first, str):
+        return []
+    path: list[dict[str, Any]] = []
+    cur: str | None = first
+    seen: set[str] = set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        n = by_id.get(cur)
+        if not n:
+            break
+        path.append(n)
+        if n.get("kind") == "gate":
+            nxt = _flow_outs(edges, cur, "otherwise")
+            cur = nxt[0].get("to") if nxt else None
+            continue
+        nxt = _flow_outs(edges, cur, "then")
+        cur = nxt[0].get("to") if nxt else None
+    return path
+
+
+def _flow_default_path(
+    nodes: list[dict[str, Any]], edges: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    by_id = {n["id"]: n for n in nodes if isinstance(n, dict) and n.get("id")}
+    start = next((n for n in nodes if isinstance(n, dict) and n.get("kind") == "start"), None)
+    if not start:
+        return []
+    path: list[dict[str, Any]] = []
+    cur: str | None = start.get("id")
+    seen: set[str] = set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        n = by_id.get(cur)
+        if not n:
+            break
+        path.append(n)
+        if n.get("kind") == "gate":
+            nxt = _flow_outs(edges, cur, "otherwise")
+            cur = nxt[0].get("to") if nxt else None
+            continue
+        nxt = _flow_outs(edges, cur, "then")
+        cur = nxt[0].get("to") if nxt else None
+    return path
+
+
+def _pattern_matches(pattern: str | None, haystack: str) -> bool:
+    if not pattern or not str(pattern).strip():
+        return False
+    try:
+        return re.search(str(pattern), haystack or "", re.I) is not None
+    except re.error:
+        return str(pattern).lower() in (haystack or "").lower()
+
+
+def _preceding_observe_seconds(
+    nodes: list[dict[str, Any]], edges: list[dict[str, Any]], gate_id: str
+) -> float | None:
+    """Best-effort: observeSeconds on the node immediately before the gate on default path."""
+    path = _flow_default_path(nodes, edges)
+    for i, n in enumerate(path):
+        if n.get("id") == gate_id and i > 0:
+            prev = path[i - 1]
+            secs = prev.get("observeSeconds")
+            try:
+                if secs is not None:
+                    return float(secs)
+            except (TypeError, ValueError):
+                return None
+    return None
+
+
+def _evaluate_gate_condition(
+    condition: str,
+    pattern: str | None,
+    signals: dict[str, Any],
+    observe_seconds: float | None = None,
+) -> bool:
+    if condition == "frustration_high":
+        return bool(signals.get("frustrationHigh"))
+    if condition == "confusion_named":
+        return bool(signals.get("confusionNamed"))
+    if condition == "consent_accepted":
+        return bool(signals.get("consentAccepted"))
+    if condition == "consent_rejected":
+        return bool(signals.get("consentRejected"))
+    if condition == "goal_reached":
+        return bool(signals.get("goalReached"))
+    if condition == "url_match":
+        url = signals.get("finalUrl") or ""
+        return isinstance(url, str) and _pattern_matches(pattern, url)
+    if condition == "title_match":
+        title = signals.get("finalTitle") or ""
+        return isinstance(title, str) and _pattern_matches(pattern, title)
+    if condition == "time_elapsed":
+        need = observe_seconds if isinstance(observe_seconds, (int, float)) and observe_seconds > 0 else 30.0
+        elapsed = signals.get("elapsedSeconds")
+        try:
+            return float(elapsed or 0) >= float(need)
+        except (TypeError, ValueError):
+            return False
+    return False
+
+
+def _compile_branch_remaining_task(
+    branch_nodes: list[dict[str, Any]],
+    *,
+    condition: str | None,
+    edge_kind: str = "when",
+) -> str:
+    parts: list[str] = []
+    if condition:
+        parts.append(
+            f"LIVE-GATE REPLAN ({condition} → {edge_kind}): Die Gate-Bedingung ist eingetreten. "
+            "Ignoriere den bisherigen Hauptpfad und folge nur noch diesen Schritten:"
+        )
+    else:
+        parts.append("LIVE-GATE REPLAN: Folge nur noch diesen Schritten:")
+    for n in branch_nodes:
+        kind = n.get("kind")
+        if kind in ("start", "gate"):
+            continue
+        text = (n.get("text") or n.get("label") or "").strip()
+        if not text:
+            continue
+        if kind == "observe" and n.get("observeSeconds"):
+            prefix = f"Beobachten (~{n.get('observeSeconds')}s): "
+        elif kind == "message":
+            prefix = "Hinweis: "
+        elif kind == "measure":
+            prefix = "Messung: "
+        elif kind == "abandon":
+            prefix = "Abbruch: "
+        elif kind == "success":
+            prefix = "Erfolg: "
+        elif kind == "action":
+            prefix = "Aktion: "
+        else:
+            prefix = ""
+        parts.append(f"{prefix}{text}")
+    if len(parts) < 2:
+        parts.append(
+            "Beende die Aufgabe ehrlich (done) und erkläre kurz, warum der Gate-Zweig gewählt wurde."
+        )
+    return " ".join(parts)
+
+
+def _decide_mid_run_replan(
+    flow_graph: dict[str, Any],
+    signals: dict[str, Any],
+    already: set[str],
+) -> dict[str, Any] | None:
+    """Return a replan event dict when the first matching gate should fire, else None."""
+    nodes_raw = flow_graph.get("nodes")
+    edges_raw = flow_graph.get("edges")
+    if not isinstance(nodes_raw, list) or not isinstance(edges_raw, list):
+        return None
+    nodes = [n for n in nodes_raw if isinstance(n, dict)]
+    edges = [e for e in edges_raw if isinstance(e, dict)]
+    path = _flow_default_path(nodes, edges)
+    for n in path:
+        if n.get("kind") != "gate":
+            continue
+        gate_id = n.get("id")
+        condition = n.get("gateCondition")
+        if not isinstance(gate_id, str) or not isinstance(condition, str):
+            continue
+        if gate_id in already:
+            continue
+        observe_secs = (
+            _preceding_observe_seconds(nodes, edges, gate_id)
+            if condition == "time_elapsed"
+            else None
+        )
+        matched = _evaluate_gate_condition(
+            condition, n.get("pattern"), signals, observe_secs
+        )
+        if not matched:
+            continue
+        when_nodes = _flow_when_branch_path(nodes, edges, gate_id)
+        remaining = _compile_branch_remaining_task(
+            when_nodes, condition=condition, edge_kind="when"
+        )
+        return {
+            "gateNodeId": gate_id,
+            "edgeKind": "when",
+            "condition": condition,
+            "remainingTask": remaining,
+            "at": datetime.now(timezone.utc).isoformat(),
+        }
+    return None
+
+
+def _maybe_live_gate_replan(job_id: str, signals: dict[str, Any]) -> dict[str, Any] | None:
+    """If a Live-Gate matches and we have a live agent + flow_graph, replan once per gate.
+
+    Safe under the asyncio single-threaded event loop: reads/mutates JobState without
+    awaiting (callers run between awaits in the same loop).
+    """
+    job = _jobs.get(job_id)
+    if not job or not isinstance(job.flow_graph, dict):
+        return None
+    decision = _decide_mid_run_replan(job.flow_graph, signals, job.replanned_gate_ids)
+    if not decision:
+        return None
+    gate_id = decision.get("gateNodeId")
+    remaining = decision.get("remainingTask")
+    if not isinstance(gate_id, str) or not isinstance(remaining, str) or not remaining.strip():
+        return None
+    agent = _live_agents.get(job_id)
+    if agent is None or not hasattr(agent, "add_new_task"):
+        return None
+    try:
+        agent.add_new_task(remaining.strip())
+        print(
+            f"ux-journey: job={job_id} live-gate replan gate={gate_id} "
+            f"condition={decision.get('condition')}",
+            flush=True,
+        )
+    except Exception as exc:
+        print(f"ux-journey: job={job_id} live-gate replan failed: {exc!r}", flush=True)
+        return None
+    job.replanned_gate_ids.add(gate_id)
+    job.last_replan = decision
+    job.task = remaining.strip()
+    return decision
 
 
 def _compute_gate_signals(result: dict[str, Any] | None) -> dict[str, Any]:
@@ -7103,9 +7395,18 @@ async def get_run(job_id: str) -> dict[str, Any]:
                     merged["scorecard"] = disk_sc
             live = _compute_gate_signals(merged)
             merged["gateSignals"] = live["gateSignals"]
+            cursor = dict(live.get("flowCursor") or {})
+            # Prefer mid-run cursor already attached on partial result (replan).
+            if isinstance(merged.get("flowCursor"), dict):
+                cursor = {**cursor, **merged["flowCursor"]}
+            if job.last_replan:
+                cursor["replan"] = job.last_replan
+                cursor.setdefault("activeEdgeKind", "when")
+                cursor.setdefault("activeNodeId", job.last_replan.get("gateNodeId"))
+            merged["flowCursor"] = cursor
             out["result"] = merged
             out["gateSignals"] = live["gateSignals"]
-            out["flowCursor"] = live["flowCursor"]
+            out["flowCursor"] = cursor
         if job.error:
             out["error"] = job.error
         if job.last_observed_at is not None:

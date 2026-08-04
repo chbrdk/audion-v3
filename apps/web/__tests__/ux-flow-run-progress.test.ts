@@ -155,7 +155,7 @@ describe('ux-flow-run-progress', () => {
     // Graft a time_elapsed gate for the unit test without mutating catalog.
     const timed = {
       ...flow,
-      nodes: flow.nodes.map((n) =>
+      nodes: (flow.nodes ?? []).map((n) =>
         n.id === 'n-gate' ? { ...n, gateCondition: 'time_elapsed' as const } : n,
       ),
     }
@@ -279,5 +279,35 @@ describe('ux-flow-store', () => {
     expect(upsert.id).toBe(saved.id)
     expect(listSavedUxFlows(flow.id)).toHaveLength(1)
     expect(getSavedUxFlowByTemplate(flow.id)?.name).toBe('My edit 2')
+  })
+})
+
+describe('ux-flow-replan', () => {
+  it('decides mid-run replan onto when-branch for frustration_high', async () => {
+    const { decideMidRunReplan, toFlowGraphSnapshot } = await import('../lib/ux-flow-replan')
+    const flow = getUxTestFlow('flow-feeling-gate')!
+    const decision = decideMidRunReplan(flow, { frustrationHigh: true })
+    expect(decision.shouldReplan).toBe(true)
+    expect(decision.gateNodeId).toBeTruthy()
+    expect(decision.remainingTask).toMatch(/LIVE-GATE REPLAN/)
+    expect(decision.replan?.edgeKind).toBe('when')
+    const again = decideMidRunReplan(flow, { frustrationHigh: true }, new Set([decision.gateNodeId!]))
+    expect(again.shouldReplan).toBe(false)
+    expect(toFlowGraphSnapshot(flow)?.nodes.length).toBe(flow.nodes!.length)
+  })
+})
+
+describe('moderated protocol path', () => {
+  it('stops at undecided gate then continues on choice', async () => {
+    const { buildProtocolPath } = await import('../components/ux-flow-moderated-protocol')
+    const flow = getUxTestFlow('flow-feeling-gate')!
+    const untilGate = buildProtocolPath(flow, {})
+    expect(untilGate.some((n) => n.kind === 'gate')).toBe(true)
+    expect(untilGate.at(-1)?.kind).toBe('gate')
+    const gateId = untilGate.at(-1)!.id
+    const whenPath = buildProtocolPath(flow, { [gateId]: 'when' })
+    expect(whenPath.some((n) => n.kind === 'abandon')).toBe(true)
+    const otherPath = buildProtocolPath(flow, { [gateId]: 'otherwise' })
+    expect(otherPath.some((n) => n.kind === 'action' || n.kind === 'success')).toBe(true)
   })
 })

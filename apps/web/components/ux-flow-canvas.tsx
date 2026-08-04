@@ -45,6 +45,7 @@ import { flattenFlowBlocks } from '../lib/ux-test-flow-graph'
 import { paths } from '../lib/paths'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
 import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
+import { UxFlowModeratedProtocol } from './ux-flow-moderated-protocol'
 
 const nodeTypes = { uxFlow: UxFlowRfNodeView }
 const POLL_MS = 1800
@@ -608,8 +609,8 @@ function FlowCanvasInner({
               ))}
             </div>
             <p className="audion-flow-canvas-hint">
-              Testen markiert Nodes live · Live-Gates: url/title/frustration · Save persistiert die
-              Session
+              Testen markiert Nodes live · Live-Gates + Mid-Run-Replan · Save → Postgres wenn
+              DATABASE_URL · Protokoll ohne Agent
             </p>
           </div>
           <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--tall">
@@ -663,9 +664,17 @@ function FlowCanvasInner({
   )
 }
 
-export function UxFlowDetailClient({ flow }: { flow: UxTestFlow }) {
+export function UxFlowDetailClient({
+  flow,
+  initialView,
+}: {
+  flow: UxTestFlow
+  initialView?: 'canvas' | 'list' | 'protocol'
+}) {
   const hasGraph = Boolean(flow.nodes?.length)
-  const [view, setView] = useState<'canvas' | 'list'>(hasGraph ? 'canvas' : 'list')
+  const [view, setView] = useState<'canvas' | 'list' | 'protocol'>(
+    initialView ?? (hasGraph ? 'canvas' : 'list'),
+  )
   const blocks = useMemo(() => flattenFlowBlocks(flow), [flow])
 
   return (
@@ -688,12 +697,23 @@ export function UxFlowDetailClient({ flow }: { flow: UxTestFlow }) {
         >
           Liste
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={view === 'protocol' ? 'primary' : 'subtle'}
+          onClick={() => setView('protocol')}
+          disabled={!hasGraph}
+        >
+          Protokoll
+        </Button>
       </div>
 
       {view === 'canvas' ? (
         <ReactFlowProvider>
           <FlowCanvasInner initialFlow={flow} />
         </ReactFlowProvider>
+      ) : view === 'protocol' ? (
+        <UxFlowModeratedProtocol flow={flow} />
       ) : (
         <section className="audion-flow-blocks">
           <div className="audion-flow-canvas-toolbar">

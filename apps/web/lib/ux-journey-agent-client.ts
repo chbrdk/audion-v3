@@ -99,6 +99,13 @@ export async function uxJourneyAgentStart(input: {
   task: string
   persona?: Record<string, unknown> | null
   maxSteps?: number | null
+  /** UX Test Flow graph for mid-run Live-Gate replan (agent `flow_graph`). */
+  flowGraph?: {
+    id: string
+    name?: string | null
+    nodes: unknown[]
+    edges: unknown[]
+  } | null
 }): Promise<{ jobId: string }> {
   const base = agentBase()
   if (!base) throw new Error('UX_JOURNEY_AGENT_URL is not configured')
@@ -110,6 +117,14 @@ export async function uxJourneyAgentStart(input: {
       task: input.task,
       persona: input.persona ?? undefined,
       max_steps: input.maxSteps ?? undefined,
+      flow_graph: input.flowGraph
+        ? {
+            id: input.flowGraph.id,
+            name: input.flowGraph.name ?? undefined,
+            nodes: input.flowGraph.nodes,
+            edges: input.flowGraph.edges,
+          }
+        : undefined,
     }),
     cache: 'no-store',
   })

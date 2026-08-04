@@ -78,6 +78,9 @@ export const paths = {
   uxTestFlowModelSpecPath: 'specs/domain/ux-test-flow-model.md',
   uxTestFlowsLibPath: 'apps/web/lib/ux-test-flows.ts',
   uxFlowStorePath: 'apps/web/lib/fixtures/ux-flow-store.ts',
+  uxFlowDbPath: 'apps/web/lib/db/ux-saved-flows.ts',
+  uxFlowReplanPath: 'apps/web/lib/ux-flow-replan.ts',
+  uxFlowModeratedProtocolPath: 'apps/web/components/ux-flow-moderated-protocol.tsx',
   uxFlowRunProgressPath: 'apps/web/lib/ux-flow-run-progress.ts',
   labArchetypeCorrelatePath: 'apps/web/lib/lab-archetype-correlate.ts',
   personaLabNavCorrelatePath: 'apps/web/lib/persona-lab-nav-correlate.ts',
@@ -196,6 +199,7 @@ export const paths = {
     studies: '/studies',
     studiesFlows: '/studies/flows',
     studiesFlowDetail: (flowId: string) => `/studies/flows/${flowId}`,
+    studiesFlowProtocol: (flowId: string) => `/studies/flows/${flowId}?view=protocol`,
     studyDetail: (id: string) => `/studies/${id}`,
     studyWaveDetail: (studyId: string, waveId: string) =>
       `/studies/${studyId}/waves/${waveId}`,

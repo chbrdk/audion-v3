@@ -14,6 +14,7 @@ import type {
   ProjectMember,
   TargetGroupLinkedPersona,
   UxHypothesisTemplate,
+  UxTestFlow,
   UxWaveEvaluation,
   UxWaveRunItem,
 } from '@audion-v3/contracts'
@@ -214,3 +215,16 @@ export const personaUxJourneyRuns = pgTable(
 
 export type PersonaUxJourneyRunRow = typeof personaUxJourneyRuns.$inferSelect
 export type PersonaUxJourneyRunInsert = typeof personaUxJourneyRuns.$inferInsert
+
+/** User-edited UX Test Flow snapshots (canvas Save). */
+export const uxSavedFlows = pgTable('ux_saved_flows', {
+  id: text('id').primaryKey(),
+  templateFlowId: text('template_flow_id').notNull(),
+  name: text('name').notNull(),
+  flow: jsonb('flow').$type<UxTestFlow>().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type UxSavedFlowRow = typeof uxSavedFlows.$inferSelect
+export type UxSavedFlowInsert = typeof uxSavedFlows.$inferInsert

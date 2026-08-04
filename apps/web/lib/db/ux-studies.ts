@@ -137,6 +137,7 @@ function normalizeRun(
     finalTitle: partial.finalTitle ?? null,
     deeplinkCheat: partial.deeplinkCheat ?? null,
     derivedJourneyId: partial.derivedJourneyId,
+    flowGraph: partial.flowGraph ?? null,
   }
 }
 

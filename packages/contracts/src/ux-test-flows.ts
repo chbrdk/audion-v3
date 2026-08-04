@@ -107,7 +107,7 @@ export type UxStudyFromFlowResult = {
   flowId: string
 }
 
-/** Persisted user-edited flow snapshot (fixture/native store). */
+/** Persisted user-edited flow snapshot (Postgres `ux_saved_flows` or in-memory). */
 export type UxSavedFlow = {
   id: string
   /** Catalog template id this edit descends from. */
@@ -157,8 +157,30 @@ export type UxFlowGateEvaluation = {
   gateNodeId?: string | null
 }
 
+/** Emitted once when the agent replans onto a gate branch mid-run. */
+export type UxFlowReplanEvent = {
+  gateNodeId: string
+  edgeKind: 'when' | 'otherwise'
+  condition: UxFlowGateCondition
+  remainingTask: string
+  at: string
+}
+
 export type UxFlowCursor = {
   activeNodeId?: string | null
   activeEdgeKind?: UxFlowEdgeKind | null
   gateEvaluations?: UxFlowGateEvaluation[] | null
+  /** Present after a mid-run Live-Gate replan. */
+  replan?: UxFlowReplanEvent | null
+}
+
+/**
+ * Minimal graph snapshot forwarded to the journey agent for mid-run Live-Gate replan.
+ * Same node/edge shape as `UxTestFlow` — not a second product model.
+ */
+export type UxFlowGraphSnapshot = {
+  id: string
+  name?: string | null
+  nodes: UxFlowNode[]
+  edges: UxFlowEdge[]
 }

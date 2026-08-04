@@ -22,6 +22,7 @@ import {
 import { storeCreateUxStudy, storeCreateUxWave } from './fixtures/ux-study-store'
 import { paths } from './paths'
 import { flattenFlowBlocks, nodeMap, outs } from './ux-test-flow-graph'
+import { toFlowGraphSnapshot } from './ux-flow-replan'
 
 export { flattenFlowBlocks } from './ux-test-flow-graph'
 
@@ -279,7 +280,10 @@ export async function createStudyFromUxTestFlow(
   })
 
   const waveKey = (payload.waveKey ?? pack.defaultWaveKey).trim() || pack.defaultWaveKey
-  const runs = packRunsToWaveRuns(pack)
+  const graph = toFlowGraphSnapshot(flow)
+  const runs = packRunsToWaveRuns(pack).map((r) =>
+    graph ? { ...r, flowGraph: graph } : r,
+  )
   // Ensure URL resolves (absolute keys ok)
   resolveScenarioPackUrl(pack.targetUrlKey)
 
@@ -323,7 +327,7 @@ export async function createStudyFromUxTestFlow(
       },
       notes: [
         `Seeded from UX Test Flow ${flow.id}`,
-        'Compiled V1 — gates embedded in task text; live mid-run gates = Phase 2.',
+        'Compiled V1 + Phase 3 mid-run Live-Gate replan when flowGraph is present.',
       ],
     },
   }

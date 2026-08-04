@@ -1,5 +1,7 @@
 /** UX Study / Wave contracts — Testbirds-like study workflow (Phase 3). */
 
+import type { UxFlowGraphSnapshot } from './ux-test-flows'
+
 export type UxStudyStatus = 'draft' | 'active' | 'archived'
 export type UxWaveStatus = 'draft' | 'running' | 'complete' | 'failed'
 export type UxHypothesisVerdict =
@@ -140,6 +142,12 @@ export type UxWaveRunItem = {
   deeplinkCheat?: boolean | null
   /** Set after Convert to Journey (fixture or live). */
   derivedJourneyId?: string | null
+  /**
+   * UX Test Flow graph snapshot for mid-run Live-Gate replan.
+   * Set when the wave was created from a flow; forwarded to the journey agent as `flow_graph`.
+   * @see specs/domain/ux-test-flow-model.md — Mid-run agent replan
+   */
+  flowGraph?: UxFlowGraphSnapshot | null
 }
 
 export type SoftScoreEntry = {

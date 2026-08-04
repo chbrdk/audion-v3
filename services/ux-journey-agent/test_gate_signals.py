@@ -118,3 +118,66 @@ def test_gate_signals_elapsed_seconds():
         }
     )
     assert out["gateSignals"]["elapsedSeconds"] == 47.0
+
+
+def test_decide_mid_run_replan_frustration_when_branch():
+    flow_graph = {
+        "id": "flow-feeling-gate",
+        "nodes": [
+            {"id": "n-start", "kind": "start", "label": "Start"},
+            {"id": "n-orient", "kind": "prompt", "label": "Orient", "text": "Schau dich um."},
+            {
+                "id": "n-feel-gate",
+                "kind": "gate",
+                "label": "Feel",
+                "gateCondition": "frustration_high",
+            },
+            {
+                "id": "n-early-exit",
+                "kind": "abandon",
+                "label": "Exit",
+                "text": "Stoppe und erkläre die Frustration.",
+            },
+            {"id": "n-task", "kind": "action", "label": "Task", "text": "Finde den CTA."},
+            {"id": "n-ok", "kind": "success", "label": "OK", "text": "Fertig."},
+        ],
+        "edges": [
+            {"id": "e1", "from": "n-start", "to": "n-orient", "kind": "then"},
+            {"id": "e2", "from": "n-orient", "to": "n-feel-gate", "kind": "then"},
+            {"id": "e3", "from": "n-feel-gate", "to": "n-early-exit", "kind": "when"},
+            {"id": "e4", "from": "n-feel-gate", "to": "n-task", "kind": "otherwise"},
+            {"id": "e5", "from": "n-task", "to": "n-ok", "kind": "then"},
+        ],
+    }
+    decision = agent_main._decide_mid_run_replan(
+        flow_graph, {"frustrationHigh": True}, set()
+    )
+    assert decision is not None
+    assert decision["gateNodeId"] == "n-feel-gate"
+    assert decision["edgeKind"] == "when"
+    assert decision["condition"] == "frustration_high"
+    assert "Stoppe und erkläre" in decision["remainingTask"]
+    assert "LIVE-GATE REPLAN" in decision["remainingTask"]
+    # One-shot: already replanned skips
+    again = agent_main._decide_mid_run_replan(
+        flow_graph, {"frustrationHigh": True}, {"n-feel-gate"}
+    )
+    assert again is None
+
+
+def test_decide_mid_run_replan_no_match():
+    flow_graph = {
+        "id": "f",
+        "nodes": [
+            {"id": "n-start", "kind": "start", "label": "S"},
+            {"id": "n-g", "kind": "gate", "label": "G", "gateCondition": "goal_reached"},
+            {"id": "n-ok", "kind": "success", "label": "OK", "text": "done"},
+            {"id": "n-cont", "kind": "action", "label": "C", "text": "continue"},
+        ],
+        "edges": [
+            {"id": "e1", "from": "n-start", "to": "n-g", "kind": "then"},
+            {"id": "e2", "from": "n-g", "to": "n-ok", "kind": "when"},
+            {"id": "e3", "from": "n-g", "to": "n-cont", "kind": "otherwise"},
+        ],
+    }
+    assert agent_main._decide_mid_run_replan(flow_graph, {"goalReached": False}, set()) is None
