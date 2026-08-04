@@ -12,11 +12,14 @@ import type {
   UxTestFlow,
 } from '@audion-v3/contracts'
 import { flattenFlowBlocks } from './ux-test-flow-graph'
+import type { FlowNodeRunState } from './ux-flow-run-progress'
 
 export type UxFlowRfNodeData = {
   flowNode: UxFlowNode
   /** Inline edit from inside the node (n8n-style). */
   onUpdate?: (nodeId: string, patch: Partial<UxFlowNode>) => void
+  /** Live run highlight from in-flow Testen. */
+  runState?: FlowNodeRunState
 }
 
 export type UxFlowRfEdgeData = {

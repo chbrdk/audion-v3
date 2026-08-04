@@ -77,14 +77,24 @@ Phase 2: agent evaluates gates live and chooses edges.
 - Create Study may POST an inline `flow` snapshot; server validates then compiles (V1).
 - All 10 catalog templates ship with full graphs (`compileReady`).
 
+## In-flow live run (progress overlay)
+
+- Canvas **Testen** creates a Study+Wave from the current snapshot, starts the wave (agent), and polls `GET /api/ux-journey-agent/run/{jobId}`.
+- Node states overlay: `idle | active | done | skipped | error` (heuristic cursor on the default/`otherwise` path; URL/title gates advance when `finalUrl`/step targets match).
+- Single-run cursor (run A); parallel persona runs are not dual-tracked in this slice.
+- **Stop** best-effort cancels via agent cancel proxy.
+- Live gates (agent chooses `when`/`otherwise` mid-run) remain Phase 2.
+
 ## Surfaces / API
 
 | Surface | Role |
 |---------|------|
 | `GET /studies/flows` | Template gallery |
-| `GET /studies/flows/[flowId]` | Block list + canvas + create CTA |
+| `GET /studies/flows/[flowId]` | Block list + canvas + create CTA + in-flow Testen |
 | `GET /api/studies/from-flow` | List summaries |
 | `POST /api/studies/from-flow` | `{ flowId?, flow?, name?, projectId?, waveKey? }` → Study+Wave |
+| `POST /api/studies/…/waves/…/start` | Start agent jobs for wave runs |
+| `GET /api/ux-journey-agent/run/{jobId}` | Poll job status + partial steps |
 
 `flowId` **or** `flow` required. If both, `flow` wins for the graph; `flowId` is id fallback when `flow.id` is missing.
 
@@ -92,4 +102,5 @@ Phase 2: agent evaluates gates live and chooses edges.
 
 - DB-persisted user-edited flows  
 - Agent mid-run gate engine  
-- Moderated-only protocol UI without agent
+- Moderated-only protocol UI without agent  
+- Dual cursors for parallel runs

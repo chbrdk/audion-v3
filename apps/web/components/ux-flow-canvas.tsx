@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import {
   Background,
   Controls,
@@ -14,7 +15,12 @@ import {
   type OnSelectionChangeParams,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import type { UxFlowNode, UxFlowNodeKind, UxTestFlow } from '@audion-v3/contracts'
+import type {
+  UxFlowNode,
+  UxFlowNodeKind,
+  UxStudyFromFlowResult,
+  UxTestFlow,
+} from '@audion-v3/contracts'
 import { Alert, Button, Chip, Text } from '@msqdx/ui'
 import {
   UX_FLOW_NODE_KINDS,
@@ -26,11 +32,30 @@ import {
   type UxFlowRfEdge,
   type UxFlowRfNode,
 } from '../lib/ux-flow-canvas'
+import {
+  mapJobToFlowNodeStates,
+  type FlowNodeRunState,
+} from '../lib/ux-flow-run-progress'
 import { flattenFlowBlocks } from '../lib/ux-test-flow-graph'
+import { paths } from '../lib/paths'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
 import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
 
 const nodeTypes = { uxFlow: UxFlowRfNodeView }
+const POLL_MS = 1800
+
+type AgentJobPoll = {
+  jobId: string
+  status: string
+  error?: string | null
+  result?: {
+    success?: boolean | null
+    steps?: Array<{ action?: string; target?: string; result?: string }>
+    finalUrl?: string | null
+    finalTitle?: string | null
+    error?: string | null
+  } | null
+}
 
 function FlowCanvasInner({
   initialFlow,
@@ -43,8 +68,29 @@ function FlowCanvasInner({
   const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges)
   const [dirty, setDirty] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [runStates, setRunStates] = useState<Record<string, FlowNodeRunState>>({})
+  const [runBusy, setRunBusy] = useState(false)
+  const [runError, setRunError] = useState<string | null>(null)
+  const [runMeta, setRunMeta] = useState<{
+    studyId: string
+    waveId: string
+    jobId: string
+    status: string
+    stepCount: number
+  } | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const jobIdRef = useRef<string | null>(null)
 
   const markDirty = useCallback(() => setDirty(true), [])
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }, [])
+
+  useEffect(() => () => stopPolling(), [stopPolling])
 
   const onUpdateNode = useCallback(
     (nodeId: string, patch: Partial<UxFlowNode>) => {
@@ -73,14 +119,153 @@ function FlowCanvasInner({
         data: {
           ...n.data,
           onUpdate: onUpdateNode,
+          runState: runStates[n.id] ?? 'idle',
         },
       })),
-    [nodes, onUpdateNode],
+    [nodes, onUpdateNode, runStates],
   )
 
   const getSnapshot = useCallback((): UxTestFlow => {
     return rfToUxTestFlow(templateRef.current, nodes as UxFlowRfNode[], edges as UxFlowRfEdge[])
   }, [nodes, edges])
+
+  const applyJobToStates = useCallback(
+    (job: AgentJobPoll) => {
+      const flow = getSnapshot()
+      const next = mapJobToFlowNodeStates(flow, {
+        status: job.status,
+        steps: job.result?.steps ?? [],
+        finalUrl: job.result?.finalUrl,
+        finalTitle: job.result?.finalTitle,
+        success: job.result?.success,
+        error: job.error ?? job.result?.error,
+      })
+      setRunStates(next)
+      setRunMeta((m) =>
+        m
+          ? {
+              ...m,
+              status: job.status,
+              stepCount: job.result?.steps?.length ?? 0,
+            }
+          : m,
+      )
+    },
+    [getSnapshot],
+  )
+
+  const pollOnce = useCallback(async (jobId: string) => {
+    const res = await fetch(paths.routes.apiUxJourneyAgentRun(jobId), {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      throw new Error(`Job poll failed (${res.status}): ${detail.slice(0, 200)}`)
+    }
+    return (await res.json()) as AgentJobPoll
+  }, [])
+
+  const startPolling = useCallback(
+    (jobId: string) => {
+      stopPolling()
+      jobIdRef.current = jobId
+      const tick = async () => {
+        try {
+          const job = await pollOnce(jobId)
+          applyJobToStates(job)
+          if (job.status === 'complete' || job.status === 'error') {
+            stopPolling()
+            setRunBusy(false)
+          }
+        } catch (e) {
+          setRunError(e instanceof Error ? e.message : String(e))
+          stopPolling()
+          setRunBusy(false)
+        }
+      }
+      void tick()
+      pollRef.current = setInterval(() => void tick(), POLL_MS)
+    },
+    [applyJobToStates, pollOnce, stopPolling],
+  )
+
+  const onTest = useCallback(async () => {
+    setRunError(null)
+    setRunBusy(true)
+    stopPolling()
+    setRunStates({})
+    try {
+      const flow = getSnapshot()
+      const createRes = await fetch(paths.routes.apiStudiesFromFlow, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flowId: flow.id,
+          flow,
+          name: `${flow.name} · live test`,
+          waveKey: `live-${Date.now().toString(36)}`,
+        }),
+      })
+      const created = (await createRes.json()) as UxStudyFromFlowResult & { error?: string }
+      if (!createRes.ok) {
+        throw new Error(created.error || `Create failed (${createRes.status})`)
+      }
+      const studyId = created.study.id
+      const waveId = created.wave.id
+      const startRes = await fetch(paths.routes.apiStudyWaveStart(studyId, waveId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: true }),
+      })
+      const started = (await startRes.json()) as {
+        error?: string
+        started?: Array<{ runKey: string; jobId: string | null; skipped?: boolean }>
+      }
+      if (!startRes.ok) {
+        throw new Error(started.error || `Start failed (${startRes.status})`)
+      }
+      const jobId =
+        started.started?.find((s) => s.jobId && !String(s.jobId).startsWith('job-local-'))
+          ?.jobId ||
+        started.started?.find((s) => s.jobId)?.jobId ||
+        null
+      if (!jobId) {
+        throw new Error(
+          'No agent jobId — is UX_JOURNEY_AGENT_URL configured? Study was created; open wave to retry.',
+        )
+      }
+      setRunMeta({
+        studyId,
+        waveId,
+        jobId,
+        status: 'running',
+        stepCount: 0,
+      })
+      // Seed start as active
+      applyJobToStates({ jobId, status: 'running', result: { steps: [] } })
+      startPolling(jobId)
+    } catch (e) {
+      setRunError(e instanceof Error ? e.message : String(e))
+      setRunBusy(false)
+    }
+  }, [applyJobToStates, getSnapshot, startPolling, stopPolling])
+
+  const onStop = useCallback(async () => {
+    const jobId = jobIdRef.current || runMeta?.jobId
+    if (!jobId) return
+    stopPolling()
+    setRunBusy(false)
+    try {
+      await fetch(`${paths.routes.apiUxJourneyAgentRun(jobId)}/cancel`, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+      })
+    } catch {
+      /* best-effort */
+    }
+    setRunMeta((m) => (m ? { ...m, status: 'cancelled' } : m))
+  }, [runMeta?.jobId, stopPolling])
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -149,6 +334,7 @@ function FlowCanvasInner({
     setEdges(next.edges)
     setSelectedId(null)
     setDirty(false)
+    setRunStates({})
   }, [setNodes, setEdges])
 
   const hasGraph = Boolean(initialFlow.nodes?.length)
@@ -156,6 +342,17 @@ function FlowCanvasInner({
   return (
     <div className="audion-flow-canvas-shell">
       <div className="audion-flow-canvas-toolbar">
+        <Button
+          type="button"
+          size="md"
+          onClick={() => void onTest()}
+          disabled={!hasGraph || runBusy}
+        >
+          {runBusy ? 'Running…' : 'Testen'}
+        </Button>
+        <Button type="button" size="sm" variant="subtle" onClick={() => void onStop()} disabled={!runBusy}>
+          Stop
+        </Button>
         <CreateStudyFromFlowButton
           flowId={initialFlow.id}
           flowName={initialFlow.name}
@@ -175,11 +372,35 @@ function FlowCanvasInner({
           size="sm"
           variant="ghost"
           onClick={deleteSelected}
-          disabled={!selectedId}
+          disabled={!selectedId || runBusy}
         >
           Delete node
         </Button>
       </div>
+
+      {runMeta ? (
+        <div className="audion-flow-run-strip">
+          <Chip size="sm" static>
+            {runMeta.status}
+          </Chip>
+          <span>
+            steps {runMeta.stepCount} · job {runMeta.jobId.slice(0, 10)}…
+          </span>
+          <Link href={paths.routes.studyWaveDetail(runMeta.studyId, runMeta.waveId)}>
+            Open wave
+          </Link>
+          {runBusy && runMeta.jobId ? (
+            // Live frame refreshes as steps advance (cache-bust).
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className="audion-flow-live-thumb"
+              src={`${paths.routes.apiUxJourneyAgentLive(runMeta.jobId)}?t=${runMeta.stepCount}`}
+              alt="Live viewport"
+            />
+          ) : null}
+        </div>
+      ) : null}
+      {runError ? <p className="audion-flow-create-error">{runError}</p> : null}
 
       {!hasGraph ? (
         <Alert tone="info">
@@ -200,13 +421,14 @@ function FlowCanvasInner({
                   size="sm"
                   variant="subtle"
                   onClick={() => addNode(kind)}
+                  disabled={runBusy}
                 >
                   + {kind}
                 </Button>
               ))}
             </div>
             <p className="audion-flow-canvas-hint">
-              Felder direkt in der Node bearbeiten · Gates: rechte Ports wenn / sonst
+              Testen startet den Agenten und markiert Nodes live · Gates bleiben V1 (Task-Text)
             </p>
           </div>
           <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--tall">
@@ -237,6 +459,7 @@ function FlowCanvasInner({
               nodeTypes={nodeTypes}
               fitView
               deleteKeyCode={null}
+              nodesDraggable={!runBusy}
               connectionLineStyle={{ strokeWidth: 2 }}
               defaultEdgeOptions={{
                 type: 'smoothstep',

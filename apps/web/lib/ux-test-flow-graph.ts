@@ -54,3 +54,52 @@ export function flattenFlowBlocks(flow: UxTestFlow): Array<{
   visit(start.id, 0, 'main', new Set())
   return out
 }
+
+/** Optimistic execution path: at gates follow `otherwise` (continue). */
+export function defaultExecutionPath(flow: UxTestFlow): UxFlowNode[] {
+  const nodes = flow.nodes ?? []
+  const edges = flow.edges ?? []
+  if (!nodes.length) return []
+  const byId = nodeMap(nodes)
+  const start = nodes.find((n) => n.kind === 'start')
+  if (!start) return []
+  const path: UxFlowNode[] = []
+  let id: string | null = start.id
+  const seen = new Set<string>()
+  while (id && !seen.has(id)) {
+    seen.add(id)
+    const n = byId.get(id)
+    if (!n) break
+    path.push(n)
+    if (n.kind === 'gate') {
+      id = outs(edges, id, 'otherwise')[0]?.to ?? null
+      continue
+    }
+    id = outs(edges, id, 'then')[0]?.to ?? null
+  }
+  return path
+}
+
+/** Nodes after a gate on the `when` branch (not including the gate). */
+export function whenBranchPath(flow: UxTestFlow, gateId: string): UxFlowNode[] {
+  const nodes = flow.nodes ?? []
+  const edges = flow.edges ?? []
+  const byId = nodeMap(nodes)
+  const first = outs(edges, gateId, 'when')[0]?.to
+  if (!first) return []
+  const path: UxFlowNode[] = []
+  let id: string | null = first
+  const seen = new Set<string>()
+  while (id && !seen.has(id)) {
+    seen.add(id)
+    const n = byId.get(id)
+    if (!n) break
+    path.push(n)
+    if (n.kind === 'gate') {
+      id = outs(edges, id, 'otherwise')[0]?.to ?? null
+      continue
+    }
+    id = outs(edges, id, 'then')[0]?.to ?? null
+  }
+  return path
+}

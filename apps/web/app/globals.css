@@ -4371,9 +4371,20 @@ main { min-height: 100vh; }
 .audion-flow-canvas-viewport--tall{height:min(78vh,760px)}
 .audion-flow-rf-node{position:relative;width:260px;border-radius:6px;border:1px solid #2b2b2b;background:#1f1f1f;color:#f2f2f2;font-size:.75rem;box-shadow:0 4px 14px rgba(0,0,0,.22);overflow:visible}
 .audion-flow-rf-node.is-selected{box-shadow:0 0 0 2px #e8a23a,0 4px 14px rgba(0,0,0,.28)}
-.audion-flow-rf-node-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.4rem .55rem;border-bottom:1px solid rgba(255,255,255,.08);background:#2a2a2a;border-radius:6px 6px 0 0}
+.audion-flow-rf-node--run-active{box-shadow:0 0 0 2px #e8a23a,0 0 18px rgba(232,162,58,.45);animation:audion-flow-pulse 1.4s ease-in-out infinite}
+.audion-flow-rf-node--run-done{box-shadow:0 0 0 2px #3d9a6a}
+.audion-flow-rf-node--run-error{box-shadow:0 0 0 2px #c45c4a}
+.audion-flow-rf-node--run-skipped{opacity:.55}
+@keyframes audion-flow-pulse{0%,100%{box-shadow:0 0 0 2px #e8a23a,0 0 10px rgba(232,162,58,.35)}50%{box-shadow:0 0 0 2px #e8a23a,0 0 22px rgba(232,162,58,.55)}}
+.audion-flow-rf-node-head{display:flex;align-items:center;justify-content:space-between;gap:.35rem;padding:.4rem .55rem;border-bottom:1px solid rgba(255,255,255,.08);background:#2a2a2a;border-radius:6px 6px 0 0}
 .audion-flow-rf-node-kind{font-weight:700;letter-spacing:.02em;text-transform:uppercase;font-size:.68rem}
-.audion-flow-rf-node-id{opacity:.55;font-size:.62rem;max-width:9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.audion-flow-rf-node-run{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;opacity:.85;color:#e8a23a;min-width:2.5rem;text-align:center}
+.audion-flow-rf-node--run-done .audion-flow-rf-node-run{color:#6dce9a}
+.audion-flow-rf-node--run-error .audion-flow-rf-node-run{color:#e08a7a}
+.audion-flow-rf-node--run-skipped .audion-flow-rf-node-run{color:#999}
+.audion-flow-rf-node-id{opacity:.55;font-size:.62rem;max-width:7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.audion-flow-run-strip{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin:0 0 1rem;padding:.55rem .75rem;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#f7f5f1;font-size:.85rem}
+.audion-flow-live-thumb{width:120px;height:72px;object-fit:cover;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:#111}
 .audion-flow-rf-node-body{display:grid;gap:.4rem;padding:.5rem .55rem .65rem}
 .audion-flow-rf-field{display:grid;gap:.15rem;margin:0}
 .audion-flow-rf-field>span{font-size:.62rem;text-transform:uppercase;letter-spacing:.04em;opacity:.65}

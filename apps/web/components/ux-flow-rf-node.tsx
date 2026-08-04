@@ -26,6 +26,7 @@ function stopDrag(e: MouseEvent) {
 function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
   const flowNode = data.flowNode
   const onUpdate = data.onUpdate
+  const runState = data.runState ?? 'idle'
   const kind = flowNode.kind
 
   const patch = useCallback(
@@ -57,7 +58,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
 
   return (
     <div
-      className={`audion-flow-rf-node audion-flow-rf-node--${kind}${selected ? ' is-selected' : ''}`}
+      className={`audion-flow-rf-node audion-flow-rf-node--${kind} audion-flow-rf-node--run-${runState}${selected ? ' is-selected' : ''}`}
     >
       <Handle
         type="target"
@@ -68,6 +69,9 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
 
       <header className="audion-flow-rf-node-head">
         <span className="audion-flow-rf-node-kind">{KIND_LABEL[kind]}</span>
+        <span className="audion-flow-rf-node-run" data-run={runState}>
+          {runState === 'idle' ? '' : runState}
+        </span>
         <span className="audion-flow-rf-node-id" title={id}>
           {id}
         </span>
