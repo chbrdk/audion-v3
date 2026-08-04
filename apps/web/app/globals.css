@@ -4357,55 +4357,130 @@ main { min-height: 100vh; }
 .audion-flow-block-list{list-style:none;margin:1rem 0 0;padding:0;display:grid;gap:.75rem}
 .audion-flow-block-meta{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 .35rem}
 .audion-flow-block-text{margin:.35rem 0 0;font-size:.9rem}
-.audion-flow-block-panel--list{padding:.75rem 1rem;border:1px solid var(--color-border,rgba(0,0,0,.12));border-radius:8px;background:var(--color-bg,#fff)}
+.audion-flow-block-panel--list{padding:.75rem 1rem;border:1px solid var(--line,var(--color-border,rgba(0,0,0,.12)));border-radius:8px;background:var(--surface-1,var(--color-bg,#fff))}
 .audion-flow-create{margin:0 0 1.25rem}
 .audion-flow-create-hint,.audion-flow-create-error{margin:.35rem 0 0;font-size:.85rem}
-.audion-flow-create-error{color:var(--color-danger,#b00020)}
+.audion-flow-create-error{color:var(--danger,var(--color-danger,#b00020))}
 .audion-flow-view-toggle{display:flex;gap:.35rem;margin:0 0 1rem}
 .audion-flow-canvas-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin:0 0 1rem}
 .audion-flow-canvas-main{display:grid;gap:.75rem;min-width:0}
 .audion-flow-canvas-main--full{width:100%}
 .audion-flow-palette-row{display:flex;flex-wrap:wrap;gap:.35rem;margin:.35rem 0 0}
 .audion-flow-canvas-hint{margin:.5rem 0 0;font-size:.8rem;opacity:.75}
-.audion-flow-canvas-viewport{height:min(70vh,640px);border:1px solid var(--color-border,rgba(0,0,0,.12));border-radius:8px;overflow:hidden;background:#f3f1ec}
-.audion-flow-canvas-viewport--tall{height:min(78vh,760px)}
-.audion-flow-rf-node{position:relative;width:260px;border-radius:6px;border:1px solid #2b2b2b;background:#1f1f1f;color:#f2f2f2;font-size:.75rem;box-shadow:0 4px 14px rgba(0,0,0,.22);overflow:visible}
-.audion-flow-rf-node.is-selected{box-shadow:0 0 0 2px #e8a23a,0 4px 14px rgba(0,0,0,.28)}
-.audion-flow-rf-node--run-active{box-shadow:0 0 0 2px #e8a23a,0 0 18px rgba(232,162,58,.45);animation:audion-flow-pulse 1.4s ease-in-out infinite}
-.audion-flow-rf-node--run-done{box-shadow:0 0 0 2px #3d9a6a}
-.audion-flow-rf-node--run-error{box-shadow:0 0 0 2px #c45c4a}
+.audion-flow-canvas-viewport{
+  --flow-viewport-bg:color-mix(in srgb,var(--surface-2,var(--bg0,#f3f1ec)) 88%,var(--ink, #111) 4%);
+  height:min(76vh,720px);
+  border:1px solid var(--line,var(--color-border,rgba(0,0,0,.12)));
+  border-radius:8px;
+  overflow:hidden;
+  background:var(--flow-viewport-bg);
+}
+.audion-flow-canvas-viewport--tall{height:min(82vh,820px)}
+.audion-flow-canvas-viewport .react-flow{background:transparent}
+.audion-flow-canvas-viewport .react-flow__background{background:transparent!important}
+.audion-flow-canvas-viewport .react-flow__controls{
+  border:1px solid var(--line);
+  border-radius:6px;
+  overflow:hidden;
+  box-shadow:none;
+  background:var(--surface-1,var(--surface-2));
+}
+.audion-flow-canvas-viewport .react-flow__controls-button{
+  background:var(--surface-1,var(--surface-2));
+  border-bottom:1px solid var(--line);
+  fill:var(--fg,var(--ink));
+}
+.audion-flow-canvas-viewport .react-flow__minimap{
+  background:color-mix(in srgb,var(--surface-2) 92%,transparent);
+  border:1px solid var(--line);
+  border-radius:6px;
+}
+.audion-flow-rf-node{
+  --flow-node-bg:color-mix(in srgb,var(--surface-2, #1f1f1f) 94%,var(--ink));
+  --flow-node-border:color-mix(in srgb,var(--line, #2b2b2b) 85%,var(--ink));
+  --flow-node-fg:var(--fg,var(--ink,#f2f2f2));
+  --flow-node-head-border:color-mix(in srgb,var(--line) 55%,transparent);
+  --flow-input-bg:color-mix(in srgb,var(--bg0, #141414) 88%,var(--surface-2));
+  --flow-input-border:color-mix(in srgb,var(--line) 70%,transparent);
+  --flow-accent:var(--accent,#e8a23a);
+  --flow-ok:var(--ok,#3d9a6a);
+  --flow-danger:var(--danger,#c45c4a);
+  position:relative;
+  width:260px;
+  border-radius:6px;
+  border:1px solid var(--flow-node-border);
+  background:var(--flow-node-bg);
+  color:var(--flow-node-fg);
+  font-size:.75rem;
+  box-shadow:0 4px 14px color-mix(in srgb,var(--ink,#000) 14%,transparent);
+  overflow:visible;
+}
+.audion-flow-rf-node.is-selected{box-shadow:0 0 0 2px var(--flow-accent),0 4px 14px color-mix(in srgb,var(--ink,#000) 18%,transparent)}
+.audion-flow-rf-node--run-active{box-shadow:0 0 0 2px var(--flow-accent),0 0 18px color-mix(in srgb,var(--flow-accent) 45%,transparent);animation:audion-flow-pulse 1.4s ease-in-out infinite}
+.audion-flow-rf-node--run-done{box-shadow:0 0 0 2px var(--flow-ok)}
+.audion-flow-rf-node--run-error{box-shadow:0 0 0 2px var(--flow-danger)}
 .audion-flow-rf-node--run-skipped{opacity:.55}
-@keyframes audion-flow-pulse{0%,100%{box-shadow:0 0 0 2px #e8a23a,0 0 10px rgba(232,162,58,.35)}50%{box-shadow:0 0 0 2px #e8a23a,0 0 22px rgba(232,162,58,.55)}}
-.audion-flow-rf-node-head{display:flex;align-items:center;justify-content:space-between;gap:.35rem;padding:.4rem .55rem;border-bottom:1px solid rgba(255,255,255,.08);background:#2a2a2a;border-radius:6px 6px 0 0}
+.audion-flow-rf-node--run-b-active{outline:2px dashed color-mix(in srgb,var(--flow-accent) 70%,var(--ok,#3d9a6a));outline-offset:2px}
+.audion-flow-rf-node--run-b-done{outline:2px solid color-mix(in srgb,var(--flow-ok) 55%,var(--accent));outline-offset:2px}
+.audion-flow-rf-node--run-b-error{outline:2px solid color-mix(in srgb,var(--flow-danger) 70%,var(--accent));outline-offset:2px}
+@keyframes audion-flow-pulse{
+  0%,100%{box-shadow:0 0 0 2px var(--flow-accent),0 0 10px color-mix(in srgb,var(--flow-accent) 35%,transparent)}
+  50%{box-shadow:0 0 0 2px var(--flow-accent),0 0 22px color-mix(in srgb,var(--flow-accent) 55%,transparent)}
+}
+.audion-flow-rf-node-head{
+  display:flex;align-items:center;justify-content:space-between;gap:.35rem;
+  padding:.4rem .55rem;
+  border-bottom:1px solid var(--flow-node-head-border);
+  background:color-mix(in srgb,var(--surface-2) 70%,var(--ink) 8%);
+  border-radius:6px 6px 0 0;
+}
 .audion-flow-rf-node-kind{font-weight:700;letter-spacing:.02em;text-transform:uppercase;font-size:.68rem}
-.audion-flow-rf-node-run{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;opacity:.85;color:#e8a23a;min-width:2.5rem;text-align:center}
-.audion-flow-rf-node--run-done .audion-flow-rf-node-run{color:#6dce9a}
-.audion-flow-rf-node--run-error .audion-flow-rf-node-run{color:#e08a7a}
-.audion-flow-rf-node--run-skipped .audion-flow-rf-node-run{color:#999}
+.audion-flow-rf-node-run{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;opacity:.85;color:var(--flow-accent);min-width:2.5rem;text-align:center}
+.audion-flow-rf-node--run-done .audion-flow-rf-node-run{color:var(--flow-ok)}
+.audion-flow-rf-node--run-error .audion-flow-rf-node-run{color:var(--flow-danger)}
+.audion-flow-rf-node--run-skipped .audion-flow-rf-node-run{color:var(--muted,#999)}
 .audion-flow-rf-node-id{opacity:.55;font-size:.62rem;max-width:7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.audion-flow-run-strip{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin:0 0 1rem;padding:.55rem .75rem;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#f7f5f1;font-size:.85rem}
-.audion-flow-live-thumb{width:120px;height:72px;object-fit:cover;border-radius:4px;border:1px solid rgba(0,0,0,.12);background:#111}
+.audion-flow-run-strip{
+  display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;
+  margin:0 0 1rem;padding:.55rem .75rem;border-radius:8px;
+  border:1px solid var(--line,rgba(0,0,0,.1));
+  background:color-mix(in srgb,var(--surface-2, #f7f5f1) 92%,var(--ink));
+  font-size:.85rem;
+}
+.audion-flow-live-thumb{
+  width:168px;height:100px;object-fit:cover;border-radius:4px;
+  border:1px solid var(--line,rgba(0,0,0,.12));
+  background:color-mix(in srgb,var(--bg0,#111) 90%,var(--ink));
+}
 .audion-flow-rf-node-body{display:grid;gap:.4rem;padding:.5rem .55rem .65rem}
 .audion-flow-rf-field{display:grid;gap:.15rem;margin:0}
 .audion-flow-rf-field>span{font-size:.62rem;text-transform:uppercase;letter-spacing:.04em;opacity:.65}
 .audion-flow-rf-field--inline{grid-template-columns:1fr auto;align-items:center}
-.audion-flow-rf-input{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.14);border-radius:4px;background:#141414;color:#f5f5f5;padding:.28rem .4rem;font:inherit}
-.audion-flow-rf-input:focus{outline:1px solid #e8a23a;border-color:#e8a23a}
+.audion-flow-rf-input{
+  width:100%;box-sizing:border-box;
+  border:1px solid var(--flow-input-border);
+  border-radius:4px;
+  background:var(--flow-input-bg);
+  color:var(--flow-node-fg);
+  padding:.28rem .4rem;font:inherit;
+}
+.audion-flow-rf-input:focus{outline:1px solid var(--flow-accent);border-color:var(--flow-accent)}
 .audion-flow-rf-input--narrow{width:4.5rem}
 .audion-flow-rf-textarea{resize:vertical;min-height:3.2rem;line-height:1.35}
 .audion-flow-rf-select{appearance:auto}
-.audion-flow-rf-handle{width:10px;height:10px;border:2px solid #1f1f1f;background:#e8a23a}
-.audion-flow-rf-handle--when{background:#3d9a6a}
-.audion-flow-rf-handle--otherwise{background:#c45c4a}
+.audion-flow-rf-handle{width:10px;height:10px;border:2px solid var(--flow-node-bg);background:var(--flow-accent)}
+.audion-flow-rf-handle--when{background:var(--flow-ok)}
+.audion-flow-rf-handle--otherwise{background:var(--flow-danger)}
 .audion-flow-rf-port-label{position:absolute;right:14px;font-size:.58rem;opacity:.7;pointer-events:none;text-transform:uppercase}
 .audion-flow-rf-port-label--when{top:calc(38% - .55rem)}
 .audion-flow-rf-port-label--otherwise{top:calc(72% - .55rem)}
-.audion-flow-rf-node--start .audion-flow-rf-node-head{background:#1f4d3a}
-.audion-flow-rf-node--prompt .audion-flow-rf-node-head{background:#2c3e50}
-.audion-flow-rf-node--observe .audion-flow-rf-node-head{background:#5c4a1f}
-.audion-flow-rf-node--action .audion-flow-rf-node-head{background:#6b3a1f}
-.audion-flow-rf-node--gate .audion-flow-rf-node-head{background:#5a2a32}
-.audion-flow-rf-node--message .audion-flow-rf-node-head{background:#3a3a3a}
-.audion-flow-rf-node--success .audion-flow-rf-node-head{background:#1f5a38}
-.audion-flow-rf-node--abandon .audion-flow-rf-node-head{background:#5a321f}
-.audion-flow-rf-node--measure .audion-flow-rf-node-head{background:#1f455a}
+.audion-flow-rf-node--start .audion-flow-rf-node-head{background:color-mix(in srgb,var(--ok,#1f4d3a) 42%,var(--surface-2))}
+.audion-flow-rf-node--prompt .audion-flow-rf-node-head{background:color-mix(in srgb,#2c3e50 38%,var(--surface-2))}
+.audion-flow-rf-node--observe .audion-flow-rf-node-head{background:color-mix(in srgb,#b8860b 32%,var(--surface-2))}
+.audion-flow-rf-node--action .audion-flow-rf-node-head{background:color-mix(in srgb,#c45c1a 34%,var(--surface-2))}
+.audion-flow-rf-node--gate .audion-flow-rf-node-head{background:color-mix(in srgb,var(--danger,#5a2a32) 36%,var(--surface-2))}
+.audion-flow-rf-node--message .audion-flow-rf-node-head{background:color-mix(in srgb,var(--muted,#3a3a3a) 28%,var(--surface-2))}
+.audion-flow-rf-node--success .audion-flow-rf-node-head{background:color-mix(in srgb,var(--ok,#1f5a38) 45%,var(--surface-2))}
+.audion-flow-rf-node--abandon .audion-flow-rf-node-head{background:color-mix(in srgb,#8a4b1f 38%,var(--surface-2))}
+.audion-flow-rf-node--measure .audion-flow-rf-node-head{background:color-mix(in srgb,#1f6a8a 38%,var(--surface-2))}
+

@@ -2864,6 +2864,9 @@ async def _publish_partial_steps(
         }
         if persona and isinstance(persona, dict):
             partial["persona"] = {"id": persona.get("id"), "name": persona.get("name")}
+        # Live-Gate mid-run signals (url/title/frustration) for canvas cursor.
+        live = _compute_gate_signals(partial)
+        partial["gateSignals"] = live["gateSignals"]
         async with _jobs_lock:
             if job_id in _jobs:
                 _jobs[job_id].result = partial
@@ -6883,6 +6886,105 @@ async def _safe_await(task: Any) -> None:
     except Exception:
         pass
 
+def _http_url_from_steps(steps: list[Any] | None, final_url: str | None = None) -> str | None:
+    """Last http(s) target from steps, else final_url."""
+    if isinstance(final_url, str) and final_url.strip():
+        return final_url.strip()
+    if not isinstance(steps, list):
+        return None
+    for st in reversed(steps):
+        if not isinstance(st, dict):
+            continue
+        t = st.get("target")
+        if isinstance(t, str) and t.strip().lower().startswith(("http://", "https://")):
+            return t.strip()
+    return None
+
+
+def _compute_gate_signals(result: dict[str, Any] | None) -> dict[str, Any]:
+    """Live-Gate signal bundle for UX Test Flow canvas progress.
+
+    Emits detectable closed-set cues (url / title / frustration / confusion)
+    without requiring the full flow graph on the agent. Canvas evaluates
+    patterns against the flow template.
+    @see specs/domain/ux-test-flow-model.md — Live-Gate signals
+    """
+    result = result if isinstance(result, dict) else {}
+    steps = result.get("steps") if isinstance(result.get("steps"), list) else []
+    final_url = result.get("finalUrl")
+    if not isinstance(final_url, str) or not final_url.strip():
+        final_url = _http_url_from_steps(steps, None)
+    final_title = result.get("finalTitle")
+    if not isinstance(final_title, str) or not final_title.strip():
+        final_title = None
+    else:
+        final_title = final_title.strip()
+
+    frustration_high = False
+    confusion_named = False
+    for st in steps:
+        if not isinstance(st, dict):
+            continue
+        perc = st.get("perception")
+        if not isinstance(perc, dict):
+            perc = st.get("thinkAloud") if isinstance(st.get("thinkAloud"), dict) else None
+        if not isinstance(perc, dict):
+            continue
+        stance = str(perc.get("stance") or "").strip().lower()
+        clarity = perc.get("clarity")
+        confusion = perc.get("confusion")
+        if stance == "abandon":
+            frustration_high = True
+        if isinstance(clarity, int) and clarity <= 0:
+            frustration_high = True
+        if confusion is not None and str(confusion).strip():
+            confusion_named = True
+            frustration_high = True
+
+    # End-of-run scorecard friction can also imply frustration.
+    sc = result.get("scorecard")
+    if isinstance(sc, dict):
+        friction = sc.get("frictionScore")
+        try:
+            if friction is not None and float(friction) >= 0.7:
+                frustration_high = True
+        except (TypeError, ValueError):
+            pass
+
+    evaluations: list[dict[str, Any]] = []
+    # url/title stay in gateSignals only — canvas applies flow patterns.
+    # Agent can fully evaluate perception-based gates:
+    if frustration_high:
+        evaluations.append(
+            {
+                "condition": "frustration_high",
+                "matched": True,
+                "evidence": "perception/scorecard",
+            }
+        )
+    if confusion_named:
+        evaluations.append(
+            {
+                "condition": "confusion_named",
+                "matched": True,
+                "evidence": "perception.confusion",
+            }
+        )
+
+    gate_signals = {
+        "finalUrl": final_url,
+        "finalTitle": final_title,
+        "frustrationHigh": frustration_high,
+        "confusionNamed": confusion_named,
+        "evaluatedAt": datetime.now(timezone.utc).isoformat(),
+    }
+    flow_cursor = {
+        "activeEdgeKind": "when" if (frustration_high or confusion_named) else None,
+        "gateEvaluations": evaluations if evaluations else None,
+    }
+    return {"gateSignals": gate_signals, "flowCursor": flow_cursor}
+
+
 @app.get("/run/{job_id}")
 async def get_run(job_id: str) -> dict[str, Any]:
     async with _jobs_lock:
@@ -6901,7 +7003,11 @@ async def get_run(job_id: str) -> dict[str, Any]:
                 disk_sc = _load_scorecard_sidecar(job_id)
                 if disk_sc is not None:
                     merged["scorecard"] = disk_sc
+            live = _compute_gate_signals(merged)
+            merged["gateSignals"] = live["gateSignals"]
             out["result"] = merged
+            out["gateSignals"] = live["gateSignals"]
+            out["flowCursor"] = live["flowCursor"]
         if job.error:
             out["error"] = job.error
         if job.last_observed_at is not None:
@@ -6910,6 +7016,15 @@ async def get_run(job_id: str) -> dict[str, Any]:
 
     cold = _cold_recover_run_response(job_id)
     if cold is not None:
+        result = cold.get("result") if isinstance(cold.get("result"), dict) else {}
+        live = _compute_gate_signals(result)
+        cold = dict(cold)
+        if isinstance(cold.get("result"), dict):
+            cold_result = dict(cold["result"])
+            cold_result["gateSignals"] = live["gateSignals"]
+            cold["result"] = cold_result
+        cold["gateSignals"] = live["gateSignals"]
+        cold["flowCursor"] = live["flowCursor"]
         return cold
     raise HTTPException(status_code=404, detail="Job not found")
 

@@ -33,8 +33,9 @@
 - UX Study routes: `/studies`, `/studies/[studyId]`, `/studies/[studyId]/waves/[waveId]` (`paths.routes.studies*`)
 - UX Study API: `/api/studies*` → optional proxy to v2 `/ux-studies` when `NEXT_PERSONA_DATA_SOURCE=api`
 - UX Study from pack: `paths.routes.apiStudiesFromPack` (`/api/studies/from-pack`)
-- UX Test Flows (product templates): `paths.routes.studiesFlows` (`/studies/flows`) · detail canvas+list · in-flow **Testen** (create+start+poll) · `apiStudiesFromFlow` · `apiStudyWaveStart` · `apiUxJourneyAgentRun` · lib `paths.uxTestFlowsLibPath` · progress `apps/web/lib/ux-flow-run-progress.ts` · canvas map `apps/web/lib/ux-flow-canvas.ts` · model `paths.uxTestFlowModelSpecPath` · scenarios `paths.uxTestFlowScenariosSpecPath`
+- UX Test Flows (product templates): `paths.routes.studiesFlows` (`/studies/flows`) · detail canvas+list · in-flow **Testen** (create+start+poll) · Save/load · Live-Gate `gateSignals` · `apiStudiesFromFlow` · `apiStudiesFlowsSaved` · `apiStudyWaveStart` · `apiUxJourneyAgentRun` · lib `paths.uxTestFlowsLibPath` · store `paths.uxFlowStorePath` · progress `paths.uxFlowRunProgressPath` · canvas map `apps/web/lib/ux-flow-canvas.ts` · model `paths.uxTestFlowModelSpecPath` · scenarios `paths.uxTestFlowScenariosSpecPath`
 - UX Study fixtures/store: `apps/web/lib/fixtures/ux-studies.ts` · `ux-study-store.ts`
+- UX saved flows store: `apps/web/lib/fixtures/ux-flow-store.ts` (fixture/native; no Postgres table yet)
 - Scenario packs: `apps/web/lib/scenario-packs.ts` · `apps/web/lib/fixtures/scenario-packs/` · `knowledge/scenario-packs.md`
 - UX Lab archetypes: `paths.uxLabArchetypesSpecPath` · correlate `paths.labArchetypeCorrelatePath` · playbook `paths.personaLabMicroLabsKnowledgePath`
 - Template findability pack: `paths.labTemplateFindabilityPackId` · URL keys `lab.template.findability.*` → example.org / example.com

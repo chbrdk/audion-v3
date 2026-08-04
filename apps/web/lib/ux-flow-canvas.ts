@@ -18,8 +18,10 @@ export type UxFlowRfNodeData = {
   flowNode: UxFlowNode
   /** Inline edit from inside the node (n8n-style). */
   onUpdate?: (nodeId: string, patch: Partial<UxFlowNode>) => void
-  /** Live run highlight from in-flow Testen. */
+  /** Live run highlight from in-flow Testen (run A). */
   runState?: FlowNodeRunState
+  /** Optional parallel segment highlight (run B). */
+  runStateB?: FlowNodeRunState
 }
 
 export type UxFlowRfEdgeData = {

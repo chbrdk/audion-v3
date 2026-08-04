@@ -1,20 +1,37 @@
 /**
- * Heuristic map of agent job progress → UX Test Flow node run states.
- * @see specs/domain/ux-test-flow-model.md — In-flow live run
+ * Heuristic + Live-Gate map of agent job progress → UX Test Flow node run states.
+ * @see specs/domain/ux-test-flow-model.md — In-flow live run / Live-Gate signals
  */
 
-import type { UxFlowNode, UxTestFlow } from '@audion-v3/contracts'
+import type {
+  UxFlowCursor,
+  UxFlowGateCondition,
+  UxFlowGateEvaluation,
+  UxFlowGateSignalBundle,
+  UxFlowNode,
+  UxTestFlow,
+} from '@audion-v3/contracts'
 import { defaultExecutionPath, whenBranchPath } from './ux-test-flow-graph'
 
 export type FlowNodeRunState = 'idle' | 'active' | 'done' | 'skipped' | 'error'
 
 export type FlowRunProgressInput = {
   status: 'running' | 'complete' | 'error' | string
-  steps?: Array<{ action?: string; target?: string; result?: string }> | null
+  steps?: Array<{
+    action?: string
+    target?: string
+    result?: string
+    perception?: Record<string, unknown> | null
+    thinkAloud?: Record<string, unknown> | null
+  }> | null
   finalUrl?: string | null
   finalTitle?: string | null
   success?: boolean | null
   error?: string | null
+  /** Agent-emitted Live-Gate signals (preferred over raw URL/title when set). */
+  gateSignals?: UxFlowGateSignalBundle | null
+  /** Optional agent/BFF cursor; when present, gate branch + active node win over heuristics. */
+  flowCursor?: UxFlowCursor | null
 }
 
 function nodeWeight(n: UxFlowNode): number {
@@ -52,7 +69,7 @@ export function extractLastHttpUrl(
   return null
 }
 
-function patternMatches(pattern: string | null | undefined, haystack: string): boolean {
+export function patternMatches(pattern: string | null | undefined, haystack: string): boolean {
   if (!pattern?.trim()) return false
   try {
     return new RegExp(pattern, 'i').test(haystack)
@@ -61,28 +78,146 @@ function patternMatches(pattern: string | null | undefined, haystack: string): b
   }
 }
 
+/** Derive gateSignals from steps/result when the agent omitted the bundle. */
+export function deriveGateSignalsFromJob(job: FlowRunProgressInput): UxFlowGateSignalBundle {
+  if (job.gateSignals) return job.gateSignals
+  const steps = job.steps ?? []
+  const lastUrl = extractLastHttpUrl(steps, job.finalUrl)
+  const lastTitle = job.finalTitle?.trim() || null
+  let frustrationHigh = false
+  let confusionNamed = false
+  for (const step of steps) {
+    const perc = step.perception ?? step.thinkAloud
+    if (!perc || typeof perc !== 'object') continue
+    const stance = String((perc as { stance?: unknown }).stance ?? '').toLowerCase()
+    const clarity = (perc as { clarity?: unknown }).clarity
+    const confusion = (perc as { confusion?: unknown }).confusion
+    if (stance === 'abandon') frustrationHigh = true
+    if (typeof clarity === 'number' && clarity <= 0) frustrationHigh = true
+    if (confusion != null && String(confusion).trim()) {
+      confusionNamed = true
+      frustrationHigh = true
+    }
+  }
+  return {
+    finalUrl: lastUrl,
+    finalTitle: lastTitle,
+    frustrationHigh,
+    confusionNamed,
+    evaluatedAt: null,
+  }
+}
+
+function evaluateGateCondition(
+  condition: UxFlowGateCondition | null | undefined,
+  pattern: string | null | undefined,
+  signals: UxFlowGateSignalBundle,
+): { matched: boolean; evidence: string | null } {
+  switch (condition) {
+    case 'url_match': {
+      const url = signals.finalUrl?.trim()
+      if (!url) return { matched: false, evidence: null }
+      const ok = patternMatches(pattern, url)
+      return { matched: ok, evidence: ok ? url : null }
+    }
+    case 'title_match': {
+      const title = signals.finalTitle?.trim()
+      if (!title) return { matched: false, evidence: null }
+      const ok = patternMatches(pattern, title)
+      return { matched: ok, evidence: ok ? title : null }
+    }
+    case 'frustration_high':
+      return {
+        matched: Boolean(signals.frustrationHigh),
+        evidence: signals.frustrationHigh ? 'frustrationHigh' : null,
+      }
+    case 'confusion_named':
+      return {
+        matched: Boolean(signals.confusionNamed),
+        evidence: signals.confusionNamed ? 'confusionNamed' : null,
+      }
+    default:
+      return { matched: false, evidence: null }
+  }
+}
+
+/**
+ * Evaluate closed-set gates against agent gateSignals.
+ * Returns evaluations + whether any gate on the default path matched (take `when`).
+ */
+export function evaluateFlowGates(
+  flow: UxTestFlow,
+  signals: UxFlowGateSignalBundle,
+  cursorEvals?: UxFlowGateEvaluation[] | null,
+): { evaluations: UxFlowGateEvaluation[]; gateMatched: boolean; matchedGateId: string | null } {
+  const cursorByCondition = new Map<string, UxFlowGateEvaluation>()
+  for (const e of cursorEvals ?? []) {
+    if (e?.condition) cursorByCondition.set(e.condition, e)
+  }
+
+  const base = defaultExecutionPath(flow)
+  const evaluations: UxFlowGateEvaluation[] = []
+  let gateMatched = false
+  let matchedGateId: string | null = null
+
+  for (const n of base) {
+    if (n.kind !== 'gate' || !n.gateCondition) continue
+    const fromCursor = cursorByCondition.get(n.gateCondition)
+    let matched = false
+    let evidence: string | null = null
+    if (
+      fromCursor &&
+      (n.gateCondition === 'frustration_high' || n.gateCondition === 'confusion_named')
+    ) {
+      matched = Boolean(fromCursor.matched)
+      evidence = fromCursor.evidence ?? null
+    } else {
+      const local = evaluateGateCondition(n.gateCondition, n.pattern, signals)
+      matched = local.matched
+      evidence = local.evidence
+    }
+    evaluations.push({
+      condition: n.gateCondition,
+      matched,
+      evidence,
+      gateNodeId: n.id,
+    })
+    if (matched && !gateMatched) {
+      gateMatched = true
+      matchedGateId = n.id
+    }
+  }
+  return { evaluations, gateMatched, matchedGateId }
+}
+
 function buildExecPath(
   flow: UxTestFlow,
-  lastUrl: string | null,
-  lastTitle: string | null,
+  signals: UxFlowGateSignalBundle,
+  cursor?: UxFlowCursor | null,
 ): { path: UxFlowNode[]; gateMatched: boolean } {
   const base = defaultExecutionPath(flow)
-  const gate = base.find(
-    (n) =>
-      n.kind === 'gate' &&
-      (n.gateCondition === 'url_match' || n.gateCondition === 'title_match'),
+  const { gateMatched, matchedGateId } = evaluateFlowGates(
+    flow,
+    signals,
+    cursor?.gateEvaluations,
   )
-  if (!gate) return { path: base, gateMatched: false }
+  if (!gateMatched) return { path: base, gateMatched: false }
 
-  const matched =
-    gate.gateCondition === 'url_match'
-      ? Boolean(lastUrl && patternMatches(gate.pattern, lastUrl))
-      : Boolean(lastTitle && patternMatches(gate.pattern, lastTitle))
+  const gateId =
+    matchedGateId ||
+    base.find(
+      (n) =>
+        n.kind === 'gate' &&
+        (n.gateCondition === 'url_match' ||
+          n.gateCondition === 'title_match' ||
+          n.gateCondition === 'frustration_high' ||
+          n.gateCondition === 'confusion_named'),
+    )?.id
 
-  if (!matched) return { path: base, gateMatched: false }
+  if (!gateId) return { path: base, gateMatched: false }
 
-  const idx = base.findIndex((n) => n.id === gate.id)
-  const when = whenBranchPath(flow, gate.id)
+  const idx = base.findIndex((n) => n.id === gateId)
+  const when = whenBranchPath(flow, gateId)
   return {
     path: [...base.slice(0, idx + 1), ...when],
     gateMatched: true,
@@ -96,7 +231,6 @@ function cursorIndex(path: UxFlowNode[], stepCount: number): number {
   for (let i = 0; i < path.length; i++) {
     const w = Math.max(1, nodeWeight(path[i]))
     if (i === 0 && path[i].kind === 'start') {
-      // start consumes no steps; leave immediately once any step exists
       continue
     }
     if (budget < w) return i
@@ -116,7 +250,6 @@ export function mapJobToFlowNodeStates(
   const states: Record<string, FlowNodeRunState> = {}
   for (const n of nodes) states[n.id] = 'idle'
 
-  // Parallel persona markers (message with personaId, not on default path) → skipped
   const defaultIds = new Set(defaultExecutionPath(flow).map((n) => n.id))
   for (const n of nodes) {
     if (n.kind === 'message' && n.personaId && !defaultIds.has(n.id)) {
@@ -127,36 +260,40 @@ export function mapJobToFlowNodeStates(
   if (!nodes.length) return states
 
   const steps = job.steps ?? []
-  const lastUrl = extractLastHttpUrl(steps, job.finalUrl)
-  const lastTitle = job.finalTitle?.trim() || null
-  const { path, gateMatched } = buildExecPath(flow, lastUrl, lastTitle)
+  const signals = deriveGateSignalsFromJob({
+    ...job,
+    finalUrl: job.gateSignals?.finalUrl ?? job.finalUrl,
+    finalTitle: job.gateSignals?.finalTitle ?? job.finalTitle,
+  })
+  const { path, gateMatched } = buildExecPath(flow, signals, job.flowCursor)
   if (!path.length) return states
 
   const status = job.status
+  const cursorActiveId = job.flowCursor?.activeNodeId?.trim() || null
 
   if (status === 'error') {
-    const idx = cursorIndex(path, steps.length)
-    for (let i = 0; i < idx; i++) states[path[i].id] = 'done'
-    states[path[idx].id] = 'error'
+    const idx = cursorActiveId
+      ? Math.max(0, path.findIndex((n) => n.id === cursorActiveId))
+      : cursorIndex(path, steps.length)
+    const safeIdx = idx >= 0 ? idx : cursorIndex(path, steps.length)
+    for (let i = 0; i < safeIdx; i++) states[path[i].id] = 'done'
+    states[path[safeIdx].id] = 'error'
     return states
   }
 
   if (status === 'complete') {
     const ok = job.success === true
-    // Mark entire walked path done, then emphasize terminal
     for (const n of path) {
       if (n.kind === 'success') states[n.id] = ok ? 'done' : 'skipped'
       else if (n.kind === 'abandon') states[n.id] = ok ? 'skipped' : 'done'
       else states[n.id] = 'done'
     }
-    // If success/abandon not on path (when branch), mark appropriately
     for (const n of nodes) {
       if (n.kind === 'success' && ok) states[n.id] = 'done'
       if (n.kind === 'abandon' && !ok && states[n.id] === 'idle') states[n.id] = 'done'
       if (n.kind === 'success' && !ok && states[n.id] === 'idle') states[n.id] = 'skipped'
       if (n.kind === 'abandon' && ok && states[n.id] === 'idle') states[n.id] = 'skipped'
     }
-    // When-branch unused nodes stay skipped if on the other arm
     const whenOnly = new Set<string>()
     for (const n of nodes) {
       if (n.kind !== 'gate') continue
@@ -170,15 +307,25 @@ export function mapJobToFlowNodeStates(
 
   // running
   let idx = cursorIndex(path, steps.length)
-  if (gateMatched) {
-    const gateIdx = path.findIndex(
-      (n) =>
-        n.kind === 'gate' &&
-        (n.gateCondition === 'url_match' || n.gateCondition === 'title_match'),
-    )
+  if (cursorActiveId) {
+    const found = path.findIndex((n) => n.id === cursorActiveId)
+    if (found >= 0) idx = found
+  } else if (gateMatched) {
+    const gateIdx = path.findIndex((n) => n.kind === 'gate')
     if (gateIdx >= 0) idx = Math.max(idx, Math.min(gateIdx + 1, path.length - 1))
   }
   for (let i = 0; i < idx; i++) states[path[i].id] = 'done'
   states[path[idx].id] = 'active'
   return states
+}
+
+/** Merge two run-state maps for dual-cursor (A primary, B secondary). */
+export function mergeDualRunStates(
+  a: Record<string, FlowNodeRunState>,
+  b: Record<string, FlowNodeRunState>,
+): {
+  primary: Record<string, FlowNodeRunState>
+  secondary: Record<string, FlowNodeRunState>
+} {
+  return { primary: a, secondary: b }
 }

@@ -106,3 +106,51 @@ export type UxStudyFromFlowResult = {
   wave: UxWaveDetail
   flowId: string
 }
+
+/** Persisted user-edited flow snapshot (fixture/native store). */
+export type UxSavedFlow = {
+  id: string
+  /** Catalog template id this edit descends from. */
+  templateFlowId: string
+  name: string
+  flow: UxTestFlow
+  updatedAt: string
+  createdAt: string
+}
+
+export type UxSavedFlowSummary = {
+  id: string
+  templateFlowId: string
+  name: string
+  updatedAt: string
+}
+
+export type UxSavedFlowWritePayload = {
+  /** When set, upsert that saved id; otherwise upsert by templateFlowId. */
+  id?: string
+  templateFlowId: string
+  name?: string
+  flow: UxTestFlow
+}
+
+/** Agent poll extras for Live-Gate progress (optional on job status). */
+export type UxFlowGateSignalBundle = {
+  finalUrl?: string | null
+  finalTitle?: string | null
+  frustrationHigh?: boolean
+  confusionNamed?: boolean
+  evaluatedAt?: string | null
+}
+
+export type UxFlowGateEvaluation = {
+  condition: UxFlowGateCondition
+  matched: boolean
+  evidence?: string | null
+  gateNodeId?: string | null
+}
+
+export type UxFlowCursor = {
+  activeNodeId?: string | null
+  activeEdgeKind?: UxFlowEdgeKind | null
+  gateEvaluations?: UxFlowGateEvaluation[] | null
+}

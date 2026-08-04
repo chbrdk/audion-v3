@@ -16,8 +16,11 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import type {
+  UxFlowCursor,
+  UxFlowGateSignalBundle,
   UxFlowNode,
   UxFlowNodeKind,
+  UxSavedFlow,
   UxStudyFromFlowResult,
   UxTestFlow,
 } from '@audion-v3/contracts'
@@ -43,19 +46,30 @@ import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
 
 const nodeTypes = { uxFlow: UxFlowRfNodeView }
 const POLL_MS = 1800
+const HISTORY_MAX = 30
 
 type AgentJobPoll = {
   jobId: string
   status: string
   error?: string | null
+  gateSignals?: UxFlowGateSignalBundle | null
+  flowCursor?: UxFlowCursor | null
   result?: {
     success?: boolean | null
-    steps?: Array<{ action?: string; target?: string; result?: string }>
+    steps?: Array<{
+      action?: string
+      target?: string
+      result?: string
+      perception?: Record<string, unknown> | null
+    }>
     finalUrl?: string | null
     finalTitle?: string | null
     error?: string | null
+    gateSignals?: UxFlowGateSignalBundle | null
   } | null
 }
+
+type GraphSnap = { nodes: UxFlowRfNode[]; edges: UxFlowRfEdge[] }
 
 function FlowCanvasInner({
   initialFlow,
@@ -67,21 +81,45 @@ function FlowCanvasInner({
   const [nodes, setNodes, onNodesChange] = useNodesState(initial.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges)
   const [dirty, setDirty] = useState(false)
+  const [savedId, setSavedId] = useState<string | null>(null)
+  const [saveBusy, setSaveBusy] = useState(false)
+  const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [runStates, setRunStates] = useState<Record<string, FlowNodeRunState>>({})
+  const [runStatesB, setRunStatesB] = useState<Record<string, FlowNodeRunState>>({})
   const [runBusy, setRunBusy] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [runMeta, setRunMeta] = useState<{
     studyId: string
     waveId: string
     jobId: string
+    jobIdB?: string | null
     status: string
     stepCount: number
+    stepCountB?: number
   } | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const jobIdRef = useRef<string | null>(null)
+  const jobIdBRef = useRef<string | null>(null)
+  const historyRef = useRef<GraphSnap[]>([])
+  const skipHistoryRef = useRef(false)
+  const [historyLen, setHistoryLen] = useState(0)
 
-  const markDirty = useCallback(() => setDirty(true), [])
+  const pushHistory = useCallback(() => {
+    if (skipHistoryRef.current) return
+    const snap: GraphSnap = {
+      nodes: structuredClone(nodes) as UxFlowRfNode[],
+      edges: structuredClone(edges) as UxFlowRfEdge[],
+    }
+    historyRef.current = [...historyRef.current.slice(-(HISTORY_MAX - 1)), snap]
+    setHistoryLen(historyRef.current.length)
+  }, [nodes, edges])
+
+  const markDirty = useCallback(() => {
+    pushHistory()
+    setDirty(true)
+    setSaveMsg(null)
+  }, [pushHistory])
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -92,8 +130,47 @@ function FlowCanvasInner({
 
   useEffect(() => () => stopPolling(), [stopPolling])
 
+  // Load saved variant for this template (if any).
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetch(
+          `${paths.routes.apiStudiesFlowsSaved}?templateFlowId=${encodeURIComponent(initialFlow.id)}`,
+          { headers: { Accept: 'application/json' }, cache: 'no-store' },
+        )
+        if (!res.ok) return
+        const json = (await res.json()) as { items?: Array<{ id: string }> }
+        const first = json.items?.[0]
+        if (!first?.id) return
+        const detailRes = await fetch(paths.routes.apiStudiesFlowSavedDetail(first.id), {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        })
+        if (!detailRes.ok) return
+        const saved = (await detailRes.json()) as UxSavedFlow
+        if (cancelled || !saved.flow?.nodes?.length) return
+        skipHistoryRef.current = true
+        const mapped = flowToRfNodesEdges(saved.flow)
+        setNodes(mapped.nodes)
+        setEdges(mapped.edges)
+        setSavedId(saved.id)
+        setDirty(false)
+        skipHistoryRef.current = false
+        setSaveMsg('Loaded saved flow')
+      } catch {
+        /* ignore — fall back to template */
+      }
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [initialFlow.id, setNodes, setEdges])
+
   const onUpdateNode = useCallback(
     (nodeId: string, patch: Partial<UxFlowNode>) => {
+      pushHistory()
       setNodes((nds) =>
         nds.map((n) => {
           if (n.id !== nodeId) return n
@@ -107,9 +184,10 @@ function FlowCanvasInner({
           }
         }),
       )
-      markDirty()
+      setDirty(true)
+      setSaveMsg(null)
     },
-    [setNodes, markDirty],
+    [setNodes, pushHistory],
   )
 
   const nodesForFlow = useMemo(
@@ -120,38 +198,51 @@ function FlowCanvasInner({
           ...n.data,
           onUpdate: onUpdateNode,
           runState: runStates[n.id] ?? 'idle',
+          runStateB: runStatesB[n.id] ?? 'idle',
         },
       })),
-    [nodes, onUpdateNode, runStates],
+    [nodes, onUpdateNode, runStates, runStatesB],
   )
 
   const getSnapshot = useCallback((): UxTestFlow => {
     return rfToUxTestFlow(templateRef.current, nodes as UxFlowRfNode[], edges as UxFlowRfEdge[])
   }, [nodes, edges])
 
-  const applyJobToStates = useCallback(
-    (job: AgentJobPoll) => {
+  const jobToInput = useCallback((job: AgentJobPoll) => {
+    const signals = job.gateSignals ?? job.result?.gateSignals ?? null
+    return {
+      status: job.status,
+      steps: job.result?.steps ?? [],
+      finalUrl: signals?.finalUrl ?? job.result?.finalUrl,
+      finalTitle: signals?.finalTitle ?? job.result?.finalTitle,
+      success: job.result?.success,
+      error: job.error ?? job.result?.error,
+      gateSignals: signals,
+      flowCursor: job.flowCursor ?? null,
+    }
+  }, [])
+
+  const applyJobsToStates = useCallback(
+    (jobA: AgentJobPoll, jobB?: AgentJobPoll | null) => {
       const flow = getSnapshot()
-      const next = mapJobToFlowNodeStates(flow, {
-        status: job.status,
-        steps: job.result?.steps ?? [],
-        finalUrl: job.result?.finalUrl,
-        finalTitle: job.result?.finalTitle,
-        success: job.result?.success,
-        error: job.error ?? job.result?.error,
-      })
-      setRunStates(next)
+      setRunStates(mapJobToFlowNodeStates(flow, jobToInput(jobA)))
+      if (jobB) {
+        setRunStatesB(mapJobToFlowNodeStates(flow, jobToInput(jobB)))
+      } else {
+        setRunStatesB({})
+      }
       setRunMeta((m) =>
         m
           ? {
               ...m,
-              status: job.status,
-              stepCount: job.result?.steps?.length ?? 0,
+              status: jobA.status,
+              stepCount: jobA.result?.steps?.length ?? 0,
+              stepCountB: jobB?.result?.steps?.length ?? m.stepCountB,
             }
           : m,
       )
     },
-    [getSnapshot],
+    [getSnapshot, jobToInput],
   )
 
   const pollOnce = useCallback(async (jobId: string) => {
@@ -167,14 +258,18 @@ function FlowCanvasInner({
   }, [])
 
   const startPolling = useCallback(
-    (jobId: string) => {
+    (jobId: string, jobIdB?: string | null) => {
       stopPolling()
       jobIdRef.current = jobId
+      jobIdBRef.current = jobIdB ?? null
       const tick = async () => {
         try {
-          const job = await pollOnce(jobId)
-          applyJobToStates(job)
-          if (job.status === 'complete' || job.status === 'error') {
+          const jobA = await pollOnce(jobId)
+          const jobB = jobIdB ? await pollOnce(jobIdB) : null
+          applyJobsToStates(jobA, jobB)
+          const aDone = jobA.status === 'complete' || jobA.status === 'error'
+          const bDone = !jobB || jobB.status === 'complete' || jobB.status === 'error'
+          if (aDone && bDone) {
             stopPolling()
             setRunBusy(false)
           }
@@ -187,7 +282,7 @@ function FlowCanvasInner({
       void tick()
       pollRef.current = setInterval(() => void tick(), POLL_MS)
     },
-    [applyJobToStates, pollOnce, stopPolling],
+    [applyJobsToStates, pollOnce, stopPolling],
   )
 
   const onTest = useCallback(async () => {
@@ -195,6 +290,7 @@ function FlowCanvasInner({
     setRunBusy(true)
     stopPolling()
     setRunStates({})
+    setRunStatesB({})
     try {
       const flow = getSnapshot()
       const createRes = await fetch(paths.routes.apiStudiesFromFlow, {
@@ -225,11 +321,15 @@ function FlowCanvasInner({
       if (!startRes.ok) {
         throw new Error(started.error || `Start failed (${startRes.status})`)
       }
-      const jobId =
-        started.started?.find((s) => s.jobId && !String(s.jobId).startsWith('job-local-'))
-          ?.jobId ||
-        started.started?.find((s) => s.jobId)?.jobId ||
-        null
+      const realJobs =
+        started.started
+          ?.map((s) => s.jobId)
+          .filter((id): id is string => Boolean(id) && !String(id).startsWith('job-local-')) ?? []
+      const fallbackJobs =
+        started.started?.map((s) => s.jobId).filter((id): id is string => Boolean(id)) ?? []
+      const jobs = realJobs.length ? realJobs : fallbackJobs
+      const jobId = jobs[0] ?? null
+      const jobIdB = jobs[1] ?? null
       if (!jobId) {
         throw new Error(
           'No agent jobId — is UX_JOURNEY_AGENT_URL configured? Study was created; open wave to retry.',
@@ -239,37 +339,78 @@ function FlowCanvasInner({
         studyId,
         waveId,
         jobId,
+        jobIdB,
         status: 'running',
         stepCount: 0,
+        stepCountB: jobIdB ? 0 : undefined,
       })
-      // Seed start as active
-      applyJobToStates({ jobId, status: 'running', result: { steps: [] } })
-      startPolling(jobId)
+      applyJobsToStates({ jobId, status: 'running', result: { steps: [] } })
+      startPolling(jobId, jobIdB)
     } catch (e) {
       setRunError(e instanceof Error ? e.message : String(e))
       setRunBusy(false)
     }
-  }, [applyJobToStates, getSnapshot, startPolling, stopPolling])
+  }, [applyJobsToStates, getSnapshot, startPolling, stopPolling])
 
   const onStop = useCallback(async () => {
-    const jobId = jobIdRef.current || runMeta?.jobId
-    if (!jobId) return
+    const ids = [jobIdRef.current || runMeta?.jobId, jobIdBRef.current || runMeta?.jobIdB].filter(
+      Boolean,
+    ) as string[]
     stopPolling()
     setRunBusy(false)
-    try {
-      await fetch(`${paths.routes.apiUxJourneyAgentRun(jobId)}/cancel`, {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-      })
-    } catch {
-      /* best-effort */
-    }
+    await Promise.all(
+      ids.map((jobId) =>
+        fetch(`${paths.routes.apiUxJourneyAgentRun(jobId)}/cancel`, {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+        }).catch(() => undefined),
+      ),
+    )
     setRunMeta((m) => (m ? { ...m, status: 'cancelled' } : m))
-  }, [runMeta?.jobId, stopPolling])
+  }, [runMeta?.jobId, runMeta?.jobIdB, stopPolling])
+
+  const onSave = useCallback(async () => {
+    setSaveBusy(true)
+    setSaveMsg(null)
+    try {
+      const flow = getSnapshot()
+      const res = await fetch(paths.routes.apiStudiesFlowsSaved, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          id: savedId ?? undefined,
+          templateFlowId: templateRef.current.id,
+          name: flow.name,
+          flow,
+        }),
+      })
+      const json = (await res.json()) as UxSavedFlow & { error?: string }
+      if (!res.ok) throw new Error(json.error || `Save failed (${res.status})`)
+      setSavedId(json.id)
+      setDirty(false)
+      setSaveMsg('Saved')
+    } catch (e) {
+      setSaveMsg(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSaveBusy(false)
+    }
+  }, [getSnapshot, savedId])
+
+  const onUndo = useCallback(() => {
+    const prev = historyRef.current.pop()
+    if (!prev) return
+    setHistoryLen(historyRef.current.length)
+    skipHistoryRef.current = true
+    setNodes(prev.nodes)
+    setEdges(prev.edges)
+    setDirty(true)
+    skipHistoryRef.current = false
+  }, [setNodes, setEdges])
 
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return
+      pushHistory()
       const sourceRf = nodes.find((n) => n.id === connection.source) as UxFlowRfNode | undefined
       const kind = nextEdgeKindForSource(
         sourceRf?.data?.flowNode,
@@ -294,9 +435,10 @@ function FlowCanvasInner({
           eds,
         ),
       )
-      markDirty()
+      setDirty(true)
+      setSaveMsg(null)
     },
-    [nodes, edges, setEdges, markDirty],
+    [nodes, edges, setEdges, pushHistory],
   )
 
   const onSelectionChange = useCallback(({ nodes: sel }: OnSelectionChangeParams) => {
@@ -305,6 +447,7 @@ function FlowCanvasInner({
 
   const addNode = useCallback(
     (kind: UxFlowNodeKind) => {
+      pushHistory()
       const flowNode = newUxFlowNode(kind)
       const maxY = nodes.reduce((m, n) => Math.max(m, n.position.y), 0)
       const rfNode: UxFlowRfNode = {
@@ -315,27 +458,34 @@ function FlowCanvasInner({
       }
       setNodes((nds) => [...nds, rfNode])
       setSelectedId(flowNode.id)
-      markDirty()
+      setDirty(true)
+      setSaveMsg(null)
     },
-    [nodes, setNodes, markDirty],
+    [nodes, setNodes, pushHistory],
   )
 
   const deleteSelected = useCallback(() => {
     if (!selectedId) return
+    pushHistory()
     setNodes((nds) => nds.filter((n) => n.id !== selectedId))
     setEdges((eds) => eds.filter((e) => e.source !== selectedId && e.target !== selectedId))
     setSelectedId(null)
-    markDirty()
-  }, [selectedId, setNodes, setEdges, markDirty])
+    setDirty(true)
+    setSaveMsg(null)
+  }, [selectedId, setNodes, setEdges, pushHistory])
 
   const reset = useCallback(() => {
+    pushHistory()
     const next = flowToRfNodesEdges(templateRef.current)
     setNodes(next.nodes)
     setEdges(next.edges)
     setSelectedId(null)
     setDirty(false)
+    setSavedId(null)
     setRunStates({})
-  }, [setNodes, setEdges])
+    setRunStatesB({})
+    setSaveMsg(null)
+  }, [setNodes, setEdges, pushHistory])
 
   const hasGraph = Boolean(initialFlow.nodes?.length)
 
@@ -359,12 +509,23 @@ function FlowCanvasInner({
           disabled={!initialFlow.compileReady && !hasGraph}
           getFlowSnapshot={getSnapshot}
         />
+        <Button type="button" size="sm" onClick={() => void onSave()} disabled={!hasGraph || saveBusy}>
+          {saveBusy ? 'Saving…' : 'Save'}
+        </Button>
+        <Button type="button" size="sm" variant="subtle" onClick={onUndo} disabled={historyLen < 1}>
+          Undo
+        </Button>
         {dirty ? (
           <Chip size="sm" static>
-            unsaved session edit
+            unsaved edits
+          </Chip>
+        ) : savedId ? (
+          <Chip size="sm" static>
+            saved
           </Chip>
         ) : null}
-        <Button type="button" size="sm" variant="subtle" onClick={reset} disabled={!dirty}>
+        {saveMsg ? <span className="audion-flow-canvas-hint">{saveMsg}</span> : null}
+        <Button type="button" size="sm" variant="subtle" onClick={reset} disabled={!dirty && !savedId}>
           Reset to template
         </Button>
         <Button
@@ -384,13 +545,15 @@ function FlowCanvasInner({
             {runMeta.status}
           </Chip>
           <span>
-            steps {runMeta.stepCount} · job {runMeta.jobId.slice(0, 10)}…
+            A steps {runMeta.stepCount} · job {runMeta.jobId.slice(0, 10)}…
+            {runMeta.jobIdB
+              ? ` · B steps ${runMeta.stepCountB ?? 0} · job ${runMeta.jobIdB.slice(0, 10)}…`
+              : ''}
           </span>
           <Link href={paths.routes.studyWaveDetail(runMeta.studyId, runMeta.waveId)}>
             Open wave
           </Link>
           {runBusy && runMeta.jobId ? (
-            // Live frame refreshes as steps advance (cache-bust).
             // eslint-disable-next-line @next/next/no-img-element
             <img
               className="audion-flow-live-thumb"
@@ -428,7 +591,8 @@ function FlowCanvasInner({
               ))}
             </div>
             <p className="audion-flow-canvas-hint">
-              Testen startet den Agenten und markiert Nodes live · Gates bleiben V1 (Task-Text)
+              Testen markiert Nodes live · Live-Gates: url/title/frustration · Save persistiert die
+              Session
             </p>
           </div>
           <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--tall">
@@ -436,7 +600,6 @@ function FlowCanvasInner({
               nodes={nodesForFlow}
               edges={edges}
               onNodesChange={(c) => {
-                onNodesChange(c)
                 if (
                   c.some(
                     (ch) =>
@@ -445,14 +608,19 @@ function FlowCanvasInner({
                       (ch.type === 'position' && 'dragging' in ch && ch.dragging === false),
                   )
                 ) {
-                  markDirty()
+                  pushHistory()
+                  setDirty(true)
+                  setSaveMsg(null)
                 }
+                onNodesChange(c)
               }}
               onEdgesChange={(c) => {
-                onEdgesChange(c)
                 if (c.some((ch) => ch.type === 'remove' || ch.type === 'add')) {
-                  markDirty()
+                  pushHistory()
+                  setDirty(true)
+                  setSaveMsg(null)
                 }
+                onEdgesChange(c)
               }}
               onConnect={onConnect}
               onSelectionChange={onSelectionChange}
@@ -467,7 +635,7 @@ function FlowCanvasInner({
                 style: { strokeWidth: 2 },
               }}
             >
-              <Background gap={18} size={1} />
+              <Background gap={18} size={1} color="var(--line)" bgColor="transparent" />
               <Controls />
               <MiniMap pannable zoomable />
             </ReactFlow>

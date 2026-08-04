@@ -27,6 +27,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
   const flowNode = data.flowNode
   const onUpdate = data.onUpdate
   const runState = data.runState ?? 'idle'
+  const runStateB = data.runStateB ?? 'idle'
   const kind = flowNode.kind
 
   const patch = useCallback(
@@ -56,9 +57,12 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
     kind === 'measure' ||
     kind === 'observe'
 
+  const runBClass =
+    runStateB !== 'idle' ? ` audion-flow-rf-node--run-b-${runStateB}` : ''
+
   return (
     <div
-      className={`audion-flow-rf-node audion-flow-rf-node--${kind} audion-flow-rf-node--run-${runState}${selected ? ' is-selected' : ''}`}
+      className={`audion-flow-rf-node audion-flow-rf-node--${kind} audion-flow-rf-node--run-${runState}${runBClass}${selected ? ' is-selected' : ''}`}
     >
       <Handle
         type="target"

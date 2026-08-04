@@ -28,6 +28,23 @@ export type UxJourneyAgentJobStatus = {
   task?: string
   error?: string | null
   lastObservedAt?: string | null
+  gateSignals?: {
+    finalUrl?: string | null
+    finalTitle?: string | null
+    frustrationHigh?: boolean
+    confusionNamed?: boolean
+    evaluatedAt?: string | null
+  } | null
+  flowCursor?: {
+    activeNodeId?: string | null
+    activeEdgeKind?: string | null
+    gateEvaluations?: Array<{
+      condition: string
+      matched: boolean
+      evidence?: string | null
+      gateNodeId?: string | null
+    }> | null
+  } | null
   result?: {
     success?: boolean
     steps?: UxJourneyAgentStep[]
@@ -39,6 +56,13 @@ export type UxJourneyAgentJobStatus = {
     finalUrl?: string | null
     finalTitle?: string | null
     deeplinkCheat?: boolean | null
+    gateSignals?: {
+      finalUrl?: string | null
+      finalTitle?: string | null
+      frustrationHigh?: boolean
+      confusionNamed?: boolean
+      evaluatedAt?: string | null
+    } | null
     personaPolicy?: {
       dimensions?: Record<string, number> | null
       heuristics?: string[] | null
