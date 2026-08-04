@@ -64,11 +64,13 @@ type AgentJobPoll = {
       target?: string
       result?: string
       reasoning?: string | null
+      timestamp?: string | null
       screenshot?: string | null
       screenshotUrl?: string | null
       perception?: Record<string, unknown> | null
       thinkAloud?: Record<string, unknown> | null
     }>
+    scorecard?: Record<string, unknown> | null
     finalUrl?: string | null
     finalTitle?: string | null
     error?: string | null
