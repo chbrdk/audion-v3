@@ -139,6 +139,14 @@ export type UxFlowGateSignalBundle = {
   finalTitle?: string | null
   frustrationHigh?: boolean
   confusionNamed?: boolean
+  /** Heuristic: accept/confirm of external/privacy content. */
+  consentAccepted?: boolean
+  /** Heuristic: decline/reject or wander away from consent. */
+  consentRejected?: boolean
+  /** End-of-run or scorecard goalReached / success. */
+  goalReached?: boolean
+  /** Wall-clock seconds from first→last step timestamp (canvas compares to observeSeconds). */
+  elapsedSeconds?: number | null
   evaluatedAt?: string | null
 }
 

@@ -41,11 +41,11 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
 | `frustration_high` | Self-report / perception frustration | Embed abandon instructions in task | Agent `gateSignals.frustrationHigh` from perception stance/confusion |
 | `url_match` | `finalUrl` matches `pattern` | `successCriteria.url_match` | Agent `gateSignals.finalUrl` (+ canvas pattern match) |
 | `title_match` | `finalTitle` matches `pattern` | `successCriteria.title_match` | Agent `gateSignals.finalTitle` (+ canvas pattern match) |
-| `consent_accepted` | User confirmed external/privacy | Prompt + action text | Deferred |
-| `consent_rejected` | User declined | Abandon branch text | Deferred |
-| `goal_reached` | Task goal met | Soft successCriteria / task wording | Deferred (end-of-run success only) |
+| `consent_accepted` | User confirmed external/privacy | Prompt + action text | Agent `gateSignals.consentAccepted` (click/text heuristics) |
+| `consent_rejected` | User declined | Abandon branch text | Agent `gateSignals.consentRejected` |
+| `goal_reached` | Task goal met | Soft successCriteria / task wording | Agent `gateSignals.goalReached` (success/scorecard) |
 | `confusion_named` | Confusion explicitly named | Comprehension success path | Soft: `gateSignals.confusionNamed` |
-| `time_elapsed` | Observe window done | Prompt timing in task | Deferred |
+| `time_elapsed` | Observe window done | Prompt timing in task | Agent `elapsedSeconds` vs preceding `observeSeconds` |
 
 ## Graph rules
 
@@ -101,6 +101,10 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
     "finalTitle": "…",
     "frustrationHigh": false,
     "confusionNamed": false,
+    "consentAccepted": false,
+    "consentRejected": false,
+    "goalReached": false,
+    "elapsedSeconds": 42,
     "evaluatedAt": "ISO-8601"
   },
   "flowCursor": {
@@ -135,6 +139,6 @@ Persistence: same fixture/native pattern as studies (`ux-flow-store`). No dedica
 ## Out of scope (still later)
 
 - Agent mid-run **replanning** / task rewrite when a gate fires  
-- Live evaluation for consent / goal_reached / time_elapsed  
+- Mid-run agent replan when a Live-Gate fires (today: canvas branch only)  
 - Postgres-backed `ux_saved_flows` table  
 - Moderated-only protocol UI without agent  

@@ -122,6 +122,64 @@ describe('ux-flow-run-progress', () => {
     expect(signals.finalUrl).toBe('https://example.org/')
   })
 
+  it('takes when-branch on consent_accepted gateSignals', () => {
+    const flow = getUxTestFlow('flow-consent-gate')!
+    const { gateMatched, matchedGateId } = evaluateFlowGates(flow, {
+      consentAccepted: true,
+      consentRejected: false,
+    })
+    expect(gateMatched).toBe(true)
+    expect(matchedGateId).toBe('n-gate')
+    const states = mapJobToFlowNodeStates(flow, {
+      status: 'running',
+      steps: [
+        { action: 'click', target: 'Externen Inhalt bestätigen', result: 'ok' },
+        { action: 'click' },
+        { action: 'click' },
+      ],
+      gateSignals: { consentAccepted: true },
+    })
+    expect(states['n-gate']).toBe('done')
+    expect(states['n-accept']).toBe('active')
+    expect(states['n-reject']).toBe('idle')
+  })
+
+  it('takes when-branch on goal_reached', () => {
+    const flow = getUxTestFlow('flow-task-goal')!
+    const { gateMatched } = evaluateFlowGates(flow, { goalReached: true })
+    expect(gateMatched).toBe(true)
+  })
+
+  it('matches time_elapsed against preceding observeSeconds', () => {
+    const flow = getUxTestFlow('flow-consent-gate')!
+    // Graft a time_elapsed gate for the unit test without mutating catalog.
+    const timed = {
+      ...flow,
+      nodes: flow.nodes.map((n) =>
+        n.id === 'n-gate' ? { ...n, gateCondition: 'time_elapsed' as const } : n,
+      ),
+    }
+    const miss = evaluateFlowGates(timed, { elapsedSeconds: 10 })
+    expect(miss.gateMatched).toBe(false)
+    const hit = evaluateFlowGates(timed, { elapsedSeconds: 45 })
+    expect(hit.gateMatched).toBe(true)
+  })
+
+  it('derives consent and goal from step text / success', () => {
+    const consent = deriveGateSignalsFromJob({
+      status: 'running',
+      steps: [{ action: 'click', target: 'Bestätigen', result: 'akzeptiert' }],
+    })
+    expect(consent.consentAccepted).toBe(true)
+    const goal = deriveGateSignalsFromJob({
+      status: 'complete',
+      success: true,
+      steps: [],
+      scorecard: { coverage: { goalReached: true } },
+    })
+    expect(goal.goalReached).toBe(true)
+  })
+
   it('marks success done on complete success', () => {
     const flow = getUxTestFlow('flow-findability')!
     const states = mapJobToFlowNodeStates(flow, {

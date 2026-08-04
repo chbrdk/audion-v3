@@ -226,6 +226,7 @@ function FlowCanvasInner({
       finalTitle: signals?.finalTitle ?? job.result?.finalTitle,
       success: job.result?.success,
       error: job.error ?? job.result?.error,
+      scorecard: job.result?.scorecard ?? null,
       gateSignals: signals,
       flowCursor: job.flowCursor ?? null,
       jobId: job.jobId,

@@ -6901,12 +6901,58 @@ def _http_url_from_steps(steps: list[Any] | None, final_url: str | None = None) 
     return None
 
 
+_CONSENT_ACCEPT_RE = re.compile(
+    r"bestätig|akzeptier|zustimm|einwillig|accept\b|allow\s+(all|cookies)|"
+    r"cookie.*akzept|externen?\s+inhalt",
+    re.I,
+)
+_CONSENT_REJECT_RE = re.compile(
+    r"ablehn|reject|decline|verweig|ohne\s+(cookies?|einwillig)|"
+    r"zu\s+google|nicht\s+bestätig|dismiss",
+    re.I,
+)
+
+
+def _step_text_blob(st: dict[str, Any]) -> str:
+    parts: list[str] = []
+    for key in ("action", "target", "result", "reasoning"):
+        val = st.get(key)
+        if isinstance(val, str) and val.strip():
+            parts.append(val)
+    ta = st.get("thinkAloud")
+    if isinstance(ta, dict):
+        for v in ta.values():
+            if isinstance(v, str) and v.strip():
+                parts.append(v)
+    elif isinstance(ta, str) and ta.strip():
+        parts.append(ta)
+    return " ".join(parts)
+
+
+def _elapsed_seconds_from_steps(steps: list[Any]) -> float | None:
+    stamps: list[datetime] = []
+    for st in steps:
+        if not isinstance(st, dict):
+            continue
+        raw = st.get("timestamp")
+        if not isinstance(raw, str) or not raw.strip():
+            continue
+        try:
+            stamps.append(datetime.fromisoformat(raw.replace("Z", "+00:00")))
+        except ValueError:
+            continue
+    if len(stamps) < 2:
+        return 0.0 if stamps else None
+    delta = (max(stamps) - min(stamps)).total_seconds()
+    return max(0.0, float(delta))
+
+
 def _compute_gate_signals(result: dict[str, Any] | None) -> dict[str, Any]:
     """Live-Gate signal bundle for UX Test Flow canvas progress.
 
-    Emits detectable closed-set cues (url / title / frustration / confusion)
-    without requiring the full flow graph on the agent. Canvas evaluates
-    patterns against the flow template.
+    Emits closed-set cues (url/title/frustration/confusion/consent/goal/elapsed)
+    without requiring the full flow graph on the agent. Canvas applies url/title
+    patterns and compares elapsedSeconds to observeSeconds.
     @see specs/domain/ux-test-flow-model.md — Live-Gate signals
     """
     result = result if isinstance(result, dict) else {}
@@ -6922,9 +6968,17 @@ def _compute_gate_signals(result: dict[str, Any] | None) -> dict[str, Any]:
 
     frustration_high = False
     confusion_named = False
+    consent_accepted = False
+    consent_rejected = False
     for st in steps:
         if not isinstance(st, dict):
             continue
+        blob = _step_text_blob(st)
+        if blob:
+            if _CONSENT_ACCEPT_RE.search(blob):
+                consent_accepted = True
+            if _CONSENT_REJECT_RE.search(blob):
+                consent_rejected = True
         perc = st.get("perception")
         if not isinstance(perc, dict):
             perc = st.get("thinkAloud") if isinstance(st.get("thinkAloud"), dict) else None
@@ -6941,7 +6995,8 @@ def _compute_gate_signals(result: dict[str, Any] | None) -> dict[str, Any]:
             confusion_named = True
             frustration_high = True
 
-    # End-of-run scorecard friction can also imply frustration.
+    # End-of-run scorecard friction / goal.
+    goal_reached = result.get("success") is True
     sc = result.get("scorecard")
     if isinstance(sc, dict):
         friction = sc.get("frictionScore")
@@ -6950,10 +7005,16 @@ def _compute_gate_signals(result: dict[str, Any] | None) -> dict[str, Any]:
                 frustration_high = True
         except (TypeError, ValueError):
             pass
+        if sc.get("goalReached") is True:
+            goal_reached = True
+        cov = sc.get("coverage")
+        if isinstance(cov, dict) and cov.get("goalReached") is True:
+            goal_reached = True
+
+    elapsed_seconds = _elapsed_seconds_from_steps(steps)
 
     evaluations: list[dict[str, Any]] = []
-    # url/title stay in gateSignals only — canvas applies flow patterns.
-    # Agent can fully evaluate perception-based gates:
+    # url/title/time stay signal-only — canvas applies patterns / observeSeconds.
     if frustration_high:
         evaluations.append(
             {
@@ -6970,16 +7031,53 @@ def _compute_gate_signals(result: dict[str, Any] | None) -> dict[str, Any]:
                 "evidence": "perception.confusion",
             }
         )
+    if consent_accepted:
+        evaluations.append(
+            {
+                "condition": "consent_accepted",
+                "matched": True,
+                "evidence": "step_text",
+            }
+        )
+    if consent_rejected:
+        evaluations.append(
+            {
+                "condition": "consent_rejected",
+                "matched": True,
+                "evidence": "step_text",
+            }
+        )
+    if goal_reached:
+        evaluations.append(
+            {
+                "condition": "goal_reached",
+                "matched": True,
+                "evidence": "success/scorecard",
+            }
+        )
+
+    when_conds = {
+        "frustration_high",
+        "confusion_named",
+        "consent_accepted",
+        "consent_rejected",
+        "goal_reached",
+    }
+    any_when = any(e["condition"] in when_conds and e.get("matched") for e in evaluations)
 
     gate_signals = {
         "finalUrl": final_url,
         "finalTitle": final_title,
         "frustrationHigh": frustration_high,
         "confusionNamed": confusion_named,
+        "consentAccepted": consent_accepted,
+        "consentRejected": consent_rejected,
+        "goalReached": goal_reached,
+        "elapsedSeconds": elapsed_seconds,
         "evaluatedAt": datetime.now(timezone.utc).isoformat(),
     }
     flow_cursor = {
-        "activeEdgeKind": "when" if (frustration_high or confusion_named) else None,
+        "activeEdgeKind": "when" if any_when else None,
         "gateEvaluations": evaluations if evaluations else None,
     }
     return {"gateSignals": gate_signals, "flowCursor": flow_cursor}

@@ -33,6 +33,10 @@ export type UxJourneyAgentJobStatus = {
     finalTitle?: string | null
     frustrationHigh?: boolean
     confusionNamed?: boolean
+    consentAccepted?: boolean
+    consentRejected?: boolean
+    goalReached?: boolean
+    elapsedSeconds?: number | null
     evaluatedAt?: string | null
   } | null
   flowCursor?: {
@@ -61,6 +65,10 @@ export type UxJourneyAgentJobStatus = {
       finalTitle?: string | null
       frustrationHigh?: boolean
       confusionNamed?: boolean
+      consentAccepted?: boolean
+      consentRejected?: boolean
+      goalReached?: boolean
+      elapsedSeconds?: number | null
       evaluatedAt?: string | null
     } | null
     personaPolicy?: {

@@ -29,6 +29,7 @@ export type FlowRunProgressStep = {
   target?: string
   result?: string
   reasoning?: string | null
+  timestamp?: string | null
   screenshot?: string | null
   screenshotUrl?: string | null
   perception?: Record<string, unknown> | null
@@ -47,6 +48,7 @@ export type FlowRunProgressInput = {
   finalTitle?: string | null
   success?: boolean | null
   error?: string | null
+  scorecard?: Record<string, unknown> | null
   /** Agent-emitted Live-Gate signals (preferred over raw URL/title when set). */
   gateSignals?: UxFlowGateSignalBundle | null
   /** Optional agent/BFF cursor; when present, gate branch + active node win over heuristics. */
@@ -99,6 +101,59 @@ export function patternMatches(pattern: string | null | undefined, haystack: str
   }
 }
 
+const CONSENT_ACCEPT_RE =
+  /bestätig|akzeptier|zustimm|einwillig|accept\b|allow\s+(all|cookies)|cookie.*akzept|externen?\s+inhalt/i
+const CONSENT_REJECT_RE =
+  /ablehn|reject|decline|verweig|ohne\s+(cookies?|einwillig)|zu\s+google|nicht\s+bestätig|dismiss/i
+
+const AGENT_CURSOR_GATE_CONDS = new Set<UxFlowGateCondition>([
+  'frustration_high',
+  'confusion_named',
+  'consent_accepted',
+  'consent_rejected',
+  'goal_reached',
+])
+
+function stepTextBlob(step: FlowRunProgressStep): string {
+  const parts: string[] = []
+  for (const key of ['action', 'target', 'result', 'reasoning'] as const) {
+    const v = step[key]
+    if (typeof v === 'string' && v.trim()) parts.push(v)
+  }
+  const ta = step.thinkAloud
+  if (ta && typeof ta === 'object') {
+    for (const v of Object.values(ta)) {
+      if (typeof v === 'string' && v.trim()) parts.push(v)
+    }
+  }
+  return parts.join(' ')
+}
+
+function elapsedSecondsFromSteps(steps: FlowRunProgressStep[]): number | null {
+  const stamps: number[] = []
+  for (const step of steps) {
+    const raw = step.timestamp?.trim()
+    if (!raw) continue
+    const ms = Date.parse(raw)
+    if (!Number.isNaN(ms)) stamps.push(ms)
+  }
+  if (stamps.length < 2) return stamps.length ? 0 : null
+  return Math.max(0, (Math.max(...stamps) - Math.min(...stamps)) / 1000)
+}
+
+/** Observe window for a gate: nearest preceding observe node on the default path. */
+export function precedingObserveSeconds(flow: UxTestFlow, gateNodeId: string): number {
+  const base = defaultExecutionPath(flow)
+  const idx = base.findIndex((n) => n.id === gateNodeId)
+  for (let i = idx - 1; i >= 0; i--) {
+    const n = base[i]
+    if (n?.kind === 'observe' && typeof n.observeSeconds === 'number' && n.observeSeconds > 0) {
+      return n.observeSeconds
+    }
+  }
+  return 30
+}
+
 /** Derive gateSignals from steps/result when the agent omitted the bundle. */
 export function deriveGateSignalsFromJob(job: FlowRunProgressInput): UxFlowGateSignalBundle {
   if (job.gateSignals) return job.gateSignals
@@ -107,7 +162,14 @@ export function deriveGateSignalsFromJob(job: FlowRunProgressInput): UxFlowGateS
   const lastTitle = job.finalTitle?.trim() || null
   let frustrationHigh = false
   let confusionNamed = false
+  let consentAccepted = false
+  let consentRejected = false
   for (const step of steps) {
+    const blob = stepTextBlob(step)
+    if (blob) {
+      if (CONSENT_ACCEPT_RE.test(blob)) consentAccepted = true
+      if (CONSENT_REJECT_RE.test(blob)) consentRejected = true
+    }
     const perc = step.perception ?? step.thinkAloud
     if (!perc || typeof perc !== 'object') continue
     const stance = String((perc as { stance?: unknown }).stance ?? '').toLowerCase()
@@ -120,11 +182,24 @@ export function deriveGateSignalsFromJob(job: FlowRunProgressInput): UxFlowGateS
       frustrationHigh = true
     }
   }
+  let goalReached = job.success === true
+  const sc = job.scorecard
+  if (sc && typeof sc === 'object') {
+    if (sc.goalReached === true) goalReached = true
+    const cov = sc.coverage
+    if (cov && typeof cov === 'object' && (cov as { goalReached?: unknown }).goalReached === true) {
+      goalReached = true
+    }
+  }
   return {
     finalUrl: lastUrl,
     finalTitle: lastTitle,
     frustrationHigh,
     confusionNamed,
+    consentAccepted,
+    consentRejected,
+    goalReached,
+    elapsedSeconds: elapsedSecondsFromSteps(steps),
     evaluatedAt: null,
   }
 }
@@ -133,6 +208,7 @@ function evaluateGateCondition(
   condition: UxFlowGateCondition | null | undefined,
   pattern: string | null | undefined,
   signals: UxFlowGateSignalBundle,
+  observeSeconds?: number | null,
 ): { matched: boolean; evidence: string | null } {
   switch (condition) {
     case 'url_match': {
@@ -157,6 +233,27 @@ function evaluateGateCondition(
         matched: Boolean(signals.confusionNamed),
         evidence: signals.confusionNamed ? 'confusionNamed' : null,
       }
+    case 'consent_accepted':
+      return {
+        matched: Boolean(signals.consentAccepted),
+        evidence: signals.consentAccepted ? 'consentAccepted' : null,
+      }
+    case 'consent_rejected':
+      return {
+        matched: Boolean(signals.consentRejected),
+        evidence: signals.consentRejected ? 'consentRejected' : null,
+      }
+    case 'goal_reached':
+      return {
+        matched: Boolean(signals.goalReached),
+        evidence: signals.goalReached ? 'goalReached' : null,
+      }
+    case 'time_elapsed': {
+      const need = typeof observeSeconds === 'number' && observeSeconds > 0 ? observeSeconds : 30
+      const elapsed = typeof signals.elapsedSeconds === 'number' ? signals.elapsedSeconds : 0
+      const ok = elapsed >= need
+      return { matched: ok, evidence: ok ? String(elapsed) : null }
+    }
     default:
       return { matched: false, evidence: null }
   }
@@ -186,14 +283,13 @@ export function evaluateFlowGates(
     const fromCursor = cursorByCondition.get(n.gateCondition)
     let matched = false
     let evidence: string | null = null
-    if (
-      fromCursor &&
-      (n.gateCondition === 'frustration_high' || n.gateCondition === 'confusion_named')
-    ) {
+    if (fromCursor && AGENT_CURSOR_GATE_CONDS.has(n.gateCondition)) {
       matched = Boolean(fromCursor.matched)
       evidence = fromCursor.evidence ?? null
     } else {
-      const local = evaluateGateCondition(n.gateCondition, n.pattern, signals)
+      const observeSecs =
+        n.gateCondition === 'time_elapsed' ? precedingObserveSeconds(flow, n.id) : null
+      const local = evaluateGateCondition(n.gateCondition, n.pattern, signals, observeSecs)
       matched = local.matched
       evidence = local.evidence
     }
@@ -226,14 +322,7 @@ function buildExecPath(
 
   const gateId =
     matchedGateId ||
-    base.find(
-      (n) =>
-        n.kind === 'gate' &&
-        (n.gateCondition === 'url_match' ||
-          n.gateCondition === 'title_match' ||
-          n.gateCondition === 'frustration_high' ||
-          n.gateCondition === 'confusion_named'),
-    )?.id
+    base.find((n) => n.kind === 'gate' && n.gateCondition)?.id
 
   if (!gateId) return { path: base, gateMatched: false }
 
