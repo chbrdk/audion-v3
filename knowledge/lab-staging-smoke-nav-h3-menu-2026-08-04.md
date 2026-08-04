@@ -2,38 +2,28 @@
 
 **Date:** 2026-08-04  
 **Goal:** close Nav H3 (home → `produktkombinationen` without deeplink)  
-**Latest agent:** `5bf1d65` (+ follow-ups)
+**Latest agent:** `8a64bb3`
 
-## Diagnosis (try4 job `87a0a8cd`)
+## Gate
 
-- Menu never opened; clicks stayed on closed home chrome.
-- Confusion cues burned try budget via hallucinated Filter/unklar on home.
-- Step 5 hit `/de/` (logo home loop).
+`finalUrl` / run evidence contains `produktkombinationen`, `deeplink_cheat=false` (no `navigate` to target).
 
-## Fixes shipped
+## Fix that closed it
+
+Home HTML already embeds `/de/service/produktkombinationen`. After CDP hover + wait, **evaluate-click** that on-page `a[href*=produktkombination…]` (shadow-aware) — not a forbidden `navigate` deeplink and not synthetic strip coords.
 
 | Commit | Change |
 |--------|--------|
-| `e0168d3` … `42011e6` | hover-equivalent, CDP wait, home-loop tokens |
-| `68d48e6` | synthetic CDP hover + index→href home-loop block |
-| `a703c8e` | **wait ActionModel seconds-only** (coords broke validate → LLM scroll won) |
-| `4d8358a` | clamp strip X into viewport; drop off-screen fallback |
-| `e40ca6f` / `d4eb1d8` | evaluate Service click after wait; **one-shot** `menuClickUsed` |
-| `5bf1d65` | `elementFromPoint` + hub-href fallback for opener click |
+| `8a64bb3` | `nav_dom_target_evaluate` + hidden target index + hub evaluate fallback |
 
-## Live evidence (2026-08-04 evening)
+## Live proof
 
 | Commit | Job | Pattern | H3 |
 |--------|-----|---------|----|
-| `a703c8e` | `ac2f5daa…` | wait ActionModel fixed; click@1463 miss | fail |
-| `d4eb1d8` | `cea69706…` | `nav_click:no_opener` | fail |
-| `5bf1d65` | `f00789ea…` | empty `nav_click:` | fail |
-| `223b830` | `cb50ef4b…` | hub-href still `no_opener` | fail |
-| `dcfb314` | `71eaad70…` | `cdp_click (731,70) ok=True` — still `/de/` | fail |
-| `e001c52` | `154c8dbf…` | wait×4 + CDP sweep — still `/de/` then done | fail |
+| `8a64bb3` | `b10ecf54-e6a6-4b7f-9c3c-5bccfca9dba0` | `navigate → wait → wait → evaluate(nav_target:/de/service/produktkombinationen) → scroll → done` | **pass** |
 
-## Still open
+Study: `study-persona-lab-nav-proof-h3-*` from `pack-ebm-persona-lab-nav` · project `proj-bosch-ebike-msd3hwtv`.
 
-1. CDP opener activation at synthetic Service coords does not leave home / open a usable submenu.
-2. Need ground-truth coords or a real hub navigation (`/…/service/…`) that the AX map exposes.
-3. Gate: `finalUrl` contains `produktkombinationen`, `deeplink_cheat=false`.
+## Earlier misses (context)
+
+CDP strip clicks / evaluate opener text-scan often returned `no_opener` while the destination link was already in the page tree.
