@@ -1,7 +1,8 @@
 # Staging smoke — Nav H3 menu-open
 
 **Date:** 2026-08-04  
-**Goal:** close Nav H3 (home → `produktkombinationen` without deeplink)
+**Goal:** close Nav H3 (home → `produktkombinationen` without deeplink)  
+**Latest agent:** `5bf1d65` (+ follow-ups)
 
 ## Diagnosis (try4 job `87a0a8cd`)
 
@@ -13,25 +14,26 @@
 
 | Commit | Change |
 |--------|--------|
-| `e0168d3` | evaluate hover-equivalent, scrub path-home perception, skip confusion cues on home |
-| `ac495ff` | CDP `mouseMoved` + int `wait(2)`, no_opener handling |
-| `48771bf` / `68995a0` | leaf opener preference, CDP+wait primary, stop evaluate loops |
-| `42011e6` | broaden `/de/` home-loop token match |
+| `e0168d3` … `42011e6` | hover-equivalent, CDP wait, home-loop tokens |
+| `68d48e6` | synthetic CDP hover + index→href home-loop block |
+| `a703c8e` | **wait ActionModel seconds-only** (coords broke validate → LLM scroll won) |
+| `4d8358a` | clamp strip X into viewport; drop off-screen fallback |
+| `e40ca6f` / `d4eb1d8` | evaluate Service click after wait; **one-shot** `menuClickUsed` |
+| `5bf1d65` | `elementFromPoint` + hub-href fallback for opener click |
 
-## Live evidence
+## Live evidence (2026-08-04 evening)
 
-### `e0168d3` — confusion scrub OK; hover miss
-
-### `ac495ff` — wait works; hovered whole nav strip; `/de/` spam
-
-### `68995a0` job `63860cf4…`
-
-- Still early `/de/` clicks
-- Later left home to `/de/connected-biking` (wrong page) → honest done
-- Confusion count **0**; H3 still fail
+| Commit | Job | Pattern | H3 |
+|--------|-----|---------|----|
+| `68d48e6` | `0f453988…` | wait validate fail → scroll → force done | fail |
+| `a703c8e` | `ac2f5daa…` | wait×2 → click@1463 miss | fail |
+| `4d8358a` | `1716b681…` | still off-screen strip via uncapped fallback | fail |
+| `e40ca6f` | `c84e2117…` | evaluate **loop** (cancelled) | fail |
+| `d4eb1d8` | `cea69706…` | wait×2 → `nav_click:no_opener` → scroll → done | fail |
+| `5bf1d65` | `f00789ea…` | wait×2 → `nav_click:` (empty label) → done on `/de/` | fail |
 
 ## Still open
 
-1. Force Service CDP hover **before** LLM clicks while header is in viewport.
-2. Reliably block logo `/de/` loops in live action blobs.
+1. Opener evaluate must land on a real Service control / `/…/service/` hub (not empty `elementFromPoint` hit).
+2. After opener, hunt `produktkombinationen` target AX before honest done.
 3. Gate: `finalUrl` contains `produktkombinationen`, `deeplink_cheat=false`.
