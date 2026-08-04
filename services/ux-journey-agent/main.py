@@ -3160,6 +3160,46 @@ async def _cdp_mouse_move(agent_instance: Any, x: float, y: float) -> bool:
     return False
 
 
+async def _cdp_mouse_click(agent_instance: Any, x: float, y: float) -> bool:
+    """Best-effort real pointer click (pressed+released) at viewport CSS pixels."""
+    try:
+        session = await agent_instance.browser_session.get_or_create_cdp_session()
+    except Exception:
+        return False
+    if not session:
+        return False
+
+    async def _dispatch(event_type: str) -> bool:
+        params = {
+            "type": event_type,
+            "x": float(x),
+            "y": float(y),
+            "button": "left",
+            "clickCount": 1,
+        }
+        try:
+            if hasattr(session, "cdp_client"):
+                send = getattr(session.cdp_client, "send", None)
+                if send and hasattr(send, "Input"):
+                    await send.Input.dispatchMouseEvent(
+                        params, session_id=session.session_id
+                    )
+                    return True
+            if hasattr(session, "send") and hasattr(session.send, "Input"):
+                await session.send.Input.dispatchMouseEvent(
+                    params, session_id=session.session_id
+                )
+                return True
+        except Exception:
+            return False
+        return False
+
+    moved = await _cdp_mouse_move(agent_instance, x, y)
+    pressed = await _dispatch("mousePressed")
+    released = await _dispatch("mouseReleased")
+    return bool(moved and pressed and released)
+
+
 async def _play_click_ring(agent_instance: Any, params: dict[str, Any]) -> None:
     """Render a fading red ring at the click coordinates so the recording
     shows where the agent clicked. We resolve coordinates in this priority:
@@ -4011,6 +4051,7 @@ async def run_agent(
                     if dom_reason in (
                         "nav_dom_service_coordinate",
                         "nav_dom_service_click",
+                        "nav_dom_service_cdp_click",
                         "nav_dom_product_index",
                     ):
                         felt_state["menuClickUsed"] = True
@@ -4309,6 +4350,17 @@ async def run_agent(
                             # Mark hover used even if the following wait validate
                             # fails — otherwise we loop CDP without progress.
                             felt_state["menuHoverUsed"] = True
+                    if dom_reason == "nav_dom_service_cdp_click":
+                        vx = dom_action.get("coordinate_x")
+                        vy = dom_action.get("coordinate_y")
+                        if isinstance(vx, (int, float)) and isinstance(vy, (int, float)):
+                            clicked = await _cdp_mouse_click(agent, float(vx), float(vy))
+                            print(
+                                f"ux-journey: job={job_id} cdp_click "
+                                f"({int(vx)},{int(vy)}) ok={clicked}",
+                                flush=True,
+                            )
+                            felt_state["menuClickUsed"] = True
                     tool_name = str(dom_action.get("tool") or "")
                     dom_filtered = _typed_action(
                         tool_name, _params_for_typed_tool(tool_name, dom_params)

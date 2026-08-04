@@ -1176,13 +1176,9 @@ def select_nav_dom_action(
     if menu_phase and not menu_wait_used and not menu_expanded and target_idx is None:
         return {"tool": "wait", "seconds": 2}, "nav_dom_menu_wait"
 
-    # After hover (+ wait): prefer a non-rootish opener hub (/…/service/…) before logo/LLM.
-    if (
-        open_keys
-        and (menu_hover_used or menu_phase)
-        and target_idx is None
-        and not menu_click_used
-    ):
+    # After hover+wait: CDP click at synthetic Service coords (shadow/AX-proof),
+    # then a short wait — evaluate text scans often miss Bosch mega-menu chrome.
+    if open_keys and (menu_hover_used or menu_phase) and target_idx is None and not menu_click_used:
         hub_idx: int | None = None
         hub_score = float("-inf")
         for idx, node in _selector_map_items(browser_state_summary):
@@ -1201,19 +1197,15 @@ def select_nav_dom_action(
                 hub_idx = idx
         if hub_idx is not None:
             return {"tool": "click", "index": hub_idx}, "nav_dom_service_click"
-        # After hover+wait, prefer DOM evaluate click over AX-strip coordinates
-        # (wide strips often miss the leaf Service control). Once only.
         synth = _synthetic_top_opener_coord(open_keys)
-        point = None
         if synth is not None:
-            try:
-                point = (
-                    float(synth["coordinate_x"]),
-                    float(synth["coordinate_y"]),
-                )
-            except (KeyError, TypeError, ValueError):
-                point = None
-        click_eval = build_nav_opener_click_evaluate(open_keys, point=point)
+            return {
+                "tool": "wait",
+                "seconds": 2,
+                "coordinate_x": synth.get("coordinate_x"),
+                "coordinate_y": synth.get("coordinate_y"),
+            }, "nav_dom_service_cdp_click"
+        click_eval = build_nav_opener_click_evaluate(open_keys)
         if click_eval is not None:
             return click_eval, "nav_dom_service_click"
 
