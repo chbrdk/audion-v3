@@ -126,6 +126,63 @@ def test_intent_align_keeps_overlapping_click():
     assert len(kept) == 1
 
 
+def test_prefer_targeted_actions_nav_h3_prefers_produktkombinationen():
+    actions = [
+        {"click": {"text": "Service & Beratung"}},
+        {"click": {"text": "Produktkombinationen"}},
+        {"done": {"text": "Ich bin fertig"}},
+    ]
+    kept, reason = P.prefer_targeted_actions(
+        actions,
+        task=(
+            "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+            "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+        ),
+        current_url="https://www.bosch-ebike.com/de/service/",
+    )
+    assert reason == "nav_h3_produktkombinationen"
+    assert len(kept) == 1
+    assert "produktkombination" in P.action_text_blob(kept[0])
+
+
+def test_prefer_targeted_actions_cookie_prefers_reject_click():
+    actions = [
+        {"click": {"text": "Alles ablehnen"}},
+        {"scroll": {"down": True}},
+        {"done": {"text": "Ich breche ab"}},
+    ]
+    kept, reason = P.prefer_targeted_actions(
+        actions,
+        current_url="https://www.bosch-ebike.com/de/service/produktkombinationen",
+        perception={
+            "stance": "proceed",
+            "intent": "Ich schließe zuerst das Cookie-Banner.",
+            "think": "Das Banner blockiert die Auswahl.",
+            "noticed": [{"what": "Cookie-Banner mit Alles ablehnen", "relevance": "high"}],
+        },
+    )
+    assert reason == "cookie_reject"
+    assert len(kept) == 1
+    assert "ablehnen" in P.action_text_blob(kept[0])
+
+
+def test_targeted_continue_nudge_mentions_cookie_reject():
+    msg = P.targeted_continue_nudge(
+        task="Aufgabe 2 Kombination prüfen",
+        current_url="https://www.bosch-ebike.com/de/service/produktkombinationen",
+        perception={
+            "stance": "proceed",
+            "intent": "Ich klicke auf Alles ablehnen.",
+            "think": "Cookie-Banner blockiert das Tool.",
+            "noticed": [{"what": "Cookie-Banner", "relevance": "high"}],
+        },
+        actions=[{"click": {"text": "Alles ablehnen"}}, {"done": {"text": "Stop"}}],
+        min_steps=6,
+    )
+    assert "alles ablehnen" in msg.lower()
+    assert "done ist bis mindestens schritt 6 verboten" in msg.lower()
+
+
 def test_felt_state_updates():
     state = P.new_felt_state()
     perc = {

@@ -354,6 +354,139 @@ def action_tool_name(action: Any) -> str:
     return ""
 
 
+def action_text_blob(action: Any) -> str:
+    """Best-effort lowercase JSON/text blob for action target matching."""
+    if action is None:
+        return ""
+    if hasattr(action, "model_dump"):
+        try:
+            return json.dumps(action.model_dump(exclude_none=True), ensure_ascii=False).lower()
+        except Exception:
+            return str(action).lower()
+    if isinstance(action, dict):
+        try:
+            return json.dumps(action, ensure_ascii=False).lower()
+        except Exception:
+            return str(action).lower()
+    return str(action).lower()
+
+
+def _actions_matching_keywords(
+    actions: list[Any],
+    keywords: list[str] | tuple[str, ...],
+    *,
+    tool_names: tuple[str, ...] = ("click", "input", "type", "select_dropdown", "navigate"),
+) -> list[Any]:
+    want = [str(k).lower() for k in keywords if str(k).strip()]
+    if not actions or not want:
+        return []
+    out: list[Any] = []
+    for action in actions:
+        if action_tool_name(action) not in tool_names:
+            continue
+        blob = action_text_blob(action)
+        if any(k in blob for k in want):
+            out.append(action)
+    return out
+
+
+def is_nav_h3_task(task: str | None) -> bool:
+    if not task:
+        return False
+    t = str(task).lower()
+    return (
+        "bosch ebike startseite" in t
+        and "produktkombination" in t
+        and ("service" in t or "beratung" in t)
+    )
+
+
+def prefer_targeted_actions(
+    actions: list[Any],
+    *,
+    task: str | None = None,
+    current_url: str | None = None,
+    perception: dict[str, Any] | None = None,
+) -> tuple[list[Any], str]:
+    """
+    Prefer a higher-signal next step for known brittle flows.
+
+    Current use cases:
+    - Nav H3: once a Produktkombinationen link is visible, prefer it over a
+      generic service/menu retry.
+    - Cookie blocker: prefer the visible reject/dismiss action before generic
+      fallback scrolling or premature done.
+    """
+    if not actions:
+        return actions, "targeted_none"
+
+    if is_nav_h3_task(task):
+        produkt = _actions_matching_keywords(actions, ["produktkombination"])
+        if produkt:
+            return produkt, "nav_h3_produktkombinationen"
+        service = _actions_matching_keywords(actions, ["service", "beratung"])
+        if service:
+            return service, "nav_h3_service"
+
+    blob = " ".join(
+        bit
+        for bit in (
+            str(current_url or ""),
+            perception_text_blob(perception),
+            " ".join(action_text_blob(a) for a in actions),
+        )
+        if bit
+    ).lower()
+    if any(tok in blob for tok in ("cookie", "consent", "ablehnen", "banner")):
+        cookie = _actions_matching_keywords(
+            actions,
+            ["alles ablehnen", "ablehnen", "reject", "cookie", "consent"],
+        )
+        if cookie:
+            return cookie, "cookie_reject"
+
+    return actions, "targeted_passthrough"
+
+
+def targeted_continue_nudge(
+    *,
+    task: str | None,
+    current_url: str | None,
+    perception: dict[str, Any] | None,
+    actions: list[Any],
+    min_steps: int,
+) -> str:
+    """Targeted no-done retry message for pre-minSteps recovery."""
+    hinted, reason = prefer_targeted_actions(
+        actions,
+        task=task,
+        current_url=current_url,
+        perception=perception,
+    )
+    if reason == "nav_h3_produktkombinationen":
+        return (
+            f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
+            "NAV-H3: Wenn der Link/Zielpfad sichtbar ist, klicke jetzt gezielt "
+            "auf Produktkombinationen (oder den direkten Tool-Link) statt erneut nur Service zu wählen."
+        )
+    if reason == "nav_h3_service":
+        return (
+            f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
+            "NAV-H3: Klicke jetzt auf den sichtbaren Service-/Beratungs-Navigationseintrag, "
+            "um den Pfad zum Produktkombinationen-Tool weiterzuverfolgen."
+        )
+    if reason == "cookie_reject":
+        return (
+            f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
+            "Die sichtbare nächste Aktion ist das Cookie-Banner zu schließen: klicke "
+            "auf 'Alles ablehnen' / 'Ablehnen' statt abzubrechen oder blind zu scrollen."
+        )
+    return (
+        f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
+        "Bitte liefere einen sichtbaren nächsten Schritt (passender Klick/Scroll), kein done."
+    )
+
+
 _GREY_FILTER_CUES = (
     "grau",
     "gray",

@@ -3715,6 +3715,15 @@ async def run_agent(
                     except Exception:
                         pass
 
+                def _typed_scroll_fallback() -> list[Any]:
+                    action_model = getattr(agent, "ActionModel", None)
+                    if action_model is not None and hasattr(action_model, "model_validate"):
+                        try:
+                            return [action_model.model_validate({"scroll": {"down": True}})]
+                        except Exception:
+                            pass
+                    return []
+
                 async def _force_done_schema(reason: str) -> None:
                     """Last-resort done (stance abandon / empty filter) — still needs PERCEPTION."""
                     felt_state["forcedDone"] = int(felt_state.get("forcedDone") or 0) + 1
@@ -3959,6 +3968,15 @@ async def run_agent(
                                         filtered, perc
                                     )
 
+                filtered, targeted_reason = ux_perception.prefer_targeted_actions(
+                    filtered,
+                    task=task,
+                    current_url=current_url,
+                    perception=perc,
+                )
+                if targeted_reason != "targeted_passthrough":
+                    reason = targeted_reason
+
                 # Lab L1/L5: enforce minSteps before allowing a model-proposed
                 # done/complete/finish on patient-like flows (unless the stance
                 # is abandon, i.e. honest early quit).
@@ -3982,11 +4000,51 @@ async def run_agent(
                             reason = "min_steps_done_blocked"
                         else:
                             await _nudge(
-                                f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
-                                "Bitte liefere einen explorativen Schritt (scroll/klick), kein done."
+                                ux_perception.targeted_continue_nudge(
+                                    task=task,
+                                    current_url=current_url,
+                                    perception=perc,
+                                    actions=actions,
+                                    min_steps=min_steps,
+                                )
                             )
-                            filtered = [{"scroll": {"down": True}}]
-                            reason = "min_steps_done_blocked_scroll"
+                            felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
+                            perc2 = await _once()
+                            if perc2:
+                                perc = perc2
+                                mo = getattr(getattr(agent, "state", None), "last_model_output", None)
+                                actions = list(getattr(mo, "action", None) or []) if mo else []
+                                filtered, reason = ux_perception.filter_actions_for_stance(
+                                    actions, perc
+                                )
+                                if (
+                                    reason.startswith("proceed")
+                                    or reason == "hesitate_filter"
+                                    or reason == "abandon_done"
+                                    or reason == "try_then_quit_explore"
+                                ):
+                                    filtered, _ = ux_perception.filter_actions_intent_align(
+                                        filtered, perc
+                                    )
+                                filtered = [
+                                    a
+                                    for a in (filtered or [])
+                                    if ux_perception.action_tool_name(a) not in done_names
+                                ]
+                                filtered, targeted_reason = ux_perception.prefer_targeted_actions(
+                                    filtered,
+                                    task=task,
+                                    current_url=current_url,
+                                    perception=perc,
+                                )
+                                reason = (
+                                    f"min_steps_done_retry_{targeted_reason}"
+                                    if targeted_reason != "targeted_passthrough"
+                                    else "min_steps_done_retry"
+                                )
+                            if not filtered:
+                                filtered = _typed_scroll_fallback()
+                                reason = "min_steps_done_blocked_scroll"
 
                 if not filtered:
                     if perc and perc.get("stanceSoftened"):
@@ -3997,6 +4055,79 @@ async def run_agent(
                         ux_perception.update_felt_state(felt_state, perc)
                         print(
                             f"ux-journey: job={job_id} try-then-quit block force-done",
+                            flush=True,
+                        )
+                        return
+                    if ux_perception.min_steps_blocks_done(
+                        int(felt_state.get("stepsWithPerception") or 0) + 1,
+                        min_steps,
+                        stance=str(perc.get("stance") or ""),
+                    ):
+                        await _nudge(
+                            ux_perception.targeted_continue_nudge(
+                                task=task,
+                                current_url=current_url,
+                                perception=perc,
+                                actions=actions,
+                                min_steps=min_steps,
+                            )
+                        )
+                        felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
+                        perc2 = await _once()
+                        if perc2:
+                            perc = perc2
+                            mo = getattr(getattr(agent, "state", None), "last_model_output", None)
+                            actions = list(getattr(mo, "action", None) or []) if mo else []
+                            filtered, reason = ux_perception.filter_actions_for_stance(
+                                actions, perc
+                            )
+                            if (
+                                reason.startswith("proceed")
+                                or reason == "hesitate_filter"
+                                or reason == "abandon_done"
+                                or reason == "try_then_quit_explore"
+                            ):
+                                filtered, _ = ux_perception.filter_actions_intent_align(
+                                    filtered, perc
+                                )
+                            filtered = [
+                                a
+                                for a in (filtered or [])
+                                if ux_perception.action_tool_name(a)
+                                not in ("done", "complete", "finish")
+                            ]
+                            filtered, targeted_reason = ux_perception.prefer_targeted_actions(
+                                filtered,
+                                task=task,
+                                current_url=current_url,
+                                perception=perc,
+                            )
+                            if filtered:
+                                await _apply_actions(filtered)
+                                ux_perception.update_felt_state(felt_state, perc)
+                                print(
+                                    f"ux-journey: job={job_id} perception stance={perc.get('stance')} "
+                                    f"noticed={perc.get('noticedUsed')}/{perc.get('salienceBudget')} "
+                                    f"gate=min_steps_empty_retry_{targeted_reason} "
+                                    f"upgraded={bool(perc.get('stanceUpgraded'))} "
+                                    f"softened={bool(perc.get('stanceSoftened'))}",
+                                    flush=True,
+                                )
+                                return
+                        filtered = _typed_scroll_fallback()
+                        reason = "min_steps_empty_retry_scroll"
+                        print(
+                            f"ux-journey: job={job_id} min_steps empty filtered → scroll fallback",
+                            flush=True,
+                        )
+                    if filtered:
+                        await _apply_actions(filtered)
+                        ux_perception.update_felt_state(felt_state, perc)
+                        print(
+                            f"ux-journey: job={job_id} perception stance={perc.get('stance')} "
+                            f"noticed={perc.get('noticedUsed')}/{perc.get('salienceBudget')} "
+                            f"gate={reason} upgraded={bool(perc.get('stanceUpgraded'))} "
+                            f"softened={bool(perc.get('stanceSoftened'))}",
                             flush=True,
                         )
                         return
