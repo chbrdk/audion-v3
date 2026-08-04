@@ -1198,7 +1198,8 @@ def test_select_nav_dom_action_opens_with_cdp_hover_wait_first():
     assert isinstance(action.get("coordinate_y"), int)
 
 
-def test_select_nav_dom_action_evaluate_hover_without_bounds():
+def test_select_nav_dom_action_synthetic_hover_without_bounds():
+    """No usable bounds → synthetic top-strip CDP hover (not evaluate-only)."""
     summary = {
         "dom_state": {
             "selector_map": {
@@ -1218,11 +1219,49 @@ def test_select_nav_dom_action_evaluate_hover_without_bounds():
     )
     assert reason == "nav_dom_menu_hover"
     assert action is not None
-    assert action["tool"] == "evaluate"
-    assert "service" in action["code"].lower()
+    assert action["tool"] == "wait"
+    assert action["seconds"] == 2
+    assert isinstance(action.get("coordinate_x"), int)
+    assert isinstance(action.get("coordinate_y"), int)
 
 
-def test_scope_nav_home_scrubs_think_and_blocks_filter_promote():
+def test_is_home_loop_click_resolves_logo_index_href():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                1: {
+                    "is_visible": True,
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {"name": "Bosch", "role": "link"},
+                }
+            }
+        }
+    }
+
+    class _Click:
+        def model_dump(self, exclude_none=True):
+            return {"click": {"index": 1}}
+
+    assert P.is_home_loop_click(
+        _Click(),
+        "https://www.bosch-ebike.com/de/",
+        start_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        browser_state_summary=summary,
+    )
+
+
+def test_select_nav_dom_action_empty_map_still_hovers():
+    action, reason = P.select_nav_dom_action(
+        {"dom_state": {"selector_map": {}}},
+        current_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        menu_hover_used=False,
+    )
+    assert reason == "nav_dom_menu_hover"
+    assert action is not None
+    assert action["tool"] == "wait"
+    assert isinstance(action.get("coordinate_x"), int)
     nav_task = NAV_TASK
     perc = {
         "taskReminder": "x",

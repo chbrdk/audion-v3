@@ -1054,6 +1054,7 @@ def select_nav_dom_action(
 
     # Open mega-menus before the first blind opener click — once per run.
     # Prefer CDP pointer move via attached coords (CSS :hover); evaluate is fallback.
+    # Always emit a hover before any LLM click while still on the path-home surface.
     if open_keys and not menu_hover_used and not menu_phase and not menu_expanded:
         coord_src = best_coord or strip_coord
         if coord_src is None and opener_click_idx is not None:
@@ -1069,6 +1070,8 @@ def select_nav_dom_action(
                     "coordinate_y": int(round(by + bh * 0.5)),
                 }
                 break
+        if coord_src is None:
+            coord_src = _synthetic_top_opener_coord(open_keys)
         if coord_src is not None:
             return {
                 "tool": "wait",
@@ -1083,6 +1086,28 @@ def select_nav_dom_action(
     # Mega-menu may need a paint frame after hover/opener before submenu AX appears.
     if menu_phase and not menu_wait_used and not menu_expanded and target_idx is None:
         return {"tool": "wait", "seconds": 2}, "nav_dom_menu_wait"
+
+    # After hover (+ wait): prefer a non-rootish opener hub (/…/service/…) before logo/LLM.
+    if open_keys and (menu_hover_used or menu_phase) and target_idx is None:
+        hub_idx: int | None = None
+        hub_score = float("-inf")
+        for idx, node in _selector_map_items(browser_state_summary):
+            if not _node_visible(node):
+                continue
+            href = _node_attr(node, "href").lower()
+            if not href or _is_rootish_href(href):
+                continue
+            blob = _node_text_blob(node)
+            if not any(k in blob or k in href for k in open_keys):
+                continue
+            score = 20.0 if any(k in href for k in open_keys) else 10.0
+            score += max(0.0, 40.0 - float(len(blob)))
+            if score > hub_score:
+                hub_score = score
+                hub_idx = idx
+        if hub_idx is not None:
+            return {"tool": "click", "index": hub_idx}, "nav_dom_service_click"
+
     if opener_click_idx is not None and not menu_phase:
         return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
     if opener_click_idx is not None and menu_phase:
@@ -1100,12 +1125,53 @@ def select_nav_dom_action(
     return None, "nav_dom_no_candidate"
 
 
-def _is_home_loop_click(
+def _synthetic_top_opener_coord(open_keys: list[str]) -> dict[str, Any] | None:
+    """
+    Last-resort top-chrome coordinate for opener keywords when the selector
+    map has no usable bounds yet (still site-agnostic — only task keywords).
+    """
+    keys = [str(k).strip().lower() for k in (open_keys or []) if str(k).strip()]
+    if not keys:
+        return None
+    # Fake a typical LTR top nav label strip so ordinal bias can land near Service.
+    fake_blob = "produkte product ebikes models service beratung magazin magazine business"
+    return _coordinate_click_for_label(
+        (80.0, 48.0, 1100.0, 44.0),
+        fake_blob,
+        keys,
+        ordinal_bias=0.55,
+    )
+
+
+def _click_action_index(action: Any) -> int | None:
+    """Extract click index from ActionModel / dict shapes."""
+    if action is None:
+        return None
+    dump: Any = None
+    if hasattr(action, "model_dump"):
+        try:
+            dump = action.model_dump(exclude_none=True)
+        except Exception:
+            dump = None
+    elif isinstance(action, dict):
+        dump = action
+    if not isinstance(dump, dict):
+        return None
+    click = dump.get("click")
+    if isinstance(click, dict) and isinstance(click.get("index"), int):
+        return int(click["index"])
+    if isinstance(dump.get("index"), int) and action_tool_name(action) == "click":
+        return int(dump["index"])
+    return None
+
+
+def is_home_loop_click(
     action: Any,
     current_url: str | None,
     *,
     start_url: str | None = None,
     task: str | None = None,
+    browser_state_summary: Any = None,
 ) -> bool:
     """True when a path-finding click only points back to the start/root URL."""
     if action_tool_name(action) != "click":
@@ -1114,6 +1180,24 @@ def _is_home_loop_click(
     target_keys = _task_target_keywords(task)
     if target_keys and any(k in blob for k in target_keys):
         return False
+    # Resolve index → href from the live selector map (logo clicks often lack /de/ text).
+    idx = _click_action_index(action)
+    if idx is not None and browser_state_summary is not None:
+        for i, node in _selector_map_items(browser_state_summary):
+            if i != idx:
+                continue
+            href = _node_attr(node, "href").lower()
+            if _is_rootish_href(href):
+                return True
+            node_blob = _node_text_blob(node)
+            # Bosch logo / brand home control.
+            if href and _is_rootish_href(href.rstrip("/")):
+                return True
+            if node_blob in ("bosch", "logo", "startseite", "home") or node_blob.endswith(
+                " logo"
+            ):
+                return True
+            break
     cur = (current_url or "").strip().lower().rstrip("/")
     start = (start_url or "").strip().lower().rstrip("/")
     tokens = [
@@ -1127,12 +1211,19 @@ def _is_home_loop_click(
         " /de/ ",
         "'/de/'",
         '"/de/"',
+        '"href": "/de/"',
+        '"href": "/"',
+        '"href": "/en/"',
     ]
     if cur:
         tokens.extend([cur, cur + "/"])
     if start:
         tokens.extend([start, start + "/"])
     return any(token and token in blob for token in tokens)
+
+
+# Backward-compatible private alias.
+_is_home_loop_click = is_home_loop_click
 
 
 def prefer_targeted_actions(

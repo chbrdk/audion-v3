@@ -3917,16 +3917,21 @@ async def run_agent(
                         current_url=current_url,
                     )
                     reason_local = targeted_reason
-                    # Drop logo/home self-loops even when the LLM insists.
+                    # Drop logo/home self-loops even when the LLM insists
+                    # (resolve click index → href via selector map).
                     if ux_perception.is_ui_path_finding_task(task):
                         non_loop = [
                             a
                             for a in filtered_local
-                            if not ux_perception._is_home_loop_click(
-                                a, current_url, start_url=url, task=task
+                            if not ux_perception.is_home_loop_click(
+                                a,
+                                current_url,
+                                start_url=url,
+                                task=task,
+                                browser_state_summary=browser_state_summary,
                             )
                         ]
-                        if non_loop and len(non_loop) < len(filtered_local):
+                        if len(non_loop) < len(filtered_local):
                             filtered_local = non_loop
                             reason_local = "path_avoid_home_loop"
                     if deeplink_reason == "deeplink_blocked":
