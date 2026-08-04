@@ -16,6 +16,7 @@
 | UX Study workspace | `specs/domain/ux-study-workspace.md` |
 | UX Study fields | `specs/domain/ux-study-fields.md` |
 | UX Lab archetypes | `specs/domain/ux-lab-archetypes.md` |
+| UX Test Flow Szenarien (10 + Bausteine) | `specs/domain/ux-test-flow-scenarios.md` |
 | Chat workspace | `specs/domain/chat-workspace.md` |
 | Chat fields | `specs/domain/chat-fields.md` |
 | Project workspace | `specs/domain/project-workspace.md` |
