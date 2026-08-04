@@ -711,10 +711,21 @@ def _coordinate_click_for_label(
                 frac = (pos + (len(needle) / 2.0)) / float(len(blob))
                 break
     frac = max(0.08, min(0.92, frac))
+    # Cap absolute X so wide/full-bleed AX strips don't click past the viewport.
+    # Mega-nav nodes often report bw ≫ visible chrome; ordinal frac then lands off-screen.
+    eff_bw = min(float(bw), 1100.0)
+    eff_bx = float(bx)
+    if bw > 1100:
+        # Keep the strip anchored near typical LTR header chrome.
+        eff_bx = max(40.0, float(bx))
+    x = int(round(eff_bx + (eff_bw * frac)))
+    y = int(round(by + (bh * 0.5)))
+    x = max(24, min(x, 1280))
+    y = max(8, min(y, 160))
     return {
         "tool": "click",
-        "coordinate_x": int(round(bx + (bw * frac))),
-        "coordinate_y": int(round(by + (bh * 0.5))),
+        "coordinate_x": x,
+        "coordinate_y": y,
     }
 
 
@@ -897,8 +908,8 @@ def select_nav_dom_action(
         return None, "nav_dom_no_keywords"
 
     menu_phase = _is_menu_open_phase(prior_nav_reason)
-    # After a missed Service click, bias further into the label cell / right.
-    ordinal_bias = 0.72 if menu_phase else 0.5
+    # After a missed Service click, bias slightly into the label cell — not past it.
+    ordinal_bias = 0.58 if menu_phase else 0.5
 
     avoid = list(avoid_coordinates or [])
     target_idx: int | None = None
@@ -1113,14 +1124,38 @@ def select_nav_dom_action(
     if opener_click_idx is not None and menu_phase:
         # Re-try discrete opener only if we have no better target yet.
         return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
+    if text_opener_idx is not None:
+        return {"tool": "click", "index": text_opener_idx}, "nav_dom_service_click"
+
+    def _sane_coord(action: dict[str, Any] | None) -> dict[str, Any] | None:
+        if action is None or not _accept_coord(action):
+            return None
+        x = int(action.get("coordinate_x") or 0)
+        if x <= 0 or x > 1280:
+            return None
+        return action
+
+    sane_best = _sane_coord(best_coord)
+    if sane_best is not None:
+        return sane_best, "nav_dom_service_coordinate"
+    sane_strip = _sane_coord(strip_coord)
+    if sane_strip is not None:
+        return sane_strip, "nav_dom_service_coordinate"
+    sane_alt = _sane_coord(alt_strip)
+    if sane_alt is not None:
+        return sane_alt, "nav_dom_service_coordinate"
+    # Last resort after hover/wait when AX strip coords were off-screen / missing.
+    if open_keys and (menu_hover_used or menu_phase):
+        synth = _synthetic_top_opener_coord(open_keys)
+        sane_synth = _sane_coord(synth)
+        if sane_synth is not None:
+            return sane_synth, "nav_dom_service_coordinate"
     if best_coord is not None:
         return best_coord, "nav_dom_service_coordinate"
     if strip_coord is not None:
         return strip_coord, "nav_dom_service_coordinate"
     if alt_strip is not None:
         return alt_strip, "nav_dom_service_coordinate"
-    if text_opener_idx is not None:
-        return {"tool": "click", "index": text_opener_idx}, "nav_dom_service_click"
     _ = start_url
     return None, "nav_dom_no_candidate"
 

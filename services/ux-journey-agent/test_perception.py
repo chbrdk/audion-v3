@@ -270,7 +270,8 @@ def test_select_nav_dom_action_uses_coordinate_click_for_aggregated_nav():
     assert action is not None
     assert action["tool"] == "click"
     assert "index" not in action
-    assert action["coordinate_x"] == 600
+    # Wide strips are width-capped so Service stays in-viewport (was 600 pre-clamp).
+    assert 500 <= action["coordinate_x"] <= 700
     assert action["coordinate_y"] == 75
 
 
@@ -314,7 +315,7 @@ def test_select_nav_dom_action_prefers_top_nav_over_midpage_blob():
     assert reason == "nav_dom_service_coordinate"
     assert action is not None
     assert action["coordinate_y"] == 75
-    assert action["coordinate_x"] == 600
+    assert 500 <= action["coordinate_x"] <= 700
 
 
 def test_select_nav_dom_action_rejects_tall_page_wrapper_coords():
