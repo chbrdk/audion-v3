@@ -375,7 +375,14 @@ def _actions_matching_keywords(
     actions: list[Any],
     keywords: list[str] | tuple[str, ...],
     *,
-    tool_names: tuple[str, ...] = ("click", "input", "type", "select_dropdown", "navigate"),
+    tool_names: tuple[str, ...] = (
+        "click",
+        "hover",
+        "input",
+        "type",
+        "select_dropdown",
+        "navigate",
+    ),
 ) -> list[Any]:
     want = [str(k).lower() for k in keywords if str(k).strip()]
     if not actions or not want:
@@ -448,7 +455,16 @@ def prefer_targeted_actions(
         produkt = _actions_matching_keywords(actions, ["produktkombination"])
         if produkt:
             return produkt, "nav_h3_produktkombinationen"
-        service = _actions_matching_keywords(actions, ["service", "beratung"])
+        service = _actions_matching_keywords(
+            actions,
+            ["service", "beratung", "menu", "menü", "submenu"],
+            tool_names=("click", "hover"),
+        )
+        hover_service = [
+            a for a in service if action_tool_name(a) == "hover"
+        ]
+        if hover_service:
+            return hover_service, "nav_h3_hover_service"
         if exploratory_attempts >= 1:
             service = [
                 a
@@ -513,6 +529,12 @@ def targeted_continue_nudge(
             f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
             "NAV-H3: Klicke jetzt auf den sichtbaren Service-/Beratungs-Navigationseintrag, "
             "um den Pfad zum Produktkombinationen-Tool weiterzuverfolgen."
+        )
+    if reason == "nav_h3_hover_service":
+        return (
+            f"AUDION_MIN_STEPS_DONE_GATE: done ist bis mindestens Schritt {min_steps} verboten. "
+            "NAV-H3: Öffne jetzt zuerst das sichtbare Service-/Beratungs-Menü "
+            "(hover/menü öffnen), dann den Unterpunkt zum Produktkombinationen-Tool."
         )
     if reason == "cookie_reject":
         return (

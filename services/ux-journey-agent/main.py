@@ -3376,8 +3376,10 @@ async def run_agent(
                 "NAV-REGEL: Nav-Home: bevor du abbrichst/done wählst, "
                 "klicke (mindestens einmal) auf einen Navigation-Link in Richtung "
                 "Service/Produktkombinationen, sofern dein Try-Budget noch nicht "
-                "erschöpft ist. Wenn du diese Navigation trotz echten Versuchs nicht "
-                "findest oder sie keine Wirkung zeigt, darfst du ehrlich abbrechen.\n"
+                "erschöpft ist. Wenn ein Service-Menü sichtbar ist, öffne es notfalls "
+                "per Hover/Klick und verfolge dann den Unterpunkt zu "
+                "Produktkombinationen. Wenn diese Navigation trotz echten Versuchs "
+                "keine Wirkung zeigt, darfst du ehrlich abbrechen.\n"
             )
         if persona_tp is not None and persona_tp >= 0.75:
             abandon_n = int(confusion_abandon.get("threshold") or 2)
