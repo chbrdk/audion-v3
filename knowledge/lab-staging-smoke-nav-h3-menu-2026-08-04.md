@@ -2,28 +2,28 @@
 
 **Date:** 2026-08-04  
 **Goal:** close Nav H3 (home → `produktkombinationen` without deeplink)  
-**Latest agent:** `8a64bb3`
+**Latest:** `511d433` (evaluate gate) · path-find `8a64bb3`
 
 ## Gate
 
-`finalUrl` / run evidence contains `produktkombinationen`, `deeplink_cheat=false` (no `navigate` to target).
+`finalUrl` contains `produktkombinationen`, `deeplinkCheat=false`, Sync `goalReached=true`, Soft-Q **Q4** drafted, H3 auto-verdict from correlator (`navH3Pass=true`).
 
-## Fix that closed it
+## Fix that closed path-finding
 
-Home HTML already embeds `/de/service/produktkombinationen`. After CDP hover + wait, **evaluate-click** that on-page `a[href*=produktkombination…]` (shadow-aware) — not a forbidden `navigate` deeplink and not synthetic strip coords.
+Home HTML already embeds `/de/service/produktkombinationen`. After CDP hover + wait, **evaluate-click** that on-page `a[href*=produktkombination…]` (shadow-aware) — not a forbidden `navigate` deeplink.
 
 | Commit | Change |
 |--------|--------|
-| `8a64bb3` | `nav_dom_target_evaluate` + hidden target index + hub evaluate fallback |
+| `8a64bb3` | `nav_dom_target_evaluate` + hub evaluate fallback |
+| `511d433` | Agent `finalUrl` / URL `goalReached` override · Sync map · Soft-Q Q4 · H3 evaluate |
 
 ## Live proof
 
-| Commit | Job | Pattern | H3 |
-|--------|-----|---------|----|
-| `8a64bb3` | `b10ecf54-e6a6-4b7f-9c3c-5bccfca9dba0` | `navigate → wait → wait → evaluate(nav_target:/de/service/produktkombinationen) → scroll → done` | **pass** |
+| Commit | Job | Pattern | Result |
+|--------|-----|---------|--------|
+| `8a64bb3` | `b10ecf54-…` | `navigate → wait → wait → evaluate(nav_target) → scroll → done` | path landed |
+| `511d433` | `28086099-…` | `navigate → wait → wait → evaluate → done` | **finalUrl + Sync + Q4=4 + H3=refuted** |
 
-Study: `study-persona-lab-nav-proof-h3-*` from `pack-ebm-persona-lab-nav` · project `proj-bosch-ebike-msd3hwtv`.
+Study pack: `pack-ebm-persona-lab-nav` · project `proj-bosch-ebike-msd3hwtv`.
 
-## Earlier misses (context)
-
-CDP strip clicks / evaluate opener text-scan often returned `no_opener` while the destination link was already in the page tree.
+H3 statement is „Kein natürlicher Einstieg“ → successful UI path **refutes** H3; Soft-Q Q4 rises.
