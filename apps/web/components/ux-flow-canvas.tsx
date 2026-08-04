@@ -14,14 +14,8 @@ import {
   type OnSelectionChangeParams,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import type {
-  UxFlowGateCondition,
-  UxFlowNode,
-  UxFlowNodeKind,
-  UxTestFlow,
-} from '@audion-v3/contracts'
-import { Alert, Button, Chip, Field, Input, Panel, Text, Textarea } from '@msqdx/ui'
-import { Select } from '../lib/msqdx-ui-client'
+import type { UxFlowNode, UxFlowNodeKind, UxTestFlow } from '@audion-v3/contracts'
+import { Alert, Button, Chip, Text } from '@msqdx/ui'
 import {
   UX_FLOW_NODE_KINDS,
   edgeKindLabel,
@@ -35,17 +29,6 @@ import {
 import { flattenFlowBlocks } from '../lib/ux-test-flow-graph'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
 import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
-
-const GATE_OPTIONS: UxFlowGateCondition[] = [
-  'frustration_high',
-  'url_match',
-  'title_match',
-  'consent_accepted',
-  'consent_rejected',
-  'goal_reached',
-  'confusion_named',
-  'time_elapsed',
-]
 
 const nodeTypes = { uxFlow: UxFlowRfNodeView }
 
@@ -63,15 +46,41 @@ function FlowCanvasInner({
 
   const markDirty = useCallback(() => setDirty(true), [])
 
+  const onUpdateNode = useCallback(
+    (nodeId: string, patch: Partial<UxFlowNode>) => {
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id !== nodeId) return n
+          const prev = (n as UxFlowRfNode).data?.flowNode
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              flowNode: { ...prev, ...patch, id: nodeId },
+            },
+          }
+        }),
+      )
+      markDirty()
+    },
+    [setNodes, markDirty],
+  )
+
+  const nodesForFlow = useMemo(
+    () =>
+      nodes.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          onUpdate: onUpdateNode,
+        },
+      })),
+    [nodes, onUpdateNode],
+  )
+
   const getSnapshot = useCallback((): UxTestFlow => {
     return rfToUxTestFlow(templateRef.current, nodes as UxFlowRfNode[], edges as UxFlowRfEdge[])
   }, [nodes, edges])
-
-  const selectedNode = useMemo(() => {
-    if (!selectedId) return null
-    const n = nodes.find((x) => x.id === selectedId) as UxFlowRfNode | undefined
-    return n?.data?.flowNode ?? null
-  }, [nodes, selectedId])
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -84,6 +93,7 @@ function FlowCanvasInner({
           kind: (e.data as UxFlowRfEdge['data'])?.kind ?? 'then',
         })),
         connection.source,
+        connection.sourceHandle,
       )
       const id = `e-${connection.source}-${connection.target}-${Date.now().toString(36)}`
       setEdges((eds) =>
@@ -91,6 +101,8 @@ function FlowCanvasInner({
           {
             ...connection,
             id,
+            sourceHandle: connection.sourceHandle ?? kind,
+            targetHandle: connection.targetHandle ?? 'in',
             label: edgeKindLabel(kind),
             data: { kind },
           },
@@ -106,26 +118,6 @@ function FlowCanvasInner({
     setSelectedId(sel[0]?.id ?? null)
   }, [])
 
-  const updateSelected = useCallback(
-    (patch: Partial<UxFlowNode>) => {
-      if (!selectedId) return
-      setNodes((nds) =>
-        nds.map((n) => {
-          if (n.id !== selectedId) return n
-          const prev = (n as UxFlowRfNode).data?.flowNode
-          return {
-            ...n,
-            data: {
-              flowNode: { ...prev, ...patch, id: selectedId },
-            },
-          }
-        }),
-      )
-      markDirty()
-    },
-    [selectedId, setNodes, markDirty],
-  )
-
   const addNode = useCallback(
     (kind: UxFlowNodeKind) => {
       const flowNode = newUxFlowNode(kind)
@@ -133,7 +125,7 @@ function FlowCanvasInner({
       const rfNode: UxFlowRfNode = {
         id: flowNode.id,
         type: 'uxFlow',
-        position: { x: 40, y: maxY + 120 },
+        position: { x: 40, y: maxY + 180 },
         data: { flowNode },
       }
       setNodes((nds) => [...nds, rfNode])
@@ -178,6 +170,15 @@ function FlowCanvasInner({
         <Button type="button" size="sm" variant="subtle" onClick={reset} disabled={!dirty}>
           Reset to template
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={deleteSelected}
+          disabled={!selectedId}
+        >
+          Delete node
+        </Button>
       </div>
 
       {!hasGraph ? (
@@ -186,144 +187,68 @@ function FlowCanvasInner({
           {initialFlow.nodeKindsUsed.join(', ')}.
         </Alert>
       ) : (
-        <div className="audion-flow-canvas-layout">
-          <div className="audion-flow-canvas-main">
-            <div className="audion-flow-palette">
-              <Text role="label" as="p">
-                Bausteine
-              </Text>
-              <div className="audion-flow-palette-row">
-                {UX_FLOW_NODE_KINDS.map((kind) => (
-                  <Button
-                    key={kind}
-                    type="button"
-                    size="sm"
-                    variant="subtle"
-                    onClick={() => addNode(kind)}
-                  >
-                    + {kind}
-                  </Button>
-                ))}
-              </div>
+        <div className="audion-flow-canvas-main audion-flow-canvas-main--full">
+          <div className="audion-flow-palette">
+            <Text role="label" as="p">
+              Bausteine
+            </Text>
+            <div className="audion-flow-palette-row">
+              {UX_FLOW_NODE_KINDS.map((kind) => (
+                <Button
+                  key={kind}
+                  type="button"
+                  size="sm"
+                  variant="subtle"
+                  onClick={() => addNode(kind)}
+                >
+                  + {kind}
+                </Button>
+              ))}
             </div>
-            <div className="audion-flow-canvas-viewport">
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={(c) => {
-                  onNodesChange(c)
-                  if (
-                    c.some(
-                      (ch) =>
-                        ch.type === 'remove' ||
-                        ch.type === 'add' ||
-                        (ch.type === 'position' && 'dragging' in ch && ch.dragging === false),
-                    )
-                  ) {
-                    markDirty()
-                  }
-                }}
-                onEdgesChange={(c) => {
-                  onEdgesChange(c)
-                  if (c.some((ch) => ch.type === 'remove' || ch.type === 'add')) {
-                    markDirty()
-                  }
-                }}
-                onConnect={onConnect}
-                onSelectionChange={onSelectionChange}
-                nodeTypes={nodeTypes}
-                fitView
-                deleteKeyCode={['Backspace', 'Delete']}
-              >
-                <Background />
-                <Controls />
-                <MiniMap />
-              </ReactFlow>
-            </div>
+            <p className="audion-flow-canvas-hint">
+              Felder direkt in der Node bearbeiten · Gates: rechte Ports wenn / sonst
+            </p>
           </div>
-          <aside className="audion-flow-inspector">
-            <Panel as="div" variant="card">
-              <Text role="headline" as="h3">
-                Inspector
-              </Text>
-              {!selectedNode ? (
-                <p className="audion-flow-block-text">Knoten wählen zum Bearbeiten.</p>
-              ) : (
-                <div className="audion-flow-inspector-fields">
-                  <p className="audion-flow-block-meta">
-                    <Chip size="sm" static>
-                      {selectedNode.kind}
-                    </Chip>
-                    <Chip size="sm" static>
-                      {selectedNode.id}
-                    </Chip>
-                  </p>
-                  <Field label="Label" size="sm" htmlFor="flow-node-label">
-                    <Input
-                      id="flow-node-label"
-                      size="sm"
-                      block
-                      value={selectedNode.label}
-                      onChange={(e) => updateSelected({ label: e.target.value })}
-                    />
-                  </Field>
-                  {selectedNode.kind !== 'start' && selectedNode.kind !== 'gate' ? (
-                    <Field label="Text" size="sm" htmlFor="flow-node-text">
-                      <Textarea
-                        id="flow-node-text"
-                        size="sm"
-                        block
-                        rows={4}
-                        value={selectedNode.text ?? ''}
-                        onChange={(e) => updateSelected({ text: e.target.value })}
-                      />
-                    </Field>
-                  ) : null}
-                  {selectedNode.kind === 'start' ? (
-                    <Field label="urlKey" size="sm" htmlFor="flow-node-url">
-                      <Input
-                        id="flow-node-url"
-                        size="sm"
-                        block
-                        value={selectedNode.urlKey ?? ''}
-                        onChange={(e) => updateSelected({ urlKey: e.target.value })}
-                      />
-                    </Field>
-                  ) : null}
-                  {selectedNode.kind === 'gate' ? (
-                    <>
-                      <Field label="Gate condition" size="sm" htmlFor="flow-node-gate">
-                        <Select
-                          id="flow-node-gate"
-                          size="sm"
-                          value={selectedNode.gateCondition ?? 'goal_reached'}
-                          onChange={(v: string) =>
-                            updateSelected({ gateCondition: v as UxFlowGateCondition })
-                          }
-                          options={GATE_OPTIONS.map((g) => ({ value: g, label: g }))}
-                        />
-                      </Field>
-                      {(selectedNode.gateCondition === 'url_match' ||
-                        selectedNode.gateCondition === 'title_match') && (
-                        <Field label="pattern" size="sm" htmlFor="flow-node-pattern">
-                          <Input
-                            id="flow-node-pattern"
-                            size="sm"
-                            block
-                            value={selectedNode.pattern ?? ''}
-                            onChange={(e) => updateSelected({ pattern: e.target.value })}
-                          />
-                        </Field>
-                      )}
-                    </>
-                  ) : null}
-                  <Button type="button" size="sm" variant="ghost" onClick={deleteSelected}>
-                    Delete node
-                  </Button>
-                </div>
-              )}
-            </Panel>
-          </aside>
+          <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--tall">
+            <ReactFlow
+              nodes={nodesForFlow}
+              edges={edges}
+              onNodesChange={(c) => {
+                onNodesChange(c)
+                if (
+                  c.some(
+                    (ch) =>
+                      ch.type === 'remove' ||
+                      ch.type === 'add' ||
+                      (ch.type === 'position' && 'dragging' in ch && ch.dragging === false),
+                  )
+                ) {
+                  markDirty()
+                }
+              }}
+              onEdgesChange={(c) => {
+                onEdgesChange(c)
+                if (c.some((ch) => ch.type === 'remove' || ch.type === 'add')) {
+                  markDirty()
+                }
+              }}
+              onConnect={onConnect}
+              onSelectionChange={onSelectionChange}
+              nodeTypes={nodeTypes}
+              fitView
+              deleteKeyCode={null}
+              connectionLineStyle={{ strokeWidth: 2 }}
+              defaultEdgeOptions={{
+                type: 'smoothstep',
+                animated: false,
+                style: { strokeWidth: 2 },
+              }}
+            >
+              <Background gap={18} size={1} />
+              <Controls />
+              <MiniMap pannable zoomable />
+            </ReactFlow>
+          </div>
         </div>
       )}
     </div>
@@ -386,7 +311,7 @@ export function UxFlowDetailClient({ flow }: { flow: UxTestFlow }) {
                   className="audion-flow-block"
                   style={{ marginLeft: `${depth * 1.25}rem` }}
                 >
-                  <Panel as="div" variant="card" className="audion-flow-block-panel">
+                  <div className="audion-flow-block-panel audion-flow-block-panel--list">
                     <p className="audion-flow-block-meta">
                       <Chip size="sm" static>
                         {node.kind}
@@ -412,7 +337,7 @@ export function UxFlowDetailClient({ flow }: { flow: UxTestFlow }) {
                     {node.pattern ? (
                       <p className="audion-tg-card-meta">pattern: {node.pattern}</p>
                     ) : null}
-                  </Panel>
+                  </div>
                 </li>
               ))}
             </ol>

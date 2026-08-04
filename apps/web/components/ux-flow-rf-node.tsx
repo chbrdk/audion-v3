@@ -1,39 +1,190 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useCallback, type ChangeEvent, type MouseEvent } from 'react'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
-import { Chip } from '@msqdx/ui'
-import type { UxFlowRfNodeData } from '../lib/ux-flow-canvas'
-
-function truncate(text: string | null | undefined, max = 72): string {
-  if (!text) return ''
-  const t = text.trim()
-  if (t.length <= max) return t
-  return `${t.slice(0, max - 1)}…`
-}
+import type { UxFlowGateCondition, UxFlowNode, UxFlowNodeKind } from '@audion-v3/contracts'
+import { UX_FLOW_GATE_OPTIONS, type UxFlowRfNodeData } from '../lib/ux-flow-canvas'
 
 type UxFlowNodeType = Node<UxFlowRfNodeData, 'uxFlow'>
 
-function UxFlowRfNodeInner({ data, selected }: NodeProps<UxFlowNodeType>) {
+const KIND_LABEL: Record<UxFlowNodeKind, string> = {
+  start: 'Start',
+  prompt: 'Prompt',
+  observe: 'Observe',
+  action: 'Action',
+  gate: 'Gate',
+  message: 'Message',
+  success: 'Success',
+  abandon: 'Abandon',
+  measure: 'Measure',
+}
+
+function stopDrag(e: MouseEvent) {
+  e.stopPropagation()
+}
+
+function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
   const flowNode = data.flowNode
+  const onUpdate = data.onUpdate
+  const kind = flowNode.kind
+
+  const patch = useCallback(
+    (partial: Partial<UxFlowNode>) => {
+      onUpdate?.(id, partial)
+    },
+    [id, onUpdate],
+  )
+
+  const onLabel = (e: ChangeEvent<HTMLInputElement>) => patch({ label: e.target.value })
+  const onText = (e: ChangeEvent<HTMLTextAreaElement>) => patch({ text: e.target.value })
+  const onUrl = (e: ChangeEvent<HTMLInputElement>) => patch({ urlKey: e.target.value })
+  const onPattern = (e: ChangeEvent<HTMLInputElement>) => patch({ pattern: e.target.value })
+  const onSeconds = (e: ChangeEvent<HTMLInputElement>) => {
+    const n = Number(e.target.value)
+    patch({ observeSeconds: Number.isFinite(n) ? n : null })
+  }
+  const onGate = (e: ChangeEvent<HTMLSelectElement>) =>
+    patch({ gateCondition: e.target.value as UxFlowGateCondition })
+
+  const showText =
+    kind === 'prompt' ||
+    kind === 'action' ||
+    kind === 'message' ||
+    kind === 'abandon' ||
+    kind === 'success' ||
+    kind === 'measure' ||
+    kind === 'observe'
+
   return (
-    <div className={`audion-flow-rf-node${selected ? ' is-selected' : ''}`}>
-      <Handle type="target" position={Position.Top} className="audion-flow-rf-handle" />
-      <p className="audion-flow-rf-node-meta">
-        <Chip size="sm" static>
-          {flowNode.kind}
-        </Chip>
-        {flowNode.gateCondition ? (
-          <Chip size="sm" static>
-            {flowNode.gateCondition}
-          </Chip>
+    <div
+      className={`audion-flow-rf-node audion-flow-rf-node--${kind}${selected ? ' is-selected' : ''}`}
+    >
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="in"
+        className="audion-flow-rf-handle audion-flow-rf-handle--in"
+      />
+
+      <header className="audion-flow-rf-node-head">
+        <span className="audion-flow-rf-node-kind">{KIND_LABEL[kind]}</span>
+        <span className="audion-flow-rf-node-id" title={id}>
+          {id}
+        </span>
+      </header>
+
+      <div className="audion-flow-rf-node-body nodrag nopan" onMouseDown={stopDrag}>
+        <label className="audion-flow-rf-field">
+          <span>Name</span>
+          <input
+            className="audion-flow-rf-input"
+            value={flowNode.label}
+            onChange={onLabel}
+            placeholder="Node name"
+          />
+        </label>
+
+        {kind === 'start' ? (
+          <label className="audion-flow-rf-field">
+            <span>urlKey</span>
+            <input
+              className="audion-flow-rf-input"
+              value={flowNode.urlKey ?? ''}
+              onChange={onUrl}
+              placeholder="url key or https://…"
+            />
+          </label>
         ) : null}
-      </p>
-      <p className="audion-flow-rf-node-label">{flowNode.label}</p>
-      {flowNode.text ? (
-        <p className="audion-flow-rf-node-text">{truncate(flowNode.text)}</p>
-      ) : null}
-      <Handle type="source" position={Position.Bottom} className="audion-flow-rf-handle" />
+
+        {kind === 'gate' ? (
+          <>
+            <label className="audion-flow-rf-field">
+              <span>Condition</span>
+              <select
+                className="audion-flow-rf-input audion-flow-rf-select"
+                value={flowNode.gateCondition ?? 'goal_reached'}
+                onChange={onGate}
+              >
+                {UX_FLOW_GATE_OPTIONS.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {(flowNode.gateCondition === 'url_match' ||
+              flowNode.gateCondition === 'title_match') && (
+              <label className="audion-flow-rf-field">
+                <span>pattern</span>
+                <input
+                  className="audion-flow-rf-input"
+                  value={flowNode.pattern ?? ''}
+                  onChange={onPattern}
+                  placeholder="regex"
+                />
+              </label>
+            )}
+          </>
+        ) : null}
+
+        {kind === 'observe' ? (
+          <label className="audion-flow-rf-field audion-flow-rf-field--inline">
+            <span>Sekunden</span>
+            <input
+              className="audion-flow-rf-input audion-flow-rf-input--narrow"
+              type="number"
+              min={1}
+              value={flowNode.observeSeconds ?? 30}
+              onChange={onSeconds}
+            />
+          </label>
+        ) : null}
+
+        {showText ? (
+          <label className="audion-flow-rf-field">
+            <span>{kind === 'measure' ? 'Frage' : 'Text'}</span>
+            <textarea
+              className="audion-flow-rf-input audion-flow-rf-textarea"
+              rows={kind === 'observe' ? 2 : 3}
+              value={flowNode.text ?? ''}
+              onChange={onText}
+              placeholder="Instruction / question…"
+            />
+          </label>
+        ) : null}
+      </div>
+
+      {kind === 'gate' ? (
+        <>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="when"
+            className="audion-flow-rf-handle audion-flow-rf-handle--when"
+            style={{ top: '38%' }}
+            title="wenn"
+          />
+          <span className="audion-flow-rf-port-label audion-flow-rf-port-label--when">wenn</span>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="otherwise"
+            className="audion-flow-rf-handle audion-flow-rf-handle--otherwise"
+            style={{ top: '72%' }}
+            title="sonst"
+          />
+          <span className="audion-flow-rf-port-label audion-flow-rf-port-label--otherwise">
+            sonst
+          </span>
+        </>
+      ) : (
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="then"
+          className="audion-flow-rf-handle audion-flow-rf-handle--out"
+        />
+      )}
     </div>
   )
 }
