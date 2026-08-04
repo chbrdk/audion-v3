@@ -926,6 +926,7 @@ def select_nav_dom_action(
     prior_nav_reason: str | None = None,
     menu_wait_used: bool = False,
     menu_hover_used: bool = False,
+    menu_click_used: bool = False,
 ) -> tuple[dict[str, Any] | None, str]:
     """
     Deterministically steer brittle home→destination nav using visible DOM nodes.
@@ -1141,7 +1142,12 @@ def select_nav_dom_action(
         return {"tool": "wait", "seconds": 2}, "nav_dom_menu_wait"
 
     # After hover (+ wait): prefer a non-rootish opener hub (/…/service/…) before logo/LLM.
-    if open_keys and (menu_hover_used or menu_phase) and target_idx is None:
+    if (
+        open_keys
+        and (menu_hover_used or menu_phase)
+        and target_idx is None
+        and not menu_click_used
+    ):
         hub_idx: int | None = None
         hub_score = float("-inf")
         for idx, node in _selector_map_items(browser_state_summary):
@@ -1161,18 +1167,23 @@ def select_nav_dom_action(
         if hub_idx is not None:
             return {"tool": "click", "index": hub_idx}, "nav_dom_service_click"
         # After hover+wait, prefer DOM evaluate click over AX-strip coordinates
-        # (wide strips often miss the leaf Service control).
+        # (wide strips often miss the leaf Service control). Once only.
         click_eval = build_nav_opener_click_evaluate(open_keys)
         if click_eval is not None:
             return click_eval, "nav_dom_service_click"
 
-    if opener_click_idx is not None and not menu_phase:
+    if opener_click_idx is not None and not menu_phase and not menu_click_used:
         return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
-    if opener_click_idx is not None and menu_phase:
+    if opener_click_idx is not None and menu_phase and not menu_click_used:
         # Re-try discrete opener only if we have no better target yet.
         return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
-    if text_opener_idx is not None:
+    if text_opener_idx is not None and not menu_click_used:
         return {"tool": "click", "index": text_opener_idx}, "nav_dom_service_click"
+
+    # Opener already activated once — stop thrashing; wait for target AX or LLM.
+    if menu_click_used:
+        _ = start_url
+        return None, "nav_dom_opener_spent"
 
     def _sane_coord(action: dict[str, Any] | None) -> dict[str, Any] | None:
         if action is None or not _accept_coord(action):

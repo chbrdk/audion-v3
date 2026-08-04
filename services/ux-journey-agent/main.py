@@ -3414,6 +3414,7 @@ async def run_agent(
         felt_state["lastNavReason"] = None
         felt_state["menuWaitUsed"] = False
         felt_state["menuHoverUsed"] = False
+        felt_state["menuClickUsed"] = False
         try_before_n = int(confusion_abandon.get("tryBeforeAbandon") or 1)
         print(
             f"ux-journey: job={job_id} step_budget={step_budget} "
@@ -3997,6 +3998,7 @@ async def run_agent(
                         ),
                         menu_wait_used=bool(felt_state.get("menuWaitUsed")),
                         menu_hover_used=bool(felt_state.get("menuHoverUsed")),
+                        menu_click_used=bool(felt_state.get("menuClickUsed")),
                     )
 
                 def _record_nav_steer(dom_reason: str, params: dict[str, Any]) -> None:
@@ -4011,6 +4013,7 @@ async def run_agent(
                         "nav_dom_service_click",
                         "nav_dom_product_index",
                     ):
+                        felt_state["menuClickUsed"] = True
                         _record_nav_coord(
                             {
                                 "coordinate_x": params.get("coordinate_x"),

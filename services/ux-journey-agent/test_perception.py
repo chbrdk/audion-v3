@@ -1085,10 +1085,10 @@ def test_select_nav_dom_action_avoids_repeating_same_coordinates():
         task=NAV_TASK,
         avoid_coordinates=[(600, 60)],
         menu_hover_used=True,
+        menu_click_used=True,
     )
-    assert reason2 == "nav_dom_service_click"
-    assert second is not None
-    assert second["tool"] == "evaluate"
+    assert reason2 == "nav_dom_opener_spent"
+    assert second is None
 
 
 def test_select_nav_dom_action_menu_phase_prefers_target_after_opener():
