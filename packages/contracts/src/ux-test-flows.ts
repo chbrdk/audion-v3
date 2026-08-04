@@ -89,7 +89,13 @@ export type UxTestFlowSummary = {
 }
 
 export type UxStudyFromFlowPayload = {
-  flowId: string
+  /** Fixture id and/or id fallback when `flow.id` is missing. */
+  flowId?: string
+  /**
+   * Session-edited graph snapshot. When set, validate+compile this graph
+   * (wins over fixture). Requires a full node/edge graph.
+   */
+  flow?: UxTestFlow
   name?: string
   projectId?: string | null
   waveKey?: string

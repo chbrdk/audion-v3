@@ -15,7 +15,7 @@ First-class **Study → Wave → Run plan → Start/Sync → Evaluate → Compar
 |-------|------|
 | `/studies` | Study list + **New study** |
 | `/studies/flows` | UX Test Flow template gallery (product layer) |
-| `/studies/flows/[flowId]` | Flow block list + **Create study from flow** |
+| `/studies/flows/[flowId]` | Flow block list + canvas (session edit) + **Create study from flow** |
 | `/studies/[studyId]` | Study detail + wave list + **New wave** |
 | `/studies/[studyId]/waves/[waveId]` | Wave detail: run matrix, Start/Sync, evaluation, compare picker, report edit, F-Fragen → chat |
 

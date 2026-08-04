@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { UxStudyFromFlowResult } from '@audion-v3/contracts'
+import type { UxStudyFromFlowResult, UxTestFlow } from '@audion-v3/contracts'
 import { Button } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 
@@ -10,10 +10,13 @@ export function CreateStudyFromFlowButton({
   flowId,
   flowName,
   disabled,
+  getFlowSnapshot,
 }: {
   flowId: string
   flowName: string
   disabled?: boolean
+  /** When provided, POST includes the current (possibly edited) graph. */
+  getFlowSnapshot?: () => UxTestFlow
 }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
@@ -23,6 +26,7 @@ export function CreateStudyFromFlowButton({
     setBusy(true)
     setError(null)
     try {
+      const flow = getFlowSnapshot?.()
       const res = await fetch(paths.routes.apiStudiesFromFlow, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -30,6 +34,7 @@ export function CreateStudyFromFlowButton({
           flowId,
           name: flowName,
           waveKey: `from-flow-${Date.now().toString(36)}`,
+          ...(flow ? { flow } : {}),
         }),
       })
       const data = (await res.json()) as UxStudyFromFlowResult & { error?: string }

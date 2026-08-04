@@ -18,8 +18,11 @@ export async function POST(request: Request) {
     )
   }
   const body = (await request.json()) as UxStudyFromFlowPayload
-  if (!body?.flowId?.trim()) {
-    return NextResponse.json({ error: 'flowId is required' }, { status: 400 })
+  if (!body?.flow && !body?.flowId?.trim()) {
+    return NextResponse.json(
+      { error: 'flowId or flow is required' },
+      { status: 400 },
+    )
   }
   try {
     const result = await createStudyFromUxTestFlow(body)

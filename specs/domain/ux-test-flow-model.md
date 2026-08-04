@@ -1,9 +1,9 @@
 # UX Test Flow Model
 
-**Status:** Accepted (V1 MVP)  
+**Status:** Accepted (V1 + Canvas session edit)  
 **Contracts:** `@audion-v3/contracts` — `UxTestFlow`, `UxFlowNode`, `UxFlowEdge`  
 **Scenarios catalog:** `specs/domain/ux-test-flow-scenarios.md`  
-**UI:** `/studies/flows` (template gallery + block list; canvas later)
+**UI:** `/studies/flows` (template gallery + block list + React Flow canvas)
 
 ## Purpose
 
@@ -68,18 +68,28 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
 
 Phase 2: agent evaluates gates live and chooses edges.
 
+## Canvas (session edit)
+
+- Detail page: toggle **Liste | Canvas** (default Canvas when a full graph exists).
+- Canvas uses `@xyflow/react`; node/edge payload is the same `UxTestFlow` JSON.
+- Layout positions are UI-only (not persisted on `UxFlowNode`).
+- Edits are **browser-session only**; **Reset to template** restores the fixture. Reload = fixture.
+- Create Study may POST an inline `flow` snapshot; server validates then compiles (V1).
+- Catalog-only templates (no nodes) show the existing empty alert — no fake graph.
+
 ## Surfaces / API
 
 | Surface | Role |
 |---------|------|
 | `GET /studies/flows` | Template gallery |
-| `GET /studies/flows/[flowId]` | Block list + create CTA |
+| `GET /studies/flows/[flowId]` | Block list + canvas + create CTA |
 | `GET /api/studies/from-flow` | List summaries |
-| `POST /api/studies/from-flow` | `{ flowId, name?, projectId?, waveKey? }` → Study+Wave |
+| `POST /api/studies/from-flow` | `{ flowId?, flow?, name?, projectId?, waveKey? }` → Study+Wave |
 
-## Out of scope (V1)
+`flowId` **or** `flow` required. If both, `flow` wins for the graph; `flowId` is id fallback when `flow.id` is missing.
 
-- React Flow canvas editor  
+## Out of scope (still later)
+
 - DB-persisted user-edited flows  
 - Agent mid-run gate engine  
 - Moderated-only protocol UI without agent

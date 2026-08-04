@@ -240,10 +240,46 @@ export function compileUxTestFlowToPackShape(flow: UxTestFlow): UxScenarioPack {
   }
 }
 
+/**
+ * Inline snapshot wins over fixture; requires full graph when `flow` is set.
+ */
+export function resolveUxTestFlowForCreate(
+  payload: UxStudyFromFlowPayload,
+): UxTestFlow | null {
+  if (payload.flow) {
+    const flow = payload.flow
+    const base =
+      (payload.flowId ? getUxTestFlow(payload.flowId) : null) ??
+      (flow.id ? getUxTestFlow(flow.id) : null)
+    const id = (flow.id?.trim() || payload.flowId?.trim() || base?.id || '').trim()
+    if (!id) return null
+    const merged: UxTestFlow = {
+      ...(base ?? {
+        id,
+        name: flow.name || id,
+        description: flow.description || '',
+        scenarioIndex: flow.scenarioIndex ?? 0,
+        primaryArchetype: flow.primaryArchetype ?? 'task_goal',
+        nodeKindsUsed: flow.nodeKindsUsed ?? [],
+        defaultWaveKey: flow.defaultWaveKey || id,
+        compileReady: false,
+      }),
+      ...flow,
+      id,
+      nodes: flow.nodes ?? null,
+      edges: flow.edges ?? null,
+    }
+    const hasGraph = Boolean(merged.nodes?.length && merged.edges?.length)
+    return { ...merged, compileReady: hasGraph }
+  }
+  if (payload.flowId?.trim()) return getUxTestFlow(payload.flowId.trim())
+  return null
+}
+
 export async function createStudyFromUxTestFlow(
   payload: UxStudyFromFlowPayload,
 ): Promise<UxStudyFromFlowResult | null> {
-  const flow = getUxTestFlow(payload.flowId)
+  const flow = resolveUxTestFlowForCreate(payload)
   if (!flow) return null
   const validation = validateUxTestFlow(flow)
   if (!validation.ok) {

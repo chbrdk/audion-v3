@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { Alert, Chip, Panel, Text, TopStatus } from '@msqdx/ui'
+import { Alert, Chip, TopStatus } from '@msqdx/ui'
 import { AppShell } from '../../../../components/app-shell'
-import { CreateStudyFromFlowButton } from '../../../../components/create-study-from-flow-button'
-import { flattenFlowBlocks, getUxTestFlow } from '../../../../lib/ux-test-flows'
+import { UxFlowDetailClient } from '../../../../components/ux-flow-canvas'
+import { getUxTestFlow } from '../../../../lib/ux-test-flows'
 import { paths } from '../../../../lib/paths'
 
 export default async function StudiesFlowDetailPage({
@@ -20,8 +20,6 @@ export default async function StudiesFlowDetailPage({
       </AppShell>
     )
   }
-
-  const blocks = flattenFlowBlocks(flow)
 
   return (
     <AppShell
@@ -43,61 +41,7 @@ export default async function StudiesFlowDetailPage({
         </Chip>
       </p>
 
-      <CreateStudyFromFlowButton
-        flowId={flow.id}
-        flowName={flow.name}
-        disabled={!flow.compileReady}
-      />
-
-      <section className="audion-flow-blocks">
-        <Text role="headline" as="h2">
-          Blockliste
-        </Text>
-        {!blocks.length ? (
-          <Alert tone="info">
-            Noch kein vollständiger Graph — nur Katalog-Metadaten. Bausteine:{' '}
-            {flow.nodeKindsUsed.join(', ')}.
-          </Alert>
-        ) : (
-          <ol className="audion-flow-block-list">
-            {blocks.map(({ node, branch, depth }) => (
-              <li
-                key={`${node.id}-${branch}-${depth}`}
-                className="audion-flow-block"
-                style={{ marginLeft: `${depth * 1.25}rem` }}
-              >
-                <Panel as="div" variant="card" className="audion-flow-block-panel">
-                  <p className="audion-flow-block-meta">
-                    <Chip size="sm" static>
-                      {node.kind}
-                    </Chip>
-                    {branch && branch !== 'main' ? (
-                      <Chip size="sm" static>
-                        {branch === 'when' ? 'wenn' : 'sonst'}
-                      </Chip>
-                    ) : null}
-                    {node.gateCondition ? (
-                      <Chip size="sm" static>
-                        {node.gateCondition}
-                      </Chip>
-                    ) : null}
-                  </p>
-                  <Text role="headline" as="h3">
-                    {node.label}
-                  </Text>
-                  {node.text ? <p className="audion-flow-block-text">{node.text}</p> : null}
-                  {node.urlKey ? (
-                    <p className="audion-tg-card-meta">urlKey: {node.urlKey}</p>
-                  ) : null}
-                  {node.pattern ? (
-                    <p className="audion-tg-card-meta">pattern: {node.pattern}</p>
-                  ) : null}
-                </Panel>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      <UxFlowDetailClient flow={flow} />
     </AppShell>
   )
 }
