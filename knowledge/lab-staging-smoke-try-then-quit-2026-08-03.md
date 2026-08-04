@@ -39,4 +39,4 @@ Study/wave: `study-persona-lab-sam-patient-db-2026-08-03-msds5ghc` / `wave-perso
 
 ## Ops lesson
 
-`from-pack` seeds fixture `persona-alex-lab-impatient` — always PATCH wave run to DB persona id before Start (same lesson as Alex lab seed).
+`from-pack` now auto-resolves fixture lab personas to staging DB ids (`lab-persona-resolve` / `AUDION_LAB_*`). **No PATCH** required after web deploy `ffd1914+`. See `knowledge/persona-lab-persona-resolve-2026-08-04.md` · smoke `knowledge/lab-staging-smoke-explore-budget-2026-08-04.md`.
