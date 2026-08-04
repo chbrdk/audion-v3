@@ -68,13 +68,13 @@ export type UxTestFlow = {
   nodeKindsUsed: UxFlowNodeKind[]
   domainProfileId?: SoftScoreDomainProfileId | null
   softScoreKeys?: SoftScoreKey[] | null
-  /** Full graph when available (V1: scenarios 1–3); catalog-only entries may omit. */
+  /** Full graph when available; catalog-only entries may omit (legacy). */
   nodes?: UxFlowNode[] | null
   edges?: UxFlowEdge[] | null
   /** Hint success criteria when graph omitted or for pack compile override */
   successCriteria?: UxSuccessCriteria | null
   defaultWaveKey: string
-  /** Whether compile to agent study is supported in V1 */
+  /** Whether compile to agent study is supported */
   compileReady: boolean
 }
 

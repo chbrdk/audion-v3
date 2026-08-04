@@ -13,7 +13,7 @@
 
 Statt hundert spezieller Screens reichen wenige **Knotentypen**. Ein Board (React Flow o.ä.) kann dieselben Knoten wiederverwenden. Die 10 Szenarien unten prüfen, ob diese Knoten wirklich reichen.
 
-V1: Vorlagen + Blockliste + Compile → Study. Canvas und Live-Gates = später.
+V1: Vorlagen + Blockliste + Canvas + Compile → Study (alle 10 Graphen). Live-Gates = später.
 
 ---
 

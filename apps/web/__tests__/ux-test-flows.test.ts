@@ -24,7 +24,7 @@ describe('ux-test-flows', () => {
     const items = listUxTestFlows()
     expect(items).toHaveLength(10)
     expect(items.map((i) => i.scenarioIndex)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    expect(items.filter((i) => i.compileReady)).toHaveLength(3)
+    expect(items.filter((i) => i.compileReady)).toHaveLength(10)
   })
 
   it('validates feeling-gate and findability graphs', () => {
@@ -32,8 +32,8 @@ describe('ux-test-flows', () => {
     const find = getUxTestFlow('flow-findability')!
     expect(validateUxTestFlow(feeling)).toEqual({ ok: true })
     expect(validateUxTestFlow(find)).toEqual({ ok: true })
-    const catalog = getUxTestFlow('flow-task-goal')!
-    expect(validateUxTestFlow(catalog).ok).toBe(false)
+    expect(validateUxTestFlow(getUxTestFlow('flow-task-goal')!)).toEqual({ ok: true })
+    expect(validateUxTestFlow(getUxTestFlow('flow-moderated-outline')!)).toEqual({ ok: true })
   })
 
   it('compiles findability flow with url_match successCriteria', () => {
@@ -72,6 +72,23 @@ describe('ux-test-flows', () => {
     expect(result!.wave.runs).toHaveLength(1)
     expect(result!.wave.runs[0]?.url).toBe(paths.labTemplateFindabilityStartUrl)
     expect(result!.study.targetUrlKey).toBe(paths.labTemplateFindabilityStartUrlKey)
+  })
+
+  it('compiles segment-contrast into two parallel persona runs', () => {
+    const flow = getUxTestFlow('flow-segment-contrast')!
+    const pack = compileUxTestFlowToPackShape(flow)
+    expect(pack.runs).toHaveLength(2)
+    expect(pack.runs[0]?.personaId).toBe(paths.personaLabImpatientPersonaId)
+    expect(pack.runs[1]?.personaId).toBe(paths.personaLabPatientPersonaId)
+    expect(pack.runs[0]?.task).toBe(pack.runs[1]?.task)
+  })
+
+  it('validates all ten fixture graphs', () => {
+    for (const item of listUxTestFlows()) {
+      const flow = getUxTestFlow(item.id)!
+      expect(validateUxTestFlow(flow), item.id).toEqual({ ok: true })
+      expect(compileUxTestFlowToPackShape(flow).runs.length).toBeGreaterThan(0)
+    }
   })
 
   it('round-trips feeling-gate through React Flow mapper', () => {

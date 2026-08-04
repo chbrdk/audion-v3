@@ -64,7 +64,7 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
 3. First `url_match` / `title_match` on the graph → pack/run `successCriteria`.
 4. `start.urlKey` → `targetUrlKey` and run `urlKey`.
 5. Soft-Q keys: core profile (`ease`…`overall`) unless flow sets `domainProfileId`.
-6. `parallel` edges from start → multiple runs (same task, different persona ids on nodes).
+6. `parallel` edges from start → **additional runs** (same task; persona/segment from the parallel target node).
 
 Phase 2: agent evaluates gates live and chooses edges.
 
@@ -75,7 +75,7 @@ Phase 2: agent evaluates gates live and chooses edges.
 - Layout positions are UI-only (not persisted on `UxFlowNode`).
 - Edits are **browser-session only**; **Reset to template** restores the fixture. Reload = fixture.
 - Create Study may POST an inline `flow` snapshot; server validates then compiles (V1).
-- Catalog-only templates (no nodes) show the existing empty alert — no fake graph.
+- All 10 catalog templates ship with full graphs (`compileReady`).
 
 ## Surfaces / API
 

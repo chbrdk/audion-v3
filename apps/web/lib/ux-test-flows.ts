@@ -154,12 +154,47 @@ export function compileUxTestFlowToPackShape(flow: UxTestFlow): UxScenarioPack {
   if (!validation.ok) {
     throw new Error(validation.errors.join(' '))
   }
-  const start = (flow.nodes ?? []).find((n) => n.kind === 'start')!
+  const nodes = flow.nodes ?? []
+  const edges = flow.edges ?? []
+  const byId = nodeMap(nodes)
+  const start = nodes.find((n) => n.kind === 'start')!
   const urlKey = start.urlKey?.trim() || paths.labTemplateFindabilityStartUrlKey
   const softKeys: SoftScoreKey[] =
     flow.softScoreKeys?.length ? flow.softScoreKeys : [...SOFT_SCORE_CORE_KEYS]
   const successCriteria = collectSuccessCriteria(flow)
   const task = compileTaskText(flow)
+
+  const baseRun = {
+    leitfadenBlock: flow.name,
+    urlKey,
+    task,
+    maxSteps: start.maxSteps ?? 12,
+    archetype: flow.primaryArchetype,
+    successCriteria,
+  }
+
+  const runs = [
+    {
+      ...baseRun,
+      runKey: `${flow.id}-run-a`,
+      personaId: start.personaId || paths.personaLabImpatientPersonaId,
+      personaName: start.personaName ?? 'Lab Persona',
+      segment: start.segment ?? 'owner_upgrade',
+    },
+    ...outs(edges, start.id, 'parallel').map((edge, i) => {
+      const marker = byId.get(edge.to)
+      return {
+        ...baseRun,
+        runKey: `${flow.id}-run-b${i || ''}`,
+        personaId:
+          marker?.personaId ||
+          paths.personaLabPatientPersonaId,
+        personaName: marker?.personaName ?? 'Lab Persona B',
+        segment: marker?.segment ?? start.segment ?? 'owner_upgrade',
+        maxSteps: marker?.maxSteps ?? start.maxSteps ?? 12,
+      }
+    }),
+  ]
 
   return {
     id: `compiled-${flow.id}`,
@@ -178,24 +213,11 @@ export function compileUxTestFlowToPackShape(flow: UxTestFlow): UxScenarioPack {
     domainProfileId: flow.domainProfileId ?? 'core',
     archetype: flow.primaryArchetype,
     successCriteria,
-    fFragenPrompts: (flow.nodes ?? [])
+    fFragenPrompts: nodes
       .filter((n) => n.kind === 'measure' && n.text)
       .map((n) => n.text!),
     defaultWaveKey: flow.defaultWaveKey,
-    runs: [
-      {
-        runKey: `${flow.id}-run`,
-        leitfadenBlock: flow.name,
-        personaId: start.personaId || paths.personaLabImpatientPersonaId,
-        personaName: start.personaName ?? 'Lab Persona',
-        segment: start.segment ?? 'owner_upgrade',
-        urlKey,
-        task,
-        maxSteps: start.maxSteps ?? 12,
-        archetype: flow.primaryArchetype,
-        successCriteria,
-      },
-    ],
+    runs,
   }
 }
 
