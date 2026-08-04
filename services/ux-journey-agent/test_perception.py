@@ -551,6 +551,68 @@ def test_lab_b_gold_context_allowed_scopes_nav_home_vs_tool_url():
     assert P.lab_b_gold_context_allowed("https://www.bosch-ebike.com/de/", lab_b_matrix_task) is True
 
 
+def test_scope_nav_home_perception_rewrites_tool_bias_on_home():
+    nav_task = (
+        "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+        "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+    )
+    perc = {
+        "taskReminder": "Ich will kompatible Displays finden",
+        "noticed": [
+            {"what": "Filter/Ursache prüfen", "where": "Tool", "relevance": "high"},
+            {
+                "what": "Filter-Ursache unklar warum",
+                "where": "Kompatibilitätswahl",
+                "relevance": "high",
+            },
+        ],
+        "think": "Ohne Erklärung zur Ursache bleibe ich unsicher.",
+        "clarity": 1,
+        "feel": {"label": "angespannt", "valence": -1},
+        "confusion": "filter_cause_unknown",
+        "stance": "proceed",
+        "intent": "Ich erkunde einmal kurz weiter.",
+        "why": "Filter-Ursache unklar — ein kurzer Versuch ist noch sinnvoll.",
+    }
+    out = P.scope_nav_home_perception(
+        perc,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=nav_task,
+        budget=3,
+    )
+    assert out is not None
+    assert out["taskReminder"] == "Ich suche den Weg zum Produktkombinationen-Tool."
+    assert out["confusion"] is None
+    joined = " ".join(n.get("what") for n in out["noticed"] if isinstance(n, dict)).lower()
+    assert "startseite" in joined
+    assert "filter" not in joined
+
+
+def test_scope_nav_home_perception_skips_on_tool_url():
+    nav_task = (
+        "Starte auf der Bosch eBike Startseite (nicht direkt im Tool). "
+        "Finde den Weg zum Produktkombinationen-Tool (Service/Produktkombinationen)."
+    )
+    perc = {
+        "taskReminder": "Ich will kompatible Displays finden",
+        "noticed": [{"what": "Filter/Ursache prüfen", "where": "Tool", "relevance": "high"}],
+        "think": "Tool ist sichtbar.",
+        "clarity": 1,
+        "feel": {"label": "ok", "valence": 0},
+        "confusion": "filter_cause_unknown",
+        "stance": "proceed",
+        "intent": "Ich prüfe das Tool.",
+        "why": "Tool ist geladen.",
+    }
+    out = P.scope_nav_home_perception(
+        perc,
+        current_url="https://www.bosch-ebike.com/de/service/produktkombinationen",
+        task=nav_task,
+        budget=3,
+    )
+    assert out == perc
+
+
 def test_enrich_skips_matrix_gold_when_off_tool():
     # Full budget scenario: if matrix gold cues were allowed, enrichment could
     # replace the single noticed slot with "Performance Line" / "grau / disabled".

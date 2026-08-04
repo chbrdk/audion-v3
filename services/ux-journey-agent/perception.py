@@ -846,6 +846,67 @@ def lab_b_gold_context_allowed(current_url: str | None, task: str | None) -> boo
     return "produktkombinationen" in str(current_url).lower()
 
 
+def scope_nav_home_perception(
+    perception: dict[str, Any] | None,
+    *,
+    current_url: str | None,
+    task: str | None,
+    budget: int,
+) -> dict[str, Any] | None:
+    """
+    Keep Nav-H3 on the *path-finding* problem while still on Bosch home.
+
+    Without this, the model can hallucinate matrix/filter state from the target
+    task and abandon before it has actually reached the Produktkombinationen
+    surface.
+    """
+    if not perception or not is_nav_h3_task(task):
+        return perception
+    if lab_b_gold_context_allowed(current_url, task):
+        return perception
+
+    out = dict(perception)
+    blob = perception_text_blob(out)
+    noticed: list[dict[str, Any]] = [
+        {
+            "what": "Bosch eBike Startseite geladen",
+            "where": "Home",
+            "relevance": "high",
+        }
+    ]
+    if any(tok in blob for tok in ("service", "beratung")):
+        noticed.append(
+            {
+                "what": "Service & Beratung als möglicher Einstieg",
+                "where": "Navigation",
+                "relevance": "high",
+            }
+        )
+    if "produktkombination" in blob:
+        noticed.append(
+            {
+                "what": "Produktkombinationen noch nicht verifiziert",
+                "where": "Zielpfad",
+                "relevance": "high",
+            }
+        )
+    if len(noticed) == 1:
+        noticed.append(
+            {
+                "what": "Direkter Tool-Einstieg noch nicht sichtbar",
+                "where": "Startseite",
+                "relevance": "high",
+            }
+        )
+    out["noticed"] = noticed[: max(2, budget)]
+    out["taskReminder"] = "Ich suche den Weg zum Produktkombinationen-Tool."
+    out["intent"] = "Ich suche den sichtbaren Service-/Produktkombinationen-Einstieg."
+    out["why"] = "Auf der Startseite zählt zuerst der Weg zum Tool, nicht die Tool-Bedienung."
+    if str(out.get("confusion") or "") == "filter_cause_unknown":
+        out["confusion"] = None
+    return out
+
+
 def min_steps_blocks_done(current_step: int, min_steps: int, *, stance: str) -> bool:
     """
     True when "done" should be blocked because we're still below minSteps.

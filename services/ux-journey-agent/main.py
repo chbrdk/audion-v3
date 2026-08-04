@@ -3671,6 +3671,12 @@ async def run_agent(
                     raw_perc = ux_perception.extract_perception_from_thinking(
                         thinking, budget=_perc_budget
                     )
+                    raw_perc = ux_perception.scope_nav_home_perception(
+                        raw_perc,
+                        current_url=current_url,
+                        task=task,
+                        budget=_perc_budget,
+                    )
                     perc_out, upgraded = ux_perception.finalize_perception_for_persona(
                         raw_perc,
                         budget=_perc_budget,
