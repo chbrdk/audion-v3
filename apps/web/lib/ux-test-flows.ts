@@ -316,12 +316,16 @@ export async function createStudyFromUxTestFlow(
 
   if (wave.evaluation && wave.evaluation.waveId !== wave.id) {
     const { storePatchUxWave } = await import('./fixtures/ux-study-store')
-    await storePatchUxWave(study.id, wave.id, {
-      evaluation: { ...wave.evaluation, waveId: wave.id },
+    const patched = await storePatchUxWave(study.id, wave.id, {
+      waveKey: wave.waveKey,
+      evaluation: { ...wave.evaluation, waveId: wave.id, studyId: study.id },
     })
+    return {
+      study,
+      wave: patched ?? { ...wave, evaluation: { ...wave.evaluation, waveId: wave.id } },
+      flowId: flow.id,
+    }
   }
 
-  const { storeUxWaveDetail } = await import('./fixtures/ux-study-store')
-  const refreshed = (await storeUxWaveDetail(study.id, wave.id)) ?? wave
-  return { study, wave: refreshed, flowId: flow.id }
+  return { study, wave, flowId: flow.id }
 }
