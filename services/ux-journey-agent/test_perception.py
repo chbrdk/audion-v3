@@ -266,13 +266,10 @@ def test_select_nav_dom_action_uses_coordinate_click_for_aggregated_nav():
         ),
         menu_hover_used=True,
     )
-    assert reason == "nav_dom_service_coordinate"
+    assert reason == "nav_dom_service_click"
     assert action is not None
-    assert action["tool"] == "click"
-    assert "index" not in action
-    # Wide strips are width-capped so Service stays in-viewport (was 600 pre-clamp).
-    assert 500 <= action["coordinate_x"] <= 700
-    assert action["coordinate_y"] == 75
+    assert action["tool"] == "evaluate"
+    assert ".click()" in action["code"]
 
 
 def test_select_nav_dom_action_prefers_top_nav_over_midpage_blob():
@@ -312,10 +309,9 @@ def test_select_nav_dom_action_prefers_top_nav_over_midpage_blob():
         ),
         menu_hover_used=True,
     )
-    assert reason == "nav_dom_service_coordinate"
+    assert reason == "nav_dom_service_click"
     assert action is not None
-    assert action["coordinate_y"] == 75
-    assert 500 <= action["coordinate_x"] <= 700
+    assert action["tool"] == "evaluate"
 
 
 def test_select_nav_dom_action_rejects_tall_page_wrapper_coords():
@@ -378,11 +374,9 @@ def test_select_nav_dom_action_synthesizes_top_strip_for_tall_menu_wrapper():
         ),
         menu_hover_used=True,
     )
-    assert reason == "nav_dom_service_coordinate"
+    assert reason == "nav_dom_service_click"
     assert action is not None
-    assert "index" not in action
-    assert action["coordinate_y"] == 60  # 36 + 48*0.5
-    assert 450 <= action["coordinate_x"] <= 700
+    assert action["tool"] == "evaluate"
 
 
 def test_select_nav_dom_action_falls_back_to_short_label_when_only_midpage_bounds():
@@ -1081,19 +1075,20 @@ def test_select_nav_dom_action_avoids_repeating_same_coordinates():
         task=NAV_TASK,
         menu_hover_used=True,
     )
-    assert reason1 == "nav_dom_service_coordinate"
+    # After hover, leaf opener is activated via evaluate click (not strip coords).
+    assert reason1 == "nav_dom_service_click"
     assert first is not None
-    xy = (first["coordinate_x"], first["coordinate_y"])
+    assert first["tool"] == "evaluate"
     second, reason2 = P.select_nav_dom_action(
         summary,
         current_url="https://www.example.com/de/",
         task=NAV_TASK,
-        avoid_coordinates=[xy],
+        avoid_coordinates=[(600, 60)],
         menu_hover_used=True,
     )
-    assert reason2 == "nav_dom_service_coordinate"
+    assert reason2 == "nav_dom_service_click"
     assert second is not None
-    assert (second["coordinate_x"], second["coordinate_y"]) != xy
+    assert second["tool"] == "evaluate"
 
 
 def test_select_nav_dom_action_menu_phase_prefers_target_after_opener():
@@ -1163,13 +1158,43 @@ def test_select_nav_dom_action_menu_phase_waits_once_for_submenu():
     assert reason2 == "nav_dom_service_click"
     assert action2 == {"tool": "click", "index": 3}
 
-def test_build_nav_menu_hover_evaluate_embeds_open_keys():
-    action = P.build_nav_menu_hover_evaluate(["service", "beratung"])
+def test_build_nav_opener_click_evaluate_embeds_open_keys():
+    action = P.build_nav_opener_click_evaluate(["service", "beratung"])
     assert action is not None
     assert action["tool"] == "evaluate"
     assert "service" in action["code"]
-    assert "mouseover" in action["code"]
-    assert "mouseenter" in action["code"]
+    assert ".click()" in action["code"]
+
+
+def test_select_nav_dom_action_evaluate_click_after_hover_wait():
+    summary = {
+        "dom_state": {
+            "selector_map": {
+                # Rootish aggregated strip only — no discrete hub index.
+                3: {
+                    "is_visible": True,
+                    "bounds": {"x": 0, "y": 40, "width": 2000, "height": 40},
+                    "attributes": {"href": "/de/"},
+                    "ax_node": {
+                        "name": "Produkte eBikes Service & Beratung Magazin Business",
+                        "role": "link",
+                    },
+                }
+            }
+        }
+    }
+    action, reason = P.select_nav_dom_action(
+        summary,
+        current_url="https://www.bosch-ebike.com/de/",
+        task=NAV_TASK,
+        prior_nav_reason="nav_dom_menu_wait",
+        menu_wait_used=True,
+        menu_hover_used=True,
+    )
+    assert reason == "nav_dom_service_click"
+    assert action is not None
+    assert action["tool"] == "evaluate"
+    assert ".click()" in action["code"]
 
 
 def test_select_nav_dom_action_opens_with_cdp_hover_wait_first():

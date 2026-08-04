@@ -804,6 +804,48 @@ def build_nav_menu_hover_evaluate(open_keys: list[str]) -> dict[str, Any] | None
     return {"tool": "evaluate", "code": code}
 
 
+def build_nav_opener_click_evaluate(open_keys: list[str]) -> dict[str, Any] | None:
+    """
+    Site-agnostic opener activation via ``evaluate`` click on the best
+    top-chrome control matching task opener keywords (leaf labels only).
+    """
+    keys = [str(k).strip().lower() for k in (open_keys or []) if str(k).strip()]
+    if not keys:
+        return None
+    keys_js = json.dumps(keys, ensure_ascii=True)
+    code = (
+        "(function(){try{"
+        f"const keys={keys_js};"
+        "const match=t=>keys.some(k=>t.includes(k));"
+        "const nodes=Array.from(document.querySelectorAll("
+        "'a,button,nav a,header a,[role=menuitem],[role=link],[role=button],"
+        "[class*=nav] a,[class*=menu] a,[class*=Menu] a'));"
+        "let best=null; let bestScore=-1e9;"
+        "for(const el of nodes){"
+        "const href=String(el.getAttribute('href')||'').toLowerCase();"
+        "const t=((el.innerText||el.textContent||'')+' '+"
+        "(el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+href)"
+        ".toLowerCase().replace(/\\s+/g,' ').trim();"
+        "if(!match(t)) continue;"
+        "if(t.length>56) continue;"
+        "if((t.match(/produkte|ebikes|magazin|business|über uns/g)||[]).length>=2) continue;"
+        "const r=el.getBoundingClientRect();"
+        "if(r.width<8||r.height<8||r.bottom<0||r.top>420) continue;"
+        "let score=0;"
+        "if(r.top<=160) score+=50; else if(r.top<=280) score+=20;"
+        "if(href && href!=='/' && !/^\\/[a-z]{2}\\/?$/.test(href)) score+=25;"
+        "if(t.length<=40) score+=20; else if(t.length<=56) score+=8;"
+        "if(keys.some(k=>t===k||t.startsWith(k+' ')||t.includes('& '+k)||t.includes(k+' &'))) score+=30;"
+        "if(score>bestScore){bestScore=score; best=el;}"
+        "}"
+        "if(!best) return 'nav_click:no_opener';"
+        "best.click();"
+        "return 'nav_click:'+String(best.innerText||best.textContent||'').trim().slice(0,48);"
+        "}catch(e){return 'nav_click:err:'+e.message}}())"
+    )
+    return {"tool": "evaluate", "code": code}
+
+
 def _nav_open_candidate_score(
     rect: tuple[float, float, float, float],
     blob: str,
@@ -1118,6 +1160,11 @@ def select_nav_dom_action(
                 hub_idx = idx
         if hub_idx is not None:
             return {"tool": "click", "index": hub_idx}, "nav_dom_service_click"
+        # After hover+wait, prefer DOM evaluate click over AX-strip coordinates
+        # (wide strips often miss the leaf Service control).
+        click_eval = build_nav_opener_click_evaluate(open_keys)
+        if click_eval is not None:
+            return click_eval, "nav_dom_service_click"
 
     if opener_click_idx is not None and not menu_phase:
         return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
@@ -1144,18 +1191,12 @@ def select_nav_dom_action(
     sane_alt = _sane_coord(alt_strip)
     if sane_alt is not None:
         return sane_alt, "nav_dom_service_coordinate"
-    # Last resort after hover/wait when AX strip coords were off-screen / missing.
     if open_keys and (menu_hover_used or menu_phase):
         synth = _synthetic_top_opener_coord(open_keys)
         sane_synth = _sane_coord(synth)
         if sane_synth is not None:
             return sane_synth, "nav_dom_service_coordinate"
-    if best_coord is not None:
-        return best_coord, "nav_dom_service_coordinate"
-    if strip_coord is not None:
-        return strip_coord, "nav_dom_service_coordinate"
-    if alt_strip is not None:
-        return alt_strip, "nav_dom_service_coordinate"
+    # Never return off-screen strip coords — that only burns the try budget.
     _ = start_url
     return None, "nav_dom_no_candidate"
 
