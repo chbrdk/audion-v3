@@ -1343,7 +1343,13 @@ def _apply_persona_perception_finalize(
     return steps
 
 
-def _history_to_steps(history: Any) -> list[dict[str, Any]]:
+def _history_to_steps(
+    history: Any,
+    *,
+    task: str | None = None,
+    start_url: str | None = None,
+    perception_budget: int = 4,
+) -> list[dict[str, Any]]:
     """Map browser-use action_history to AUDION steps (readable labels, target, result, reasoning).
 
     When a step has ``model_output=None`` (LLM/parse/timeout failure), browser-use still
@@ -1354,9 +1360,15 @@ def _history_to_steps(history: Any) -> list[dict[str, Any]]:
         actions = list(history.action_history()) if hasattr(history, "action_history") and callable(history.action_history) else []
         thoughts = _get_model_thoughts(history)
         step_errors = _history_step_errors(history)
+        current_url = start_url
         for i, action_item in enumerate(actions):
             step_num = i + 1
             action_label, target, result = _normalize_action_entry(action_item)
+            if isinstance(target, str):
+                if target.startswith("http"):
+                    current_url = target
+                elif target == "/de/":
+                    current_url = "https://www.bosch-ebike.com/de/"
             err = step_errors[i] if i < len(step_errors) else None
             # Empty action lists mean the step never got a model_output — replace "[]" with error.
             if err and (
@@ -1383,6 +1395,12 @@ def _history_to_steps(history: Any) -> list[dict[str, Any]]:
                 if thinking:
                     # Extract perception (or legacy think-aloud) + observations BEFORE trim.
                     perception = ux_perception.extract_perception_from_thinking(thinking)
+                    perception = ux_perception.scope_nav_home_perception(
+                        perception,
+                        current_url=current_url,
+                        task=task,
+                        budget=perception_budget,
+                    )
                     think_aloud = _extract_think_aloud(thinking)
                     observations, invalid_obs = _extract_observations(thinking)
                     cleaned_thinking = _strip_thinking_blocks(thinking)
@@ -2768,7 +2786,16 @@ async def _publish_partial_steps(
 ) -> None:
     """Write latest steps + per-step screenshot file + small JSON (screenshotUrl, not huge base64)."""
     try:
-        steps_now = _history_to_steps(agent_instance.history)
+        persona_dims = _persona_dim_map(persona if isinstance(persona, dict) else None)
+        persona_tp = _persona_time_pressure(persona if isinstance(persona, dict) else None)
+        steps_now = _history_to_steps(
+            agent_instance.history,
+            task=task,
+            start_url=None,
+            perception_budget=ux_perception.salience_budget(
+                persona_tp, persona_dims.get("detail_orientation")
+            ),
+        )
         steps_now = steps_now[-60:]
         mono_now = time.monotonic()
         rec = _recording_mono.get(job_id)
@@ -4255,7 +4282,16 @@ async def run_agent(
             if confusion_abandon.get("enabled") and not confusion_abandon.get("forced"):
                 try:
                     hist = getattr(agent_instance, "history", None)
-                    steps_now = _history_to_steps(hist) if hist is not None else []
+                    steps_now = (
+                        _history_to_steps(
+                            hist,
+                            task=task,
+                            start_url=url,
+                            perception_budget=_perc_budget,
+                        )
+                        if hist is not None
+                        else []
+                    )
                     before = int(confusion_abandon.get("count") or 0)
                     _update_confusion_abandon_from_steps(
                         confusion_abandon,
@@ -4385,7 +4421,14 @@ async def run_agent(
             browser = None  # avoid double-close in the outer finally
 
         # Map browser-use history to AUDION result format
-        steps = _history_to_steps(history)
+        steps = _history_to_steps(
+            history,
+            task=task,
+            start_url=url,
+            perception_budget=ux_perception.salience_budget(
+                persona_tp, persona_dims.get("detail_orientation")
+            ),
+        )
         steps = _apply_persona_perception_finalize(
             steps,
             time_pressure=persona_tp,
