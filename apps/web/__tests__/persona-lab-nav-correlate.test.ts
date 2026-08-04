@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  applyNavH3HypothesisFromRuns,
   correlatePersonaLabNavRun,
   navGoldSnapshot,
   navMissedToolSnapshot,
@@ -65,12 +66,55 @@ describe('persona lab nav correlator (H3)', () => {
       goalReached: true,
       finding: 'Tool gefunden',
       categories: {},
-    }
-    const snap = waveRunToPersonaLabNavSnapshot(run, {
       finalUrl: paths.boschEbikeProduktkombinationenUrl,
       finalTitle: 'Produktkombinationen',
-    })
+    }
+    const snap = waveRunToPersonaLabNavSnapshot(run)
     expect(correlatePersonaLabNavRun(snap).closer).toBe(true)
+  })
+
+  it('applyNavH3HypothesisFromRuns refutes H3 when tool landed', () => {
+    const run: UxWaveRunItem = {
+      id: 'run-nav-1',
+      runKey: 'Nav-home-to-tool',
+      leitfadenBlock: 'lab',
+      personaId: paths.personaLabImpatientDbPersonaId,
+      personaName: 'Alex',
+      segment: 'owner_upgrade',
+      url: paths.boschEbikeHomeUrl,
+      task: 'Starte auf der Startseite. Finde den Weg.',
+      maxSteps: 12,
+      jobId: 'j1',
+      agentStatus: 'complete',
+      agentSuccess: true,
+      taskCompleted: true,
+      validEvidence: true,
+      validEvidenceCaveat: null,
+      blockers: [],
+      steps: 5,
+      frictionScore: 6,
+      personaFitScore: 3,
+      goalReached: true,
+      finding: 'Tool gefunden',
+      categories: {},
+      finalUrl: paths.boschEbikeProduktkombinationenUrl,
+    }
+    const out = applyNavH3HypothesisFromRuns(
+      [
+        {
+          id: 'H3',
+          statement: 'Kein natürlicher Einstieg / Next Step',
+          verdict: 'not_tested',
+          confidence: 0,
+          score: null,
+          evidenceRunIds: [],
+          rationale: '',
+        },
+      ],
+      [run],
+    )
+    expect(out.navH3Pass).toBe(true)
+    expect(out.hypotheses[0]?.verdict).toBe('refuted')
   })
 
   it('seeds study from nav pack', async () => {

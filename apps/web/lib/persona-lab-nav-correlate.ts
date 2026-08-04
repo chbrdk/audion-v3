@@ -5,7 +5,7 @@
  * @see knowledge/persona-lab-micro-labs-2026-08-04.md
  */
 
-import type { UxWaveRunItem } from '@audion-v3/contracts'
+import type { UxHypothesisResult, UxWaveRunItem } from '@audion-v3/contracts'
 import { paths } from './paths'
 
 const TOOL_URL_RE = /produktkombinationen/i
@@ -90,14 +90,94 @@ export function waveRunToPersonaLabNavSnapshot(
     runKey: run.runKey,
     steps: run.steps,
     maxSteps: run.maxSteps,
-    finalUrl: extras?.finalUrl ?? null,
-    finalTitle: extras?.finalTitle ?? null,
+    finalUrl: extras?.finalUrl ?? run.finalUrl ?? null,
+    finalTitle: extras?.finalTitle ?? run.finalTitle ?? null,
     finding: run.finding,
     narrativeBlob:
       extras?.narrativeBlob ??
       [run.finding, run.validEvidenceCaveat, run.task].filter(Boolean).join('\n'),
     goalReached: run.goalReached,
     blockers: run.blockers ?? [],
+  }
+}
+
+/**
+ * Apply H3 from Nav correlator onto evaluation hypotheses.
+ * Problem statement is "Kein natürlicher Einstieg" → landing on tool **refutes** H3;
+ * missing tool URL with usable evidence **supports** H3.
+ */
+export function applyNavH3HypothesisFromRuns(
+  hypotheses: UxHypothesisResult[],
+  runs: UxWaveRunItem[],
+): {
+  hypotheses: UxHypothesisResult[]
+  navH3Pass: boolean | null
+  note: string | null
+} {
+  const navRun =
+    runs.find((r) => r.runKey === PERSONA_LAB_NAV_GOLD.runKey && r.validEvidence === true) ??
+    runs.find(
+      (r) =>
+        r.validEvidence === true &&
+        (/^Nav-/i.test(r.runKey) || /finde den weg|startseite/i.test(r.task || '')),
+    )
+  if (!navRun) {
+    return { hypotheses, navH3Pass: null, note: null }
+  }
+
+  const snap = waveRunToPersonaLabNavSnapshot(navRun)
+  const corr = correlatePersonaLabNavRun(snap)
+  const base =
+    hypotheses.length > 0
+      ? hypotheses
+      : [
+          {
+            id: 'H3',
+            statement: 'Kein natürlicher Einstieg / Next Step',
+            verdict: 'not_tested' as const,
+            confidence: 0,
+            score: null,
+            evidenceRunIds: [] as string[],
+            rationale: '',
+          },
+        ]
+
+  const hypothesesOut = base.map((h) => {
+    if (h.id !== 'H3') return h
+    if (corr.closer) {
+      return {
+        ...h,
+        verdict: 'refuted' as const,
+        confidence: Math.min(0.9, 0.55 + corr.score * 0.35),
+        score: -1,
+        evidenceRunIds: [navRun.runKey],
+        rationale: `Auto: UI-Pfad Home→Tool belegt (${corr.verdict}); finalUrl=${snap.finalUrl ?? '—'}. H3 („kein Einstieg“) widerlegt.`,
+      }
+    }
+    if (snap.finalUrl && !toolUrlMatches(snap.finalUrl)) {
+      return {
+        ...h,
+        verdict: 'supported' as const,
+        confidence: Math.min(0.85, 0.5 + (1 - corr.score) * 0.3),
+        score: 1,
+        evidenceRunIds: [navRun.runKey],
+        rationale: `Auto: Tool-URL nicht erreicht (${corr.verdict}); finalUrl=${snap.finalUrl}. H3 gestützt.`,
+      }
+    }
+    return {
+      ...h,
+      verdict: 'inconclusive' as const,
+      confidence: 0.4,
+      score: null,
+      evidenceRunIds: [navRun.runKey],
+      rationale: `Auto: ${corr.verdict}; finalUrl=${snap.finalUrl ?? '(missing)'}.`,
+    }
+  })
+
+  return {
+    hypotheses: hypothesesOut,
+    navH3Pass: corr.closer,
+    note: `H3 auto from Nav correlator (navH3Pass=${corr.closer}).`,
   }
 }
 

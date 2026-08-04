@@ -15,9 +15,13 @@
 | validEvidence | Run | Gate for aggregate + soft Q |
 | frictionScore / personaFitScore | Run | From agent scorecard |
 | finding | Run | Editable summary line |
+| finalUrl / finalTitle | Run | From agent job; Nav H3 URL proof |
+| deeplinkCheat | Run | Path-finding honesty (`navigate` to target) |
 | softScores Q1–Q7 | Evaluation | Soft; PATCH value/confidence/rationale |
 | verdict | Hypothesis | supported \| partially_supported \| inconclusive \| refuted \| not_tested |
 | rationale | Hypothesis | Editable |
+
+Nav pack Evaluate: Soft-Q **Q4** drafts from `goalReached`/`finalUrl`; H3 auto-verdict via `persona-lab-nav-correlate` (tool landing **refutes** „kein Einstieg“; miss **supports**).
 
 ## PATCH semantics (wave)
 

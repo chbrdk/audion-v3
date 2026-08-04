@@ -1061,6 +1061,38 @@ def test_filter_path_finding_deeplinks_blocks_target_navigate():
     assert P.action_tool_name(kept[0]) == "click"
 
 
+def test_path_target_reached_and_deeplink_cheat_detection():
+    assert P.path_target_reached(
+        "https://www.bosch-ebike.com/de/service/produktkombinationen",
+        NAV_TASK,
+    )
+    assert not P.path_target_reached("https://www.bosch-ebike.com/de/", NAV_TASK)
+    assert (
+        P.detect_path_finding_deeplink_cheat(
+            [
+                {
+                    "action": "navigate",
+                    "target": "https://www.bosch-ebike.com/de/service/produktkombinationen",
+                }
+            ],
+            task=NAV_TASK,
+            start_url="https://www.bosch-ebike.com/de/",
+        )
+        is True
+    )
+    assert (
+        P.detect_path_finding_deeplink_cheat(
+            [
+                {"action": "navigate", "target": "https://www.bosch-ebike.com/de/"},
+                {"action": "evaluate", "result": "nav_target:/de/service/produktkombinationen"},
+            ],
+            task=NAV_TASK,
+            start_url="https://www.bosch-ebike.com/de/",
+        )
+        is False
+    )
+
+
 def test_select_nav_dom_action_avoids_repeating_same_coordinates():
     summary = {
         "dom_state": {

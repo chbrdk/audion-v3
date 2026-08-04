@@ -133,6 +133,9 @@ function normalizeRun(
     goalReached: partial.goalReached ?? null,
     finding: partial.finding ?? null,
     categories: partial.categories ?? {},
+    finalUrl: partial.finalUrl ?? null,
+    finalTitle: partial.finalTitle ?? null,
+    deeplinkCheat: partial.deeplinkCheat ?? null,
     derivedJourneyId: partial.derivedJourneyId,
   }
 }

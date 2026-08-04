@@ -589,6 +589,51 @@ def is_nav_h3_task(task: str | None) -> bool:
     return is_ui_path_finding_task(task)
 
 
+def path_target_reached(current_url: str | None, task: str | None) -> bool:
+    """True when the observed URL already encodes the task destination keywords."""
+    keys = _task_target_keywords(task)
+    if keys:
+        return _url_contains_any(current_url, keys)
+    return "produktkombinationen" in str(current_url or "").lower()
+
+
+def detect_path_finding_deeplink_cheat(
+    steps: list[dict[str, Any]] | None,
+    *,
+    task: str | None,
+    start_url: str | None = None,
+) -> bool | None:
+    """
+    True when a path-finding run recorded navigate/go_to_url straight to the
+    destination. False when path-finding and no such shortcut. None otherwise.
+    """
+    if not is_ui_path_finding_task(task):
+        return None
+    keys = _task_target_keywords(task)
+    if not keys:
+        return False
+    start_norm = str(start_url or "").rstrip("/").lower()
+    for step in steps or []:
+        if not isinstance(step, dict):
+            continue
+        action = str(step.get("action") or "").strip().lower()
+        if action not in ("navigate", "go_to_url", "open_tab"):
+            continue
+        target = str(step.get("target") or step.get("url") or step.get("result") or "").strip()
+        target_norm = target.rstrip("/").lower()
+        # Initial home load is allowed even when the blob mentions the task target.
+        if start_norm and target_norm and (
+            target_norm == start_norm or target_norm.startswith(start_norm + "?")
+        ):
+            continue
+        blob = " ".join(
+            str(step.get(k) or "") for k in ("target", "result", "url", "reasoning")
+        ).lower()
+        if any(k in blob for k in keys):
+            return True
+    return False
+
+
 def _is_rootish_href(href: str) -> bool:
     h = (href or "").strip().lower().rstrip("/")
     if h in ("", "/", "#"):
@@ -2581,6 +2626,8 @@ def public_perception_stats(felt: dict[str, Any] | None, steps: list[dict[str, A
         "tryThenQuitSoftens": int((felt or {}).get("tryThenQuitSoftens") or 0),
         "lowClarityStreak": int((felt or {}).get("lowClarityStreak") or 0),
         "missingPerceptionClears": int((felt or {}).get("missingPerceptionClears") or 0),
+        "lastObservedUrl": (felt or {}).get("lastObservedUrl"),
+        "targetClickUsed": bool((felt or {}).get("targetClickUsed")),
     }
 
 

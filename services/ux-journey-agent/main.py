@@ -5146,6 +5146,41 @@ async def run_agent(
             }
         if scorecard:
             result["scorecard"] = scorecard
+        # Deterministic path-finding coverage: URL/title beat optimistic/pessimistic LLM.
+        final_url = (
+            str(felt_state.get("lastObservedUrl") or "").strip()
+            or str(url or "").strip()
+            or None
+        )
+        final_title = str(felt_state.get("lastObservedTitle") or "").strip() or None
+        deeplink_cheat = ux_perception.detect_path_finding_deeplink_cheat(
+            steps,
+            task=task,
+            start_url=str(url or "") or None,
+        )
+        path_goal = bool(
+            ux_perception.is_ui_path_finding_task(task)
+            and final_url
+            and ux_perception.path_target_reached(final_url, task)
+        )
+        if path_goal:
+            if not isinstance(scorecard, dict):
+                scorecard = {}
+            cov = scorecard.get("coverage")
+            if not isinstance(cov, dict):
+                cov = {}
+            if cov.get("goalReached") is not True:
+                print(
+                    f"ux-journey: job={job_id} path-finding URL goal override "
+                    f"finalUrl={final_url!r} (LLM goalReached={cov.get('goalReached')!r})",
+                    flush=True,
+                )
+            scorecard["coverage"] = {**cov, "goalReached": True, "gap": cov.get("gap")}
+            result["scorecard"] = scorecard
+        result["finalUrl"] = final_url
+        result["finalTitle"] = final_title
+        if deeplink_cheat is not None:
+            result["deeplinkCheat"] = deeplink_cheat
         if video_path:
             result["videoUrl"] = f"/run/{job_id}/video"
         if cancelled:

@@ -36,6 +36,9 @@ export type UxJourneyAgentJobStatus = {
     error?: string | null
     cancelled?: boolean
     videoUrl?: string | null
+    finalUrl?: string | null
+    finalTitle?: string | null
+    deeplinkCheat?: boolean | null
     personaPolicy?: {
       dimensions?: Record<string, number> | null
       heuristics?: string[] | null

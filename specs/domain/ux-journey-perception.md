@@ -95,3 +95,5 @@ Cross-step digest injected into the next user context:
 ## Soft-Q
 
 Evaluate Soft-Q drafts use perception `confusion` / low clarity / negative valence from validEvidence **findings** (and caveats). When the synced finding is generic, Sync must prefer done-step / Think-Aloud / perception markers via `resolveFindingFromAgentResult` so L6 rule draft can fill Q2/Q3. High friction (≥7) alone still drafts Q2≈2 even without an explicit confusion tag. Evaluate must not leave the scenario-pack null Soft-Q shell in place when validEvidence runs exist — merge keeps hand edits only.
+
+**Path-finding / Nav H3:** Agent result must include `finalUrl` (and `deeplinkCheat` when applicable). Sync maps these onto the wave run. For UI path-finding tasks, URL match to task target keywords overrides a pessimistic LLM `coverage.goalReached`. Soft-Q **Q4** drafts from Nav runs’ `goalReached`/`finalUrl`. Evaluate applies `applyNavH3HypothesisFromRuns` (landing → H3 refuted; miss → supported).

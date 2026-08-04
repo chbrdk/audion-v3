@@ -187,6 +187,39 @@ export function draftSoftScoresFromValidRuns(runs: UxWaveRunItem[]): SoftQDraft 
   if (confusion || (typeof friction === 'number' && friction >= 8)) q7 = 4
   else if (optimistic && goalRate >= 0.8) q7 = 2
 
+  // Q4 Auffindbarkeit: fill when Nav / path-finding runs are in the wave
+  const navRuns = valid.filter(
+    (r) =>
+      /^Nav-/i.test(r.runKey) ||
+      /finde den weg|startseite|nicht direkt im tool/i.test(r.task || ''),
+  )
+  const navLanded = navRuns.filter(
+    (r) =>
+      r.goalReached === true ||
+      /produktkombinationen/i.test(r.finalUrl || '') ||
+      /produktkombinationen/i.test(narrativeFromRun(r)),
+  )
+  let q4: number | null = null
+  let q4Rationale =
+    'Auto-draft: Auffindbarkeit (Nav von Home) in diesem Slice nicht belegt.'
+  let q4Conf = 0
+  if (navRuns.length > 0) {
+    const landRate = navLanded.length / navRuns.length
+    if (landRate >= 0.8) {
+      q4 = 4
+      q4Conf = Math.min(0.85, confBase + 0.2)
+      q4Rationale = `Auto-draft: Home→Tool erreicht (goal/finalUrl); n=${navRuns.length}.`
+    } else if (landRate <= 0.2) {
+      q4 = 2
+      q4Conf = Math.min(0.8, confBase + 0.15)
+      q4Rationale = `Auto-draft: Nav von Home scheiterte / Tool-URL fehlt; n=${navRuns.length}.`
+    } else {
+      q4 = 3
+      q4Conf = confBase
+      q4Rationale = `Auto-draft: gemischte Auffindbarkeit (${navLanded.length}/${navRuns.length}).`
+    }
+  }
+
   const draft: SoftQDraft = {
     basis: `Think-Aloud draft from ${n} validEvidence run(s); not Testbirds n=15.`,
     Q1_nuetzlichkeit: soft(
@@ -211,12 +244,7 @@ export function draftSoftScoresFromValidRuns(runs: UxWaveRunItem[]): SoftQDraft 
         ? `Auto-draft: Filter/grau/unklar benannt — „${quote}“`
         : `Auto-draft: keine klaren Filter-Cues in Findings.`,
     ),
-    Q4_auffindbarkeit: soft(
-      SCALE_1_5,
-      null,
-      0,
-      'Auto-draft: Auffindbarkeit (Nav von Home) in diesem Slice nicht belegt.',
-    ),
+    Q4_auffindbarkeit: soft(SCALE_1_5, q4, q4Conf, q4Rationale),
     Q5_produktnah_vs_tool: soft(
       SCALE_CHOICE,
       confusion ? 'produktseite_bevorzugt_vermutet' : null,

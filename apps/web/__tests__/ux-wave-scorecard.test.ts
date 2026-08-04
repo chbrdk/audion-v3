@@ -242,4 +242,42 @@ describe('ux-wave-scorecard', () => {
     expect(mapped.finding).not.toMatch(/Browser agent completed run/i)
     expect(mapped.validEvidence).toBe(true)
   })
+
+  it('maps finalUrl and overrides goalReached for path-finding Nav runs', () => {
+    const status: UxJourneyAgentJobStatus = {
+      jobId: 'job-nav',
+      status: 'complete',
+      result: {
+        success: true,
+        summary: 'Ich habe den Weg zum Produktkombinationen-Tool gefunden über Service.',
+        finalUrl: 'https://www.bosch-ebike.com/de/service/produktkombinationen',
+        deeplinkCheat: false,
+        steps: [
+          { step: 1, action: 'navigate', target: 'https://www.bosch-ebike.com/de/' },
+          {
+            step: 2,
+            action: 'evaluate',
+            result: 'nav_target:/de/service/produktkombinationen',
+          },
+          { step: 3, action: 'done', result: 'Tool-Seite erreicht.' },
+        ],
+        scorecard: {
+          frictionScore: 8,
+          coverage: { goalReached: false },
+        },
+      },
+    }
+    const mapped = mapAgentResultToWaveRun(
+      baseRun({
+        runKey: 'Nav-home-to-tool',
+        url: 'https://www.bosch-ebike.com/de/',
+        task: 'Starte auf der Startseite. Finde den Weg zum Produktkombinationen-Tool.',
+      }),
+      status,
+    )
+    expect(mapped.finalUrl).toMatch(/produktkombinationen/i)
+    expect(mapped.deeplinkCheat).toBe(false)
+    expect(mapped.goalReached).toBe(true)
+    expect(mapped.taskCompleted).toBe(true)
+  })
 })

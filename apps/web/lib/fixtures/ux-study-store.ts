@@ -20,6 +20,7 @@ import type {
 } from '@audion-v3/contracts'
 import { isProjectsDatabaseConfigured } from '../db/config'
 import { draftSoftScoresFromValidRuns, mergeSoftScoreDraft } from '../soft-q-draft'
+import { applyNavH3HypothesisFromRuns } from '../persona-lab-nav-correlate'
 import { DEMO_UX_STUDIES, DEMO_UX_WAVES } from './ux-studies'
 
 export { buildWaveReportMarkdown } from '../ux-wave-report'
@@ -155,6 +156,9 @@ function normalizeRun(
     goalReached: partial.goalReached ?? null,
     finding: partial.finding ?? null,
     categories: partial.categories ?? {},
+    finalUrl: partial.finalUrl ?? null,
+    finalTitle: partial.finalTitle ?? null,
+    deeplinkCheat: partial.deeplinkCheat ?? null,
   }
 }
 
@@ -215,10 +219,12 @@ export function evaluateUxWaveFromRuns(
   const softDraft = draftSoftScoresFromValidRuns(runs)
   const softNote =
     softDraft.Q2_bedienbarkeit?.value != null
-      ? `Soft-Q draft applied (Q2=${String(softDraft.Q2_bedienbarkeit.value)}, Q3=${String(softDraft.Q3_filterlogik?.value ?? '—')}).`
+      ? `Soft-Q draft applied (Q2=${String(softDraft.Q2_bedienbarkeit.value)}, Q3=${String(softDraft.Q3_filterlogik?.value ?? '—')}, Q4=${String(softDraft.Q4_auffindbarkeit?.value ?? '—')}).`
       : softDraft.basis?.includes('skipped')
         ? 'Soft-Q draft skipped — no validEvidence runs.'
         : 'Soft-Q draft produced no Q2 (unexpected).'
+
+  const h3 = applyNavH3HypothesisFromRuns(preserved, runs)
 
   return {
     schemaVersion: '1.0.0',
@@ -245,13 +251,14 @@ export function evaluateUxWaveFromRuns(
       segmentsCoveredWithValidEvidence: segmentsCovered,
       segmentsMissingValidEvidence: segmentsMissing,
     },
-    hypotheses: preserved,
+    hypotheses: h3.hypotheses,
     softScores: softDraft,
     notes: [
       'Evaluate aggregates only validEvidence=true runs for friction/fit/goal rates.',
       'Soft-Q: Think-Aloud draft fills empty keys; hand-edited values are preserved on re-evaluate.',
       softNote,
-      'Hypothesis verdicts preserved from prior evaluation when present.',
+      h3.note ?? 'Hypothesis verdicts preserved from prior evaluation when present.',
+      ...(typeof h3.navH3Pass === 'boolean' ? [`navH3Pass=${h3.navH3Pass}`] : []),
     ],
   }
 }

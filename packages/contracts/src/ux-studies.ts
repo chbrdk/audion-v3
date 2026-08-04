@@ -64,6 +64,15 @@ export type UxWaveRunItem = {
   goalReached: boolean | null
   finding: string | null
   categories: Record<string, number>
+  /** Final browser URL from agent job (path-finding / H3 proof). */
+  finalUrl?: string | null
+  /** Final document title when the agent captured it. */
+  finalTitle?: string | null
+  /**
+   * Path-finding honesty: true when navigate/go_to_url jumped to the target.
+   * false = UI path only; null = not a path-finding run / unknown.
+   */
+  deeplinkCheat?: boolean | null
   /** Set after Convert to Journey (fixture or live). */
   derivedJourneyId?: string | null
 }

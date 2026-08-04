@@ -79,6 +79,9 @@ export function packRunsToWaveRuns(pack: UxScenarioPack): UxWaveRunItem[] {
     goalReached: null,
     finding: null,
     categories: {},
+    finalUrl: null,
+    finalTitle: null,
+    deeplinkCheat: null,
   }))
 }
 

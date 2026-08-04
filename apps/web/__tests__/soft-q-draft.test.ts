@@ -72,6 +72,33 @@ describe('soft-q-draft L6', () => {
     expect(draft.Q3_filterlogik?.value).toBe(4)
   })
 
+  it('drafts Q4 when Nav run lands on tool', () => {
+    const draft = draftSoftScoresFromValidRuns([
+      validConfusionRun({
+        runKey: 'Nav-home-to-tool',
+        task: 'Starte auf der Startseite. Finde den Weg zum Produktkombinationen-Tool.',
+        goalReached: true,
+        finalUrl: 'https://www.bosch-ebike.com/de/service/produktkombinationen',
+        frictionScore: 5,
+        finding: 'Über Service zum Tool navigiert.',
+      }),
+    ])
+    expect(draft.Q4_auffindbarkeit?.value).toBe(4)
+  })
+
+  it('drafts Q4=2 when Nav run misses tool', () => {
+    const draft = draftSoftScoresFromValidRuns([
+      validConfusionRun({
+        runKey: 'Nav-home-to-tool',
+        task: 'Starte auf der Startseite. Finde den Weg zum Tool.',
+        goalReached: false,
+        finalUrl: 'https://www.bosch-ebike.com/de/',
+        finding: 'Auf der Startseite geblieben.',
+      }),
+    ])
+    expect(draft.Q4_auffindbarkeit?.value).toBe(2)
+  })
+
   it('mergeSoftScoreDraft preserves hand-filled, refreshes auto-draft', () => {
     const draft = draftSoftScoresFromValidRuns([validConfusionRun()])
     const hand = {
