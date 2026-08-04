@@ -7,58 +7,51 @@
 
 ## Summary
 
-| Lab | Job(s) | Steps | Friction | Soft-Q Q2/Q3 | Verdict |
-|-----|--------|-------|----------|--------------|---------|
-| **Nav H3** | `9c368462…` → `2ad95280…` | 4 → 4 | 8 → 8 | 2/2 | **Still fail H3** — now clicks `Service & Beratung`, but still no verified tool URL |
-| **Purchase** | `22e1278f…` → `4047747e…` | 2 → **8** | 7 → **8** | 2/2 | **Pass after minSteps gate** |
-| **A Erstkontakt** | `1a875c23…` | 5 | 8 | 2/2 (wave) | **Pass** — try-then-quit → forced abandon |
-| **C Kombination** | `c2bb058b…` → `c7fcf51f…` | 3 → 2 | 8 → invalid | 2/2 (wave) | **Fail rerun** — job errored / `validEvidence=false` |
-| **Sam Lab B** | `25353178…` | **8** | 8 | 2/2 | **Pass** — contrast vs Alex explore-budget **5** |
+| Lab | Latest job | Steps | Friction | Soft-Q Q2/Q3 | Verdict |
+|-----|------------|-------|----------|--------------|---------|
+| **Nav H3** | `d17c11f1…` | 5 | 8 | 2/2 | **Still fail H3** — clicks Service/home, never lands on tool URL |
+| **Purchase** | `4047747e…` | **8** | **8** | 2/2 | **Pass** (minSteps gate) |
+| **A Erstkontakt** | `96a2b7f7…` | 5 | 8 | 2/2 (wave) | **Pass** |
+| **C Kombination** | `c5746c4e…` | **7** | **8** | 2/2 (wave) | **Pass** after continuation fix |
+| **Sam Lab B** | `25353178…` | **8** | 8 | 2/2 | **Pass** vs Alex explore-budget **5** |
 
-First smoke set had `validEvidence=true`, no infra blockers. Rerun after fix commit `612db69` improved Purchase, partially improved Nav, and regressed C (`validEvidence=false`). Personas auto-resolved (Sam Lab B used one PATCH override on Lab B pack).
+Personas auto-resolved (Sam Lab B used one PATCH override on Lab B pack).
 
 ## Nav H3 (`pack-ebm-persona-lab-nav`)
 
-- Study/wave: `study-persona-lab-nav-live-smoke-2026-08-04-mseboo33` / `wave-…mseboo3o`
-- Start URL: `https://www.bosch-ebike.com/de/`
-- First run (`9c368462…`): navigate → scroll → scroll → done; stayed on home
-- Rerun (`2ad95280…`, after `612db69`): clicked **Service & Beratung** twice before done; no verified `produktkombinationen` URL
-- Nav correlate still **closer=false** (`url_matches_tool` fail)
-- Improvement: Lab-B matrix leak reduced — no fake `Performance Line` / `Display-Karten grau` on home; remaining wording is generic `Filter/Ursache prüfen`
+- Study/wave final: `study-persona-lab-nav-final-2026-08-04-msee0d2c` / `wave-…msee0d3q`
+- Job `d17c11f1-0536-41e8-8aab-bea64623d52e` after `c96d84c`
+- Actions: navigate home → click `/de/` ×3 → done (forced abandon after explor 3/3)
+- Finding: Service & Beratung seen; **page stayed on start**; no verified `produktkombinationen`
+- Nav correlate: **closer=false** (`url_matches_tool` fail), score 0.75
+- Progress vs first smoke: no matrix-gold leak on home; tries clicks instead of scroll-only — **selector still wrong** (clicks resolve to `/de/` not Service submenu / tool link)
 
-**Status:** Gold scoping + Nav click bias landed, but H3 still needs stronger route-following after first Service click (likely submenu / next-step targeting rather than generic retry).
+**Open:** reliable element targeting for Service → Produktkombinationen (DOM/index selection), not more abandon bias.
 
 ## Purchase (`pack-ebm-persona-lab-purchase`)
 
-- Study/wave: `study-…msebs50j` / `wave-…msebs50p`
-- Persona: `persona-sam-lab-geduldig-msdroy3t` (resolve, no PATCH)
-- `impatientApplied=false`, `tryBeforeAbandon=6`, abandon **off**
-- First run (`22e1278f…`): steps **2** despite `minSteps=6`
-- Rerun (`4047747e…`, after `612db69`): steps **8**, friction **8**, patient hesitation visible through steps 3–8, ends with honest abandon
-
+- Rerun after `612db69`: job `4047747e…`, steps **8**, friction **8**, patient, Soft-Q 2/2  
 **Status:** **Fixed** by minSteps done gate.
 
 ## A+C (`pack-ebm-persona-lab-ac`)
 
-- Study/wave: `study-…msebt3wz` / `wave-…msebt3x6`
-- **A** Alex: 5 steps, explor 3/3, `forced=true` abandon — OK for Erstkontakt
-- **C** first run (`c2bb058b…`): 3 steps, abandon off — short for full Kombination
-- **C** rerun (`c7fcf51f…`): **error / invalidEvidence=false** after 2 steps; finding stuck at `Scrolled down 1080px`
-
-**Status:** still open; rerun exposed a separate stability issue, not just early `done`.
+- Final study/wave: `study-persona-lab-ac-final-2026-08-04-msee3hxz` / `wave-…msee3hy9` after `c96d84c`
+- **A** `96a2b7f7…`: 5 steps, forced abandon, VE true — Pass
+- **C** `c5746c4e…`: **7** steps, VE true, friction 8; clicks Cargo Line / PowerPack / Kiox / Mini Remote then honest incomplete finish — **Pass**
+- Prior broken C (`c7fcf51f…`): dict-scroll crash / invalidEvidence — fixed by typed ActionModel fallback + continuation retries
 
 ## Sam Lab B contrast
 
-- Study/wave: `study-…msebvfns` / `wave-…msebvfnz`
-- PATCH Lab B run → Sam DB id (pack still seeds Alex fixture→Alex resolve)
-- Steps **8**, tp **0.2**, friction **8**, correlate **closer 0.9**
-- vs Alex explore-budget smoke (`ae533264…`): **5** steps → Sam > Alex ✓
+- Steps **8**, tp **0.2**, friction **8**, correlate closer 0.9 vs Alex **5** ✓
 
 ## Soft-Q
 
-L6b assist present (`LLM-assist:` rationales). Q2/Q3 stayed ~2 across waves. Q4 often null (nav/findability not auto-filled strongly).
+L6b assist on; Q2/Q3 ~2. Q4 often null on non-nav-success slices.
 
-## Fix rerun note
+## Fix commits
 
-Fix commit: `612db69` — gold scoping off-tool, minSteps done gate, Nav click priority.  
-Rerun studies: Nav `study-persona-lab-nav-rerun-2026-08-04-mseco1uu`, Purchase `study-persona-lab-purchase-rerun-2026-08-04-msecqpdp`, A+C `study-persona-lab-ac-rerun-2026-08-04-msecue1h`.
+| Commit | What |
+|--------|------|
+| `612db69` | Lab-B gold scoping + minSteps done gate + Nav click bias |
+| `c96d84c` | Nav/C continuation retries + typed scroll fallback (C crash) |
+| Deploy | agent `cll86x3pqxyb90frqe8e7rw5` @ `c96d84c` |
