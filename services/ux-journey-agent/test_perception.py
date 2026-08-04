@@ -1149,7 +1149,7 @@ def test_select_nav_dom_action_menu_phase_waits_once_for_submenu():
         menu_hover_used=True,
     )
     assert reason == "nav_dom_menu_wait"
-    assert action == {"tool": "wait", "seconds": 1.5}
+    assert action == {"tool": "wait", "seconds": 2}
     # Second call with wait already used falls back to opener re-click.
     action2, reason2 = P.select_nav_dom_action(
         summary,

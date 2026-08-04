@@ -3133,6 +3133,33 @@ async def _eval_js_via_cdp(agent_instance: Any, js: str) -> bool:
     return False
 
 
+async def _cdp_mouse_move(agent_instance: Any, x: float, y: float) -> bool:
+    """Best-effort real pointer move so CSS :hover mega-menus can open."""
+    try:
+        session = await agent_instance.browser_session.get_or_create_cdp_session()
+    except Exception:
+        return False
+    if not session:
+        return False
+    params = {"type": "mouseMoved", "x": float(x), "y": float(y)}
+    try:
+        if hasattr(session, "cdp_client"):
+            send = getattr(session.cdp_client, "send", None)
+            if send and hasattr(send, "Input"):
+                await send.Input.dispatchMouseEvent(
+                    params, session_id=session.session_id
+                )
+                return True
+        if hasattr(session, "send") and hasattr(session.send, "Input"):
+            await session.send.Input.dispatchMouseEvent(
+                params, session_id=session.session_id
+            )
+            return True
+    except Exception:
+        return False
+    return False
+
+
 async def _play_click_ring(agent_instance: Any, params: dict[str, Any]) -> None:
     """Render a fading red ring at the click coordinates so the recording
     shows where the agent clicked. We resolve coordinates in this priority:
@@ -4207,10 +4234,39 @@ async def run_agent(
                         f"tool={dom_action.get('tool')} params={dom_params}",
                         flush=True,
                     )
+                    if dom_reason == "nav_dom_menu_hover":
+                        # Real pointer move (CSS :hover) using viewport CSS pixels.
+                        vx = dom_action.get("coordinate_x")
+                        vy = dom_action.get("coordinate_y")
+                        if isinstance(vx, (int, float)) and isinstance(vy, (int, float)):
+                            moved = await _cdp_mouse_move(agent, float(vx), float(vy))
+                            print(
+                                f"ux-journey: job={job_id} cdp_hover "
+                                f"({int(vx)},{int(vy)}) ok={moved}",
+                                flush=True,
+                            )
                     dom_filtered = _typed_action(
                         str(dom_action.get("tool") or ""),
-                        dom_params,
+                        {
+                            k: v
+                            for k, v in dom_params.items()
+                            # evaluate ActionModel only accepts code=
+                            if k == "code"
+                            or (
+                                str(dom_action.get("tool") or "") != "evaluate"
+                                and k in ("coordinate_x", "coordinate_y", "index", "seconds", "down")
+                            )
+                            or (
+                                str(dom_action.get("tool") or "") == "wait"
+                                and k == "seconds"
+                            )
+                        },
                     )
+                    if not dom_filtered and str(dom_action.get("tool") or "") == "evaluate":
+                        # Ensure evaluate still runs even if coord keys confused validate.
+                        dom_filtered = _typed_action(
+                            "evaluate", {"code": str(dom_action.get("code") or "")}
+                        )
                     if dom_filtered:
                         filtered = dom_filtered
                         reason = dom_reason
@@ -4633,6 +4689,25 @@ async def run_agent(
                     await _play_click_ring(agent_instance, action_params)
                 elif action_name == "scroll":
                     await _play_slow_scroll(agent_instance, action_params)
+                elif action_name == "evaluate":
+                    # Failed opener probe must not lock out the coordinate fallback.
+                    raw = str(_result or "")
+                    extracted = ""
+                    for attr in ("extracted_content", "extractedContent", "memory"):
+                        val = getattr(_result, attr, None) if _result is not None else None
+                        if val:
+                            extracted = str(val)
+                            break
+                    blob = f"{raw}\n{extracted}"
+                    if "nav_hover:no_opener" in blob or "nav_hover:err:" in blob:
+                        felt_state["menuHoverUsed"] = False
+                        if str(felt_state.get("lastNavReason") or "") == "nav_dom_menu_hover":
+                            felt_state["lastNavReason"] = ""
+                        print(
+                            f"ux-journey: job={job_id} menu hover miss — "
+                            "allow coordinate opener next",
+                            flush=True,
+                        )
             except Exception:  # pragma: no cover - hooks must never break runs
                 pass
 

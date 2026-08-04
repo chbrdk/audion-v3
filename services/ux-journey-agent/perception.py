@@ -734,7 +734,7 @@ def build_nav_menu_hover_evaluate(open_keys: list[str]) -> dict[str, Any] | None
     Site-agnostic hover-equivalent via ``evaluate`` (0.13.x has no hover tool).
 
     Dispatches mouseover/mouseenter/pointerover on the first top-chrome control
-    whose visible text matches a task opener keyword.
+    whose visible text or href matches a task opener keyword.
     """
     keys = [str(k).strip().lower() for k in (open_keys or []) if str(k).strip()]
     if not keys:
@@ -743,20 +743,42 @@ def build_nav_menu_hover_evaluate(open_keys: list[str]) -> dict[str, Any] | None
     code = (
         "(function(){try{"
         f"const keys={keys_js};"
+        "const match=t=>keys.some(k=>t.includes(k));"
         "const nodes=Array.from(document.querySelectorAll("
-        "'a,button,[role=menuitem],[role=link],[role=button]'));"
-        "let best=null;"
+        "'a,button,nav a,header a,[role=menuitem],[role=link],[role=button],"
+        "[class*=nav] a,[class*=menu] a,[class*=Menu] a'));"
+        "let best=null; let bestScore=-1e9;"
         "for(const el of nodes){"
+        "const href=String(el.getAttribute('href')||'').toLowerCase();"
         "const t=((el.innerText||el.textContent||'')+' '+"
-        "(el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||''))"
+        "(el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+href)"
         ".toLowerCase().replace(/\\s+/g,' ').trim();"
-        "if(!keys.some(k=>t.includes(k))) continue;"
+        "if(!match(t)) continue;"
         "const r=el.getBoundingClientRect();"
-        "if(r.width<16||r.height<10||r.top>220||r.bottom<0) continue;"
+        "if(r.width<8||r.height<8||r.bottom<0||r.top>420) continue;"
+        "let score=0;"
+        "if(r.top<=160) score+=50; else if(r.top<=280) score+=20;"
+        "if(href && href!=='/' && !/^\\/[a-z]{2}\\/?$/.test(href)) score+=15;"
+        "if(t.length<=80) score+=10;"
+        "if(score>bestScore){bestScore=score; best=el;}"
+        "}"
+        "if(!best){"
+        "const all=Array.from(document.querySelectorAll('*'));"
+        "for(const el of all){"
+        "if(el.children && el.children.length>6) continue;"
+        "const t=String(el.innerText||el.textContent||'').toLowerCase().replace(/\\s+/g,' ').trim();"
+        "if(t.length<4||t.length>60||!match(t)) continue;"
+        "const r=el.getBoundingClientRect();"
+        "if(r.width<8||r.height<8||r.top>420||r.top<0) continue;"
         "best=el; break;"
         "}"
+        "}"
         "if(!best) return 'nav_hover:no_opener';"
-        "const opts={bubbles:true,cancelable:true,view:window};"
+        "const r=best.getBoundingClientRect();"
+        "const x=r.left+r.width*0.55; const y=r.top+r.height*0.5;"
+        "const opts={bubbles:true,cancelable:true,view:window,clientX:x,clientY:y};"
+        "best.dispatchEvent(new PointerEvent('pointermove',opts));"
+        "best.dispatchEvent(new MouseEvent('mousemove',opts));"
         "best.dispatchEvent(new MouseEvent('mouseover',opts));"
         "best.dispatchEvent(new MouseEvent('mouseenter',opts));"
         "try{best.dispatchEvent(new PointerEvent('pointerover',opts));}catch(_e){}"
@@ -1027,14 +1049,31 @@ def select_nav_dom_action(
         return {"tool": "click", "index": submenu_target_idx}, "nav_dom_product_index"
 
     # Open mega-menus before the first blind opener click — once per run.
+    # Attach DOM coords when known so main can CDP-mouseMoved (CSS :hover).
     if open_keys and not menu_hover_used and not menu_phase and not menu_expanded:
         hover_action = build_nav_menu_hover_evaluate(open_keys)
         if hover_action is not None:
+            coord_src = best_coord or strip_coord
+            if coord_src is not None:
+                hover_action["coordinate_x"] = coord_src.get("coordinate_x")
+                hover_action["coordinate_y"] = coord_src.get("coordinate_y")
+            elif opener_click_idx is not None:
+                # Fall back to opener node center from selector map.
+                for idx, node in _selector_map_items(browser_state_summary):
+                    if idx != opener_click_idx:
+                        continue
+                    rect = _node_bounds(node)
+                    if rect is None:
+                        break
+                    bx, by, bw, bh = rect
+                    hover_action["coordinate_x"] = int(round(bx + bw * 0.55))
+                    hover_action["coordinate_y"] = int(round(by + bh * 0.5))
+                    break
             return hover_action, "nav_dom_menu_hover"
 
     # Mega-menu may need a paint frame after hover/opener before submenu AX appears.
     if menu_phase and not menu_wait_used and not menu_expanded and target_idx is None:
-        return {"tool": "wait", "seconds": 1.5}, "nav_dom_menu_wait"
+        return {"tool": "wait", "seconds": 2}, "nav_dom_menu_wait"
     if opener_click_idx is not None and not menu_phase:
         return {"tool": "click", "index": opener_click_idx}, "nav_dom_service_click"
     if opener_click_idx is not None and menu_phase:
