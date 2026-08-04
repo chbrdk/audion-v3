@@ -3815,19 +3815,60 @@ async def run_agent(
                             pass
                     return []
 
+                def _params_for_typed_tool(
+                    tool_name: str, params: dict[str, Any]
+                ) -> dict[str, Any]:
+                    """
+                    Strip keys ActionModel rejects per tool.
+
+                    Wait only accepts ``seconds`` — attaching CDP hover coords
+                    (coordinate_x/y) caused validate failures and dropped the
+                    entire menu-open steer (LLM scroll won instead).
+                    """
+                    tool = str(tool_name or "")
+                    raw = {k: v for k, v in (params or {}).items() if v is not None}
+                    if tool == "evaluate":
+                        return {"code": str(raw.get("code") or "")}
+                    if tool == "wait":
+                        out: dict[str, Any] = {}
+                        if "seconds" in raw:
+                            try:
+                                out["seconds"] = int(raw["seconds"])
+                            except (TypeError, ValueError):
+                                out["seconds"] = raw["seconds"]
+                        return out
+                    if tool == "scroll":
+                        return {
+                            k: raw[k]
+                            for k in ("down", "pages", "index")
+                            if k in raw
+                        }
+                    # click / input / etc.
+                    allowed = (
+                        "coordinate_x",
+                        "coordinate_y",
+                        "index",
+                        "seconds",
+                        "down",
+                        "text",
+                        "value",
+                    )
+                    out = {k: raw[k] for k in allowed if k in raw}
+                    if (
+                        out.get("coordinate_x") is not None
+                        and out.get("coordinate_y") is not None
+                    ):
+                        out.pop("index", None)
+                    return out
+
                 def _typed_action(tool_name: str, params: dict[str, Any]) -> list[Any]:
                     action_model = getattr(agent, "ActionModel", None)
                     # 0.13.x has no hover tool — degrade to click when we only have an index.
                     tool = str(tool_name or "")
-                    payload_params = dict(params or {})
+                    payload_params = _params_for_typed_tool(tool, params)
                     if tool == "hover":
                         tool = "click"
-                    # Coordinate path must omit index or runtime still hits the aggregated node.
-                    if (
-                        payload_params.get("coordinate_x") is not None
-                        and payload_params.get("coordinate_y") is not None
-                    ):
-                        payload_params.pop("index", None)
+                        payload_params = _params_for_typed_tool(tool, params)
                     payload = {tool: payload_params}
                     if action_model is not None and hasattr(action_model, "model_validate"):
                         try:
@@ -4262,28 +4303,20 @@ async def run_agent(
                                 f"({int(vx)},{int(vy)}) ok={moved}",
                                 flush=True,
                             )
+                            # Mark hover used even if the following wait validate
+                            # fails — otherwise we loop CDP without progress.
+                            felt_state["menuHoverUsed"] = True
+                    tool_name = str(dom_action.get("tool") or "")
                     dom_filtered = _typed_action(
-                        str(dom_action.get("tool") or ""),
-                        {
-                            k: v
-                            for k, v in dom_params.items()
-                            # evaluate ActionModel only accepts code=
-                            if k == "code"
-                            or (
-                                str(dom_action.get("tool") or "") != "evaluate"
-                                and k in ("coordinate_x", "coordinate_y", "index", "seconds", "down")
-                            )
-                            or (
-                                str(dom_action.get("tool") or "") == "wait"
-                                and k == "seconds"
-                            )
-                        },
+                        tool_name, _params_for_typed_tool(tool_name, dom_params)
                     )
-                    if not dom_filtered and str(dom_action.get("tool") or "") == "evaluate":
+                    if not dom_filtered and tool_name == "evaluate":
                         # Ensure evaluate still runs even if coord keys confused validate.
                         dom_filtered = _typed_action(
                             "evaluate", {"code": str(dom_action.get("code") or "")}
                         )
+                    if not dom_filtered and tool_name == "wait":
+                        dom_filtered = _typed_action("wait", {"seconds": 2})
                     if dom_filtered:
                         filtered = dom_filtered
                         reason = dom_reason
@@ -4369,9 +4402,10 @@ async def run_agent(
                                         for k, v in dom_action.items()
                                         if k != "tool" and v is not None
                                         })
+                                    tool_name = str(dom_action.get("tool") or "")
                                     dom_filtered = _typed_action(
-                                        str(dom_action.get("tool") or ""),
-                                        dom_params,
+                                        tool_name,
+                                        _params_for_typed_tool(tool_name, dom_params),
                                     )
                                     if dom_filtered:
                                         filtered = dom_filtered
@@ -4409,9 +4443,10 @@ async def run_agent(
                                         for k, v in dom_action.items()
                                         if k != "tool" and v is not None
                                         })
+                                    tool_name = str(dom_action.get("tool") or "")
                                     filtered = _typed_action(
-                                        str(dom_action.get("tool") or ""),
-                                        dom_params,
+                                        tool_name,
+                                        _params_for_typed_tool(tool_name, dom_params),
                                     )
                                     reason = f"min_steps_done_blocked_{dom_reason}"
                                     if filtered:
@@ -4498,9 +4533,10 @@ async def run_agent(
                                     for k, v in dom_action.items()
                                     if k != "tool" and v is not None
                                     })
+                                tool_name = str(dom_action.get("tool") or "")
                                 filtered = _typed_action(
-                                    str(dom_action.get("tool") or ""),
-                                    dom_params,
+                                    tool_name,
+                                    _params_for_typed_tool(tool_name, dom_params),
                                 )
                                 if filtered:
                                     reason = f"min_steps_empty_retry_{dom_reason}"
