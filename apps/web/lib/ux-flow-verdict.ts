@@ -12,6 +12,7 @@ import {
   type FlowRunProgressInput,
 } from './ux-flow-run-progress'
 import { inferInfrastructureBlockers, inferValidEvidence } from './ux-wave-scorecard'
+import type { UxJourneyAgentStep } from './ux-journey-agent-client'
 
 export type FlowGateVerdictItem = {
   gateNodeId: string
@@ -197,7 +198,7 @@ export function deriveFlowVerdict(flow: UxTestFlow, job: FlowRunProgressInput): 
       cancelled,
       summary: job.summary,
       error: job.error,
-      steps,
+      steps: steps as UxJourneyAgentStep[],
       confusionTagCount: scorecardConfusionCount(job.scorecard),
     })
     validEvidence = evidence.validEvidence

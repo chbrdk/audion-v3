@@ -75,19 +75,19 @@ export function UxFlowVerdictCard({ verdict }: { verdict: FlowRunVerdict | null 
           <span className="audion-flow-verdict-gates-label">Gates auf Pfad</span>
           <div className="audion-flow-verdict-gate-chips">
             {verdict.gatesOnPath.map((g) => (
-              <Chip
-                key={g.gateNodeId}
-                size="sm"
-                static
-                className={
-                  g.matched ? 'audion-flow-verdict-chip--ok' : 'audion-flow-verdict-chip--gate'
-                }
-                title={g.evidence ?? undefined}
-              >
-                {g.condition}
-                {g.branchTaken ? ` · ${g.branchTaken}` : ''}
-                {g.matched ? ' ✓' : ''}
-              </Chip>
+              <span key={g.gateNodeId} title={g.evidence ?? undefined}>
+                <Chip
+                  size="sm"
+                  static
+                  className={
+                    g.matched ? 'audion-flow-verdict-chip--ok' : 'audion-flow-verdict-chip--gate'
+                  }
+                >
+                  {g.condition}
+                  {g.branchTaken ? ` · ${g.branchTaken}` : ''}
+                  {g.matched ? ' ✓' : ''}
+                </Chip>
+              </span>
             ))}
           </div>
         </div>
