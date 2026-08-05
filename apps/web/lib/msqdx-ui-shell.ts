@@ -4,5 +4,10 @@ export { BrandCorner } from '../../../../msqdx-ui/packages/ui/src/components/Bra
 export { NavRail } from '../../../../msqdx-ui/packages/ui/src/components/NavRail'
 export { PageTitle } from '../../../../msqdx-ui/packages/ui/src/components/PageTitle'
 export { MsqdxLogoMark } from '../../../../msqdx-ui/packages/ui/src/brand/MsqdxLogoMark'
-export { shellFrameStyle } from '../../../../msqdx-ui/packages/ui/src/shell/railDock'
+export {
+  readRailDockFromStorage,
+  remToPx,
+  serializeRailDock,
+  shellFrameStyle,
+} from '../../../../msqdx-ui/packages/ui/src/shell/railDock'
 export type { RailDockEdge } from '../../../../msqdx-ui/packages/ui/src/shell/railDock'

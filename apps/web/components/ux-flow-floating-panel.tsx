@@ -6,7 +6,7 @@ import {
   remToPx,
   serializeRailDock,
   type RailDockEdge,
-} from '@msqdx/ui'
+} from '../lib/msqdx-ui-shell'
 
 type SnapDockLike = ComponentType<{
   children?: ReactNode
