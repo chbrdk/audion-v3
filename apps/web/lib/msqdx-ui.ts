@@ -75,3 +75,8 @@ export type {
 } from '../../../../msqdx-ui/packages/ui/src/components/FlowInspectorShell'
 export { FlowRunStrip } from '../../../../msqdx-ui/packages/ui/src/components/FlowRunStrip'
 export type { FlowRunStripProps } from '../../../../msqdx-ui/packages/ui/src/components/FlowRunStrip'
+export { ContextMenu } from '../../../../msqdx-ui/packages/ui/src/components/ContextMenu'
+export type {
+  ContextMenuProps,
+  ContextMenuItem,
+} from '../../../../msqdx-ui/packages/ui/src/components/ContextMenu'

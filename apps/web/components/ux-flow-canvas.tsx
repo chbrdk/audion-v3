@@ -28,11 +28,13 @@ import {
   Alert,
   Button,
   Chip,
+  ContextMenu,
   FlowBoardPalette,
   FlowBoardStage,
   FlowBoardToolbar,
   FlowRunStrip,
   Text,
+  type ContextMenuItem,
 } from '@msqdx/ui'
 import {
   UX_FLOW_NODE_KINDS,
@@ -150,6 +152,12 @@ function FlowCanvasInner({
   const skipHistoryRef = useRef(false)
   const [historyLen, setHistoryLen] = useState(0)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    target: 'pane' | 'node'
+    nodeId?: string
+  } | null>(null)
 
   const pushHistory = useCallback(() => {
     if (skipHistoryRef.current) return
@@ -717,6 +725,86 @@ function FlowCanvasInner({
     setSaveMsg(null)
   }, [selectedId, setNodes, setEdges, pushHistory])
 
+  const deleteNodeById = useCallback(
+    (nodeId: string) => {
+      pushHistory()
+      setNodes((nds) => nds.filter((n) => n.id !== nodeId))
+      setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId))
+      setSelectedId(null)
+      setDirty(true)
+      setSaveMsg(null)
+    },
+    [setNodes, setEdges, pushHistory],
+  )
+
+  const closeContextMenu = useCallback(() => setContextMenu(null), [])
+
+  const contextMenuItems = useMemo((): ContextMenuItem[] => {
+    if (!contextMenu) return []
+    const busy = runBusy
+    if (contextMenu.target === 'pane') {
+      return [
+        {
+          id: 'palette',
+          label: 'Bausteine öffnen',
+          disabled: busy,
+          onSelect: () => setPaletteOpen(true),
+        },
+        {
+          id: 'undo',
+          label: 'Rückgängig',
+          disabled: busy || historyLen < 1,
+          onSelect: () => onUndo(),
+        },
+      ]
+    }
+    const nodeId = contextMenu.nodeId
+    return [
+      {
+        id: 'delete',
+        label: 'Löschen',
+        shortcut: '⌫',
+        danger: true,
+        disabled: busy || !nodeId,
+        onSelect: () => {
+          if (nodeId) deleteNodeById(nodeId)
+        },
+      },
+      {
+        id: 'inspector',
+        label: 'Inspector öffnen',
+        disabled: !nodeId,
+        onSelect: () => {
+          if (nodeId) setSelectedId(nodeId)
+        },
+      },
+    ]
+  }, [contextMenu, runBusy, historyLen, onUndo, deleteNodeById])
+
+  const onPaneContextMenu = useCallback(
+    (event: React.MouseEvent | MouseEvent) => {
+      event.preventDefault()
+      if (runBusy) return
+      setContextMenu({ x: event.clientX, y: event.clientY, target: 'pane' })
+    },
+    [runBusy],
+  )
+
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent | MouseEvent, node: UxFlowRfNode) => {
+      event.preventDefault()
+      if (runBusy) return
+      setSelectedId(node.id)
+      setContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        target: 'node',
+        nodeId: node.id,
+      })
+    },
+    [runBusy],
+  )
+
   const reset = useCallback(() => {
     pushHistory()
     const next = flowToRfNodesEdges(templateRef.current)
@@ -804,6 +892,8 @@ function FlowCanvasInner({
           }}
           onConnect={onConnect}
           onSelectionChange={onSelectionChange}
+          onPaneContextMenu={onPaneContextMenu}
+          onNodeContextMenu={onNodeContextMenu}
           nodeTypes={nodeTypes}
           fitView
           deleteKeyCode={null}
@@ -1017,6 +1107,15 @@ function FlowCanvasInner({
               />
             </UxFlowFloatingPanel>
           ) : null}
+
+          <ContextMenu
+            open={Boolean(contextMenu)}
+            x={contextMenu?.x ?? 0}
+            y={contextMenu?.y ?? 0}
+            onClose={closeContextMenu}
+            items={contextMenuItems}
+            label="Flow Board Menü"
+          />
         </>
       }
     />

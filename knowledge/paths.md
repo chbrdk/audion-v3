@@ -7,6 +7,7 @@
 - Shared UI package dep from web: `../../../msqdx-ui/packages/ui`
 - Shared token package dep from web: `../../../msqdx-ui/packages/ui-tokens`
 - Flow board floating chrome: `@msqdx/ui` `FloatingPanel` + flow board organisms (`FlowBoardStage`, `FlowBoardToolbar`, `FlowBoardPalette`, `FlowNodeCard`, `FlowInspectorShell`, `FlowRunStrip`) — SoT `msqdx-ui/specs/domain/flow-board-chrome.md` / `.msqdx-flow-*`; Audion wrapper `apps/web/components/ux-flow-floating-panel.tsx`; dock keys `paths.flowBoard*DockKey`
+- Flow board context menu: `@msqdx/ui` `ContextMenu` via `apps/web/lib/msqdx-ui.ts` · wired in `apps/web/components/ux-flow-canvas.tsx` (node delete/inspector; pane Bausteine/undo)
 - Side-by-side chrome parity vs Plexon: Audion `/studies/flows/{flowId}` · Plexon `/projects/{id}/flows/{flowId}` · Storybook `Organisms/FlowBoardStage` MagazineBoard (`URL_MSQDX_UI_STORYBOOK`)
 - Default internal persona backend: `http://api:8000`
 - Env key for internal persona backend: `NEXT_PERSONA_BACKEND_INTERNAL_URL`
