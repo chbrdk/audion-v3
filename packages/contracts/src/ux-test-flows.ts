@@ -114,6 +114,10 @@ export type UxSavedFlow = {
   templateFlowId: string
   name: string
   flow: UxTestFlow
+  /** Session user id when known (Phase 4 ACL foundation). */
+  ownerId?: string | null
+  /** Optional org / team scope (Phase 4 ACL foundation). */
+  orgId?: string | null
   updatedAt: string
   createdAt: string
 }
@@ -122,6 +126,8 @@ export type UxSavedFlowSummary = {
   id: string
   templateFlowId: string
   name: string
+  ownerId?: string | null
+  orgId?: string | null
   updatedAt: string
 }
 
@@ -131,6 +137,22 @@ export type UxSavedFlowWritePayload = {
   templateFlowId: string
   name?: string
   flow: UxTestFlow
+  ownerId?: string | null
+  orgId?: string | null
+}
+
+/** Hybrid protocol: hand one agent-runnable node/segment to the journey agent. */
+export type UxFlowHybridSegmentPayload = {
+  flow: UxTestFlow
+  nodeId: string
+  maxSteps?: number | null
+}
+
+export type UxFlowHybridSegmentResult = {
+  jobId: string
+  url: string
+  task: string
+  nodeId: string
 }
 
 /** Agent poll extras for Live-Gate progress (optional on job status). */
@@ -157,11 +179,12 @@ export type UxFlowGateEvaluation = {
   gateNodeId?: string | null
 }
 
-/** Emitted once when the agent replans onto a gate branch mid-run. */
+/** Emitted when the agent replans onto a gate branch mid-run (one event per gate id). */
 export type UxFlowReplanEvent = {
   gateNodeId: string
   edgeKind: 'when' | 'otherwise'
   condition: UxFlowGateCondition
+  /** Next-segment task text (Phase 4 planner); historically full remaining when-branch. */
   remainingTask: string
   at: string
 }
@@ -170,8 +193,10 @@ export type UxFlowCursor = {
   activeNodeId?: string | null
   activeEdgeKind?: UxFlowEdgeKind | null
   gateEvaluations?: UxFlowGateEvaluation[] | null
-  /** Present after a mid-run Live-Gate replan. */
+  /** Latest mid-run Live-Gate replan. */
   replan?: UxFlowReplanEvent | null
+  /** Successive multi-gate replans (Phase 4); latest also mirrored on `replan`. */
+  replanHistory?: UxFlowReplanEvent[] | null
 }
 
 /**

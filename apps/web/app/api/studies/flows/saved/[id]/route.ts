@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { auth } from '../../../../../../auth'
+import { savedFlowScopeFromSession } from '../../../../../../lib/ux-flow-acl'
 import {
   storeDeleteSavedUxFlow,
   storeGetSavedUxFlow,
@@ -7,8 +9,10 @@ import {
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_request: Request, { params }: Params) {
+  const session = await auth()
+  const scope = savedFlowScopeFromSession(session?.user)
   const { id } = await params
-  const saved = await storeGetSavedUxFlow(id)
+  const saved = await storeGetSavedUxFlow(id, scope)
   if (!saved) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
@@ -16,8 +20,10 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
+  const session = await auth()
+  const scope = savedFlowScopeFromSession(session?.user)
   const { id } = await params
-  if (!(await storeDeleteSavedUxFlow(id))) {
+  if (!(await storeDeleteSavedUxFlow(id, scope))) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
   return NextResponse.json({ ok: true })

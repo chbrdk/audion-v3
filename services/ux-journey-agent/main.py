@@ -171,8 +171,12 @@ class JobState:
     flow_graph: dict[str, Any] | None = None
     # Gate node ids already replanned (one-shot per gate).
     replanned_gate_ids: set[str] = field(default_factory=set)
+    # Branch choices for active-path walking (gate_id → when|otherwise).
+    gate_branch_choices: dict[str, str] = field(default_factory=dict)
     # Last replan event mirrored into flowCursor.replan.
     last_replan: dict[str, Any] | None = None
+    # Successive multi-gate replans (Phase 4).
+    replan_history: list[dict[str, Any]] = field(default_factory=list)
 
 
 _jobs: dict[str, JobState] = {}
@@ -2886,6 +2890,9 @@ async def _publish_partial_steps(
             flow_cursor["replan"] = replan_event
             flow_cursor["activeNodeId"] = replan_event.get("gateNodeId")
             flow_cursor["activeEdgeKind"] = replan_event.get("edgeKind") or "when"
+            job_snap = _jobs.get(job_id)
+            if job_snap and job_snap.replan_history:
+                flow_cursor["replanHistory"] = list(job_snap.replan_history)
             if isinstance(replan_event.get("gateNodeId"), str):
                 evals = list(flow_cursor.get("gateEvaluations") or [])
                 evals.append(
@@ -2906,6 +2913,8 @@ async def _publish_partial_steps(
                     flow_cursor.setdefault(
                         "activeNodeId", job_snap.last_replan.get("gateNodeId")
                     )
+                if job_snap and job_snap.replan_history:
+                    flow_cursor["replanHistory"] = list(job_snap.replan_history)
         partial["flowCursor"] = flow_cursor
         async with _jobs_lock:
             if job_id in _jobs:
@@ -7007,8 +7016,17 @@ def _flow_outs(
 def _flow_when_branch_path(
     nodes: list[dict[str, Any]], edges: list[dict[str, Any]], gate_id: str
 ) -> list[dict[str, Any]]:
+    return _flow_branch_path(nodes, edges, gate_id, "when")
+
+
+def _flow_branch_path(
+    nodes: list[dict[str, Any]],
+    edges: list[dict[str, Any]],
+    gate_id: str,
+    edge_kind: str,
+) -> list[dict[str, Any]]:
     by_id = {n["id"]: n for n in nodes if isinstance(n, dict) and n.get("id")}
-    first_edge = _flow_outs(edges, gate_id, "when")
+    first_edge = _flow_outs(edges, gate_id, edge_kind)
     if not first_edge:
         return []
     first = first_edge[0].get("to")
@@ -7032,9 +7050,50 @@ def _flow_when_branch_path(
     return path
 
 
+def _flow_next_segment(
+    nodes: list[dict[str, Any]],
+    edges: list[dict[str, Any]],
+    gate_id: str,
+    edge_kind: str = "when",
+) -> list[dict[str, Any]]:
+    """Phase 4: nodes after gate along edge_kind until next gate (exclusive) or terminal."""
+    by_id = {n["id"]: n for n in nodes if isinstance(n, dict) and n.get("id")}
+    first_edge = _flow_outs(edges, gate_id, edge_kind)
+    if not first_edge:
+        return []
+    first = first_edge[0].get("to")
+    if not isinstance(first, str):
+        return []
+    path: list[dict[str, Any]] = []
+    cur: str | None = first
+    seen: set[str] = set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        n = by_id.get(cur)
+        if not n:
+            break
+        if n.get("kind") == "gate":
+            break
+        path.append(n)
+        if n.get("kind") in ("success", "abandon"):
+            break
+        nxt = _flow_outs(edges, cur, "then")
+        cur = nxt[0].get("to") if nxt else None
+    return path
+
+
 def _flow_default_path(
     nodes: list[dict[str, Any]], edges: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
+    return _flow_active_path(nodes, edges, {})
+
+
+def _flow_active_path(
+    nodes: list[dict[str, Any]],
+    edges: list[dict[str, Any]],
+    gate_choices: dict[str, str],
+) -> list[dict[str, Any]]:
+    """At gates follow gate_choices[id] if set, else otherwise (optimistic continue)."""
     by_id = {n["id"]: n for n in nodes if isinstance(n, dict) and n.get("id")}
     start = next((n for n in nodes if isinstance(n, dict) and n.get("kind") == "start"), None)
     if not start:
@@ -7049,7 +7108,10 @@ def _flow_default_path(
             break
         path.append(n)
         if n.get("kind") == "gate":
-            nxt = _flow_outs(edges, cur, "otherwise")
+            choice = gate_choices.get(cur) or "otherwise"
+            if choice not in ("when", "otherwise"):
+                choice = "otherwise"
+            nxt = _flow_outs(edges, cur, choice)
             cur = nxt[0].get("to") if nxt else None
             continue
         nxt = _flow_outs(edges, cur, "then")
@@ -7162,15 +7224,19 @@ def _decide_mid_run_replan(
     flow_graph: dict[str, Any],
     signals: dict[str, Any],
     already: set[str],
+    gate_choices: dict[str, str] | None = None,
 ) -> dict[str, Any] | None:
-    """Return a replan event dict when the first matching gate should fire, else None."""
+    """Return a replan event when the next matching gate on the active path should fire."""
     nodes_raw = flow_graph.get("nodes")
     edges_raw = flow_graph.get("edges")
     if not isinstance(nodes_raw, list) or not isinstance(edges_raw, list):
         return None
     nodes = [n for n in nodes_raw if isinstance(n, dict)]
     edges = [e for e in edges_raw if isinstance(e, dict)]
-    path = _flow_default_path(nodes, edges)
+    choices = dict(gate_choices or {})
+    for gid in already:
+        choices.setdefault(gid, "when")
+    path = _flow_active_path(nodes, edges, choices)
     for n in path:
         if n.get("kind") != "gate":
             continue
@@ -7190,9 +7256,10 @@ def _decide_mid_run_replan(
         )
         if not matched:
             continue
-        when_nodes = _flow_when_branch_path(nodes, edges, gate_id)
+        # Phase 4: next segment only (stop before nested gates).
+        segment = _flow_next_segment(nodes, edges, gate_id, "when")
         remaining = _compile_branch_remaining_task(
-            when_nodes, condition=condition, edge_kind="when"
+            segment, condition=condition, edge_kind="when"
         )
         return {
             "gateNodeId": gate_id,
@@ -7213,7 +7280,9 @@ def _maybe_live_gate_replan(job_id: str, signals: dict[str, Any]) -> dict[str, A
     job = _jobs.get(job_id)
     if not job or not isinstance(job.flow_graph, dict):
         return None
-    decision = _decide_mid_run_replan(job.flow_graph, signals, job.replanned_gate_ids)
+    decision = _decide_mid_run_replan(
+        job.flow_graph, signals, job.replanned_gate_ids, job.gate_branch_choices
+    )
     if not decision:
         return None
     gate_id = decision.get("gateNodeId")
@@ -7234,7 +7303,9 @@ def _maybe_live_gate_replan(job_id: str, signals: dict[str, Any]) -> dict[str, A
         print(f"ux-journey: job={job_id} live-gate replan failed: {exc!r}", flush=True)
         return None
     job.replanned_gate_ids.add(gate_id)
+    job.gate_branch_choices[gate_id] = "when"
     job.last_replan = decision
+    job.replan_history.append(decision)
     job.task = remaining.strip()
     return decision
 
@@ -7403,6 +7474,8 @@ async def get_run(job_id: str) -> dict[str, Any]:
                 cursor["replan"] = job.last_replan
                 cursor.setdefault("activeEdgeKind", "when")
                 cursor.setdefault("activeNodeId", job.last_replan.get("gateNodeId"))
+            if job.replan_history:
+                cursor["replanHistory"] = list(job.replan_history)
             merged["flowCursor"] = cursor
             out["result"] = merged
             out["gateSignals"] = live["gateSignals"]

@@ -48,6 +48,20 @@ export type UxJourneyAgentJobStatus = {
       evidence?: string | null
       gateNodeId?: string | null
     }> | null
+    replan?: {
+      gateNodeId: string
+      edgeKind: string
+      condition: string
+      remainingTask: string
+      at: string
+    } | null
+    replanHistory?: Array<{
+      gateNodeId: string
+      edgeKind: string
+      condition: string
+      remainingTask: string
+      at: string
+    }> | null
   } | null
   result?: {
     success?: boolean

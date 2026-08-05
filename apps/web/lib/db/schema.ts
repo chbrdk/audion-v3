@@ -222,6 +222,10 @@ export const uxSavedFlows = pgTable('ux_saved_flows', {
   templateFlowId: text('template_flow_id').notNull(),
   name: text('name').notNull(),
   flow: jsonb('flow').$type<UxTestFlow>().notNull(),
+  /** Session user id when known (Phase 4 ACL foundation). */
+  ownerId: text('owner_id'),
+  /** Optional org / team scope (Phase 4 ACL foundation). */
+  orgId: text('org_id'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })

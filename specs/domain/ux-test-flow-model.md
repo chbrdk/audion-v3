@@ -1,15 +1,15 @@
 # UX Test Flow Model
 
-**Status:** Accepted (V1 + Canvas + Live-Gates + Phase 3: mid-run replan, Postgres saved flows, moderated protocol)  
+**Status:** Accepted (V1 + Canvas + Live-Gates + Phase 3 + **Phase 4**: multi-gate sequential replan, agent-native branch planner, hybrid moderated+agent)  
 **Contracts:** `@audion-v3/contracts` — `UxTestFlow`, `UxFlowNode`, `UxFlowEdge`, `UxSavedFlow*`, `UxFlowGateSignalBundle`, `UxFlowCursor`, `UxFlowReplanEvent`  
 **Scenarios catalog:** `specs/domain/ux-test-flow-scenarios.md`  
-**UI:** `/studies/flows` (template gallery + block list + React Flow canvas + moderated protocol)
+**UI:** `/studies/flows` (template gallery + block list + React Flow canvas + moderated / hybrid protocol)
 
 ## Purpose
 
 Product-facing **test flow** layer: few node kinds compose the ten canonical scenarios. End users pick a template and create a Study/Wave without editing code packs.
 
-Scenario packs remain the execution seed shape. Flows **compile** into pack-like runs (V1). Live-Gate signals drive canvas branch selection; Phase 3 also **replans the agent mid-run** when a gate fires (remaining branch task via `add_new_task`). Full multi-gate planner / parallel mid-run orchestration remains deferred.
+Scenario packs remain the execution seed shape. Flows **compile** into pack-like runs for Study create (V1 shape kept). **Phase 4** shifts live execution to an **agent-native branch planner**: compile no longer embeds full when-branch trees into the initial task; the agent receives `flow_graph`, evaluates Live-Gates, and injects **next segments** via `add_new_task`. Multi-gate sequential replan walks the **active path** (prior when/otherwise choices). Hybrid sessions interleave human protocol steps with live agent segments on the same `UxTestFlow` graph.
 
 ## Node kinds
 
@@ -36,15 +36,15 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
 
 ## Gate conditions (closed set)
 
-| Id | Meaning | V1 compile | Live-Gate | Mid-run replan (Phase 3) |
-|----|---------|------------|-----------|--------------------------|
-| `frustration_high` | Self-report / perception frustration | Embed abandon instructions in task | `gateSignals.frustrationHigh` | Replan onto `when` remaining task once |
+| Id | Meaning | V1 / Study compile | Live-Gate | Mid-run replan (Phase 4) |
+|----|---------|-------------------|-----------|--------------------------|
+| `frustration_high` | Self-report / perception frustration | Soft gate note only (no when-tree embed) | `gateSignals.frustrationHigh` | Sequential: next when-segment via `add_new_task` |
 | `url_match` | `finalUrl` matches `pattern` | `successCriteria.url_match` | `gateSignals.finalUrl` + pattern | Same |
 | `title_match` | `finalTitle` matches `pattern` | `successCriteria.title_match` | `gateSignals.finalTitle` + pattern | Same |
-| `consent_accepted` | User confirmed external/privacy | Prompt + action text | `gateSignals.consentAccepted` | Same |
-| `consent_rejected` | User declined | Abandon branch text | `gateSignals.consentRejected` | Same |
+| `consent_accepted` | User confirmed external/privacy | Soft gate note | `gateSignals.consentAccepted` | Same |
+| `consent_rejected` | User declined | Soft gate note | `gateSignals.consentRejected` | Same |
 | `goal_reached` | Task goal met | Soft successCriteria / task wording | `gateSignals.goalReached` | Same |
-| `confusion_named` | Confusion explicitly named | Comprehension success path | `gateSignals.confusionNamed` | Same |
+| `confusion_named` | Confusion explicitly named | Soft gate note | `gateSignals.confusionNamed` | Same |
 | `time_elapsed` | Observe window done | Prompt timing in task | `elapsedSeconds` vs `observeSeconds` | Same |
 
 ## Graph rules
@@ -55,17 +55,30 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
 4. Terminals: `success` | `abandon` (optional trailing `measure`).
 5. No cycles in V1 templates.
 
-## Compile (V1)
+## Compile (V1 Study create) + branch planner (Phase 4)
 
-`compileUxTestFlowToPackShape(flow)` → `UxScenarioPack`-compatible object:
+`compileUxTestFlowToPackShape(flow)` → `UxScenarioPack`-compatible object (Study/Wave create unchanged):
 
-1. Walk default path: `start` → follow `then`; at `gate` follow `otherwise` (optimistic continue) **and** append `when`-branch instructions as “if … then abandon/explain”.
+1. Walk **default / otherwise path**: `start` → follow `then`; at `gate` follow `otherwise` (optimistic continue).
 2. Concatenate `prompt` / `observe` / `action` / `message` texts into `task`.
-3. First `url_match` / `title_match` on the graph → pack/run `successCriteria`.
-4. `start.urlKey` → `targetUrlKey` and run `urlKey`.
-5. Soft-Q keys: core profile (`ease`…`overall`) unless flow sets `domainProfileId`.
-6. `parallel` edges from start → **additional runs** (same task; persona/segment from the parallel target node).
-7. Each wave run may carry `flowGraph` (nodes+edges snapshot) so the agent can evaluate Live-Gates mid-run.
+3. At each `gate`, append a **short Live-Gate note** (`GATE (cond): runtime evaluates; matched → replan segment`). **Do not** embed the full `when`-branch tree into the initial task (Phase 4 planner shift).
+4. First `url_match` / `title_match` on the graph → pack/run `successCriteria`.
+5. `start.urlKey` → `targetUrlKey` and run `urlKey`.
+6. Soft-Q keys: core profile (`ease`…`overall`) unless flow sets `domainProfileId`.
+7. `parallel` edges from start → **additional runs** (same task; persona/segment from the parallel target node).
+8. Each wave run carries `flowGraph` (nodes+edges snapshot) so the agent walks the graph live.
+
+### Agent-native branch planner
+
+When `POST /run` includes `flow_graph`:
+
+1. Initial task = lean compile text (default path + soft gate notes).
+2. After each partial-steps publish, agent evaluates gates on the **active path** (see multi-gate replan).
+3. On match: build **next segment only** — nodes after the gate along `when` until the **next gate** (exclusive) or terminal — and `add_new_task(segment)`.
+4. Nested gates on that branch fire later as their own segments (no one-shot full-tree inject).
+5. Same product model — not a second project / flow type.
+
+Study create still uses compile for pack shape + URL/persona; live branching is agent-owned.
 
 ## Canvas (session edit + persist)
 
@@ -73,7 +86,7 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
 - Canvas uses `@xyflow/react`; node/edge payload is the same `UxTestFlow` JSON.
 - Layout positions are UI-only (not persisted on `UxFlowNode`).
 - **Save** persists the session snapshot via `ux-flow-store` → Postgres `ux_saved_flows` when `DATABASE_URL` is set; otherwise in-memory. Keyed by template `flowId` (or saved id). **Reset to template** restores the catalog fixture. Reload prefers saved variant when present.
-- Create Study may POST an inline `flow` snapshot; server validates then compiles (V1).
+- Create Study may POST an inline `flow` snapshot; server validates then compiles (V1 pack + lean task).
 - All 10 catalog templates ship with full graphs (`compileReady`).
 - **Undo** keeps a short in-session history stack (last N graph snapshots).
 - Theming: node/viewport/run-strip chrome uses CSS variables (`--flow-*` + Audion tokens) so **light and dark** themes both look intentional.
@@ -84,8 +97,8 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
 - Node states overlay: `idle | active | done | skipped | error`.
 - **Inline node output:** active/done/error nodes render the latest mapped agent step (action/target headline, result/think-aloud text, screenshot via BFF proxy).
 - Progress mapper (`ux-flow-run-progress.ts`) preference order:
-  1. Optional poll `flowCursor` / `gateEvaluations` when present.
-  2. Else evaluate flow gates against agent `gateSignals` (`finalUrl`, `finalTitle`, `frustrationHigh`, `confusionNamed`, consent/goal/elapsed) + step targets.
+  1. Optional poll `flowCursor` / `gateEvaluations` / `replan` + `replanHistory` when present.
+  2. Else evaluate flow gates against agent `gateSignals` on the **active path**.
   3. Else heuristic step-budget cursor on the default/`otherwise` path.
 - **Parallel runs:** when start returns multiple real `jobId`s, canvas tracks run A/B (segment contrast) without changing single-run UX.
 - **Stop** best-effort cancels via agent cancel proxy.
@@ -120,25 +133,32 @@ Scenario packs remain the execution seed shape. Flows **compile** into pack-like
       "condition": "frustration_high",
       "remainingTask": "…",
       "at": "ISO-8601"
-    }
+    },
+    "replanHistory": [
+      { "gateNodeId": "n-feel-gate", "edgeKind": "when", "condition": "frustration_high", "remainingTask": "…", "at": "…" }
+    ]
   }
 }
 ```
 
-`flowCursor` is optional; when omitted, the web mapper derives gate outcomes from `gateSignals` + the flow graph.
+`flowCursor` is optional; when omitted, the web mapper derives gate outcomes from `gateSignals` + the flow graph. `replan` is the latest event; `replanHistory` lists successive multi-gate replans (canvas aligns via history).
 
-### Mid-run agent replan (Phase 3)
+### Mid-run agent replan — multi-gate sequential (Phase 4)
 
 When `POST /run` includes optional `flow_graph` (`{ id, nodes, edges }`):
 
-1. Agent stores the graph on the job and evaluates it after each partial-steps publish (same closed-set conditions as the canvas mapper).
-2. On the **first** matching gate on the default path, agent builds the remaining **`when`-branch** task text (node labels/texts along that branch) and calls `agent.add_new_task(remainingTask)` once per gate id.
-3. Poll payload includes `flowCursor.replan` + `activeEdgeKind: "when"` so the canvas stays aligned.
-4. No second product model — same `UxTestFlow` graph + existing `gateSignals` / `flowCursor`.
+1. Agent stores the graph on the job and evaluates it after each partial-steps publish.
+2. **Active path:** start → `then`; at each gate, follow prior branch choice (`when` if that gate already replanned, else `otherwise`).
+3. On the first **unfired** matching gate on the active path, build the **next when-segment** (nodes after the gate until the next gate exclusive, or terminal) and call `agent.add_new_task(segment)`.
+4. Record gate id in `replanned_gate_ids` / branch choices; append to `replanHistory`; mirror latest on `flowCursor.replan`.
+5. Later gates further down the active path (including nested gates on a prior `when` branch) may fire the same way — one shot per gate id (no loops).
+6. Poll payload keeps canvas aligned via `replan` + `replanHistory` + `activeEdgeKind: "when"`.
 
 Wave Start passes `flowGraph` from each `UxWaveRunItem` when present (set at Study-from-Flow create).
 
-## Moderated-only protocol (Phase 3)
+## Moderated protocol + hybrid session (Phase 4)
+
+### Moderated-only (Phase 3)
 
 - View **Protokoll** on `/studies/flows/[flowId]` (and via `?view=protocol`).
 - Human moderator walks the same graph **without** calling the journey agent:
@@ -146,20 +166,32 @@ Wave Start passes `flowGraph` from each `UxWaveRunItem` when present (set at Stu
   - At gates: moderator chooses **wenn** / **sonst** (branches remaining path).
   - Per step: notes + optional measure score; Done / Skip / Back.
   - Session stays in-browser (exportable summary text); no agent job.
-- Same flow model; mode flag conceptually `moderated_outline` (scenario 10) but any compile-ready flow can run as protocol.
+
+### Hybrid (Phase 4)
+
+Same `UxTestFlow` graph; mode = moderated checklist **plus** optional live agent handoff for agent-runnable steps (`action` / `observe` / `prompt` with actionable text):
+
+1. Moderator walks protocol; gates stay human (**wenn** / **sonst**).
+2. On an agent-runnable step: **Agent ausführen** → BFF starts a short journey-agent job for that **segment** (start URL from flow `start`, task = node/segment text, small `maxSteps`).
+3. Protocol shows job status (poll); moderator may wait for complete, then Done / Skip / continue.
+4. Agent does **not** own gate choices in hybrid — human remains the branch authority for the session.
+5. Optional: after agent segment completes, notes auto-fill with a one-line job summary.
+
+Minimal slice: one segment job at a time; no multi-user collab; same Study/Wave model not required (direct agent start via BFF).
 
 ## Surfaces / API
 
 | Surface | Role |
 |---------|------|
 | `GET /studies/flows` | Template gallery |
-| `GET /studies/flows/[flowId]` | Block list + canvas + protocol + create CTA + in-flow Testen |
+| `GET /studies/flows/[flowId]` | Block list + canvas + protocol/hybrid + create CTA + in-flow Testen |
 | `GET /api/studies/from-flow` | List catalog summaries |
 | `POST /api/studies/from-flow` | `{ flowId?, flow?, name?, projectId?, waveKey? }` → Study+Wave (+ `flowGraph` on runs) |
-| `GET /api/studies/flows/saved` | List saved user flow snapshots |
-| `GET /api/studies/flows/saved/[id]` | Get one saved snapshot |
-| `POST /api/studies/flows/saved` | Upsert saved snapshot (`templateFlowId` + `flow`) |
-| `DELETE /api/studies/flows/saved/[id]` | Delete saved snapshot |
+| `GET /api/studies/flows/saved` | List saved user flow snapshots (ACL-filtered when owner known) |
+| `GET /api/studies/flows/saved/[id]` | Get one saved snapshot (owner check when set) |
+| `POST /api/studies/flows/saved` | Upsert saved snapshot (`templateFlowId` + `flow` + optional owner/org) |
+| `DELETE /api/studies/flows/saved/[id]` | Delete saved snapshot (owner check when set) |
+| `POST /api/studies/flows/hybrid-segment` | `{ flow, nodeId, maxSteps? }` → `{ jobId, url, task }` for protocol handoff |
 | `POST /api/studies/…/waves/…/start` | Start agent jobs for wave runs (forwards `flow_graph`) |
 | `GET /api/ux-journey-agent/run/{jobId}` | Poll job status + partial steps + gateSignals + flowCursor |
 
@@ -173,21 +205,26 @@ Wave Start passes `flowGraph` from each `UxWaveRunItem` when present (set at Stu
 | `template_flow_id` | text | Catalog template id |
 | `name` | text | Display name |
 | `flow` | jsonb | Full `UxTestFlow` snapshot |
+| `owner_id` | text nullable | Session user id when known (Phase 4 ACL foundation) |
+| `org_id` | text nullable | Optional org / team scope (Phase 4 ACL foundation) |
 | `created_at` / `updated_at` | timestamptz | |
 
-Facade: `apps/web/lib/fixtures/ux-flow-store.ts` — Postgres when `DATABASE_URL` set, else in-memory (tests/local). API surface unchanged.
+**ACL policy (foundation):** rows with `owner_id` null remain legacy-shared; when the request has a session user, list/get/update/delete prefer that owner's rows (+ legacy null). Org-scoped sharing UI is follow-up — schema + API stamp/filter only in this slice.
+
+Facade: `apps/web/lib/fixtures/ux-flow-store.ts` — Postgres when `DATABASE_URL` set, else in-memory (tests/local). API surface unchanged except ACL filters + hybrid-segment route.
 
 ## Phase plan
 
 | Phase | Shipped | Deferred |
 |-------|---------|----------|
 | V1 | Templates, compile, canvas edit, Study create | — |
-| Phase 2 | Live-Gate signals (url/title/frustration/consent/goal/time), canvas branch, fixture saved flows | Mid-run replan, Postgres, moderated UI |
-| **Phase 3 (this slice)** | Mid-run replan on gate fire, `ux_saved_flows` Postgres, moderated protocol view | Multi-gate sequential replan beyond first match; collaborative multi-user saved-flow ACLs; agent-driven protocol (hybrid moderated+agent mid-session); full branch planner replacing V1 compile embedding |
+| Phase 2 | Live-Gate signals (url/title/frustration/consent/goal/time), canvas branch, fixture saved flows | — |
+| Phase 3 | Mid-run replan on gate fire, `ux_saved_flows` Postgres, moderated protocol view | — |
+| **Phase 4 (this slice)** | Multi-gate sequential replan on active path + `replanHistory`; agent-native branch planner (lean compile + next-segment inject); hybrid protocol agent handoff; saved-flow `owner_id`/`org_id` ACL foundation | Org-scoped sharing UI / invite ACLs; multi-agent parallel mid-run orchestration; collaborative multi-user live protocol |
 
 ## Out of scope (still later)
 
-- Multi-gate sequential replan chain beyond the first matched gate on the default path  
-- Collaborative / ACL-scoped saved flows across orgs  
-- Hybrid session: human protocol steps interleaved with live agent actions in one job  
-- Full agent-native branch engine replacing V1 optimistic compile text  
+- Org/team sharing UI and invite ACLs on saved flows (schema foundation shipped)  
+- Multi-user collaborative live protocol editing  
+- Parallel mid-run orchestration of multiple agent jobs inside one hybrid session  
+- Replacing Study/Wave create with a non-pack execution path (compile pack shape remains)  

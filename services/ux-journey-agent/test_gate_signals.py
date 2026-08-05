@@ -165,6 +165,45 @@ def test_decide_mid_run_replan_frustration_when_branch():
     assert again is None
 
 
+def test_decide_mid_run_replan_multi_gate_on_when_branch():
+    flow_graph = {
+        "id": "flow-multi",
+        "nodes": [
+            {"id": "n-start", "kind": "start", "label": "S"},
+            {"id": "n-g1", "kind": "gate", "label": "G1", "gateCondition": "frustration_high"},
+            {"id": "n-mid", "kind": "action", "label": "Mid", "text": "Zwischenaktion."},
+            {"id": "n-g2", "kind": "gate", "label": "G2", "gateCondition": "goal_reached"},
+            {"id": "n-win", "kind": "success", "label": "Win", "text": "Ziel erreicht."},
+            {"id": "n-fail", "kind": "abandon", "label": "Fail", "text": "Nested fail."},
+            {"id": "n-cont", "kind": "action", "label": "C", "text": "continue"},
+        ],
+        "edges": [
+            {"id": "e1", "from": "n-start", "to": "n-g1", "kind": "then"},
+            {"id": "e2", "from": "n-g1", "to": "n-mid", "kind": "when"},
+            {"id": "e3", "from": "n-g1", "to": "n-cont", "kind": "otherwise"},
+            {"id": "e4", "from": "n-mid", "to": "n-g2", "kind": "then"},
+            {"id": "e5", "from": "n-g2", "to": "n-win", "kind": "when"},
+            {"id": "e6", "from": "n-g2", "to": "n-fail", "kind": "otherwise"},
+        ],
+    }
+    first = agent_main._decide_mid_run_replan(
+        flow_graph, {"frustrationHigh": True}, set()
+    )
+    assert first is not None
+    assert first["gateNodeId"] == "n-g1"
+    assert "Zwischenaktion" in first["remainingTask"]
+    assert "Ziel erreicht" not in first["remainingTask"]
+    second = agent_main._decide_mid_run_replan(
+        flow_graph,
+        {"frustrationHigh": True, "goalReached": True},
+        {"n-g1"},
+        {"n-g1": "when"},
+    )
+    assert second is not None
+    assert second["gateNodeId"] == "n-g2"
+    assert "Ziel erreicht" in second["remainingTask"]
+
+
 def test_decide_mid_run_replan_no_match():
     flow_graph = {
         "id": "f",

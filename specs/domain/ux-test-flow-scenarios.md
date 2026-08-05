@@ -13,7 +13,7 @@
 
 Statt hundert spezieller Screens reichen wenige **Knotentypen**. Ein Board (React Flow o.ä.) kann dieselben Knoten wiederverwenden. Die 10 Szenarien unten prüfen, ob diese Knoten wirklich reichen.
 
-V1 + Phase 2–3: Vorlagen + Blockliste + Canvas + Compile → Study (alle 10 Graphen). Live-Gates: Agent `gateSignals` + Canvas-Cursor; Mid-Run-Replan bei Gate-Feuer; Postgres `ux_saved_flows`; Protokoll-UI ohne Agent (moderiert).
+V1 + Phase 2–4: Vorlagen + Blockliste + Canvas + Compile → Study (alle 10 Graphen). Live-Gates: Agent `gateSignals` + Canvas-Cursor; Multi-Gate Mid-Run-Replan (aktive Pfad + `replanHistory`); Agent-nativer Branch-Planner (lean Task + Next-Segment); Postgres `ux_saved_flows` (+ Owner/Org-ACL-Foundation); Protokoll moderiert **oder hybrid** (Mensch-Gates + Agent-Segmente).
 
 ---
 
@@ -196,21 +196,22 @@ Alles unten ist mit **diesen** Typen beschreibbar — kein Szenario braucht eine
 
 ---
 
-### 10. Moderiert-light / Leitfaden ohne Agent-Zwang
+### 10. Moderiert-light / Leitfaden ohne Agent-Zwang (+ Hybrid Phase 4)
 
-**Alltag:** Interview-Struktur speichern (Händlersuche-Stil): Beobachtungsfenster + Moderationsfragen als **Meldungen**, Ausführung Mensch oder später Agent.
+**Alltag:** Interview-Struktur speichern (Händlersuche-Stil): Beobachtungsfenster + Moderationsfragen als **Meldungen**, Ausführung Mensch oder Agent-Segment.
 
 | Schritt | Baustein |
 |---------|----------|
 | Start + Szenario-Text | Start + Prompt |
 | Timer „5 Min frei explorieren“ | Beobachten |
 | Moderator-Karten: „Nachfragen zu PLZ / Karte / Filter“ | Meldung (Checkliste) |
-| Optionale Agent-Aktionen dazwischen | Aktion |
+| Optionale Agent-Aktionen dazwischen | Aktion (Hybrid: „Agent ausführen“) |
 | Abschluss: hilfreich? was fehlte? | Prompt + Messung |
 | Kein hartes goalReached nötig | Erfolg = Protokoll vollständig |
 
 **Trigger:** Zeit, Moderator markiert „Thema erledigt“, optional Agent-Events.  
-**Archetyp:** gemischt; Modus = `moderated_outline` (Produkt-Flag, kein neuer Lab-Typ zwingend).
+**Archetyp:** gemischt; Modus = `moderated_outline` (Produkt-Flag, kein neuer Lab-Typ zwingend).  
+**Phase 4 Hybrid:** Gates bleiben Mensch; `action`/`observe`/`prompt` können ein Live-Agent-Segment starten (`POST …/hybrid-segment`), dann zurück zum Protokoll.
 
 ---
 

@@ -1,7 +1,7 @@
 /**
- * Mid-run Live-Gate replan helpers — remaining branch task from flow graph + gate signals.
+ * Mid-run Live-Gate replan helpers — next-segment branch tasks from flow graph + gate signals.
  * Shared by canvas tests and Study-from-Flow → agent `flow_graph`.
- * @see specs/domain/ux-test-flow-model.md — Mid-run agent replan
+ * @see specs/domain/ux-test-flow-model.md — Mid-run agent replan / branch planner
  */
 
 import type {
@@ -12,8 +12,15 @@ import type {
   UxFlowReplanEvent,
   UxTestFlow,
 } from '@audion-v3/contracts'
-import { defaultExecutionPath, outs, whenBranchPath } from './ux-test-flow-graph'
-import { evaluateFlowGates } from './ux-flow-run-progress'
+import {
+  activeExecutionPath,
+  defaultExecutionPath,
+  gateChoicesFromReplans,
+  nextSegmentAfterGate,
+  outs,
+  whenBranchPath,
+} from './ux-test-flow-graph'
+import { evaluateFlowGatesOnPath } from './ux-flow-run-progress'
 
 export function toFlowGraphSnapshot(flow: UxTestFlow): UxFlowGraphSnapshot | null {
   const nodes = flow.nodes ?? []
@@ -85,9 +92,35 @@ export function compileBranchRemainingTask(
     if (frag) parts.push(frag)
   }
   if (parts.length < 2) {
-    parts.push('Beende die Aufgabe ehrlich (done) und erkläre kurz, warum der Gate-Zweig gewählt wurde.')
+    parts.push(
+      'Beende die Aufgabe ehrlich (done) und erkläre kurz, warum der Gate-Zweig gewählt wurde.',
+    )
   }
   return parts.join(' ')
+}
+
+/** Phase 4: next-segment task (stop before nested gates). */
+export function compileNextSegmentTask(
+  flow: UxTestFlow,
+  gateId: string,
+  opts?: { gateCondition?: UxFlowGateCondition | null; edgeKind?: 'when' | 'otherwise' },
+): string {
+  const edge = opts?.edgeKind ?? 'when'
+  const segment = nextSegmentAfterGate(flow, gateId, edge)
+  return compileBranchRemainingTask(flow, segment, {
+    gateCondition: opts?.gateCondition,
+    edgeKind: edge,
+  })
+}
+
+/** Hybrid protocol: task text for a single agent-runnable node. */
+export function compileHybridSegmentTask(flow: UxTestFlow, nodeId: string): string | null {
+  const node = (flow.nodes ?? []).find((n) => n.id === nodeId)
+  if (!node) return null
+  if (node.kind === 'start' || node.kind === 'gate' || node.kind === 'measure') return null
+  const frag = nodeTaskFragment(node)
+  if (!frag) return null
+  return `HYBRID-SEGMENT (${flow.id} / ${node.id}): Führe nur diesen Protokoll-Schritt aus, dann done. ${frag}`
 }
 
 export type MidRunReplanDecision = {
@@ -100,15 +133,24 @@ export type MidRunReplanDecision = {
 }
 
 /**
- * Decide whether a Live-Gate should trigger a one-shot mid-run replan onto the `when` branch.
- * Caller tracks already-replanned gate ids to avoid loops.
+ * Decide whether a Live-Gate should trigger a mid-run replan onto the next when-segment.
+ * Caller tracks already-replanned gate ids; walks the active path (Phase 4 multi-gate).
  */
 export function decideMidRunReplan(
   flow: UxTestFlow,
   signals: UxFlowGateSignalBundle,
   alreadyReplannedGateIds: ReadonlySet<string> = new Set(),
+  replanHistory?: ReadonlyArray<UxFlowReplanEvent> | null,
 ): MidRunReplanDecision {
-  const { gateMatched, matchedGateId, evaluations } = evaluateFlowGates(flow, signals)
+  const choices = gateChoicesFromReplans(alreadyReplannedGateIds, replanHistory)
+  const path = activeExecutionPath(flow, choices)
+  const { evaluations, gateMatched, matchedGateId } = evaluateFlowGatesOnPath(
+    flow,
+    path,
+    signals,
+    null,
+    alreadyReplannedGateIds,
+  )
   if (!gateMatched || !matchedGateId) {
     return {
       shouldReplan: false,
@@ -130,9 +172,11 @@ export function decideMidRunReplan(
     }
   }
   const gate = (flow.nodes ?? []).find((n) => n.id === matchedGateId)
-  const condition = gate?.gateCondition ?? evaluations.find((e) => e.gateNodeId === matchedGateId)?.condition ?? null
-  const whenNodes = whenBranchPath(flow, matchedGateId)
-  const remainingTask = compileBranchRemainingTask(flow, whenNodes, {
+  const condition =
+    gate?.gateCondition ??
+    evaluations.find((e) => e.gateNodeId === matchedGateId)?.condition ??
+    null
+  const remainingTask = compileNextSegmentTask(flow, matchedGateId, {
     gateCondition: condition,
     edgeKind: 'when',
   })
@@ -180,3 +224,5 @@ export function otherwiseBranchPath(flow: UxTestFlow, gateId: string): UxFlowNod
 export function protocolDefaultPath(flow: UxTestFlow): UxFlowNode[] {
   return defaultExecutionPath(flow)
 }
+
+export { whenBranchPath }

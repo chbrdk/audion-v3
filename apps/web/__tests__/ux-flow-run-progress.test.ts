@@ -295,6 +295,79 @@ describe('ux-flow-replan', () => {
     expect(again.shouldReplan).toBe(false)
     expect(toFlowGraphSnapshot(flow)?.nodes.length).toBe(flow.nodes!.length)
   })
+
+  it('multi-gate: second gate on when-branch can fire after first replan', async () => {
+    const { decideMidRunReplan } = await import('../lib/ux-flow-replan')
+    const { nextSegmentAfterGate } = await import('../lib/ux-test-flow-graph')
+    const flow: import('@audion-v3/contracts').UxTestFlow = {
+      id: 'flow-multi-gate',
+      name: 'Multi',
+      description: '',
+      scenarioIndex: 9,
+      primaryArchetype: 'end_to_end',
+      nodeKindsUsed: ['start', 'gate', 'action', 'abandon', 'success'],
+      defaultWaveKey: 'multi',
+      compileReady: true,
+      nodes: [
+        { id: 'n-start', kind: 'start', label: 'Start', urlKey: 'https://example.com/' },
+        { id: 'n-g1', kind: 'gate', label: 'G1', gateCondition: 'frustration_high' },
+        { id: 'n-mid', kind: 'action', label: 'Mid', text: 'Zwischenaktion auf when.' },
+        { id: 'n-g2', kind: 'gate', label: 'G2', gateCondition: 'goal_reached' },
+        { id: 'n-win', kind: 'success', label: 'Win', text: 'Ziel erreicht.' },
+        { id: 'n-fail', kind: 'abandon', label: 'Fail', text: 'Abbruch nested.' },
+        { id: 'n-cont', kind: 'action', label: 'Cont', text: 'Weiter otherwise.' },
+        { id: 'n-ok', kind: 'success', label: 'OK', text: 'Fertig otherwise.' },
+      ],
+      edges: [
+        { id: 'e1', from: 'n-start', to: 'n-g1', kind: 'then' },
+        { id: 'e2', from: 'n-g1', to: 'n-mid', kind: 'when' },
+        { id: 'e3', from: 'n-g1', to: 'n-cont', kind: 'otherwise' },
+        { id: 'e4', from: 'n-mid', to: 'n-g2', kind: 'then' },
+        { id: 'e5', from: 'n-g2', to: 'n-win', kind: 'when' },
+        { id: 'e6', from: 'n-g2', to: 'n-fail', kind: 'otherwise' },
+        { id: 'e7', from: 'n-cont', to: 'n-ok', kind: 'then' },
+      ],
+    }
+    const first = decideMidRunReplan(flow, { frustrationHigh: true })
+    expect(first.shouldReplan).toBe(true)
+    expect(first.gateNodeId).toBe('n-g1')
+    expect(first.remainingTask).toMatch(/Zwischenaktion/)
+    expect(first.remainingTask).not.toMatch(/Ziel erreicht/)
+    const seg = nextSegmentAfterGate(flow, 'n-g1', 'when')
+    expect(seg.map((n) => n.id)).toEqual(['n-mid'])
+
+    const second = decideMidRunReplan(
+      flow,
+      { frustrationHigh: true, goalReached: true },
+      new Set(['n-g1']),
+      [first.replan!],
+    )
+    expect(second.shouldReplan).toBe(true)
+    expect(second.gateNodeId).toBe('n-g2')
+    expect(second.remainingTask).toMatch(/Ziel erreicht/)
+  })
+})
+
+describe('ux-flow-acl', () => {
+  it('legacy rows visible; owner-scoped rows filter', async () => {
+    const { savedFlowVisibleTo } = await import('../lib/ux-flow-acl')
+    expect(savedFlowVisibleTo({ ownerId: null, orgId: null }, { ownerId: 'u1' })).toBe(true)
+    expect(savedFlowVisibleTo({ ownerId: 'u1', orgId: null }, { ownerId: 'u1' })).toBe(true)
+    expect(savedFlowVisibleTo({ ownerId: 'u1', orgId: null }, { ownerId: 'u2' })).toBe(false)
+    expect(savedFlowVisibleTo({ ownerId: 'u1', orgId: null }, {})).toBe(true)
+  })
+})
+
+describe('ux-flow-hybrid', () => {
+  it('marks action nodes agent-runnable', async () => {
+    const { isHybridAgentRunnableNode } = await import('../lib/ux-flow-hybrid')
+    const flow = getUxTestFlow('flow-feeling-gate')!
+    const action = (flow.nodes ?? []).find((n) => n.kind === 'action')
+    expect(action).toBeTruthy()
+    expect(isHybridAgentRunnableNode(flow, action!.id)).toBe(true)
+    const gate = (flow.nodes ?? []).find((n) => n.kind === 'gate')!
+    expect(isHybridAgentRunnableNode(flow, gate.id)).toBe(false)
+  })
 })
 
 describe('moderated protocol path', () => {

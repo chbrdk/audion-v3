@@ -95,6 +95,7 @@ function compileTaskText(flow: UxTestFlow): string {
 
   const parts: string[] = [
     `UX Test Flow „${flow.name}“ (${flow.id}). Folge den Schritten ehrlich; denke laut.`,
+    'Live-Gates werden zur Laufzeit bewertet; bei Match folgt ein Replan-Segment (nicht vorwegnehmen).',
   ]
 
   const walkDefault = (id: string, seen: Set<string>) => {
@@ -105,22 +106,10 @@ function compileTaskText(flow: UxTestFlow): string {
     if (n.kind === 'start') {
       /* skip */
     } else if (n.kind === 'gate') {
-      const whenEdge = outs(edges, id, 'when')[0]
       const otherEdge = outs(edges, id, 'otherwise')[0]
-      const whenNode = whenEdge ? byId.get(whenEdge.to) : null
       const cond = n.gateCondition ?? 'condition'
-      const whenTexts: string[] = []
-      let cursor = whenNode
-      const branchSeen = new Set<string>()
-      while (cursor && !branchSeen.has(cursor.id)) {
-        branchSeen.add(cursor.id)
-        if (cursor.text) whenTexts.push(cursor.text)
-        if (cursor.kind === 'abandon' || cursor.kind === 'success') break
-        const t = outs(edges, cursor.id, 'then')[0]
-        cursor = t ? byId.get(t.to) ?? null : null
-      }
       parts.push(
-        `GATE (${cond}): Wenn die Bedingung zutrifft → ${whenTexts.join(' ') || 'Zweig when'}. Sonst weiter auf dem Hauptpfad.`,
+        `GATE (${cond}): Runtime bewertet. Bei Match → Replan-Segment auf dem when-Zweig. Sonst weiter auf dem Hauptpfad.`,
       )
       if (otherEdge) walkDefault(otherEdge.to, seen)
       return

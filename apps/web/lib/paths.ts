@@ -81,6 +81,7 @@ export const paths = {
   uxFlowDbPath: 'apps/web/lib/db/ux-saved-flows.ts',
   uxFlowReplanPath: 'apps/web/lib/ux-flow-replan.ts',
   uxFlowModeratedProtocolPath: 'apps/web/components/ux-flow-moderated-protocol.tsx',
+  uxFlowHybridPath: 'apps/web/lib/ux-flow-hybrid.ts',
   uxFlowRunProgressPath: 'apps/web/lib/ux-flow-run-progress.ts',
   labArchetypeCorrelatePath: 'apps/web/lib/lab-archetype-correlate.ts',
   personaLabNavCorrelatePath: 'apps/web/lib/persona-lab-nav-correlate.ts',
@@ -208,6 +209,7 @@ export const paths = {
     apiStudiesFromFlow: '/api/studies/from-flow',
     apiStudiesFlowsSaved: '/api/studies/flows/saved',
     apiStudiesFlowSavedDetail: (id: string) => `/api/studies/flows/saved/${id}`,
+    apiStudiesFlowsHybridSegment: '/api/studies/flows/hybrid-segment',
     apiStudyDetail: (id: string) => `/api/studies/${id}`,
     apiStudyWaves: (studyId: string) => `/api/studies/${studyId}/waves`,
     apiStudyWaveDetail: (studyId: string, waveId: string) =>

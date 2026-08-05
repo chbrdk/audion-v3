@@ -609,8 +609,8 @@ function FlowCanvasInner({
               ))}
             </div>
             <p className="audion-flow-canvas-hint">
-              Testen markiert Nodes live · Live-Gates + Mid-Run-Replan · Save → Postgres wenn
-              DATABASE_URL · Protokoll ohne Agent
+              Testen markiert Nodes live · Multi-Gate-Replan + Branch-Planner · Save → Postgres wenn
+              DATABASE_URL · Protokoll/Hybrid
             </p>
           </div>
           <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--tall">

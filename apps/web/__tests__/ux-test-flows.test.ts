@@ -42,15 +42,18 @@ describe('ux-test-flows', () => {
     expect(pack.successCriteria).toEqual({ kind: 'url_match', pattern: 'example\\.com' })
     expect(pack.runs[0]?.urlKey).toBe(paths.labTemplateFindabilityStartUrlKey)
     expect(pack.runs[0]?.task).toMatch(/GATE \(url_match\)/i)
+    expect(pack.runs[0]?.task).toMatch(/Runtime bewertet|Replan-Segment/i)
+    expect(pack.runs[0]?.task).not.toMatch(/Wenn die Bedingung zutrifft →/i)
     expect(pack.domainProfileId).toBe('core')
     expect(pack.softScoreKeys).toContain('findability')
   })
 
-  it('compiles feeling-gate with frustration abandon branch in task', () => {
+  it('compiles feeling-gate with lean Live-Gate note (no when-tree embed)', () => {
     const flow = getUxTestFlow('flow-feeling-gate')!
     const pack = compileUxTestFlowToPackShape(flow)
     expect(pack.runs[0]?.task).toMatch(/frustration_high/i)
-    expect(pack.runs[0]?.task).toMatch(/Brich ab|erkläre/i)
+    expect(pack.runs[0]?.task).toMatch(/Replan-Segment/i)
+    expect(pack.runs[0]?.task).not.toMatch(/Brich ab und erkläre/i)
     expect(pack.runs[0]?.task).toMatch(/nächsten Schritt|Aufgabe/i)
   })
 

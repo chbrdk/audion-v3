@@ -1,15 +1,17 @@
 'use client'
 
 /**
- * Moderated-only protocol checklist — walks a UX Test Flow without the journey agent.
- * @see specs/domain/ux-test-flow-model.md — Moderated-only protocol
+ * Moderated / hybrid protocol checklist — walks a UX Test Flow.
+ * Hybrid: human gates + optional live agent segment handoff.
+ * @see specs/domain/ux-test-flow-model.md — Moderated protocol + hybrid session
  */
 
-import { useCallback, useMemo, useState } from 'react'
-import type { UxFlowNode, UxTestFlow } from '@audion-v3/contracts'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { UxFlowHybridSegmentResult, UxFlowNode, UxTestFlow } from '@audion-v3/contracts'
 import { Alert, Button, Chip, Field, Input, Text, Textarea } from '@msqdx/ui'
 import { outs, whenBranchPath } from '../lib/ux-test-flow-graph'
 import { otherwiseBranchPath } from '../lib/ux-flow-replan'
+import { paths } from '../lib/paths'
 
 export type ProtocolStepRecord = {
   nodeId: string
@@ -17,6 +19,15 @@ export type ProtocolStepRecord = {
   notes: string
   measureScore?: number | null
   gateChoice?: 'when' | 'otherwise' | null
+  agentJobId?: string | null
+}
+
+const AGENT_RUNNABLE = new Set(['action', 'observe', 'prompt', 'message'])
+
+function isAgentRunnable(node: UxFlowNode | null): boolean {
+  if (!node) return false
+  if (!AGENT_RUNNABLE.has(node.kind)) return false
+  return Boolean(node.text?.trim() || node.label?.trim())
 }
 
 /** Walk graph applying moderator gate choices (default: otherwise until chosen). */
@@ -63,16 +74,84 @@ export function buildProtocolPath(
 }
 
 export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
+  const [hybrid, setHybrid] = useState(false)
   const [gateChoices, setGateChoices] = useState<Record<string, 'when' | 'otherwise'>>({})
   const [cursor, setCursor] = useState(0)
   const [notesDraft, setNotesDraft] = useState('')
   const [measureDraft, setMeasureDraft] = useState('')
   const [records, setRecords] = useState<ProtocolStepRecord[]>([])
   const [finished, setFinished] = useState(false)
+  const [agentBusy, setAgentBusy] = useState(false)
+  const [agentJobId, setAgentJobId] = useState<string | null>(null)
+  const [agentStatus, setAgentStatus] = useState<string | null>(null)
+  const [agentError, setAgentError] = useState<string | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const path = useMemo(() => buildProtocolPath(flow, gateChoices), [flow, gateChoices])
   const current = path[cursor] ?? null
   const hasGraph = Boolean(flow.nodes?.length)
+  const canHandoff = hybrid && isAgentRunnable(current) && !agentBusy
+
+  const stopAgentPoll = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }, [])
+
+  useEffect(() => () => stopAgentPoll(), [stopAgentPoll])
+
+  const startAgentSegment = useCallback(async () => {
+    if (!current) return
+    setAgentError(null)
+    setAgentBusy(true)
+    setAgentStatus('starting')
+    stopAgentPoll()
+    try {
+      const res = await fetch(paths.routes.apiStudiesFlowsHybridSegment, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ flow, nodeId: current.id, maxSteps: 6 }),
+      })
+      const json = (await res.json()) as UxFlowHybridSegmentResult & { error?: string }
+      if (!res.ok) throw new Error(json.error || `Hybrid start failed (${res.status})`)
+      setAgentJobId(json.jobId)
+      setAgentStatus('running')
+      const tick = async () => {
+        try {
+          const poll = await fetch(paths.routes.apiUxJourneyAgentRun(json.jobId), {
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+          })
+          if (!poll.ok) return
+          const job = (await poll.json()) as {
+            status?: string
+            result?: { summary?: string; steps?: unknown[] }
+            error?: string | null
+          }
+          setAgentStatus(job.status ?? 'running')
+          if (job.status === 'complete' || job.status === 'error') {
+            stopAgentPoll()
+            setAgentBusy(false)
+            const summary =
+              job.result?.summary?.trim() ||
+              (job.status === 'error'
+                ? `Agent error: ${job.error || 'unknown'}`
+                : `Agent complete (${job.result?.steps?.length ?? 0} steps)`)
+            setNotesDraft((prev) => (prev.trim() ? `${prev.trim()}\n${summary}` : summary))
+          }
+        } catch {
+          /* keep polling */
+        }
+      }
+      void tick()
+      pollRef.current = setInterval(() => void tick(), 2500)
+    } catch (e) {
+      setAgentError(e instanceof Error ? e.message : String(e))
+      setAgentBusy(false)
+      setAgentStatus(null)
+    }
+  }, [current, flow, stopAgentPoll])
 
   const advance = useCallback(
     (status: 'done' | 'skipped', gateChoice?: 'when' | 'otherwise') => {
@@ -97,10 +176,15 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
           notes: notesDraft.trim(),
           measureScore: score,
           gateChoice: gateChoice ?? null,
+          agentJobId: agentJobId,
         },
       ])
       setNotesDraft('')
       setMeasureDraft('')
+      setAgentJobId(null)
+      setAgentStatus(null)
+      stopAgentPoll()
+      setAgentBusy(false)
       const nextPath = buildProtocolPath(flow, nextGateChoices)
       const idx = nextPath.findIndex((n) => n.id === current.id)
       const nextIdx = idx >= 0 ? idx + 1 : cursor + 1
@@ -111,7 +195,16 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
         setCursor(nextIdx)
       }
     },
-    [current, cursor, flow, gateChoices, measureDraft, notesDraft],
+    [
+      current,
+      cursor,
+      flow,
+      gateChoices,
+      measureDraft,
+      notesDraft,
+      agentJobId,
+      stopAgentPoll,
+    ],
   )
 
   const goBack = useCallback(() => {
@@ -120,17 +213,22 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
   }, [])
 
   const reset = useCallback(() => {
+    stopAgentPoll()
     setGateChoices({})
     setCursor(0)
     setNotesDraft('')
     setMeasureDraft('')
     setRecords([])
     setFinished(false)
-  }, [])
+    setAgentBusy(false)
+    setAgentJobId(null)
+    setAgentStatus(null)
+    setAgentError(null)
+  }, [stopAgentPoll])
 
   const summary = useMemo(() => {
     const lines = [
-      `Protokoll · ${flow.name} (${flow.id})`,
+      `Protokoll · ${flow.name} (${flow.id})${hybrid ? ' · hybrid' : ''}`,
       `Schritte: ${records.length}`,
       '',
     ]
@@ -141,12 +239,13 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
         `${r.status === 'done' ? '✓' : '↷'} ${label}`,
         r.gateChoice ? `gate=${r.gateChoice}` : null,
         r.measureScore != null ? `score=${r.measureScore}` : null,
+        r.agentJobId ? `agent=${r.agentJobId}` : null,
         r.notes ? `notes: ${r.notes}` : null,
       ].filter(Boolean)
       lines.push(bits.join(' · '))
     }
     return lines.join('\n')
-  }, [flow, records])
+  }, [flow, records, hybrid])
 
   if (!hasGraph) {
     return (
@@ -160,23 +259,40 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
     <section className="audion-flow-protocol">
       <div className="audion-flow-canvas-toolbar">
         <Chip size="sm" static>
-          ohne Agent
+          {hybrid ? 'hybrid' : 'ohne Agent'}
         </Chip>
         <Chip size="sm" static>
           Schritt {Math.min(cursor + 1, path.length || 1)} / {path.length || '—'}
         </Chip>
+        <Button
+          type="button"
+          size="sm"
+          variant={hybrid ? 'primary' : 'subtle'}
+          onClick={() => setHybrid((h) => !h)}
+        >
+          {hybrid ? 'Hybrid an' : 'Hybrid'}
+        </Button>
         <Button type="button" size="sm" variant="subtle" onClick={reset}>
           Reset
         </Button>
       </div>
 
       <Text role="headline" as="h2">
-        Moderiertes Protokoll
+        {hybrid ? 'Hybrid-Protokoll' : 'Moderiertes Protokoll'}
       </Text>
       <p className="audion-flow-canvas-hint">
-        Menschliche Moderation entlang des Flow-Graphen — kein Journey-Agent. Gates wählst du
-        selbst (wenn / sonst).
+        {hybrid
+          ? 'Gates wählst du selbst; bei Aktion/Beobachten/Prompt kannst du ein Agent-Segment starten.'
+          : 'Menschliche Moderation entlang des Flow-Graphen — kein Journey-Agent. Gates wählst du selbst (wenn / sonst).'}
       </p>
+
+      {agentError ? <Alert tone="error">{agentError}</Alert> : null}
+      {agentStatus ? (
+        <Alert tone={agentStatus === 'error' ? 'error' : 'info'}>
+          Agent: {agentStatus}
+          {agentJobId ? ` · ${agentJobId}` : ''}
+        </Alert>
+      ) : null}
 
       {finished ? (
         <div className="audion-flow-protocol-done">
@@ -240,8 +356,25 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
             <Button type="button" size="sm" variant="subtle" onClick={goBack} disabled={cursor < 1}>
               Zurück
             </Button>
+            {canHandoff ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="subtle"
+                onClick={() => void startAgentSegment()}
+                disabled={agentBusy}
+              >
+                {agentBusy ? 'Agent…' : 'Agent ausführen'}
+              </Button>
+            ) : null}
             {current.kind !== 'gate' ? (
-              <Button type="button" size="sm" variant="subtle" onClick={() => advance('skipped')}>
+              <Button
+                type="button"
+                size="sm"
+                variant="subtle"
+                onClick={() => advance('skipped')}
+                disabled={agentBusy}
+              >
                 Überspringen
               </Button>
             ) : null}
@@ -260,7 +393,12 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
                 </Button>
               </>
             ) : (
-              <Button type="button" size="md" onClick={() => advance('done')}>
+              <Button
+                type="button"
+                size="md"
+                onClick={() => advance('done')}
+                disabled={agentBusy}
+              >
                 Erledigt
               </Button>
             )}
@@ -282,6 +420,7 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
                 {node?.label ?? r.nodeId}
                 {r.gateChoice ? ` · ${r.gateChoice}` : ''}
                 {r.measureScore != null ? ` · ${r.measureScore}` : ''}
+                {r.agentJobId ? ` · agent` : ''}
               </li>
             )
           })}

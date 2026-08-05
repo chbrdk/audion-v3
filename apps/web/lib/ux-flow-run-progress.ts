@@ -11,7 +11,7 @@ import type {
   UxFlowNode,
   UxTestFlow,
 } from '@audion-v3/contracts'
-import { defaultExecutionPath, whenBranchPath } from './ux-test-flow-graph'
+import { defaultExecutionPath, whenBranchPath, activeExecutionPath, gateChoicesFromReplans } from './ux-test-flow-graph'
 
 export type FlowNodeRunState = 'idle' | 'active' | 'done' | 'skipped' | 'error'
 
@@ -260,25 +260,26 @@ function evaluateGateCondition(
 }
 
 /**
- * Evaluate closed-set gates against agent gateSignals.
- * Returns evaluations + whether any gate on the default path matched (take `when`).
+ * Evaluate closed-set gates against agent gateSignals along a specific path.
+ * Returns evaluations + first unmatched matching gate (take `when`).
  */
-export function evaluateFlowGates(
+export function evaluateFlowGatesOnPath(
   flow: UxTestFlow,
+  path: UxFlowNode[],
   signals: UxFlowGateSignalBundle,
   cursorEvals?: UxFlowGateEvaluation[] | null,
+  alreadyReplannedGateIds: ReadonlySet<string> = new Set(),
 ): { evaluations: UxFlowGateEvaluation[]; gateMatched: boolean; matchedGateId: string | null } {
   const cursorByCondition = new Map<string, UxFlowGateEvaluation>()
   for (const e of cursorEvals ?? []) {
     if (e?.condition) cursorByCondition.set(e.condition, e)
   }
 
-  const base = defaultExecutionPath(flow)
   const evaluations: UxFlowGateEvaluation[] = []
   let gateMatched = false
   let matchedGateId: string | null = null
 
-  for (const n of base) {
+  for (const n of path) {
     if (n.kind !== 'gate' || !n.gateCondition) continue
     const fromCursor = cursorByCondition.get(n.gateCondition)
     let matched = false
@@ -299,7 +300,7 @@ export function evaluateFlowGates(
       evidence,
       gateNodeId: n.id,
     })
-    if (matched && !gateMatched) {
+    if (matched && !gateMatched && !alreadyReplannedGateIds.has(n.id)) {
       gateMatched = true
       matchedGateId = n.id
     }
@@ -307,31 +308,47 @@ export function evaluateFlowGates(
   return { evaluations, gateMatched, matchedGateId }
 }
 
+/**
+ * Evaluate closed-set gates against agent gateSignals.
+ * Returns evaluations + whether any gate on the default path matched (take `when`).
+ */
+export function evaluateFlowGates(
+  flow: UxTestFlow,
+  signals: UxFlowGateSignalBundle,
+  cursorEvals?: UxFlowGateEvaluation[] | null,
+): { evaluations: UxFlowGateEvaluation[]; gateMatched: boolean; matchedGateId: string | null } {
+  return evaluateFlowGatesOnPath(flow, defaultExecutionPath(flow), signals, cursorEvals)
+}
+
 function buildExecPath(
   flow: UxTestFlow,
   signals: UxFlowGateSignalBundle,
   cursor?: UxFlowCursor | null,
 ): { path: UxFlowNode[]; gateMatched: boolean } {
-  const base = defaultExecutionPath(flow)
-  const { gateMatched, matchedGateId } = evaluateFlowGates(
+  const history = cursor?.replanHistory ?? (cursor?.replan ? [cursor.replan] : null)
+  const fired = new Set<string>()
+  for (const ev of history ?? []) {
+    if (ev?.gateNodeId) fired.add(ev.gateNodeId)
+  }
+  if (cursor?.replan?.gateNodeId) fired.add(cursor.replan.gateNodeId)
+
+  const choices = gateChoicesFromReplans(fired, history)
+  // Live-evaluate next unfired match on the path implied by prior choices.
+  let path = activeExecutionPath(flow, choices)
+  const { gateMatched, matchedGateId } = evaluateFlowGatesOnPath(
     flow,
+    path,
     signals,
     cursor?.gateEvaluations,
+    fired,
   )
-  if (!gateMatched) return { path: base, gateMatched: false }
-
-  const gateId =
-    matchedGateId ||
-    base.find((n) => n.kind === 'gate' && n.gateCondition)?.id
-
-  if (!gateId) return { path: base, gateMatched: false }
-
-  const idx = base.findIndex((n) => n.id === gateId)
-  const when = whenBranchPath(flow, gateId)
-  return {
-    path: [...base.slice(0, idx + 1), ...when],
-    gateMatched: true,
+  if (!gateMatched || !matchedGateId) {
+    return { path, gateMatched: Boolean(fired.size) }
   }
+
+  const nextChoices = { ...choices, [matchedGateId]: 'when' as const }
+  path = activeExecutionPath(flow, nextChoices)
+  return { path, gateMatched: true }
 }
 
 function cursorIndex(path: UxFlowNode[], stepCount: number): number {
