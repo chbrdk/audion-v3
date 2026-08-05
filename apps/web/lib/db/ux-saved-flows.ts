@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, sql } from 'drizzle-orm'
 import type {
   UxSavedFlow,
   UxSavedFlowSummary,
@@ -12,6 +12,35 @@ import type { SavedFlowAclScope } from '../ux-flow-acl'
 import { savedFlowVisibleTo } from '../ux-flow-acl'
 
 export type { SavedFlowAclScope }
+
+let schemaReady: Promise<void> | null = null
+
+/** Idempotent: table + Phase-4 ACL columns (owner_id / org_id). */
+export async function ensureUxSavedFlowsSchema(): Promise<void> {
+  if (!schemaReady) {
+    schemaReady = (async () => {
+      const db = getDb()
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS ux_saved_flows (
+          id text PRIMARY KEY,
+          template_flow_id text NOT NULL,
+          name text NOT NULL,
+          flow jsonb NOT NULL,
+          owner_id text,
+          org_id text,
+          updated_at timestamptz NOT NULL DEFAULT now(),
+          created_at timestamptz NOT NULL DEFAULT now()
+        )
+      `)
+      await db.execute(sql`ALTER TABLE ux_saved_flows ADD COLUMN IF NOT EXISTS owner_id text`)
+      await db.execute(sql`ALTER TABLE ux_saved_flows ADD COLUMN IF NOT EXISTS org_id text`)
+    })().catch((err) => {
+      schemaReady = null
+      throw err
+    })
+  }
+  await schemaReady
+}
 
 function rowToSaved(row: UxSavedFlowRow): UxSavedFlow {
   return {
@@ -41,6 +70,7 @@ export async function dbListSavedUxFlows(
   templateFlowId?: string,
   scope?: SavedFlowAclScope | null,
 ): Promise<UxSavedFlowSummary[]> {
+  await ensureUxSavedFlowsSchema()
   const db = getDb()
   const rows = templateFlowId
     ? await db
@@ -59,6 +89,7 @@ export async function dbGetSavedUxFlow(
   id: string,
   scope?: SavedFlowAclScope | null,
 ): Promise<UxSavedFlow | null> {
+  await ensureUxSavedFlowsSchema()
   const db = getDb()
   const rows = await db.select().from(uxSavedFlows).where(eq(uxSavedFlows.id, id)).limit(1)
   const row = rows[0]
@@ -72,6 +103,7 @@ export async function dbGetSavedUxFlowByTemplate(
   templateFlowId: string,
   scope?: SavedFlowAclScope | null,
 ): Promise<UxSavedFlow | null> {
+  await ensureUxSavedFlowsSchema()
   const db = getDb()
   const rows = await db
     .select()
@@ -89,6 +121,7 @@ export async function dbSaveUxFlow(
   payload: UxSavedFlowWritePayload,
   scope?: SavedFlowAclScope | null,
 ): Promise<UxSavedFlow> {
+  await ensureUxSavedFlowsSchema()
   if (!payload?.templateFlowId?.trim()) {
     throw new Error('templateFlowId is required')
   }
@@ -182,6 +215,7 @@ export async function dbDeleteSavedUxFlow(
   id: string,
   scope?: SavedFlowAclScope | null,
 ): Promise<boolean> {
+  await ensureUxSavedFlowsSchema()
   const existing = await dbGetSavedUxFlow(id, scope)
   if (!existing) return false
   const db = getDb()
