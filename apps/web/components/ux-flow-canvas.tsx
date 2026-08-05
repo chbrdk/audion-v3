@@ -48,6 +48,16 @@ import {
 import { flattenFlowBlocks, gateChoicesFromReplans, activePathEdgeIds } from '../lib/ux-test-flow-graph'
 import { paths } from '../lib/paths'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
+import {
+  IconDelete,
+  IconGrip,
+  IconList,
+  IconPlay,
+  IconReset,
+  IconSave,
+  IconStop,
+  IconUndo,
+} from './nav-icons'
 import { UxFlowFloatingPanel } from './ux-flow-floating-panel'
 import { UxFlowNodeInspector } from './ux-flow-node-inspector'
 import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
@@ -714,14 +724,24 @@ function FlowCanvasInner({
             storageKey={paths.flowBoardToolbarDockKey}
             defaultEdge="top"
             defaultOffset={0.1}
-            title="Flow Board"
             className="audion-flow-float-panel--toolbar"
+            ariaLabel="Flow Board"
           >
-            <div className="audion-flow-canvas-toolbar">
+            <div className="audion-flow-canvas-toolbar audion-flow-canvas-toolbar--compact">
+              <span className="audion-flow-toolbar-grip" title="Verschieben">
+                <IconGrip />
+              </span>
               {onSwitchToList ? (
-                <Button type="button" size="sm" variant="subtle" onClick={onSwitchToList}>
-                  Liste
-                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="subtle"
+                  className="audion-flow-toolbar-btn"
+                  aria-label="Liste"
+                  title="Liste"
+                  icon={<IconList />}
+                  onClick={onSwitchToList}
+                />
               ) : null}
             </div>
           </UxFlowFloatingPanel>
@@ -781,68 +801,109 @@ function FlowCanvasInner({
           <UxFlowFloatingPanel
             storageKey={paths.flowBoardToolbarDockKey}
             defaultEdge="top"
-            defaultOffset={0.08}
-            title="Flow Board"
+            defaultOffset={0.06}
             className="audion-flow-float-panel--toolbar"
             ariaLabel="Flow Board Aktionen"
           >
-            <div className="audion-flow-canvas-toolbar">
+            <div className="audion-flow-canvas-toolbar audion-flow-canvas-toolbar--compact">
+              <span className="audion-flow-toolbar-grip" title="Verschieben">
+                <IconGrip />
+              </span>
               {onSwitchToList ? (
-                <Button type="button" size="sm" variant="subtle" onClick={onSwitchToList}>
-                  Liste
-                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="subtle"
+                  className="audion-flow-toolbar-btn"
+                  aria-label="Liste"
+                  title="Liste"
+                  icon={<IconList />}
+                  onClick={onSwitchToList}
+                />
               ) : null}
+              <span className="audion-flow-toolbar-sep" aria-hidden />
               <Button
                 type="button"
-                size="md"
+                size="sm"
+                variant="primary"
+                className="audion-flow-toolbar-btn"
+                aria-label={runBusy ? 'Running' : 'Testen'}
+                title={runBusy ? 'Running…' : 'Testen'}
+                icon={<IconPlay />}
                 onClick={() => void onTest()}
                 disabled={!hasGraph || runBusy}
-              >
-                {runBusy ? 'Running…' : 'Testen'}
-              </Button>
+              />
               <Button
                 type="button"
                 size="sm"
                 variant="subtle"
+                className="audion-flow-toolbar-btn"
+                aria-label="Stop"
+                title="Stop"
+                icon={<IconStop />}
                 onClick={() => void onStop()}
                 disabled={!runBusy}
-              >
-                Stop
-              </Button>
+              />
               <CreateStudyFromFlowButton
                 flowId={initialFlow.id}
                 flowName={initialFlow.name}
                 disabled={!initialFlow.compileReady && !hasGraph}
                 getFlowSnapshot={getSnapshot}
+                compact
               />
-              <Button type="button" size="sm" onClick={() => void onSave()} disabled={!hasGraph || saveBusy}>
-                {saveBusy ? 'Saving…' : 'Save'}
-              </Button>
-              <Button type="button" size="sm" variant="subtle" onClick={onUndo} disabled={historyLen < 1}>
-                Undo
-              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="subtle"
+                className="audion-flow-toolbar-btn"
+                aria-label={saveBusy ? 'Saving' : 'Save'}
+                title={saveMsg ?? (saveBusy ? 'Saving…' : 'Save')}
+                icon={<IconSave />}
+                onClick={() => void onSave()}
+                disabled={!hasGraph || saveBusy}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="subtle"
+                className="audion-flow-toolbar-btn"
+                aria-label="Undo"
+                title="Undo"
+                icon={<IconUndo />}
+                onClick={onUndo}
+                disabled={historyLen < 1}
+              />
               {dirty ? (
-                <Chip size="sm" static>
-                  unsaved edits
+                <Chip size="sm" static className="audion-flow-toolbar-chip">
+                  edit
                 </Chip>
               ) : savedId ? (
-                <Chip size="sm" static>
-                  saved
+                <Chip size="sm" static className="audion-flow-toolbar-chip">
+                  ok
                 </Chip>
               ) : null}
-              {saveMsg ? <span className="audion-flow-canvas-hint">{saveMsg}</span> : null}
-              <Button type="button" size="sm" variant="subtle" onClick={reset} disabled={!dirty && !savedId}>
-                Reset to template
-              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="subtle"
+                className="audion-flow-toolbar-btn"
+                aria-label="Reset to template"
+                title="Reset to template"
+                icon={<IconReset />}
+                onClick={reset}
+                disabled={!dirty && !savedId}
+              />
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
+                className="audion-flow-toolbar-btn"
+                aria-label="Delete node"
+                title="Delete node"
+                icon={<IconDelete />}
                 onClick={deleteSelected}
                 disabled={!selectedId || runBusy}
-              >
-                Delete node
-              </Button>
+              />
             </div>
           </UxFlowFloatingPanel>
 

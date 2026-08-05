@@ -246,3 +246,106 @@ export function IconSparkle({ size = 16 }: { size?: number }) {
   )
 }
 
+/** List view — bullet list. */
+export function IconList({ size = 18 }: { size?: number }) {
+  return (
+    <NavSvg>
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="M3 6h.01" />
+      <path d="M3 12h.01" />
+      <path d="M3 18h.01" />
+    </NavSvg>
+  )
+}
+
+/** Play — run / test. */
+export function IconPlay({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M8 5.5v13l11-6.5-11-6.5Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Stop — square. */
+export function IconStop({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <rect x="7" y="7" width="10" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
+    </svg>
+  )
+}
+
+/** Save — floppy / disk. */
+export function IconSave({ size = 18 }: { size?: number }) {
+  return (
+    <NavSvg>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+      <path d="M17 21v-7H7v7" />
+      <path d="M7 3v5h8" />
+    </NavSvg>
+  )
+}
+
+/** Undo — corner up left. */
+export function IconUndo({ size = 18 }: { size?: number }) {
+  return (
+    <NavSvg>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+    </NavSvg>
+  )
+}
+
+/** Reset — rotate ccw. */
+export function IconReset({ size = 18 }: { size?: number }) {
+  return (
+    <NavSvg>
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+    </NavSvg>
+  )
+}
+
+/** Drag grip — six dots. */
+export function IconGrip({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon audion-flow-toolbar-grip-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+    >
+      <circle cx="9" cy="7" r="1.25" />
+      <circle cx="15" cy="7" r="1.25" />
+      <circle cx="9" cy="12" r="1.25" />
+      <circle cx="15" cy="12" r="1.25" />
+      <circle cx="9" cy="17" r="1.25" />
+      <circle cx="15" cy="17" r="1.25" />
+    </svg>
+  )
+}
+

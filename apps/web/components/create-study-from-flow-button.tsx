@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { UxStudyFromFlowResult, UxTestFlow } from '@audion-v3/contracts'
 import { Button } from '@msqdx/ui'
+import { NavIconStudies } from './nav-icons'
 import { paths } from '../lib/paths'
 
 export function CreateStudyFromFlowButton({
@@ -11,12 +12,15 @@ export function CreateStudyFromFlowButton({
   flowName,
   disabled,
   getFlowSnapshot,
+  compact,
 }: {
   flowId: string
   flowName: string
   disabled?: boolean
   /** When provided, POST includes the current (possibly edited) graph. */
   getFlowSnapshot?: () => UxTestFlow
+  /** Icon-only toolbar control. */
+  compact?: boolean
 }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
@@ -49,6 +53,25 @@ export function CreateStudyFromFlowButton({
     } finally {
       setBusy(false)
     }
+  }
+
+  if (compact) {
+    return (
+      <>
+        <Button
+          type="button"
+          size="sm"
+          variant="subtle"
+          className="audion-flow-toolbar-btn"
+          aria-label="Study aus Flow erstellen"
+          title="Study aus Flow erstellen"
+          icon={<NavIconStudies />}
+          onClick={() => void onCreate()}
+          disabled={disabled || busy}
+        />
+        {error ? <span className="audion-flow-toolbar-error" title={error}>!</span> : null}
+      </>
+    )
   }
 
   return (
