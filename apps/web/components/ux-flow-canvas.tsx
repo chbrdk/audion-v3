@@ -52,7 +52,9 @@ import {
   IconDelete,
   IconGrip,
   IconList,
+  IconClose,
   IconPlay,
+  IconPlus,
   IconReset,
   IconSave,
   IconStop,
@@ -136,6 +138,7 @@ function FlowCanvasInner({
   const historyRef = useRef<GraphSnap[]>([])
   const skipHistoryRef = useRef(false)
   const [historyLen, setHistoryLen] = useState(0)
+  const [paletteOpen, setPaletteOpen] = useState(false)
 
   const pushHistory = useCallback(() => {
     if (skipHistoryRef.current) return
@@ -685,6 +688,7 @@ function FlowCanvasInner({
       setSelectedId(flowNode.id)
       setDirty(true)
       setSaveMsg(null)
+      setPaletteOpen(false)
     },
     [nodes, setNodes, pushHistory],
   )
@@ -911,29 +915,55 @@ function FlowCanvasInner({
             storageKey={paths.flowBoardPaletteDockKey}
             defaultEdge="left"
             defaultOffset={0.38}
-            title="Bausteine"
-            className="audion-flow-float-panel--palette"
+            title={paletteOpen ? 'Bausteine' : undefined}
+            className={
+              paletteOpen
+                ? 'audion-flow-float-panel--palette audion-flow-float-panel--palette-open'
+                : 'audion-flow-float-panel--palette audion-flow-float-panel--palette-collapsed'
+            }
             ariaLabel="Flow Bausteine"
           >
-            <div className="audion-flow-palette">
-              <div className="audion-flow-palette-row">
-                {UX_FLOW_NODE_KINDS.map((kind) => (
+            {paletteOpen ? (
+              <div className="audion-flow-palette">
+                <div className="audion-flow-palette-head">
                   <Button
-                    key={kind}
                     type="button"
                     size="sm"
-                    variant="subtle"
-                    onClick={() => addNode(kind)}
-                    disabled={runBusy}
-                  >
-                    + {kind}
-                  </Button>
-                ))}
+                    variant="ghost"
+                    className="audion-flow-toolbar-btn"
+                    aria-label="Bausteine schließen"
+                    title="Schließen"
+                    icon={<IconClose />}
+                    onClick={() => setPaletteOpen(false)}
+                  />
+                </div>
+                <div className="audion-flow-palette-row">
+                  {UX_FLOW_NODE_KINDS.map((kind) => (
+                    <Button
+                      key={kind}
+                      type="button"
+                      size="sm"
+                      variant="subtle"
+                      onClick={() => addNode(kind)}
+                      disabled={runBusy}
+                    >
+                      {kind}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              <p className="audion-flow-canvas-hint">
-                Node-Klick → Inspector · Note fokussieren öffnet Inspector
-              </p>
-            </div>
+            ) : (
+              <button
+                type="button"
+                className="audion-flow-palette-fab"
+                aria-label="Bausteine hinzufügen"
+                title="Bausteine"
+                disabled={runBusy}
+                onClick={() => setPaletteOpen(true)}
+              >
+                <IconPlus size={28} />
+              </button>
+            )}
           </UxFlowFloatingPanel>
 
           {runMeta ? (

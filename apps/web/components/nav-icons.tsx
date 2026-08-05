@@ -349,3 +349,37 @@ export function IconGrip({ size = 18 }: { size?: number }) {
   )
 }
 
+/** Plus — add / expand. */
+export function IconPlus({ size = 24 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path d="M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/** Close — X. */
+export function IconClose({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      className="ui-icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path d="M6 6l12 12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M18 6 6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
