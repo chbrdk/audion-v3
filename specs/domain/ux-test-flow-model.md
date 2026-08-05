@@ -222,6 +222,21 @@ Facade: `apps/web/lib/fixtures/ux-flow-store.ts` — Postgres when `DATABASE_URL
 | Phase 3 | Mid-run replan on gate fire, `ux_saved_flows` Postgres, moderated protocol view | — |
 | **Phase 4 (this slice)** | Multi-gate sequential replan on active path + `replanHistory`; agent-native branch planner (lean compile + next-segment inject); hybrid protocol agent handoff; saved-flow `owner_id`/`org_id` ACL foundation | Org-scoped sharing UI / invite ACLs; multi-agent parallel mid-run orchestration; collaborative multi-user live protocol |
 | **Phase 5 — Interactive board** | Single **Board** mode (design + live test + notes + segment); per-node `note` persisted on Save; path edge highlight; manual gate → `POST …/gate-branch` triggers real `add_new_task` replan | Step scrubber; sticky free notes; org sharing UI |
+| **Phase 6a — Node inspector** | Side **Inspector** on node select / note focus: full agent steps per node (action, target, result, reasoning, think-aloud, perception, screenshots); step timing (Δ + elapsed); job-level metrics; gate evaluation + replan history | Step scrubber; Study ↔ Board evaluate loop |
+
+## Node inspector (Phase 6a)
+
+Selecting a node on the Board opens a right-hand **Inspector** panel (desktop). Clicking into **Note** also selects the node.
+
+| Section | Content |
+|---------|---------|
+| **Header** | Node kind, run state, label, id |
+| **Design** | `text`, `note` (read-only mirror of board fields) |
+| **Job** | Status, total steps, elapsed seconds, job id, final URL, error |
+| **Agent steps** | All steps mapped to this node — not truncated like inline node output |
+| **Gate** | `gateEvaluation` + `replanHistory` entries for gate nodes |
+
+Mapper: `mapJobToFlowNodeInspector()` in `apps/web/lib/ux-flow-run-progress.ts`. Job summary: `buildJobRunSummary()`.
 
 ## Interactive flowboard (Phase 5)
 

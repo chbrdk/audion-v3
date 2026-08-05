@@ -34,6 +34,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
   const onManualGate = data.onManualGate
   const onPlaySegment = data.onPlaySegment
   const onOutputToNote = data.onOutputToNote
+  const onOpenInspector = data.onOpenInspector
   const kind = flowNode.kind
 
   const patch = useCallback(
@@ -206,6 +207,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
             rows={2}
             value={flowNode.note ?? ''}
             onChange={onNote}
+            onFocus={() => onOpenInspector?.()}
             placeholder="Annotation / Beobachtung…"
           />
         </label>

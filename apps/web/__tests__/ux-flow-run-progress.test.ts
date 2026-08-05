@@ -4,6 +4,8 @@ import {
   deriveGateSignalsFromJob,
   evaluateFlowGates,
   extractLastHttpUrl,
+  buildJobRunSummary,
+  mapJobToFlowNodeInspector,
   mapJobToFlowNodeOutputs,
   mapJobToFlowNodeStates,
 } from '../lib/ux-flow-run-progress'
@@ -252,6 +254,58 @@ describe('ux-flow-run-progress', () => {
     const any = Object.values(outputs)[0]
     expect(any?.imageUrl).toBe('/api/ux-journey-agent/run/job-xyz/step/3/screenshot')
     expect(any?.label).toMatch(/scroll/i)
+  })
+
+  it('buildJobRunSummary aggregates step count and elapsed from timestamps', () => {
+    const summary = buildJobRunSummary({
+      status: 'complete',
+      jobId: 'job-1',
+      success: true,
+      steps: [
+        { step: 1, timestamp: '2026-08-04T10:00:00.000Z' },
+        { step: 2, timestamp: '2026-08-04T10:00:02.500Z' },
+      ],
+      finalUrl: 'https://example.com/done',
+    })
+    expect(summary.stepCount).toBe(2)
+    expect(summary.elapsedSeconds).toBe(2.5)
+    expect(summary.finalUrl).toBe('https://example.com/done')
+  })
+
+  it('mapJobToFlowNodeInspector keeps all steps per node with timing', () => {
+    const flow = getUxTestFlow('flow-feeling-gate')!
+    const inspector = mapJobToFlowNodeInspector(flow, {
+      status: 'running',
+      jobId: 'job-ins',
+      steps: [
+        {
+          step: 1,
+          action: 'click',
+          target: 'menu',
+          timestamp: '2026-08-04T10:00:00.000Z',
+        },
+        {
+          step: 2,
+          action: 'type',
+          target: 'search',
+          reasoning: 'find item',
+          timestamp: '2026-08-04T10:00:01.000Z',
+        },
+        {
+          step: 3,
+          action: 'click',
+          target: 'submit',
+          timestamp: '2026-08-04T10:00:03.000Z',
+        },
+      ],
+    })
+    const nodeIds = Object.keys(inspector)
+    expect(nodeIds.length).toBeGreaterThan(0)
+    const allSteps = nodeIds.flatMap((id) => inspector[id].steps)
+    expect(allSteps.length).toBe(3)
+    const timed = allSteps.find((s) => s.deltaSec === 1 && s.elapsedSinceStartSec === 1)
+    expect(timed?.action).toBe('type')
+    expect(allSteps[0].imageUrl).toContain('/api/ux-journey-agent/run/job-ins/step/1/screenshot')
   })
 })
 

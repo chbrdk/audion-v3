@@ -35,6 +35,8 @@ export type UxFlowRfNodeData = {
   onManualGate?: (edgeKind: 'when' | 'otherwise') => void
   onPlaySegment?: () => void
   onOutputToNote?: () => void
+  /** Focus note field → ensure node selected for inspector. */
+  onOpenInspector?: () => void
 }
 
 export type UxFlowRfEdgeData = {

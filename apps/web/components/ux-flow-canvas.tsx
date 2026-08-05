@@ -36,14 +36,19 @@ import {
   type UxFlowRfNode,
 } from '../lib/ux-flow-canvas'
 import {
+  buildJobRunSummary,
+  mapJobToFlowNodeInspector,
   mapJobToFlowNodeOutputs,
   mapJobToFlowNodeStates,
+  type FlowJobRunSummary,
+  type FlowNodeInspectorData,
   type FlowNodeRunOutput,
   type FlowNodeRunState,
 } from '../lib/ux-flow-run-progress'
 import { flattenFlowBlocks, gateChoicesFromReplans, activePathEdgeIds } from '../lib/ux-test-flow-graph'
 import { paths } from '../lib/paths'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
+import { UxFlowNodeInspector } from './ux-flow-node-inspector'
 import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
 
 const nodeTypes = { uxFlow: UxFlowRfNodeView }
@@ -97,6 +102,8 @@ function FlowCanvasInner({
   const [runStates, setRunStates] = useState<Record<string, FlowNodeRunState>>({})
   const [runStatesB, setRunStatesB] = useState<Record<string, FlowNodeRunState>>({})
   const [runOutputs, setRunOutputs] = useState<Record<string, FlowNodeRunOutput>>({})
+  const [inspectorByNode, setInspectorByNode] = useState<Record<string, FlowNodeInspectorData>>({})
+  const [jobSummary, setJobSummary] = useState<FlowJobRunSummary | null>(null)
   const [flowCursor, setFlowCursor] = useState<UxFlowCursor | null>(null)
   const [segmentBusy, setSegmentBusy] = useState(false)
   const [runBusy, setRunBusy] = useState(false)
@@ -229,6 +236,8 @@ function FlowCanvasInner({
       setFlowCursor(jobA.flowCursor ?? null)
       setRunStates(mapJobToFlowNodeStates(flow, inputA))
       setRunOutputs(mapJobToFlowNodeOutputs(flow, inputA))
+      setInspectorByNode(mapJobToFlowNodeInspector(flow, inputA))
+      setJobSummary(buildJobRunSummary(inputA))
       if (jobB) {
         setRunStatesB(mapJobToFlowNodeStates(flow, jobToInput(jobB)))
       } else {
@@ -334,6 +343,37 @@ function FlowCanvasInner({
     [nodes, onUpdateNode, runOutputs],
   )
 
+  const inspectorTextFromStep = useCallback((step: FlowNodeInspectorData['steps'][number]) => {
+    const parts: string[] = []
+    if (step.action) parts.push(step.action)
+    if (step.target) parts.push(step.target)
+    if (step.result) parts.push(step.result)
+    if (step.reasoning) parts.push(step.reasoning)
+    const think = step.thinkAloud
+    if (think && typeof think === 'object' && 'now' in think && think.now) {
+      parts.push(String(think.now))
+    }
+    return parts.join('\n').trim()
+  }, [])
+
+  const onInspectorOutputToNote = useCallback(
+    (nodeId: string) => {
+      const data = inspectorByNode[nodeId]
+      const last = data?.steps?.length ? data.steps[data.steps.length - 1] : null
+      if (!last) return
+      const addition = inspectorTextFromStep(last)
+      if (!addition) return
+      const node = nodes.find((n) => n.id === nodeId) as UxFlowRfNode | undefined
+      const prev = node?.data?.flowNode?.note?.trim() ?? ''
+      onUpdateNode(nodeId, { note: prev ? `${prev}\n${addition}` : addition })
+    },
+    [inspectorByNode, inspectorTextFromStep, nodes, onUpdateNode],
+  )
+
+  const onSelectNode = useCallback((nodeId: string) => {
+    setSelectedId(nodeId)
+  }, [])
+
   const onPlaySegment = useCallback(
     async (nodeId: string) => {
       if (runBusy || segmentBusy) return
@@ -365,6 +405,11 @@ function FlowCanvasInner({
             ...prev,
             ...mapJobToFlowNodeStates(snap, input),
           }))
+          setInspectorByNode((prev) => ({
+            ...prev,
+            ...mapJobToFlowNodeInspector(snap, { ...input, jobId }),
+          }))
+          setJobSummary(buildJobRunSummary({ ...input, jobId }))
           if (job.status === 'complete' || job.status === 'error') done = true
         }
       } catch (e) {
@@ -396,6 +441,7 @@ function FlowCanvasInner({
                 : undefined,
             onPlaySegment: () => void onPlaySegment(n.id),
             onOutputToNote: () => onOutputToNote(n.id),
+            onOpenInspector: () => onSelectNode(n.id),
           },
         }
       }),
@@ -411,8 +457,15 @@ function FlowCanvasInner({
       onManualGateForNode,
       onPlaySegment,
       onOutputToNote,
+      onSelectNode,
     ],
   )
+
+  const selectedFlowNode = useMemo(() => {
+    if (!selectedId) return null
+    const rf = nodes.find((n) => n.id === selectedId) as UxFlowRfNode | undefined
+    return rf?.data?.flowNode ?? null
+  }, [nodes, selectedId])
 
   const startPolling = useCallback(
     (jobId: string, jobIdB?: string | null) => {
@@ -732,31 +785,33 @@ function FlowCanvasInner({
           {initialFlow.nodeKindsUsed.join(', ')}.
         </Alert>
       ) : (
-        <div className="audion-flow-canvas-main audion-flow-canvas-main--full">
-          <div className="audion-flow-palette">
-            <Text role="label" as="p">
-              Bausteine
-            </Text>
-            <div className="audion-flow-palette-row">
-              {UX_FLOW_NODE_KINDS.map((kind) => (
-                <Button
-                  key={kind}
-                  type="button"
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => addNode(kind)}
-                  disabled={runBusy}
-                >
-                  + {kind}
-                </Button>
-              ))}
+        <div className="audion-flow-board-layout">
+          <div className="audion-flow-canvas-main audion-flow-canvas-main--full">
+            <div className="audion-flow-palette">
+              <Text role="label" as="p">
+                Bausteine
+              </Text>
+              <div className="audion-flow-palette-row">
+                {UX_FLOW_NODE_KINDS.map((kind) => (
+                  <Button
+                    key={kind}
+                    type="button"
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => addNode(kind)}
+                    disabled={runBusy}
+                  >
+                    + {kind}
+                  </Button>
+                ))}
+              </div>
+              <p className="audion-flow-canvas-hint">
+                Board: Design · Testen · Notes (Save) · Gate → Agent · Segment · Inspector bei
+                Node-Klick
+              </p>
             </div>
-            <p className="audion-flow-canvas-hint">
-              Board: Design · Testen · Notes (Save) · Gate → Agent · Segment · Output → Note
-            </p>
-          </div>
-          <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--tall">
-            <ReactFlow
+            <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--tall">
+              <ReactFlow
               nodes={nodesForFlow}
               edges={edgesForFlow}
               onNodesChange={(c) => {
@@ -799,7 +854,18 @@ function FlowCanvasInner({
               <Controls />
               <MiniMap pannable zoomable />
             </ReactFlow>
+            </div>
           </div>
+          {selectedFlowNode ? (
+            <UxFlowNodeInspector
+              node={selectedFlowNode}
+              runState={runStates[selectedId!] ?? 'idle'}
+              inspector={inspectorByNode[selectedId!] ?? null}
+              jobSummary={jobSummary}
+              onClose={() => setSelectedId(null)}
+              onAppendOutputToNote={() => onInspectorOutputToNote(selectedId!)}
+            />
+          ) : null}
         </div>
       )}
     </div>

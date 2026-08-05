@@ -9,6 +9,7 @@ import type {
   UxFlowGateEvaluation,
   UxFlowGateSignalBundle,
   UxFlowNode,
+  UxFlowReplanEvent,
   UxTestFlow,
 } from '@audion-v3/contracts'
 import { defaultExecutionPath, whenBranchPath, activeExecutionPath, gateChoicesFromReplans } from './ux-test-flow-graph'
@@ -21,6 +22,42 @@ export type FlowNodeRunOutput = {
   label?: string | null
   text?: string | null
   imageUrl?: string | null
+}
+
+/** Full step detail for the node inspector (Phase 6). */
+export type FlowNodeInspectorStep = {
+  step?: number | null
+  action?: string | null
+  target?: string | null
+  result?: string | null
+  reasoning?: string | null
+  timestamp?: string | null
+  /** Seconds since first step in this job. */
+  elapsedSinceStartSec?: number | null
+  /** Seconds since previous step. */
+  deltaSec?: number | null
+  perception?: Record<string, unknown> | null
+  thinkAloud?: Record<string, unknown> | null
+  reasoningMeta?: FlowRunProgressStep['reasoningMeta']
+  imageUrl?: string | null
+}
+
+export type FlowNodeInspectorData = {
+  steps: FlowNodeInspectorStep[]
+  gateEvaluation?: UxFlowGateEvaluation | null
+  replanEvents?: UxFlowReplanEvent[]
+}
+
+export type FlowJobRunSummary = {
+  jobId?: string | null
+  status?: string
+  success?: boolean | null
+  stepCount: number
+  elapsedSeconds?: number | null
+  finalUrl?: string | null
+  finalTitle?: string | null
+  gateSignals?: UxFlowGateSignalBundle | null
+  error?: string | null
 }
 
 export type FlowRunProgressStep = {
@@ -569,6 +606,132 @@ export function mapJobToFlowNodeOutputs(
         stepNum,
       ),
     }
+  }
+
+  return out
+}
+
+function parseStepTimestampMs(ts?: string | null): number | null {
+  if (!ts?.trim()) return null
+  const ms = Date.parse(ts)
+  return Number.isNaN(ms) ? null : ms
+}
+
+function enrichInspectorStep(
+  step: FlowRunProgressStep,
+  ordinal: number,
+  firstMs: number | null,
+  prevMs: number | null,
+  jobId?: string | null,
+): FlowNodeInspectorStep {
+  const stepNum = step.step ?? ordinal
+  const tsMs = parseStepTimestampMs(step.timestamp)
+  const elapsedSinceStartSec =
+    firstMs != null && tsMs != null ? Math.max(0, (tsMs - firstMs) / 1000) : null
+  const deltaSec =
+    prevMs != null && tsMs != null ? Math.max(0, (tsMs - prevMs) / 1000) : null
+  return {
+    step: stepNum,
+    action: step.action ?? null,
+    target: step.target ?? null,
+    result: step.result ?? null,
+    reasoning: step.reasoning ?? null,
+    timestamp: step.timestamp ?? null,
+    elapsedSinceStartSec,
+    deltaSec,
+    perception: step.perception ?? null,
+    thinkAloud: step.thinkAloud ?? null,
+    reasoningMeta: step.reasoningMeta ?? null,
+    imageUrl: rewriteScreenshotUrl(step.screenshotUrl ?? step.screenshot, jobId, stepNum),
+  }
+}
+
+/** Job-level metrics for the flow board inspector. */
+export function buildJobRunSummary(job: FlowRunProgressInput): FlowJobRunSummary {
+  const steps = job.steps ?? []
+  const signals = deriveGateSignalsFromJob({
+    ...job,
+    finalUrl: job.gateSignals?.finalUrl ?? job.finalUrl,
+    finalTitle: job.gateSignals?.finalTitle ?? job.finalTitle,
+  })
+  let elapsedSeconds = signals.elapsedSeconds
+  if (elapsedSeconds == null && steps.length >= 2) {
+    const stamps = steps
+      .map((s) => parseStepTimestampMs(s.timestamp))
+      .filter((t): t is number => t != null)
+    if (stamps.length >= 2) {
+      elapsedSeconds = Math.max(0, (Math.max(...stamps) - Math.min(...stamps)) / 1000)
+    }
+  }
+  return {
+    jobId: job.jobId ?? null,
+    status: job.status,
+    success: job.success,
+    stepCount: steps.length,
+    elapsedSeconds,
+    finalUrl: signals.finalUrl ?? job.finalUrl ?? null,
+    finalTitle: signals.finalTitle ?? job.finalTitle ?? null,
+    gateSignals: signals,
+    error: job.error ?? null,
+  }
+}
+
+/**
+ * Map all agent steps per flow node for the inspector panel (not just latest).
+ */
+export function mapJobToFlowNodeInspector(
+  flow: UxTestFlow,
+  job: FlowRunProgressInput,
+): Record<string, FlowNodeInspectorData> {
+  const out: Record<string, FlowNodeInspectorData> = {}
+  const steps = job.steps ?? []
+  if (!steps.length) return out
+
+  const signals = deriveGateSignalsFromJob({
+    ...job,
+    finalUrl: job.gateSignals?.finalUrl ?? job.finalUrl,
+    finalTitle: job.gateSignals?.finalTitle ?? job.finalTitle,
+  })
+  const { path } = buildExecPath(flow, signals, job.flowCursor)
+  if (!path.length) return out
+
+  const firstMs = (() => {
+    for (const s of steps) {
+      const ms = parseStepTimestampMs(s.timestamp)
+      if (ms != null) return ms
+    }
+    return null
+  })()
+
+  let prevMs: number | null = firstMs
+
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i]
+    const ordinal = i + 1
+    const idx = pathIndexForStepBudget(path, ordinal)
+    const node = path[idx]
+    if (!node) continue
+    const enriched = enrichInspectorStep(step, ordinal, firstMs, prevMs, job.jobId)
+    const tsMs = parseStepTimestampMs(step.timestamp)
+    if (tsMs != null) prevMs = tsMs
+    if (!out[node.id]) {
+      out[node.id] = { steps: [], gateEvaluation: null, replanEvents: [] }
+    }
+    out[node.id].steps.push(enriched)
+  }
+
+  for (const n of flow.nodes ?? []) {
+    if (n.kind !== 'gate') continue
+    const evals = job.flowCursor?.gateEvaluations ?? []
+    const gateEval = evals.find((e) => e.gateNodeId === n.id) ?? evals.find((e) => !e.gateNodeId)
+    const history = job.flowCursor?.replanHistory ?? []
+    const replans = history.filter((e) => e.gateNodeId === n.id)
+    if (job.flowCursor?.replan?.gateNodeId === n.id) {
+      replans.push(job.flowCursor.replan)
+    }
+    if (!out[n.id]) out[n.id] = { steps: [], gateEvaluation: null, replanEvents: [] }
+    out[n.id].gateEvaluation = gateEval ?? null
+    out[n.id].replanEvents = replans.length ? replans : undefined
   }
 
   return out
