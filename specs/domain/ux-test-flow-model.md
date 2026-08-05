@@ -263,6 +263,10 @@ When `UxWaveRunItem.flowGraph` is set, `mapAgentResultToWaveRun` calls `deriveFl
 
 Deferred: persist `lastRunVerdict` on `ux_saved_flows.flow` metadata; Board → Evaluate one-click.
 
+## Upstream — Collection Test Flow (Plexon)
+
+Cross-product programs that mix this journey graph with CHECKION page scans / score gates are orchestrated in **Plexon** on the Collection — not as a second Audion project. Spec: `plexon-v3/specs/domain/collection-test-flow.md`. Audion remains owner of journey execution + Phase 7 evidence fields; Plexon merges Collection verdict.
+
 ## Immersive flow board (Phase 6b)
 
 Board mode uses a fixed full-viewport React Flow stage. Chrome (Testen/Save, Bausteine, Live Run, Inspector) floats in draggable panels via `@msqdx/ui` **`FloatingPanel`** (SnapDock) — same interaction model as the primary NavRail. Dock positions persist in `localStorage` (`paths.flowBoard*DockKey`).

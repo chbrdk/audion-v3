@@ -99,3 +99,7 @@ Canonical staging base: `URL_CHECKION_V3` / `https://checkion-v3.projects-a.plyg
 3. Auth uses Bearer token and/or user session as above — not service-secret on scans.
 4. Deep-link pre-fills `/scan` and lands on existing results workspace after launch.
 5. Paths/bases only via `knowledge/paths.md` / runtime config.
+
+## Upstream — Collection Test Flow (Plexon)
+
+Plexon may call this same single-page scan path as a **quality segment** inside a Collection Test Flow (`plexon-v3/specs/domain/collection-test-flow.md`). AUDION journey ownership unchanged; Plexon adds orchestration + Collection verdict.
