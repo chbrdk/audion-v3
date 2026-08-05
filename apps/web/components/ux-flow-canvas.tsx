@@ -48,6 +48,7 @@ import {
 import { flattenFlowBlocks, gateChoicesFromReplans, activePathEdgeIds } from '../lib/ux-test-flow-graph'
 import { paths } from '../lib/paths'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
+import { UxFlowFloatingPanel } from './ux-flow-floating-panel'
 import { UxFlowNodeInspector } from './ux-flow-node-inspector'
 import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
 
@@ -87,8 +88,10 @@ type GraphSnap = { nodes: UxFlowRfNode[]; edges: UxFlowRfEdge[] }
 
 function FlowCanvasInner({
   initialFlow,
+  onSwitchToList,
 }: {
   initialFlow: UxTestFlow
+  onSwitchToList?: () => void
 }) {
   const templateRef = useRef(initialFlow)
   const initial = useMemo(() => flowToRfNodesEdges(initialFlow), [initialFlow])
@@ -704,114 +707,33 @@ function FlowCanvasInner({
   const hasGraph = Boolean(initialFlow.nodes?.length)
 
   return (
-    <div className="audion-flow-canvas-shell">
-      <div className="audion-flow-canvas-toolbar">
-        <Button
-          type="button"
-          size="md"
-          onClick={() => void onTest()}
-          disabled={!hasGraph || runBusy}
-        >
-          {runBusy ? 'Running…' : 'Testen'}
-        </Button>
-        <Button type="button" size="sm" variant="subtle" onClick={() => void onStop()} disabled={!runBusy}>
-          Stop
-        </Button>
-        <CreateStudyFromFlowButton
-          flowId={initialFlow.id}
-          flowName={initialFlow.name}
-          disabled={!initialFlow.compileReady && !hasGraph}
-          getFlowSnapshot={getSnapshot}
-        />
-        <Button type="button" size="sm" onClick={() => void onSave()} disabled={!hasGraph || saveBusy}>
-          {saveBusy ? 'Saving…' : 'Save'}
-        </Button>
-        <Button type="button" size="sm" variant="subtle" onClick={onUndo} disabled={historyLen < 1}>
-          Undo
-        </Button>
-        {dirty ? (
-          <Chip size="sm" static>
-            unsaved edits
-          </Chip>
-        ) : savedId ? (
-          <Chip size="sm" static>
-            saved
-          </Chip>
-        ) : null}
-        {saveMsg ? <span className="audion-flow-canvas-hint">{saveMsg}</span> : null}
-        <Button type="button" size="sm" variant="subtle" onClick={reset} disabled={!dirty && !savedId}>
-          Reset to template
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={deleteSelected}
-          disabled={!selectedId || runBusy}
-        >
-          Delete node
-        </Button>
-      </div>
-
-      {runMeta ? (
-        <div className="audion-flow-run-strip">
-          <Chip size="sm" static>
-            {runMeta.status}
-          </Chip>
-          <span>
-            A steps {runMeta.stepCount} · job {runMeta.jobId.slice(0, 10)}…
-            {runMeta.jobIdB
-              ? ` · B steps ${runMeta.stepCountB ?? 0} · job ${runMeta.jobIdB.slice(0, 10)}…`
-              : ''}
-          </span>
-          <Link href={paths.routes.studyWaveDetail(runMeta.studyId, runMeta.waveId)}>
-            Open wave
-          </Link>
-          {runBusy && runMeta.jobId ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              className="audion-flow-live-thumb"
-              src={`${paths.routes.apiUxJourneyAgentLive(runMeta.jobId)}?t=${runMeta.stepCount}`}
-              alt="Live viewport"
-            />
-          ) : null}
-        </div>
-      ) : null}
-      {runError ? <p className="audion-flow-create-error">{runError}</p> : null}
-
+    <div className="audion-flow-canvas-shell audion-flow-canvas-shell--immersive">
       {!hasGraph ? (
-        <Alert tone="info">
-          Noch kein vollständiger Graph — nur Katalog-Metadaten. Bausteine:{' '}
-          {initialFlow.nodeKindsUsed.join(', ')}.
-        </Alert>
-      ) : (
-        <div className="audion-flow-board-layout">
-          <div className="audion-flow-canvas-main audion-flow-canvas-main--full">
-            <div className="audion-flow-palette">
-              <Text role="label" as="p">
-                Bausteine
-              </Text>
-              <div className="audion-flow-palette-row">
-                {UX_FLOW_NODE_KINDS.map((kind) => (
-                  <Button
-                    key={kind}
-                    type="button"
-                    size="sm"
-                    variant="subtle"
-                    onClick={() => addNode(kind)}
-                    disabled={runBusy}
-                  >
-                    + {kind}
-                  </Button>
-                ))}
-              </div>
-              <p className="audion-flow-canvas-hint">
-                Board: Design · Testen · Notes (Save) · Gate → Agent · Segment · Inspector bei
-                Node-Klick
-              </p>
+        <div className="audion-flow-board-stage">
+          <UxFlowFloatingPanel
+            storageKey={paths.flowBoardToolbarDockKey}
+            defaultEdge="top"
+            defaultOffset={0.1}
+            title="Flow Board"
+            className="audion-flow-float-panel--toolbar"
+          >
+            <div className="audion-flow-canvas-toolbar">
+              {onSwitchToList ? (
+                <Button type="button" size="sm" variant="subtle" onClick={onSwitchToList}>
+                  Liste
+                </Button>
+              ) : null}
             </div>
-            <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--tall">
-              <ReactFlow
+          </UxFlowFloatingPanel>
+          <Alert tone="info" className="audion-flow-board-empty">
+            Noch kein vollständiger Graph — nur Katalog-Metadaten. Bausteine:{' '}
+            {initialFlow.nodeKindsUsed.join(', ')}.
+          </Alert>
+        </div>
+      ) : (
+        <div className="audion-flow-board-stage">
+          <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--fullscreen">
+            <ReactFlow
               nodes={nodesForFlow}
               edges={edgesForFlow}
               onNodesChange={(c) => {
@@ -854,18 +776,160 @@ function FlowCanvasInner({
               <Controls />
               <MiniMap pannable zoomable />
             </ReactFlow>
-            </div>
           </div>
-          {selectedFlowNode ? (
-            <UxFlowNodeInspector
-              node={selectedFlowNode}
-              runState={runStates[selectedId!] ?? 'idle'}
-              inspector={inspectorByNode[selectedId!] ?? null}
-              jobSummary={jobSummary}
-              onClose={() => setSelectedId(null)}
-              onAppendOutputToNote={() => onInspectorOutputToNote(selectedId!)}
-            />
+
+          <UxFlowFloatingPanel
+            storageKey={paths.flowBoardToolbarDockKey}
+            defaultEdge="top"
+            defaultOffset={0.08}
+            title="Flow Board"
+            className="audion-flow-float-panel--toolbar"
+            ariaLabel="Flow Board Aktionen"
+          >
+            <div className="audion-flow-canvas-toolbar">
+              {onSwitchToList ? (
+                <Button type="button" size="sm" variant="subtle" onClick={onSwitchToList}>
+                  Liste
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                size="md"
+                onClick={() => void onTest()}
+                disabled={!hasGraph || runBusy}
+              >
+                {runBusy ? 'Running…' : 'Testen'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="subtle"
+                onClick={() => void onStop()}
+                disabled={!runBusy}
+              >
+                Stop
+              </Button>
+              <CreateStudyFromFlowButton
+                flowId={initialFlow.id}
+                flowName={initialFlow.name}
+                disabled={!initialFlow.compileReady && !hasGraph}
+                getFlowSnapshot={getSnapshot}
+              />
+              <Button type="button" size="sm" onClick={() => void onSave()} disabled={!hasGraph || saveBusy}>
+                {saveBusy ? 'Saving…' : 'Save'}
+              </Button>
+              <Button type="button" size="sm" variant="subtle" onClick={onUndo} disabled={historyLen < 1}>
+                Undo
+              </Button>
+              {dirty ? (
+                <Chip size="sm" static>
+                  unsaved edits
+                </Chip>
+              ) : savedId ? (
+                <Chip size="sm" static>
+                  saved
+                </Chip>
+              ) : null}
+              {saveMsg ? <span className="audion-flow-canvas-hint">{saveMsg}</span> : null}
+              <Button type="button" size="sm" variant="subtle" onClick={reset} disabled={!dirty && !savedId}>
+                Reset to template
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={deleteSelected}
+                disabled={!selectedId || runBusy}
+              >
+                Delete node
+              </Button>
+            </div>
+          </UxFlowFloatingPanel>
+
+          <UxFlowFloatingPanel
+            storageKey={paths.flowBoardPaletteDockKey}
+            defaultEdge="left"
+            defaultOffset={0.38}
+            title="Bausteine"
+            className="audion-flow-float-panel--palette"
+            ariaLabel="Flow Bausteine"
+          >
+            <div className="audion-flow-palette">
+              <div className="audion-flow-palette-row">
+                {UX_FLOW_NODE_KINDS.map((kind) => (
+                  <Button
+                    key={kind}
+                    type="button"
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => addNode(kind)}
+                    disabled={runBusy}
+                  >
+                    + {kind}
+                  </Button>
+                ))}
+              </div>
+              <p className="audion-flow-canvas-hint">
+                Node-Klick → Inspector · Note fokussieren öffnet Inspector
+              </p>
+            </div>
+          </UxFlowFloatingPanel>
+
+          {runMeta ? (
+            <UxFlowFloatingPanel
+              storageKey={paths.flowBoardRunDockKey}
+              defaultEdge="bottom"
+              defaultOffset={0.5}
+              title="Live Run"
+              className="audion-flow-float-panel--run"
+              ariaLabel="Live Run Status"
+            >
+              <div className="audion-flow-run-strip">
+                <Chip size="sm" static>
+                  {runMeta.status}
+                </Chip>
+                <span>
+                  A steps {runMeta.stepCount} · job {runMeta.jobId.slice(0, 10)}…
+                  {runMeta.jobIdB
+                    ? ` · B steps ${runMeta.stepCountB ?? 0} · job ${runMeta.jobIdB.slice(0, 10)}…`
+                    : ''}
+                </span>
+                <Link href={paths.routes.studyWaveDetail(runMeta.studyId, runMeta.waveId)}>
+                  Open wave
+                </Link>
+                {runBusy && runMeta.jobId ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    className="audion-flow-live-thumb"
+                    src={`${paths.routes.apiUxJourneyAgentLive(runMeta.jobId)}?t=${runMeta.stepCount}`}
+                    alt="Live viewport"
+                  />
+                ) : null}
+              </div>
+            </UxFlowFloatingPanel>
           ) : null}
+
+          {selectedFlowNode ? (
+            <UxFlowFloatingPanel
+              storageKey={paths.flowBoardInspectorDockKey}
+              defaultEdge="right"
+              defaultOffset={0.22}
+              title="Inspector"
+              className="audion-flow-float-panel--inspector"
+              ariaLabel="Node Inspector"
+            >
+              <UxFlowNodeInspector
+                node={selectedFlowNode}
+                runState={runStates[selectedId!] ?? 'idle'}
+                inspector={inspectorByNode[selectedId!] ?? null}
+                jobSummary={jobSummary}
+                onClose={() => setSelectedId(null)}
+                onAppendOutputToNote={() => onInspectorOutputToNote(selectedId!)}
+              />
+            </UxFlowFloatingPanel>
+          ) : null}
+
+          {runError ? <p className="audion-flow-board-alert">{runError}</p> : null}
         </div>
       )}
     </div>
@@ -888,32 +952,46 @@ export function UxFlowDetailClient({
         : 'list'
   const [view, setView] = useState<'board' | 'list'>(resolvedView === 'list' ? 'list' : 'board')
   const blocks = useMemo(() => flattenFlowBlocks(flow), [flow])
+  const boardActive = view === 'board' && hasGraph
+
+  useEffect(() => {
+    document.body.classList.toggle('audion-flow-board-active', boardActive)
+    return () => document.body.classList.remove('audion-flow-board-active')
+  }, [boardActive])
 
   return (
-    <div className="audion-flow-detail-client">
-      <div className="audion-flow-view-toggle" role="group" aria-label="Ansicht">
-        <Button
-          type="button"
-          size="sm"
-          variant={view === 'board' ? 'primary' : 'subtle'}
-          onClick={() => setView('board')}
-          disabled={!hasGraph}
-        >
-          Board
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={view === 'list' ? 'primary' : 'subtle'}
-          onClick={() => setView('list')}
-        >
-          Liste
-        </Button>
-      </div>
+    <div
+      className={
+        boardActive
+          ? 'audion-flow-detail-client audion-flow-detail-client--immersive'
+          : 'audion-flow-detail-client'
+      }
+    >
+      {!boardActive ? (
+        <div className="audion-flow-view-toggle" role="group" aria-label="Ansicht">
+          <Button
+            type="button"
+            size="sm"
+            variant={view === 'board' ? 'primary' : 'subtle'}
+            onClick={() => setView('board')}
+            disabled={!hasGraph}
+          >
+            Board
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={view === 'list' ? 'primary' : 'subtle'}
+            onClick={() => setView('list')}
+          >
+            Liste
+          </Button>
+        </div>
+      ) : null}
 
       {view === 'board' ? (
         <ReactFlowProvider>
-          <FlowCanvasInner initialFlow={flow} />
+          <FlowCanvasInner initialFlow={flow} onSwitchToList={() => setView('list')} />
         </ReactFlowProvider>
       ) : (
         <section className="audion-flow-blocks">

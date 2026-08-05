@@ -1,7 +1,7 @@
 'use client'
 
 import type { UxFlowNode, UxFlowNodeKind } from '@audion-v3/contracts'
-import { Button, Chip, Panel, Text } from '@msqdx/ui'
+import { Button, Chip, Text } from '@msqdx/ui'
 import type {
   FlowJobRunSummary,
   FlowNodeInspectorData,
@@ -138,8 +138,7 @@ export function UxFlowNodeInspector({
     Boolean(lastStep?.result || lastStep?.reasoning || lastStep?.thinkAloud)
 
   return (
-    <aside className="audion-flow-inspector" aria-label="Node Inspector">
-      <Panel as="div" variant="card" className="audion-flow-inspector-panel">
+    <div className="audion-flow-inspector-body" aria-label="Node Inspector">
         <header className="audion-flow-inspector-head">
           <div>
             <Text role="meta" as="p" className="audion-flow-inspector-meta">
@@ -269,7 +268,6 @@ export function UxFlowNodeInspector({
             ) : null}
           </section>
         ) : null}
-      </Panel>
-    </aside>
+    </div>
   )
 }

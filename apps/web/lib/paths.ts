@@ -15,6 +15,10 @@ export const paths = {
   mainGutterRem: 2.5,
   railDockEdge: 'left' as const,
   railDockStorageKey: 'audion.v3.railDock',
+  flowBoardToolbarDockKey: 'audion.flowBoard.toolbarDock',
+  flowBoardPaletteDockKey: 'audion.flowBoard.paletteDock',
+  flowBoardInspectorDockKey: 'audion.flowBoard.inspectorDock',
+  flowBoardRunDockKey: 'audion.flowBoard.runDock',
   /** Communication band layout preview: quote | tone */
   commLayoutStorageKey: 'audion.v3.commLayout',
   /** TG linked personas layout: cards | list */

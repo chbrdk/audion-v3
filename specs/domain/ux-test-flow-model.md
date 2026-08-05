@@ -223,6 +223,11 @@ Facade: `apps/web/lib/fixtures/ux-flow-store.ts` — Postgres when `DATABASE_URL
 | **Phase 4 (this slice)** | Multi-gate sequential replan on active path + `replanHistory`; agent-native branch planner (lean compile + next-segment inject); hybrid protocol agent handoff; saved-flow `owner_id`/`org_id` ACL foundation | Org-scoped sharing UI / invite ACLs; multi-agent parallel mid-run orchestration; collaborative multi-user live protocol |
 | **Phase 5 — Interactive board** | Single **Board** mode (design + live test + notes + segment); per-node `note` persisted on Save; path edge highlight; manual gate → `POST …/gate-branch` triggers real `add_new_task` replan | Step scrubber; sticky free notes; org sharing UI |
 | **Phase 6a — Node inspector** | Side **Inspector** on node select / note focus: full agent steps per node (action, target, result, reasoning, think-aloud, perception, screenshots); step timing (Δ + elapsed); job-level metrics; gate evaluation + replan history | Step scrubber; Study ↔ Board evaluate loop |
+| **Phase 6b — Immersive board** | Canvas fills viewport; toolbar, palette, run strip, inspector as draggable **SnapDock** overlays (like NavRail) | Sticky free notes on canvas |
+
+## Immersive flow board (Phase 6b)
+
+Board mode uses a fixed full-viewport React Flow stage. Chrome (Testen/Save, Bausteine, Live Run, Inspector) floats in draggable panels via `react-driftkit` SnapDock — same interaction model as the primary NavRail. Dock positions persist in `localStorage` (`paths.flowBoard*DockKey`).
 
 ## Node inspector (Phase 6a)
 
