@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { UxFlowNode, UxFlowNodeKind } from '@audion-v3/contracts'
-import { Button, Chip, Text } from '@msqdx/ui'
+import { Button, FlowInspectorShell, type FlowInspectorSection } from '@msqdx/ui'
 import type {
   FlowJobRunSummary,
   FlowNodeInspectorData,
   FlowNodeInspectorStep,
   FlowNodeRunState,
 } from '../lib/ux-flow-run-progress'
-import { IconClose } from './nav-icons'
 
 const KIND_LABEL: Record<UxFlowNodeKind, string> = {
   start: 'Start',
@@ -21,14 +20,6 @@ const KIND_LABEL: Record<UxFlowNodeKind, string> = {
   success: 'Success',
   abandon: 'Abandon',
   measure: 'Measure',
-}
-
-const RUN_STATE_LABEL: Record<FlowNodeRunState, string> = {
-  idle: 'idle',
-  active: 'running',
-  done: 'done',
-  skipped: 'skipped',
-  error: 'error',
 }
 
 function formatSec(sec?: number | null): string {
@@ -87,45 +78,14 @@ function InspectorField({
   mono?: boolean
 }) {
   return (
-    <div className={`audion-flow-inspector-field audion-flow-inspector-field--${tone}`}>
-      <span className="audion-flow-inspector-field-label">{label}</span>
-      <div className={`audion-flow-inspector-field-value${mono ? ' audion-flow-inspector-field-value--mono' : ''}`}>
+    <div className={`msqdx-flow-inspector-field msqdx-flow-inspector-field--${tone}`}>
+      <span className="msqdx-flow-inspector-field-label">{label}</span>
+      <div
+        className={`msqdx-flow-inspector-field-value${mono ? ' msqdx-flow-inspector-field-value--mono' : ''}`}
+      >
         {children}
       </div>
     </div>
-  )
-}
-
-function InspectorSection({
-  title,
-  tone = 'meta',
-  defaultOpen = true,
-  children,
-  meta,
-}: {
-  title: string
-  tone?: 'meta' | 'gate' | 'design' | 'run'
-  defaultOpen?: boolean
-  children: ReactNode
-  meta?: ReactNode
-}) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <section className={`audion-flow-inspector-section audion-flow-inspector-section--${tone}`}>
-      <button
-        type="button"
-        className="audion-flow-inspector-section-toggle"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <span className="audion-flow-inspector-section-title">{title}</span>
-        {meta ? <span className="audion-flow-inspector-section-meta">{meta}</span> : null}
-        <span className="audion-flow-inspector-chevron" aria-hidden>
-          {open ? '▾' : '▸'}
-        </span>
-      </button>
-      {open ? <div className="audion-flow-inspector-section-body">{children}</div> : null}
-    </section>
   )
 }
 
@@ -148,32 +108,32 @@ function InspectorStepCard({
   const summary = step.target?.trim() || step.result?.trim()?.slice(0, 48) || '—'
 
   return (
-    <li className={`audion-flow-inspector-step-item${isLast ? ' is-latest' : ''}`}>
-      <article className="audion-flow-inspector-step">
+    <li className={`msqdx-flow-inspector-step-item${isLast ? ' is-latest' : ''}`}>
+      <article className="msqdx-flow-inspector-step">
         <button
           type="button"
-          className="audion-flow-inspector-step-toggle"
+          className="msqdx-flow-inspector-step-toggle"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
         >
-          <span className="audion-flow-inspector-step-num">#{step.step ?? index + 1}</span>
-          <span className={`audion-flow-inspector-action-badge audion-flow-inspector-action-badge--${actionTone(actionLabel)}`}>
+          <span className="msqdx-flow-inspector-step-num">#{step.step ?? index + 1}</span>
+          <span
+            className={`msqdx-flow-inspector-action-badge msqdx-flow-inspector-action-badge--${actionTone(actionLabel)}`}
+          >
             {actionLabel}
           </span>
-          <span className="audion-flow-inspector-step-summary" title={summary}>
+          <span className="msqdx-flow-inspector-step-summary" title={summary}>
             {summary}
           </span>
-          <span className="audion-flow-inspector-step-timing">
-            {formatSec(step.deltaSec)}
-          </span>
-          <span className="audion-flow-inspector-chevron" aria-hidden>
+          <span className="msqdx-flow-inspector-step-timing">{formatSec(step.deltaSec)}</span>
+          <span className="msqdx-flow-inspector-chevron" aria-hidden>
             {open ? '▾' : '▸'}
           </span>
         </button>
 
         {open ? (
-          <div className="audion-flow-inspector-step-body">
-            <div className="audion-flow-inspector-step-meta-row">
+          <div className="msqdx-flow-inspector-step-body">
+            <div className="msqdx-flow-inspector-step-meta-row">
               <span>{step.timestamp ? new Date(step.timestamp).toLocaleTimeString() : '—'}</span>
               <span>+{formatSec(step.elapsedSinceStartSec)}</span>
             </div>
@@ -192,28 +152,28 @@ function InspectorStepCard({
 
             {step.result ? (
               <InspectorField label="Result" tone="result">
-                <pre className="audion-flow-inspector-pre">{step.result}</pre>
+                <pre className="msqdx-flow-inspector-pre">{step.result}</pre>
               </InspectorField>
             ) : null}
 
             {step.reasoning ? (
               <InspectorField label="Reasoning" tone="reasoning">
-                <pre className="audion-flow-inspector-pre">{step.reasoning}</pre>
+                <pre className="msqdx-flow-inspector-pre">{step.reasoning}</pre>
               </InspectorField>
             ) : null}
 
             {think ? (
               <InspectorField label="Think aloud" tone="think">
-                <pre className="audion-flow-inspector-pre">{think}</pre>
+                <pre className="msqdx-flow-inspector-pre">{think}</pre>
               </InspectorField>
             ) : null}
 
             {perception.length ? (
-              <div className="audion-flow-inspector-field-group">
-                <span className="audion-flow-inspector-field-group-label">Perception</span>
+              <div className="msqdx-flow-inspector-field-group">
+                <span className="msqdx-flow-inspector-field-group-label">Perception</span>
                 {perception.map((row) => (
                   <InspectorField key={row.key} label={row.key} tone="perception">
-                    <pre className="audion-flow-inspector-pre">{row.value}</pre>
+                    <pre className="msqdx-flow-inspector-pre">{row.value}</pre>
                   </InspectorField>
                 ))}
               </div>
@@ -221,17 +181,17 @@ function InspectorStepCard({
 
             {meta?.memory ? (
               <InspectorField label="Memory" tone="meta">
-                <pre className="audion-flow-inspector-pre">{meta.memory}</pre>
+                <pre className="msqdx-flow-inspector-pre">{meta.memory}</pre>
               </InspectorField>
             ) : null}
             {meta?.next_goal ? (
               <InspectorField label="Next goal" tone="meta">
-                <pre className="audion-flow-inspector-pre">{meta.next_goal}</pre>
+                <pre className="msqdx-flow-inspector-pre">{meta.next_goal}</pre>
               </InspectorField>
             ) : null}
             {meta?.evaluation_previous_goal ? (
               <InspectorField label="Prev goal eval" tone="meta">
-                <pre className="audion-flow-inspector-pre">{meta.evaluation_previous_goal}</pre>
+                <pre className="msqdx-flow-inspector-pre">{meta.evaluation_previous_goal}</pre>
               </InspectorField>
             ) : null}
 
@@ -239,7 +199,7 @@ function InspectorStepCard({
               <InspectorField label="Screenshot" tone="meta">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  className="audion-flow-inspector-shot"
+                  className="msqdx-flow-inspector-shot"
                   src={step.imageUrl}
                   alt={`Screenshot step ${step.step ?? ''}`}
                 />
@@ -299,182 +259,201 @@ export function UxFlowNodeInspector({
     Boolean(onAppendOutputToNote) &&
     Boolean(lastStep?.result || lastStep?.reasoning || lastStep?.thinkAloud)
 
-  return (
-    <div
-      className={`audion-flow-inspector-body audion-flow-inspector-body--${node.kind}`}
-      aria-label="Node Inspector"
-    >
-      <header className="audion-flow-inspector-head">
-        <div className="audion-flow-inspector-head-main">
-          <div className="audion-flow-inspector-badges">
-            <Chip size="sm" static className={`audion-flow-inspector-kind audion-flow-inspector-kind--${node.kind}`}>
-              {KIND_LABEL[node.kind]}
-            </Chip>
-            <Chip
-              size="sm"
-              static
-              className={`audion-flow-inspector-run audion-flow-inspector-run--${runState}`}
-            >
-              {RUN_STATE_LABEL[runState]}
-            </Chip>
-          </div>
-          <Text role="headline" as="h2" className="audion-flow-inspector-title">
-            {node.label || node.id}
-          </Text>
-          <p className="audion-flow-inspector-id">{node.id}</p>
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="audion-flow-toolbar-btn"
-          aria-label="Inspector schließen"
-          title="Schließen"
-          icon={<IconClose />}
-          onClick={onClose}
-        />
-      </header>
+  const sections = useMemo((): FlowInspectorSection[] => {
+    const next: FlowInspectorSection[] = []
 
-      {node.text || node.note ? (
-        <InspectorSection title="Design" tone="design" defaultOpen={false}>
-          {node.text ? (
-            <InspectorField label="Text" tone="meta">
-              <pre className="audion-flow-inspector-pre">{node.text}</pre>
-            </InspectorField>
-          ) : null}
-          {node.note ? (
-            <InspectorField label="Note" tone="meta">
-              <pre className="audion-flow-inspector-pre">{node.note}</pre>
-            </InspectorField>
-          ) : null}
-        </InspectorSection>
-      ) : null}
+    if (node.text || node.note) {
+      next.push({
+        id: 'design',
+        title: 'Design',
+        defaultOpen: false,
+        children: (
+          <>
+            {node.text ? (
+              <InspectorField label="Text" tone="meta">
+                <pre className="msqdx-flow-inspector-pre">{node.text}</pre>
+              </InspectorField>
+            ) : null}
+            {node.note ? (
+              <InspectorField label="Note" tone="meta">
+                <pre className="msqdx-flow-inspector-pre">{node.note}</pre>
+              </InspectorField>
+            ) : null}
+          </>
+        ),
+      })
+    }
 
-      {jobSummary ? (
-        <InspectorSection
-          title="Run"
-          tone="run"
-          defaultOpen
-          meta={
-            <span className="audion-flow-inspector-pill">
-              {jobSummary.status ?? '—'} · {formatSec(jobSummary.elapsedSeconds)}
-            </span>
-          }
-        >
-          <div className="audion-flow-inspector-stats">
-            <div className="audion-flow-inspector-stat">
-              <span>Status</span>
-              <strong>{jobSummary.status ?? '—'}</strong>
+    if (jobSummary) {
+      next.push({
+        id: 'run',
+        title: 'Run',
+        defaultOpen: true,
+        meta: (
+          <span className="msqdx-flow-inspector-pill">
+            {jobSummary.status ?? '—'} · {formatSec(jobSummary.elapsedSeconds)}
+          </span>
+        ),
+        children: (
+          <>
+            <div className="msqdx-flow-inspector-stats">
+              <div className="msqdx-flow-inspector-stat">
+                <span>Status</span>
+                <strong>{jobSummary.status ?? '—'}</strong>
+              </div>
+              <div className="msqdx-flow-inspector-stat">
+                <span>Steps</span>
+                <strong>{jobSummary.stepCount}</strong>
+              </div>
+              <div className="msqdx-flow-inspector-stat">
+                <span>Dauer</span>
+                <strong>{formatSec(jobSummary.elapsedSeconds)}</strong>
+              </div>
             </div>
-            <div className="audion-flow-inspector-stat">
-              <span>Steps</span>
-              <strong>{jobSummary.stepCount}</strong>
-            </div>
-            <div className="audion-flow-inspector-stat">
-              <span>Dauer</span>
-              <strong>{formatSec(jobSummary.elapsedSeconds)}</strong>
-            </div>
-          </div>
-          {jobSummary.jobId ? (
-            <InspectorField label="Job ID" tone="meta" mono>
-              {jobSummary.jobId}
-            </InspectorField>
-          ) : null}
-          {jobSummary.finalUrl ? (
-            <InspectorField label="Final URL" tone="target" mono>
-              {jobSummary.finalUrl}
-            </InspectorField>
-          ) : null}
-          {jobSummary.error ? (
-            <InspectorField label="Error" tone="error">
-              {jobSummary.error}
-            </InspectorField>
-          ) : null}
-        </InspectorSection>
-      ) : null}
+            {jobSummary.jobId ? (
+              <InspectorField label="Job ID" tone="meta" mono>
+                {jobSummary.jobId}
+              </InspectorField>
+            ) : null}
+            {jobSummary.finalUrl ? (
+              <InspectorField label="Final URL" tone="target" mono>
+                {jobSummary.finalUrl}
+              </InspectorField>
+            ) : null}
+            {jobSummary.error ? (
+              <InspectorField label="Error" tone="error">
+                {jobSummary.error}
+              </InspectorField>
+            ) : null}
+          </>
+        ),
+      })
+    }
 
-      {steps.length ? (
-        <InspectorSection
-          title="Execution"
-          tone="meta"
-          defaultOpen
-          meta={
-            <span className="audion-flow-inspector-pill">
-              {steps.length} steps · {formatSec(nodeElapsed)}
-            </span>
-          }
-        >
-          {canAppend ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="subtle"
-              className="audion-flow-inspector-append"
-              onClick={onAppendOutputToNote}
-            >
-              Letzten Output → Note
-            </Button>
-          ) : null}
-          <ol className="audion-flow-inspector-steps">
-            {steps.map((s, i) => (
-              <InspectorStepCard
-                key={`${s.step ?? i}-${s.timestamp ?? i}`}
-                step={s}
-                index={i}
-                isLast={i === steps.length - 1}
-                defaultOpen={i === steps.length - 1 && expandedLatest}
-              />
-            ))}
-          </ol>
-        </InspectorSection>
-      ) : (
-        <InspectorSection title="Execution" tone="meta" defaultOpen>
-          <p className="audion-flow-inspector-empty">
+    if (steps.length) {
+      next.push({
+        id: 'execution',
+        title: 'Execution',
+        defaultOpen: true,
+        meta: (
+          <span className="msqdx-flow-inspector-pill">
+            {steps.length} steps · {formatSec(nodeElapsed)}
+          </span>
+        ),
+        children: (
+          <>
+            {canAppend ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="subtle"
+                className="msqdx-flow-inspector-append"
+                onClick={onAppendOutputToNote}
+              >
+                Letzten Output → Note
+              </Button>
+            ) : null}
+            <ol className="msqdx-flow-inspector-steps">
+              {steps.map((s, i) => (
+                <InspectorStepCard
+                  key={`${s.step ?? i}-${s.timestamp ?? i}`}
+                  step={s}
+                  index={i}
+                  isLast={i === steps.length - 1}
+                  defaultOpen={i === steps.length - 1 && expandedLatest}
+                />
+              ))}
+            </ol>
+          </>
+        ),
+      })
+    } else {
+      next.push({
+        id: 'execution',
+        title: 'Execution',
+        defaultOpen: true,
+        children: (
+          <p className="msqdx-flow-inspector-empty">
             Noch keine Steps auf dieser Node — Testen oder Agent-Segment starten.
           </p>
-        </InspectorSection>
-      )}
+        ),
+      })
+    }
 
-      {node.kind === 'gate' && (inspector?.gateEvaluation || inspector?.replanEvents?.length) ? (
-        <InspectorSection title="Gate" tone="gate" defaultOpen>
-          {inspector.gateEvaluation ? (
-            <div
-              className={`audion-flow-inspector-gate-card${
-                inspector.gateEvaluation.matched ? ' is-match' : ' is-miss'
-              }`}
-            >
-              <span className="audion-flow-inspector-gate-verdict">
-                {inspector.gateEvaluation.matched ? 'Match' : 'Kein Match'}
-              </span>
-              {inspector.gateEvaluation.condition ? (
-                <InspectorField label="Condition" tone="meta" mono>
-                  {inspector.gateEvaluation.condition}
-                </InspectorField>
-              ) : null}
-              {inspector.gateEvaluation.evidence ? (
-                <InspectorField label="Evidence" tone="result">
-                  {inspector.gateEvaluation.evidence}
-                </InspectorField>
-              ) : null}
-            </div>
-          ) : null}
-          {inspector.replanEvents?.length ? (
-            <ul className="audion-flow-inspector-replans">
-              {inspector.replanEvents.map((ev, i) => (
-                <li
-                  key={`${ev.gateNodeId}-${i}`}
-                  className={`audion-flow-inspector-replan audion-flow-inspector-replan--${ev.edgeKind ?? 'replan'}`}
-                >
-                  <span className="audion-flow-inspector-replan-kind">{ev.edgeKind ?? 'replan'}</span>
-                  {ev.remainingTask ? (
-                    <pre className="audion-flow-inspector-pre">{ev.remainingTask}</pre>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </InspectorSection>
-      ) : null}
-    </div>
+    if (node.kind === 'gate' && (inspector?.gateEvaluation || inspector?.replanEvents?.length)) {
+      next.push({
+        id: 'gate',
+        title: 'Gate',
+        defaultOpen: true,
+        children: (
+          <>
+            {inspector.gateEvaluation ? (
+              <div
+                className={`msqdx-flow-inspector-gate-card${
+                  inspector.gateEvaluation.matched ? ' is-match' : ' is-miss'
+                }`}
+              >
+                <span className="msqdx-flow-inspector-gate-verdict">
+                  {inspector.gateEvaluation.matched ? 'Match' : 'Kein Match'}
+                </span>
+                {inspector.gateEvaluation.condition ? (
+                  <InspectorField label="Condition" tone="meta" mono>
+                    {inspector.gateEvaluation.condition}
+                  </InspectorField>
+                ) : null}
+                {inspector.gateEvaluation.evidence ? (
+                  <InspectorField label="Evidence" tone="result">
+                    {inspector.gateEvaluation.evidence}
+                  </InspectorField>
+                ) : null}
+              </div>
+            ) : null}
+            {inspector.replanEvents?.length ? (
+              <ul className="msqdx-flow-inspector-replans">
+                {inspector.replanEvents.map((ev, i) => (
+                  <li
+                    key={`${ev.gateNodeId}-${i}`}
+                    className={`msqdx-flow-inspector-replan msqdx-flow-inspector-replan--${ev.edgeKind ?? 'replan'}`}
+                  >
+                    <span className="msqdx-flow-inspector-replan-kind">
+                      {ev.edgeKind ?? 'replan'}
+                    </span>
+                    {ev.remainingTask ? (
+                      <pre className="msqdx-flow-inspector-pre">{ev.remainingTask}</pre>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </>
+        ),
+      })
+    }
+
+    return next
+  }, [
+    canAppend,
+    expandedLatest,
+    inspector,
+    jobSummary,
+    node.kind,
+    node.note,
+    node.text,
+    nodeElapsed,
+    onAppendOutputToNote,
+    steps,
+  ])
+
+  return (
+    <FlowInspectorShell
+      kind={node.kind}
+      kindLabel={KIND_LABEL[node.kind]}
+      title={node.label || node.id}
+      nodeId={node.id}
+      runState={runState}
+      onClose={onClose}
+      sections={sections}
+      aria-label="Node Inspector"
+    />
   )
 }

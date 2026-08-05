@@ -332,7 +332,7 @@ export function IconReset({ size = 18 }: { size?: number }) {
 export function IconGrip({ size = 18 }: { size?: number }) {
   return (
     <svg
-      className="ui-icon audion-flow-toolbar-grip-icon"
+      className="ui-icon msqdx-flow-toolbar-grip-icon"
       width={size}
       height={size}
       viewBox="0 0 24 24"

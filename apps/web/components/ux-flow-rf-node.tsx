@@ -3,7 +3,7 @@
 import { memo, useCallback, type ChangeEvent, type MouseEvent } from 'react'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import type { UxFlowGateCondition, UxFlowNode, UxFlowNodeKind } from '@audion-v3/contracts'
-import { Button, Input, Textarea } from '@msqdx/ui'
+import { Button, FlowNodeCard, Input, Textarea } from '@msqdx/ui'
 import { UX_FLOW_GATE_OPTIONS, type UxFlowRfNodeData } from '../lib/ux-flow-canvas'
 
 type UxFlowNodeType = Node<UxFlowRfNodeData, 'uxFlow'>
@@ -66,8 +66,6 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
     kind === 'measure' ||
     kind === 'observe'
 
-  const runBClass =
-    runStateB !== 'idle' ? ` audion-flow-rf-node--run-b-${runStateB}` : ''
   const showOutput =
     Boolean(runOutput?.text || runOutput?.imageUrl || runOutput?.label) &&
     (runState === 'active' || runState === 'done' || runState === 'error')
@@ -77,33 +75,92 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
     (kind === 'action' || kind === 'observe' || kind === 'prompt' || kind === 'message')
 
   return (
-    <div
-      className={`audion-flow-rf-node audion-flow-rf-node--${kind} audion-flow-rf-node--run-${runState}${runBClass}${showOutput ? ' has-output' : ''}${selected ? ' is-selected' : ''}`}
+    <FlowNodeCard
+      kind={kind}
+      kindLabel={KIND_LABEL[kind]}
+      nodeId={id}
+      selected={selected}
+      runState={runState}
+      runStateB={runStateB}
+      hasOutput={showOutput}
+      targetHandle={
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="in"
+          className="msqdx-flow-rf-handle msqdx-flow-rf-handle--in"
+        />
+      }
+      sourceHandles={
+        kind === 'gate' ? (
+          <>
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="when"
+              className="msqdx-flow-rf-handle msqdx-flow-rf-handle--when"
+              style={{ top: '38%' }}
+              title="wenn"
+            />
+            <span className="msqdx-flow-rf-port-label msqdx-flow-rf-port-label--when">wenn</span>
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="otherwise"
+              className="msqdx-flow-rf-handle msqdx-flow-rf-handle--otherwise"
+              style={{ top: '72%' }}
+              title="sonst"
+            />
+            <span className="msqdx-flow-rf-port-label msqdx-flow-rf-port-label--otherwise">
+              sonst
+            </span>
+          </>
+        ) : (
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="then"
+            className="msqdx-flow-rf-handle msqdx-flow-rf-handle--out"
+          />
+        )
+      }
+      output={
+        showOutput ? (
+          <>
+            <p className="msqdx-flow-rf-output-label">
+              Output
+              {runOutput?.step != null ? ` · #${runOutput.step}` : ''}
+            </p>
+            {runOutput?.label ? (
+              <p className="msqdx-flow-rf-output-headline">{runOutput.label}</p>
+            ) : null}
+            {runOutput?.text ? (
+              <pre className="msqdx-flow-rf-output-text">{runOutput.text}</pre>
+            ) : null}
+            {runOutput?.text && onOutputToNote ? (
+              <Button type="button" size="sm" variant="ghost" onClick={() => onOutputToNote()}>
+                In Note übernehmen
+              </Button>
+            ) : null}
+            {runOutput?.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className="msqdx-flow-rf-output-img"
+                src={runOutput.imageUrl}
+                alt={runOutput.label ? `Screenshot: ${runOutput.label}` : 'Step screenshot'}
+              />
+            ) : null}
+          </>
+        ) : undefined
+      }
     >
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="in"
-        className="audion-flow-rf-handle audion-flow-rf-handle--in"
-      />
-
-      <header className="audion-flow-rf-node-head">
-        <span className="audion-flow-rf-node-kind">{KIND_LABEL[kind]}</span>
-        <span className="audion-flow-rf-node-run" data-run={runState}>
-          {runState === 'idle' ? '' : runState}
-        </span>
-        <span className="audion-flow-rf-node-id" title={id}>
-          {id}
-        </span>
-      </header>
-
-      <div className="audion-flow-rf-node-body nodrag nopan" onMouseDown={stopDrag}>
-        <label className="audion-flow-rf-field">
+      <div className="nodrag nopan" onMouseDown={stopDrag}>
+        <label className="msqdx-flow-rf-field">
           <span>Name</span>
           <Input
             block
             size="sm"
-            className="audion-flow-rf-ds-input"
+            className="msqdx-flow-rf-ds-input"
             value={flowNode.label}
             onChange={onLabel}
             placeholder="Node name"
@@ -111,12 +168,12 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
         </label>
 
         {kind === 'start' ? (
-          <label className="audion-flow-rf-field">
+          <label className="msqdx-flow-rf-field">
             <span>urlKey</span>
             <Input
               block
               size="sm"
-              className="audion-flow-rf-ds-input"
+              className="msqdx-flow-rf-ds-input"
               value={flowNode.urlKey ?? ''}
               onChange={onUrl}
               placeholder="url key or https://…"
@@ -126,10 +183,10 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
 
         {kind === 'gate' ? (
           <>
-            <label className="audion-flow-rf-field">
+            <label className="msqdx-flow-rf-field">
               <span>Condition</span>
               <select
-                className="audion-flow-rf-select"
+                className="msqdx-flow-rf-select"
                 value={flowNode.gateCondition ?? 'goal_reached'}
                 onChange={onGate}
               >
@@ -142,12 +199,12 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
             </label>
             {(flowNode.gateCondition === 'url_match' ||
               flowNode.gateCondition === 'title_match') && (
-              <label className="audion-flow-rf-field">
+              <label className="msqdx-flow-rf-field">
                 <span>pattern</span>
                 <Input
                   block
                   size="sm"
-                  className="audion-flow-rf-ds-input"
+                  className="msqdx-flow-rf-ds-input"
                   value={flowNode.pattern ?? ''}
                   onChange={onPattern}
                   placeholder="regex"
@@ -155,13 +212,13 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
               </label>
             )}
             {gateEvaluation ? (
-              <p className="audion-flow-rf-gate-evidence">
+              <p className="msqdx-flow-rf-gate-evidence">
                 Live: {gateEvaluation.matched ? 'match' : '—'}
                 {gateEvaluation.evidence ? ` · ${gateEvaluation.evidence}` : ''}
               </p>
             ) : null}
             {runBusy && onManualGate ? (
-              <div className="audion-flow-rf-gate-actions nodrag nopan" onMouseDown={stopDrag}>
+              <div className="msqdx-flow-rf-gate-actions nodrag nopan" onMouseDown={stopDrag}>
                 <Button type="button" size="sm" variant="subtle" onClick={() => onManualGate('when')}>
                   Wenn → Agent
                 </Button>
@@ -179,11 +236,11 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
         ) : null}
 
         {kind === 'observe' ? (
-          <label className="audion-flow-rf-field audion-flow-rf-field--inline">
+          <label className="msqdx-flow-rf-field msqdx-flow-rf-field--inline">
             <span>Sekunden</span>
             <Input
               size="sm"
-              className="audion-flow-rf-ds-input audion-flow-rf-input--narrow"
+              className="msqdx-flow-rf-ds-input msqdx-flow-rf-input--narrow"
               type="number"
               min={1}
               value={flowNode.observeSeconds ?? 30}
@@ -193,12 +250,12 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
         ) : null}
 
         {showText ? (
-          <label className="audion-flow-rf-field">
+          <label className="msqdx-flow-rf-field">
             <span>{kind === 'measure' ? 'Frage' : 'Text'}</span>
             <Textarea
               block
               size="sm"
-              className="audion-flow-rf-ds-input"
+              className="msqdx-flow-rf-ds-input"
               rows={kind === 'observe' ? 2 : 3}
               value={flowNode.text ?? ''}
               onChange={onText}
@@ -207,12 +264,12 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
           </label>
         ) : null}
 
-        <label className="audion-flow-rf-field">
+        <label className="msqdx-flow-rf-field">
           <span>Note</span>
           <Textarea
             block
             size="sm"
-            className="audion-flow-rf-ds-input audion-flow-rf-textarea--note"
+            className="msqdx-flow-rf-ds-input msqdx-flow-rf-textarea--note"
             rows={2}
             value={flowNode.note ?? ''}
             onChange={onNote}
@@ -222,7 +279,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
         </label>
 
         {showSegmentPlay ? (
-          <div className="audion-flow-rf-segment nodrag nopan" onMouseDown={stopDrag}>
+          <div className="msqdx-flow-rf-segment nodrag nopan" onMouseDown={stopDrag}>
             <Button
               type="button"
               size="sm"
@@ -234,73 +291,8 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
             </Button>
           </div>
         ) : null}
-
-        {showOutput ? (
-          <div className="audion-flow-rf-output">
-            <p className="audion-flow-rf-output-label">
-              Output
-              {runOutput?.step != null ? ` · #${runOutput.step}` : ''}
-            </p>
-            {runOutput?.label ? (
-              <p className="audion-flow-rf-output-headline">{runOutput.label}</p>
-            ) : null}
-            {runOutput?.text ? (
-              <pre className="audion-flow-rf-output-text">{runOutput.text}</pre>
-            ) : null}
-            {runOutput?.text && onOutputToNote ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => onOutputToNote()}
-              >
-                In Note übernehmen
-              </Button>
-            ) : null}
-            {runOutput?.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                className="audion-flow-rf-output-img"
-                src={runOutput.imageUrl}
-                alt={runOutput.label ? `Screenshot: ${runOutput.label}` : 'Step screenshot'}
-              />
-            ) : null}
-          </div>
-        ) : null}
       </div>
-
-      {kind === 'gate' ? (
-        <>
-          <Handle
-            type="source"
-            position={Position.Right}
-            id="when"
-            className="audion-flow-rf-handle audion-flow-rf-handle--when"
-            style={{ top: '38%' }}
-            title="wenn"
-          />
-          <span className="audion-flow-rf-port-label audion-flow-rf-port-label--when">wenn</span>
-          <Handle
-            type="source"
-            position={Position.Right}
-            id="otherwise"
-            className="audion-flow-rf-handle audion-flow-rf-handle--otherwise"
-            style={{ top: '72%' }}
-            title="sonst"
-          />
-          <span className="audion-flow-rf-port-label audion-flow-rf-port-label--otherwise">
-            sonst
-          </span>
-        </>
-      ) : (
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="then"
-          className="audion-flow-rf-handle audion-flow-rf-handle--out"
-        />
-      )}
-    </div>
+    </FlowNodeCard>
   )
 }
 

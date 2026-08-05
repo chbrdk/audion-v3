@@ -14,25 +14,25 @@ function VerdictRow({
 }) {
   if (value == null) {
     return (
-      <div className="audion-flow-verdict-row">
-        <span className="audion-flow-verdict-label">{label}</span>
-        <Chip size="sm" static className="audion-flow-verdict-chip--open">
+      <div className="msqdx-flow-verdict-row">
+        <span className="msqdx-flow-verdict-label">{label}</span>
+        <Chip size="sm" static className="msqdx-flow-verdict-chip--open">
           offen
         </Chip>
       </div>
     )
   }
   return (
-    <div className="audion-flow-verdict-row">
-      <span className="audion-flow-verdict-label">{label}</span>
+    <div className="msqdx-flow-verdict-row">
+      <span className="msqdx-flow-verdict-label">{label}</span>
       <Chip
         size="sm"
         static
-        className={value ? 'audion-flow-verdict-chip--ok' : 'audion-flow-verdict-chip--no'}
+        className={value ? 'msqdx-flow-verdict-chip--ok' : 'msqdx-flow-verdict-chip--no'}
       >
         {value ? 'ja' : 'nein'}
       </Chip>
-      {caveat ? <span className="audion-flow-verdict-caveat">{caveat}</span> : null}
+      {caveat ? <span className="msqdx-flow-verdict-caveat">{caveat}</span> : null}
     </div>
   )
 }
@@ -44,11 +44,11 @@ export function UxFlowVerdictCard({ verdict }: { verdict: FlowRunVerdict | null 
     verdict.status === 'running' ? null : verdict.validEvidence
 
   return (
-    <section className="audion-flow-verdict" aria-label="Flow Verdict">
-      <Text as="p" className="audion-flow-verdict-lede">
+    <section className="msqdx-flow-verdict" aria-label="Flow Verdict">
+      <Text as="p" className="msqdx-flow-verdict-lede">
         {verdict.summary}
       </Text>
-      <div className="audion-flow-verdict-grid">
+      <div className="msqdx-flow-verdict-grid">
         <VerdictRow
           label="Flow abgeschlossen"
           value={verdict.status === 'running' ? null : verdict.flowCompleted}
@@ -65,22 +65,22 @@ export function UxFlowVerdictCard({ verdict }: { verdict: FlowRunVerdict | null 
         />
       </div>
       {verdict.terminalLabel ? (
-        <p className="audion-flow-verdict-terminal">
+        <p className="msqdx-flow-verdict-terminal">
           Terminal: <strong>{verdict.terminalKind}</strong>
           {verdict.terminalLabel ? ` — ${verdict.terminalLabel}` : ''}
         </p>
       ) : null}
       {verdict.gatesOnPath.length ? (
-        <div className="audion-flow-verdict-gates">
-          <span className="audion-flow-verdict-gates-label">Gates auf Pfad</span>
-          <div className="audion-flow-verdict-gate-chips">
+        <div className="msqdx-flow-verdict-gates">
+          <span className="msqdx-flow-verdict-gates-label">Gates auf Pfad</span>
+          <div className="msqdx-flow-verdict-gate-chips">
             {verdict.gatesOnPath.map((g) => (
               <span key={g.gateNodeId} title={g.evidence ?? undefined}>
                 <Chip
                   size="sm"
                   static
                   className={
-                    g.matched ? 'audion-flow-verdict-chip--ok' : 'audion-flow-verdict-chip--gate'
+                    g.matched ? 'msqdx-flow-verdict-chip--ok' : 'msqdx-flow-verdict-chip--gate'
                   }
                 >
                   {g.condition}
@@ -93,7 +93,7 @@ export function UxFlowVerdictCard({ verdict }: { verdict: FlowRunVerdict | null 
         </div>
       ) : null}
       {verdict.blockers.length ? (
-        <p className="audion-flow-verdict-blockers">
+        <p className="msqdx-flow-verdict-blockers">
           Blocker: {verdict.blockers.join(', ')}
         </p>
       ) : null}

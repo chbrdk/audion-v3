@@ -256,8 +256,8 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
   }
 
   return (
-    <section className="audion-flow-protocol">
-      <div className="audion-flow-canvas-toolbar">
+    <section className="msqdx-flow-protocol">
+      <div className="msqdx-flow-canvas-toolbar">
         <Chip size="sm" static>
           {hybrid ? 'hybrid' : 'ohne Agent'}
         </Chip>
@@ -280,7 +280,7 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
       <Text role="headline" as="h2">
         {hybrid ? 'Hybrid-Protokoll' : 'Moderiertes Protokoll'}
       </Text>
-      <p className="audion-flow-canvas-hint">
+      <p className="msqdx-flow-canvas-hint">
         {hybrid
           ? 'Gates wählst du selbst; bei Aktion/Beobachten/Prompt kannst du ein Agent-Segment starten.'
           : 'Menschliche Moderation entlang des Flow-Graphen — kein Journey-Agent. Gates wählst du selbst (wenn / sonst).'}
@@ -295,7 +295,7 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
       ) : null}
 
       {finished ? (
-        <div className="audion-flow-protocol-done">
+        <div className="msqdx-flow-protocol-done">
           <Alert tone="ok">Protokoll durch.</Alert>
           <Field label="Zusammenfassung (kopieren)">
             <Textarea id="protocol-summary" block rows={10} value={summary} readOnly />
@@ -305,8 +305,8 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
           </Button>
         </div>
       ) : current ? (
-        <div className="audion-flow-protocol-card">
-          <p className="audion-flow-block-meta">
+        <div className="msqdx-flow-protocol-card">
+          <p className="msqdx-flow-block-meta">
             <Chip size="sm" static>
               {current.kind}
             </Chip>
@@ -324,7 +324,7 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
           <Text role="headline" as="h3">
             {current.label}
           </Text>
-          {current.text ? <p className="audion-flow-block-text">{current.text}</p> : null}
+          {current.text ? <p className="msqdx-flow-block-text">{current.text}</p> : null}
           {current.urlKey ? (
             <p className="audion-tg-card-meta">urlKey: {current.urlKey}</p>
           ) : null}
@@ -352,7 +352,7 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
             </Field>
           ) : null}
 
-          <div className="audion-flow-protocol-actions">
+          <div className="msqdx-flow-protocol-actions">
             <Button type="button" size="sm" variant="subtle" onClick={goBack} disabled={cursor < 1}>
               Zurück
             </Button>
@@ -409,7 +409,7 @@ export function UxFlowModeratedProtocol({ flow }: { flow: UxTestFlow }) {
       )}
 
       {records.length > 0 && !finished ? (
-        <ol className="audion-flow-protocol-log">
+        <ol className="msqdx-flow-protocol-log">
           {records.map((r) => {
             const node = (flow.nodes ?? []).find((n) => n.id === r.nodeId)
             return (

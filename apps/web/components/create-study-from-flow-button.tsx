@@ -62,27 +62,27 @@ export function CreateStudyFromFlowButton({
           type="button"
           size="sm"
           variant="subtle"
-          className="audion-flow-toolbar-btn"
+          className="msqdx-flow-toolbar-btn"
           aria-label="Study aus Flow erstellen"
           title="Study aus Flow erstellen"
           icon={<NavIconStudies />}
           onClick={() => void onCreate()}
           disabled={disabled || busy}
         />
-        {error ? <span className="audion-flow-toolbar-error" title={error}>!</span> : null}
+        {error ? <span className="msqdx-flow-toolbar-error" title={error}>!</span> : null}
       </>
     )
   }
 
   return (
-    <div className="audion-flow-create">
+    <div className="msqdx-flow-create">
       <Button size="md" onClick={() => void onCreate()} disabled={disabled || busy}>
         {busy ? 'Creating…' : 'Create study from flow'}
       </Button>
       {disabled ? (
-        <p className="audion-flow-create-hint">Catalog only — full graph / compile comes later.</p>
+        <p className="msqdx-flow-create-hint">Catalog only — full graph / compile comes later.</p>
       ) : null}
-      {error ? <p className="audion-flow-create-error">{error}</p> : null}
+      {error ? <p className="msqdx-flow-create-error">{error}</p> : null}
     </div>
   )
 }

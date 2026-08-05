@@ -44,7 +44,7 @@ export default async function StudiesFlowDetailPage({
         />
       }
     >
-      <p className="audion-flow-lede">
+      <p className="msqdx-flow-lede">
         <Link href={paths.routes.studiesFlows}>← Flows</Link>
         {' · '}
         <Chip size="sm" static>

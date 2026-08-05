@@ -24,7 +24,16 @@ import type {
   UxStudyFromFlowResult,
   UxTestFlow,
 } from '@audion-v3/contracts'
-import { Alert, Button, Chip, Text } from '@msqdx/ui'
+import {
+  Alert,
+  Button,
+  Chip,
+  FlowBoardPalette,
+  FlowBoardStage,
+  FlowBoardToolbar,
+  FlowRunStrip,
+  Text,
+} from '@msqdx/ui'
 import {
   UX_FLOW_NODE_KINDS,
   edgeKindLabel,
@@ -51,11 +60,8 @@ import { paths } from '../lib/paths'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
 import {
   IconDelete,
-  IconGrip,
   IconList,
-  IconClose,
   IconPlay,
-  IconPlus,
   IconReset,
   IconSave,
   IconStop,
@@ -728,119 +734,120 @@ function FlowCanvasInner({
 
   const hasGraph = Boolean(initialFlow.nodes?.length)
 
-  return (
-    <div className="audion-flow-canvas-shell audion-flow-canvas-shell--immersive">
-      {!hasGraph ? (
-        <div className="audion-flow-board-stage">
+  const listButton = onSwitchToList ? (
+    <Button
+      type="button"
+      size="sm"
+      variant="subtle"
+      className="msqdx-flow-toolbar-btn"
+      aria-label="Liste"
+      title="Liste"
+      icon={<IconList />}
+      onClick={onSwitchToList}
+    />
+  ) : null
+
+  if (!hasGraph) {
+    return (
+      <FlowBoardStage
+        active={false}
+        overlays={
           <UxFlowFloatingPanel
             storageKey={paths.flowBoardToolbarDockKey}
             defaultEdge="top"
             defaultOffset={0.1}
             variant="toolbar"
-            className="audion-flow-float-panel--toolbar"
+            className="msqdx-flow-float-panel--toolbar"
             ariaLabel="Flow Board"
           >
-            <div className="audion-flow-canvas-toolbar audion-flow-canvas-toolbar--compact">
-              <span className="audion-flow-toolbar-grip" title="Verschieben">
-                <IconGrip />
-              </span>
-              {onSwitchToList ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="subtle"
-                  className="audion-flow-toolbar-btn"
-                  aria-label="Liste"
-                  title="Liste"
-                  icon={<IconList />}
-                  onClick={onSwitchToList}
-                />
-              ) : null}
-            </div>
+            <FlowBoardToolbar leading={listButton} className="msqdx-flow-canvas-toolbar--compact" />
           </UxFlowFloatingPanel>
-          <Alert tone="info" className="audion-flow-board-empty">
-            Noch kein vollständiger Graph — nur Katalog-Metadaten. Bausteine:{' '}
-            {initialFlow.nodeKindsUsed.join(', ')}.
-          </Alert>
-        </div>
-      ) : (
-        <div className="audion-flow-board-stage">
-          <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--fullscreen">
-            <ReactFlow
-              nodes={nodesForFlow}
-              edges={edgesForFlow}
-              onNodesChange={(c) => {
-                if (
-                  c.some(
-                    (ch) =>
-                      ch.type === 'remove' ||
-                      ch.type === 'add' ||
-                      (ch.type === 'position' && 'dragging' in ch && ch.dragging === false),
-                  )
-                ) {
-                  pushHistory()
-                  setDirty(true)
-                  setSaveMsg(null)
-                }
-                onNodesChange(c)
-              }}
-              onEdgesChange={(c) => {
-                if (c.some((ch) => ch.type === 'remove' || ch.type === 'add')) {
-                  pushHistory()
-                  setDirty(true)
-                  setSaveMsg(null)
-                }
-                onEdgesChange(c)
-              }}
-              onConnect={onConnect}
-              onSelectionChange={onSelectionChange}
-              nodeTypes={nodeTypes}
-              fitView
-              deleteKeyCode={null}
-              nodesDraggable={!runBusy}
-              connectionLineStyle={{ strokeWidth: 2 }}
-              defaultEdgeOptions={{
-                type: 'smoothstep',
-                animated: false,
-                style: { strokeWidth: 2 },
-              }}
-            >
-              <Background gap={18} size={1} color="var(--line)" bgColor="transparent" />
-              <Controls />
-              <MiniMap pannable zoomable />
-            </ReactFlow>
-          </div>
+        }
+      >
+        <Alert tone="info" className="msqdx-flow-board-empty">
+          Noch kein vollständiger Graph — nur Katalog-Metadaten. Bausteine:{' '}
+          {initialFlow.nodeKindsUsed.join(', ')}.
+        </Alert>
+      </FlowBoardStage>
+    )
+  }
 
+  return (
+    <FlowBoardStage
+      alert={runError || undefined}
+      viewport={
+        <ReactFlow
+          nodes={nodesForFlow}
+          edges={edgesForFlow}
+          onNodesChange={(c) => {
+            if (
+              c.some(
+                (ch) =>
+                  ch.type === 'remove' ||
+                  ch.type === 'add' ||
+                  (ch.type === 'position' && 'dragging' in ch && ch.dragging === false),
+              )
+            ) {
+              pushHistory()
+              setDirty(true)
+              setSaveMsg(null)
+            }
+            onNodesChange(c)
+          }}
+          onEdgesChange={(c) => {
+            if (c.some((ch) => ch.type === 'remove' || ch.type === 'add')) {
+              pushHistory()
+              setDirty(true)
+              setSaveMsg(null)
+            }
+            onEdgesChange(c)
+          }}
+          onConnect={onConnect}
+          onSelectionChange={onSelectionChange}
+          nodeTypes={nodeTypes}
+          fitView
+          deleteKeyCode={null}
+          nodesDraggable={!runBusy}
+          connectionLineStyle={{ strokeWidth: 2 }}
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: false,
+            style: { strokeWidth: 2 },
+          }}
+        >
+          <Background gap={18} size={1} color="var(--line)" bgColor="transparent" />
+          <Controls />
+          <MiniMap pannable zoomable />
+        </ReactFlow>
+      }
+      overlays={
+        <>
           <UxFlowFloatingPanel
             storageKey={paths.flowBoardToolbarDockKey}
             defaultEdge="top"
             defaultOffset={0.06}
             variant="toolbar"
-            className="audion-flow-float-panel--toolbar"
+            className="msqdx-flow-float-panel--toolbar"
             ariaLabel="Flow Board Aktionen"
           >
-            <div className="audion-flow-canvas-toolbar audion-flow-canvas-toolbar--compact">
-              <span className="audion-flow-toolbar-grip" title="Verschieben">
-                <IconGrip />
-              </span>
-              {onSwitchToList ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="subtle"
-                  className="audion-flow-toolbar-btn"
-                  aria-label="Liste"
-                  title="Liste"
-                  icon={<IconList />}
-                  onClick={onSwitchToList}
-                />
-              ) : null}
-              <span className="audion-flow-toolbar-sep" aria-hidden />
+            <FlowBoardToolbar
+              leading={listButton}
+              dirty={dirty}
+              dirtyLabel="edit"
+              trailing={
+                !dirty && savedId ? (
+                  <Chip size="sm" static className="msqdx-flow-toolbar-chip">
+                    ok
+                  </Chip>
+                ) : null
+              }
+              className="msqdx-flow-canvas-toolbar--compact"
+            >
               <Button
                 type="button"
                 size="sm"
                 variant="primary"
-                className="audion-flow-toolbar-btn"
+                className="msqdx-flow-toolbar-btn"
                 aria-label={runBusy ? 'Running' : 'Testen'}
                 title={runBusy ? 'Running…' : 'Testen'}
                 icon={<IconPlay />}
@@ -851,7 +858,7 @@ function FlowCanvasInner({
                 type="button"
                 size="sm"
                 variant="subtle"
-                className="audion-flow-toolbar-btn"
+                className="msqdx-flow-toolbar-btn"
                 aria-label="Stop"
                 title="Stop"
                 icon={<IconStop />}
@@ -869,7 +876,7 @@ function FlowCanvasInner({
                 type="button"
                 size="sm"
                 variant="subtle"
-                className="audion-flow-toolbar-btn"
+                className="msqdx-flow-toolbar-btn"
                 aria-label={saveBusy ? 'Saving' : 'Save'}
                 title={saveMsg ?? (saveBusy ? 'Saving…' : 'Save')}
                 icon={<IconSave />}
@@ -880,27 +887,18 @@ function FlowCanvasInner({
                 type="button"
                 size="sm"
                 variant="subtle"
-                className="audion-flow-toolbar-btn"
+                className="msqdx-flow-toolbar-btn"
                 aria-label="Undo"
                 title="Undo"
                 icon={<IconUndo />}
                 onClick={onUndo}
                 disabled={historyLen < 1}
               />
-              {dirty ? (
-                <Chip size="sm" static className="audion-flow-toolbar-chip">
-                  edit
-                </Chip>
-              ) : savedId ? (
-                <Chip size="sm" static className="audion-flow-toolbar-chip">
-                  ok
-                </Chip>
-              ) : null}
               <Button
                 type="button"
                 size="sm"
                 variant="subtle"
-                className="audion-flow-toolbar-btn"
+                className="msqdx-flow-toolbar-btn"
                 aria-label="Reset to template"
                 title="Reset to template"
                 icon={<IconReset />}
@@ -911,71 +909,48 @@ function FlowCanvasInner({
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="audion-flow-toolbar-btn"
+                className="msqdx-flow-toolbar-btn"
                 aria-label="Delete node"
                 title="Delete node"
                 icon={<IconDelete />}
                 onClick={deleteSelected}
                 disabled={!selectedId || runBusy}
               />
-            </div>
+            </FlowBoardToolbar>
           </UxFlowFloatingPanel>
 
           <UxFlowFloatingPanel
             storageKey={paths.flowBoardPaletteDockKey}
             defaultEdge="left"
             defaultOffset={0.38}
-            title={paletteOpen ? 'Bausteine' : undefined}
             variant={paletteOpen ? 'panel' : 'toolbar'}
             className={
               paletteOpen
-                ? 'audion-flow-float-panel--palette audion-flow-float-panel--palette-open'
-                : 'audion-flow-float-panel--palette audion-flow-float-panel--palette-collapsed'
+                ? 'msqdx-flow-float-panel--palette msqdx-flow-float-panel--palette-open'
+                : 'msqdx-flow-float-panel--palette msqdx-flow-float-panel--palette-collapsed'
             }
             ariaLabel="Flow Bausteine"
           >
-            {paletteOpen ? (
-              <div className="audion-flow-palette">
-                <div className="audion-flow-palette-head">
+            <FlowBoardPalette
+              open={paletteOpen}
+              onOpenChange={setPaletteOpen}
+              fabLabel="Bausteine"
+            >
+              <div className="msqdx-flow-palette-row">
+                {UX_FLOW_NODE_KINDS.map((kind) => (
                   <Button
+                    key={kind}
                     type="button"
                     size="sm"
-                    variant="ghost"
-                    className="audion-flow-toolbar-btn"
-                    aria-label="Bausteine schließen"
-                    title="Schließen"
-                    icon={<IconClose />}
-                    onClick={() => setPaletteOpen(false)}
-                  />
-                </div>
-                <div className="audion-flow-palette-row">
-                  {UX_FLOW_NODE_KINDS.map((kind) => (
-                    <Button
-                      key={kind}
-                      type="button"
-                      size="sm"
-                      variant="subtle"
-                      onClick={() => addNode(kind)}
-                      disabled={runBusy}
-                    >
-                      {kind}
-                    </Button>
-                  ))}
-                </div>
+                    variant="subtle"
+                    onClick={() => addNode(kind)}
+                    disabled={runBusy}
+                  >
+                    {kind}
+                  </Button>
+                ))}
               </div>
-            ) : (
-              <Button
-                type="button"
-                size="md"
-                variant="subtle"
-                className="audion-flow-palette-fab"
-                aria-label="Bausteine hinzufügen"
-                title="Bausteine"
-                icon={<IconPlus size={22} />}
-                disabled={runBusy}
-                onClick={() => setPaletteOpen(true)}
-              />
-            )}
+            </FlowBoardPalette>
           </UxFlowFloatingPanel>
 
           {runMeta ? (
@@ -985,32 +960,40 @@ function FlowCanvasInner({
               defaultOffset={0.5}
               title="Live Run"
               variant="strip"
-              className="audion-flow-float-panel--run"
+              className="msqdx-flow-float-panel--run"
               ariaLabel="Live Run Status"
             >
-              <div className="audion-flow-run-strip">
-                <Chip size="sm" static>
-                  {runMeta.status}
-                </Chip>
-                <span>
-                  A steps {runMeta.stepCount} · job {runMeta.jobId.slice(0, 10)}…
-                  {runMeta.jobIdB
-                    ? ` · B steps ${runMeta.stepCountB ?? 0} · job ${runMeta.jobIdB.slice(0, 10)}…`
-                    : ''}
-                </span>
-                <Link href={paths.routes.studyWaveDetail(runMeta.studyId, runMeta.waveId)}>
-                  Open wave
-                </Link>
-                {runBusy && runMeta.jobId ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    className="audion-flow-live-thumb"
-                    src={`${paths.routes.apiUxJourneyAgentLive(runMeta.jobId)}?t=${runMeta.stepCount}`}
-                    alt="Live viewport"
-                  />
-                ) : null}
-              </div>
-              <UxFlowVerdictCard verdict={flowVerdict} />
+              <FlowRunStrip
+                status={
+                  <Chip size="sm" static>
+                    {runMeta.status}
+                  </Chip>
+                }
+                meta={
+                  <span>
+                    A steps {runMeta.stepCount} · job {runMeta.jobId.slice(0, 10)}…
+                    {runMeta.jobIdB
+                      ? ` · B steps ${runMeta.stepCountB ?? 0} · job ${runMeta.jobIdB.slice(0, 10)}…`
+                      : ''}
+                  </span>
+                }
+                links={
+                  <>
+                    <Link href={paths.routes.studyWaveDetail(runMeta.studyId, runMeta.waveId)}>
+                      Open wave
+                    </Link>
+                    {runBusy && runMeta.jobId ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        className="msqdx-flow-live-thumb"
+                        src={`${paths.routes.apiUxJourneyAgentLive(runMeta.jobId)}?t=${runMeta.stepCount}`}
+                        alt="Live viewport"
+                      />
+                    ) : null}
+                  </>
+                }
+                verdict={<UxFlowVerdictCard verdict={flowVerdict} />}
+              />
             </UxFlowFloatingPanel>
           ) : null}
 
@@ -1020,10 +1003,11 @@ function FlowCanvasInner({
               defaultEdge="right"
               defaultOffset={0.22}
               title="Inspector"
-              className="audion-flow-float-panel--inspector"
+              className="msqdx-flow-float-panel--inspector"
               ariaLabel="Node Inspector"
             >
               <UxFlowNodeInspector
+                key={selectedId!}
                 node={selectedFlowNode}
                 runState={runStates[selectedId!] ?? 'idle'}
                 inspector={inspectorByNode[selectedId!] ?? null}
@@ -1033,11 +1017,9 @@ function FlowCanvasInner({
               />
             </UxFlowFloatingPanel>
           ) : null}
-
-          {runError ? <p className="audion-flow-board-alert">{runError}</p> : null}
-        </div>
-      )}
-    </div>
+        </>
+      }
+    />
   )
 }
 
@@ -1059,21 +1041,16 @@ export function UxFlowDetailClient({
   const blocks = useMemo(() => flattenFlowBlocks(flow), [flow])
   const boardActive = view === 'board' && hasGraph
 
-  useEffect(() => {
-    document.body.classList.toggle('audion-flow-board-active', boardActive)
-    return () => document.body.classList.remove('audion-flow-board-active')
-  }, [boardActive])
-
   return (
     <div
       className={
         boardActive
-          ? 'audion-flow-detail-client audion-flow-detail-client--immersive'
-          : 'audion-flow-detail-client'
+          ? 'msqdx-flow-detail-client msqdx-flow-detail-client--immersive'
+          : 'msqdx-flow-detail-client'
       }
     >
       {!boardActive ? (
-        <div className="audion-flow-view-toggle" role="group" aria-label="Ansicht">
+        <div className="msqdx-flow-view-toggle" role="group" aria-label="Ansicht">
           <Button
             type="button"
             size="sm"
@@ -1099,8 +1076,8 @@ export function UxFlowDetailClient({
           <FlowCanvasInner initialFlow={flow} onSwitchToList={() => setView('list')} />
         </ReactFlowProvider>
       ) : (
-        <section className="audion-flow-blocks">
-          <div className="audion-flow-canvas-toolbar">
+        <section className="msqdx-flow-blocks">
+          <div className="msqdx-flow-canvas-toolbar">
             <CreateStudyFromFlowButton
               flowId={flow.id}
               flowName={flow.name}
@@ -1116,15 +1093,15 @@ export function UxFlowDetailClient({
               {flow.nodeKindsUsed.join(', ')}.
             </Alert>
           ) : (
-            <ol className="audion-flow-block-list">
+            <ol className="msqdx-flow-block-list">
               {blocks.map(({ node, branch, depth }) => (
                 <li
                   key={`${node.id}-${branch}-${depth}`}
-                  className="audion-flow-block"
+                  className="msqdx-flow-block"
                   style={{ marginLeft: `${depth * 1.25}rem` }}
                 >
-                  <div className="audion-flow-block-panel audion-flow-block-panel--list">
-                    <p className="audion-flow-block-meta">
+                  <div className="msqdx-flow-block-panel msqdx-flow-block-panel--list">
+                    <p className="msqdx-flow-block-meta">
                       <Chip size="sm" static>
                         {node.kind}
                       </Chip>
@@ -1142,7 +1119,7 @@ export function UxFlowDetailClient({
                     <Text role="headline" as="h3">
                       {node.label}
                     </Text>
-                    {node.text ? <p className="audion-flow-block-text">{node.text}</p> : null}
+                    {node.text ? <p className="msqdx-flow-block-text">{node.text}</p> : null}
                     {node.urlKey ? (
                       <p className="audion-tg-card-meta">urlKey: {node.urlKey}</p>
                     ) : null}

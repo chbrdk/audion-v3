@@ -36,7 +36,7 @@ export function UxFlowFloatingPanel({
       ariaLabel={ariaLabel}
       variant={variant}
       surface="solid"
-      className={['audion-flow-float-panel', className].filter(Boolean).join(' ')}
+      className={['msqdx-flow-float-panel', className].filter(Boolean).join(' ')}
     >
       {children}
     </FloatingPanel>

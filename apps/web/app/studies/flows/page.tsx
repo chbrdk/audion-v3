@@ -14,12 +14,12 @@ export default function StudiesFlowsPage() {
         <TopStatus level="ok" primary={`${items.length} templates`} secondary="product layer" />
       }
     >
-      <p className="audion-flow-lede">
+      <p className="msqdx-flow-lede">
         <Link href={paths.routes.studies}>← Studies</Link>
         {' · '}
         Flows sind die produktseitige Schicht; Scenario-Packs bleiben für Labs.
       </p>
-      <ul className="audion-tg-grid audion-flow-grid">
+      <ul className="audion-tg-grid msqdx-flow-grid">
         {items.map((item) => (
           <li key={item.id}>
             <Link href={paths.routes.studiesFlowDetail(item.id)} className="audion-tg-card">
@@ -32,7 +32,7 @@ export default function StudiesFlowsPage() {
                   {item.name}
                 </Text>
                 <p className="audion-tg-card-meta">{item.description}</p>
-                <p className="audion-flow-chips">
+                <p className="msqdx-flow-chips">
                   <Chip size="sm" static>
                     {item.primaryArchetype}
                   </Chip>

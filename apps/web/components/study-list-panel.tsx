@@ -14,7 +14,7 @@ export function StudyListPanel({
 }) {
   return (
     <section className="audion-index audion-tg-index">
-      <div className="audion-flow-studies-actions">
+      <div className="msqdx-flow-studies-actions">
         <Link href={paths.routes.studiesFlows}>
           <Button type="button" size="sm" variant="subtle">
             UX Test Flows
