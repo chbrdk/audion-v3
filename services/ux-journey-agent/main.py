@@ -6927,6 +6927,60 @@ async def cancel_run(job_id: str, reason: str | None = None) -> dict[str, Any]:
     }
 
 
+class ManualGateBranchRequest(BaseModel):
+    gateNodeId: str
+    edgeKind: str = "when"
+
+
+@app.post("/run/{job_id}/gate-branch")
+async def manual_gate_branch(job_id: str, body: ManualGateBranchRequest) -> dict[str, Any]:
+    """Manual gate branch from interactive flowboard — triggers real agent replan."""
+    async with _jobs_lock:
+        job = _jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status != "running":
+        raise HTTPException(status_code=409, detail=f"Job not running ({job.status})")
+    edge = (body.edgeKind or "when").strip().lower()
+    if edge not in ("when", "otherwise"):
+        raise HTTPException(status_code=400, detail="edgeKind must be when or otherwise")
+    gate_id = body.gateNodeId.strip()
+    if not gate_id:
+        raise HTTPException(status_code=400, detail="gateNodeId required")
+    decision = _apply_gate_branch_replan(
+        job_id,
+        gate_id,
+        edge,
+        evidence="manual_board",
+        allow_repeat=True,
+    )
+    if not decision:
+        raise HTTPException(
+            status_code=400,
+            detail="Gate branch could not be applied (no agent or invalid gate)",
+        )
+    flow_cursor: dict[str, Any] = {
+        "activeNodeId": gate_id,
+        "activeEdgeKind": edge,
+        "replan": decision,
+        "replanHistory": list(job.replan_history),
+        "gateEvaluations": [
+            {
+                "condition": decision.get("condition"),
+                "matched": edge == "when",
+                "evidence": "manual_board",
+                "gateNodeId": gate_id,
+            }
+        ],
+    }
+    return {
+        "jobId": job_id,
+        "status": job.status,
+        "flowCursor": flow_cursor,
+        "replan": decision,
+    }
+
+
 async def _safe_await(task: Any) -> None:
     """Await a task, swallowing CancelledError so callers can use `wait_for`
     without having to special-case the cancel they just signalled."""
@@ -7271,6 +7325,78 @@ def _decide_mid_run_replan(
     return None
 
 
+    return decision
+
+
+def _apply_gate_branch_replan(
+    job_id: str,
+    gate_node_id: str,
+    edge_kind: str,
+    *,
+    evidence: str = "mid_run_replan",
+    allow_repeat: bool = False,
+) -> dict[str, Any] | None:
+    """Apply a when/otherwise branch via add_new_task (live gate or manual board override)."""
+    job = _jobs.get(job_id)
+    if not job or not isinstance(job.flow_graph, dict):
+        return None
+    if job.status != "running":
+        return None
+    if edge_kind not in ("when", "otherwise"):
+        return None
+    if gate_node_id in job.replanned_gate_ids and not allow_repeat:
+        return None
+    flow_graph = job.flow_graph
+    nodes_raw = flow_graph.get("nodes")
+    edges_raw = flow_graph.get("edges")
+    if not isinstance(nodes_raw, list) or not isinstance(edges_raw, list):
+        return None
+    nodes = [n for n in nodes_raw if isinstance(n, dict)]
+    edges = [e for e in edges_raw if isinstance(e, dict)]
+    by_id = {n["id"]: n for n in nodes if isinstance(n, dict) and n.get("id")}
+    gate = by_id.get(gate_node_id)
+    if not isinstance(gate, dict) or gate.get("kind") != "gate":
+        return None
+    condition = gate.get("gateCondition") or "goal_reached"
+    if not isinstance(condition, str):
+        condition = "goal_reached"
+    segment = _flow_next_segment(nodes, edges, gate_node_id, edge_kind)
+    remaining = _compile_branch_remaining_task(
+        segment, condition=condition, edge_kind=edge_kind
+    )
+    if evidence == "manual_board":
+        remaining = (
+            "MANUAL GATE (Moderator): Der Mensch hat den Zweig gewählt. "
+            f"Folge nur noch diesem Segment ({edge_kind}): " + remaining
+        )
+    agent = _live_agents.get(job_id)
+    if agent is None or not hasattr(agent, "add_new_task"):
+        return None
+    try:
+        agent.add_new_task(remaining.strip())
+        print(
+            f"ux-journey: job={job_id} gate-branch gate={gate_node_id} "
+            f"edge={edge_kind} evidence={evidence}",
+            flush=True,
+        )
+    except Exception as exc:
+        print(f"ux-journey: job={job_id} gate-branch failed: {exc!r}", flush=True)
+        return None
+    job.replanned_gate_ids.add(gate_node_id)
+    job.gate_branch_choices[gate_node_id] = edge_kind
+    decision = {
+        "gateNodeId": gate_node_id,
+        "edgeKind": edge_kind,
+        "condition": condition,
+        "remainingTask": remaining.strip(),
+        "at": datetime.now(timezone.utc).isoformat(),
+    }
+    job.last_replan = decision
+    job.replan_history.append(decision)
+    job.task = remaining.strip()
+    return decision
+
+
 def _maybe_live_gate_replan(job_id: str, signals: dict[str, Any]) -> dict[str, Any] | None:
     """If a Live-Gate matches and we have a live agent + flow_graph, replan once per gate.
 
@@ -7286,28 +7412,16 @@ def _maybe_live_gate_replan(job_id: str, signals: dict[str, Any]) -> dict[str, A
     if not decision:
         return None
     gate_id = decision.get("gateNodeId")
-    remaining = decision.get("remainingTask")
-    if not isinstance(gate_id, str) or not isinstance(remaining, str) or not remaining.strip():
+    edge_kind = decision.get("edgeKind") or "when"
+    if not isinstance(gate_id, str):
         return None
-    agent = _live_agents.get(job_id)
-    if agent is None or not hasattr(agent, "add_new_task"):
-        return None
-    try:
-        agent.add_new_task(remaining.strip())
-        print(
-            f"ux-journey: job={job_id} live-gate replan gate={gate_id} "
-            f"condition={decision.get('condition')}",
-            flush=True,
-        )
-    except Exception as exc:
-        print(f"ux-journey: job={job_id} live-gate replan failed: {exc!r}", flush=True)
-        return None
-    job.replanned_gate_ids.add(gate_id)
-    job.gate_branch_choices[gate_id] = "when"
-    job.last_replan = decision
-    job.replan_history.append(decision)
-    job.task = remaining.strip()
-    return decision
+    return _apply_gate_branch_replan(
+        job_id,
+        gate_id,
+        edge_kind if edge_kind in ("when", "otherwise") else "when",
+        evidence="mid_run_replan",
+        allow_repeat=False,
+    )
 
 
 def _compute_gate_signals(result: dict[str, Any] | None) -> dict[str, Any]:

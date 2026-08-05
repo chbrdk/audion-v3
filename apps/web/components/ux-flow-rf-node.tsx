@@ -29,6 +29,11 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
   const runState = data.runState ?? 'idle'
   const runStateB = data.runStateB ?? 'idle'
   const runOutput = data.runOutput
+  const gateEvaluation = data.gateEvaluation
+  const runBusy = data.runBusy ?? false
+  const onManualGate = data.onManualGate
+  const onPlaySegment = data.onPlaySegment
+  const onOutputToNote = data.onOutputToNote
   const kind = flowNode.kind
 
   const patch = useCallback(
@@ -40,6 +45,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
 
   const onLabel = (e: ChangeEvent<HTMLInputElement>) => patch({ label: e.target.value })
   const onText = (e: ChangeEvent<HTMLTextAreaElement>) => patch({ text: e.target.value })
+  const onNote = (e: ChangeEvent<HTMLTextAreaElement>) => patch({ note: e.target.value })
   const onUrl = (e: ChangeEvent<HTMLInputElement>) => patch({ urlKey: e.target.value })
   const onPattern = (e: ChangeEvent<HTMLInputElement>) => patch({ pattern: e.target.value })
   const onSeconds = (e: ChangeEvent<HTMLInputElement>) => {
@@ -63,6 +69,10 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
   const showOutput =
     Boolean(runOutput?.text || runOutput?.imageUrl || runOutput?.label) &&
     (runState === 'active' || runState === 'done' || runState === 'error')
+
+  const showSegmentPlay =
+    onPlaySegment &&
+    (kind === 'action' || kind === 'observe' || kind === 'prompt' || kind === 'message')
 
   return (
     <div
@@ -136,6 +146,30 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
                 />
               </label>
             )}
+            {gateEvaluation ? (
+              <p className="audion-flow-rf-gate-evidence">
+                Live: {gateEvaluation.matched ? 'match' : '—'}
+                {gateEvaluation.evidence ? ` · ${gateEvaluation.evidence}` : ''}
+              </p>
+            ) : null}
+            {runBusy && onManualGate ? (
+              <div className="audion-flow-rf-gate-actions nodrag nopan" onMouseDown={stopDrag}>
+                <button
+                  type="button"
+                  className="audion-flow-rf-btn"
+                  onClick={() => onManualGate('when')}
+                >
+                  Wenn → Agent
+                </button>
+                <button
+                  type="button"
+                  className="audion-flow-rf-btn audion-flow-rf-btn--muted"
+                  onClick={() => onManualGate('otherwise')}
+                >
+                  Sonst → Agent
+                </button>
+              </div>
+            ) : null}
           </>
         ) : null}
 
@@ -165,6 +199,30 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
           </label>
         ) : null}
 
+        <label className="audion-flow-rf-field">
+          <span>Note</span>
+          <textarea
+            className="audion-flow-rf-input audion-flow-rf-textarea audion-flow-rf-textarea--note"
+            rows={2}
+            value={flowNode.note ?? ''}
+            onChange={onNote}
+            placeholder="Annotation / Beobachtung…"
+          />
+        </label>
+
+        {showSegmentPlay ? (
+          <div className="audion-flow-rf-segment nodrag nopan" onMouseDown={stopDrag}>
+            <button
+              type="button"
+              className="audion-flow-rf-btn"
+              disabled={runBusy}
+              onClick={() => onPlaySegment?.()}
+            >
+              Agent-Segment
+            </button>
+          </div>
+        ) : null}
+
         {showOutput ? (
           <div className="audion-flow-rf-output">
             <p className="audion-flow-rf-output-label">
@@ -176,6 +234,15 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
             ) : null}
             {runOutput?.text ? (
               <pre className="audion-flow-rf-output-text">{runOutput.text}</pre>
+            ) : null}
+            {runOutput?.text && onOutputToNote ? (
+              <button
+                type="button"
+                className="audion-flow-rf-btn audion-flow-rf-btn--inline"
+                onClick={() => onOutputToNote()}
+              >
+                In Note übernehmen
+              </button>
             ) : null}
             {runOutput?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

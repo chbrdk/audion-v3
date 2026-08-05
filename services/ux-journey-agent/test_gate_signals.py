@@ -220,3 +220,46 @@ def test_decide_mid_run_replan_no_match():
         ],
     }
     assert agent_main._decide_mid_run_replan(flow_graph, {"goalReached": False}, set()) is None
+
+
+def test_apply_gate_branch_replan_manual_otherwise():
+    job_id = "job-manual-board"
+    flow_graph = {
+        "id": "f",
+        "nodes": [
+            {"id": "n-start", "kind": "start", "label": "S", "urlKey": "https://example.com/"},
+            {"id": "n-g", "kind": "gate", "label": "G", "gateCondition": "goal_reached"},
+            {"id": "n-ok", "kind": "success", "label": "OK", "text": "done when"},
+            {"id": "n-cont", "kind": "action", "label": "C", "text": "continue otherwise"},
+        ],
+        "edges": [
+            {"id": "e1", "from": "n-start", "to": "n-g", "kind": "then"},
+            {"id": "e2", "from": "n-g", "to": "n-ok", "kind": "when"},
+            {"id": "e3", "from": "n-g", "to": "n-cont", "kind": "otherwise"},
+        ],
+    }
+    agent_main._jobs[job_id] = agent_main.JobState(
+        job_id=job_id,
+        status="running",
+        url="https://example.com/",
+        task="initial",
+        flow_graph=flow_graph,
+    )
+
+    class FakeAgent:
+        def add_new_task(self, task: str) -> None:
+            self.last_task = task
+
+    agent_main._live_agents[job_id] = FakeAgent()
+    out = agent_main._apply_gate_branch_replan(
+        job_id,
+        "n-g",
+        "otherwise",
+        evidence="manual_board",
+        allow_repeat=True,
+    )
+    assert out is not None
+    assert out["edgeKind"] == "otherwise"
+    assert "continue otherwise" in out["remainingTask"]
+    agent_main._jobs.pop(job_id, None)
+    agent_main._live_agents.pop(job_id, None)

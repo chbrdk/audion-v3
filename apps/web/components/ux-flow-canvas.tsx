@@ -41,11 +41,10 @@ import {
   type FlowNodeRunOutput,
   type FlowNodeRunState,
 } from '../lib/ux-flow-run-progress'
-import { flattenFlowBlocks } from '../lib/ux-test-flow-graph'
+import { flattenFlowBlocks, gateChoicesFromReplans, activePathEdgeIds } from '../lib/ux-test-flow-graph'
 import { paths } from '../lib/paths'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
 import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
-import { UxFlowModeratedProtocol } from './ux-flow-moderated-protocol'
 
 const nodeTypes = { uxFlow: UxFlowRfNodeView }
 const POLL_MS = 1800
@@ -98,6 +97,8 @@ function FlowCanvasInner({
   const [runStates, setRunStates] = useState<Record<string, FlowNodeRunState>>({})
   const [runStatesB, setRunStatesB] = useState<Record<string, FlowNodeRunState>>({})
   const [runOutputs, setRunOutputs] = useState<Record<string, FlowNodeRunOutput>>({})
+  const [flowCursor, setFlowCursor] = useState<UxFlowCursor | null>(null)
+  const [segmentBusy, setSegmentBusy] = useState(false)
   const [runBusy, setRunBusy] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [runMeta, setRunMeta] = useState<{
@@ -201,21 +202,6 @@ function FlowCanvasInner({
     [setNodes, pushHistory],
   )
 
-  const nodesForFlow = useMemo(
-    () =>
-      nodes.map((n) => ({
-        ...n,
-        data: {
-          ...n.data,
-          onUpdate: onUpdateNode,
-          runState: runStates[n.id] ?? 'idle',
-          runStateB: runStatesB[n.id] ?? 'idle',
-          runOutput: runOutputs[n.id] ?? null,
-        },
-      })),
-    [nodes, onUpdateNode, runStates, runStatesB, runOutputs],
-  )
-
   const getSnapshot = useCallback((): UxTestFlow => {
     return rfToUxTestFlow(templateRef.current, nodes as UxFlowRfNode[], edges as UxFlowRfEdge[])
   }, [nodes, edges])
@@ -240,6 +226,7 @@ function FlowCanvasInner({
     (jobA: AgentJobPoll, jobB?: AgentJobPoll | null) => {
       const flow = getSnapshot()
       const inputA = jobToInput(jobA)
+      setFlowCursor(jobA.flowCursor ?? null)
       setRunStates(mapJobToFlowNodeStates(flow, inputA))
       setRunOutputs(mapJobToFlowNodeOutputs(flow, inputA))
       if (jobB) {
@@ -272,6 +259,160 @@ function FlowCanvasInner({
     }
     return (await res.json()) as AgentJobPoll
   }, [])
+
+  const gateChoices = useMemo(() => {
+    const fired = new Set<string>()
+    for (const ev of flowCursor?.replanHistory ?? []) {
+      if (ev?.gateNodeId) fired.add(ev.gateNodeId)
+    }
+    if (flowCursor?.replan?.gateNodeId) fired.add(flowCursor.replan.gateNodeId)
+    return gateChoicesFromReplans(fired, flowCursor?.replanHistory ?? null)
+  }, [flowCursor])
+
+  const activeEdgeIds = useMemo(() => {
+    const flow = rfToUxTestFlow(
+      templateRef.current,
+      nodes as UxFlowRfNode[],
+      edges as UxFlowRfEdge[],
+    )
+    return activePathEdgeIds(flow, gateChoices)
+  }, [nodes, edges, gateChoices])
+
+  const edgesForFlow = useMemo(
+    () =>
+      edges.map((e) => {
+        const onPath = activeEdgeIds.has(e.id)
+        return {
+          ...e,
+          animated: onPath && runBusy,
+          style: {
+            ...((e.style as Record<string, unknown>) ?? {}),
+            strokeWidth: onPath ? 3 : 2,
+            stroke: onPath ? 'var(--flow-accent, var(--accent))' : undefined,
+          },
+        }
+      }),
+    [edges, activeEdgeIds, runBusy],
+  )
+
+  const onManualGateForNode = useCallback(
+    async (gateNodeId: string, edgeKind: 'when' | 'otherwise') => {
+      const jobId = jobIdRef.current ?? runMeta?.jobId
+      if (!jobId) {
+        setRunError('Kein laufender Job — zuerst Testen starten.')
+        return
+      }
+      setRunError(null)
+      try {
+        const res = await fetch(`${paths.routes.apiUxJourneyAgentRun(jobId)}/gate-branch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ gateNodeId, edgeKind }),
+        })
+        const json = (await res.json()) as { error?: string; flowCursor?: UxFlowCursor }
+        if (!res.ok) throw new Error(json.error || `Gate branch failed (${res.status})`)
+        if (json.flowCursor) setFlowCursor(json.flowCursor)
+        const jobA = await pollOnce(jobId)
+        const jobB = jobIdBRef.current ? await pollOnce(jobIdBRef.current) : null
+        applyJobsToStates(jobA, jobB)
+      } catch (e) {
+        setRunError(e instanceof Error ? e.message : String(e))
+      }
+    },
+    [applyJobsToStates, pollOnce, runMeta?.jobId],
+  )
+
+  const onOutputToNote = useCallback(
+    (nodeId: string) => {
+      const out = runOutputs[nodeId]
+      if (!out?.text?.trim()) return
+      const node = nodes.find((n) => n.id === nodeId) as UxFlowRfNode | undefined
+      const prev = node?.data?.flowNode?.note?.trim() ?? ''
+      const addition = out.text.trim()
+      onUpdateNode(nodeId, { note: prev ? `${prev}\n${addition}` : addition })
+    },
+    [nodes, onUpdateNode, runOutputs],
+  )
+
+  const onPlaySegment = useCallback(
+    async (nodeId: string) => {
+      if (runBusy || segmentBusy) return
+      setSegmentBusy(true)
+      setRunError(null)
+      try {
+        const flow = getSnapshot()
+        const res = await fetch(paths.routes.apiStudiesFlowsHybridSegment, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ flow, nodeId, maxSteps: 10 }),
+        })
+        const json = (await res.json()) as { jobId?: string; error?: string }
+        if (!res.ok || !json.jobId) {
+          throw new Error(json.error || `Segment start failed (${res.status})`)
+        }
+        const jobId = json.jobId
+        let done = false
+        for (let i = 0; i < 120 && !done; i++) {
+          await new Promise((r) => setTimeout(r, 1500))
+          const job = await pollOnce(jobId)
+          const snap = getSnapshot()
+          const input = jobToInput(job)
+          setRunOutputs((prev) => ({
+            ...prev,
+            ...mapJobToFlowNodeOutputs(snap, { ...input, jobId }),
+          }))
+          setRunStates((prev) => ({
+            ...prev,
+            ...mapJobToFlowNodeStates(snap, input),
+          }))
+          if (job.status === 'complete' || job.status === 'error') done = true
+        }
+      } catch (e) {
+        setRunError(e instanceof Error ? e.message : String(e))
+      } finally {
+        setSegmentBusy(false)
+      }
+    },
+    [getSnapshot, jobToInput, pollOnce, runBusy, segmentBusy],
+  )
+
+  const nodesForFlow = useMemo(
+    () =>
+      nodes.map((n) => {
+        const gateEval = flowCursor?.gateEvaluations?.find((e) => e.gateNodeId === n.id) ?? null
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onUpdate: onUpdateNode,
+            runState: runStates[n.id] ?? 'idle',
+            runStateB: runStatesB[n.id] ?? 'idle',
+            runOutput: runOutputs[n.id] ?? null,
+            gateEvaluation: gateEval,
+            runBusy: runBusy || segmentBusy,
+            onManualGate:
+              n.data?.flowNode?.kind === 'gate'
+                ? (edgeKind: 'when' | 'otherwise') => void onManualGateForNode(n.id, edgeKind)
+                : undefined,
+            onPlaySegment: () => void onPlaySegment(n.id),
+            onOutputToNote: () => onOutputToNote(n.id),
+          },
+        }
+      }),
+    [
+      nodes,
+      onUpdateNode,
+      runStates,
+      runStatesB,
+      runOutputs,
+      flowCursor,
+      runBusy,
+      segmentBusy,
+      onManualGateForNode,
+      onPlaySegment,
+      onOutputToNote,
+    ],
+  )
 
   const startPolling = useCallback(
     (jobId: string, jobIdB?: string | null) => {
@@ -308,6 +449,7 @@ function FlowCanvasInner({
     setRunStates({})
     setRunStatesB({})
     setRunOutputs({})
+    setFlowCursor(null)
     try {
       const flow = getSnapshot()
       const createRes = await fetch(paths.routes.apiStudiesFromFlow, {
@@ -502,6 +644,7 @@ function FlowCanvasInner({
     setRunStates({})
     setRunStatesB({})
     setRunOutputs({})
+    setFlowCursor(null)
     setSaveMsg(null)
   }, [setNodes, setEdges, pushHistory])
 
@@ -609,14 +752,13 @@ function FlowCanvasInner({
               ))}
             </div>
             <p className="audion-flow-canvas-hint">
-              Testen markiert Nodes live · Multi-Gate-Replan + Branch-Planner · Save → Postgres wenn
-              DATABASE_URL · Protokoll/Hybrid
+              Board: Design · Testen · Notes (Save) · Gate → Agent · Segment · Output → Note
             </p>
           </div>
           <div className="audion-flow-canvas-viewport audion-flow-canvas-viewport--tall">
             <ReactFlow
               nodes={nodesForFlow}
-              edges={edges}
+              edges={edgesForFlow}
               onNodesChange={(c) => {
                 if (
                   c.some(
@@ -669,12 +811,16 @@ export function UxFlowDetailClient({
   initialView,
 }: {
   flow: UxTestFlow
-  initialView?: 'canvas' | 'list' | 'protocol'
+  initialView?: 'board' | 'list' | 'canvas' | 'protocol'
 }) {
   const hasGraph = Boolean(flow.nodes?.length)
-  const [view, setView] = useState<'canvas' | 'list' | 'protocol'>(
-    initialView ?? (hasGraph ? 'canvas' : 'list'),
-  )
+  const resolvedView =
+    initialView === 'list'
+      ? 'list'
+      : initialView === 'protocol' || initialView === 'canvas' || initialView === 'board' || hasGraph
+        ? 'board'
+        : 'list'
+  const [view, setView] = useState<'board' | 'list'>(resolvedView === 'list' ? 'list' : 'board')
   const blocks = useMemo(() => flattenFlowBlocks(flow), [flow])
 
   return (
@@ -683,11 +829,11 @@ export function UxFlowDetailClient({
         <Button
           type="button"
           size="sm"
-          variant={view === 'canvas' ? 'primary' : 'subtle'}
-          onClick={() => setView('canvas')}
+          variant={view === 'board' ? 'primary' : 'subtle'}
+          onClick={() => setView('board')}
           disabled={!hasGraph}
         >
-          Canvas
+          Board
         </Button>
         <Button
           type="button"
@@ -697,23 +843,12 @@ export function UxFlowDetailClient({
         >
           Liste
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={view === 'protocol' ? 'primary' : 'subtle'}
-          onClick={() => setView('protocol')}
-          disabled={!hasGraph}
-        >
-          Protokoll
-        </Button>
       </div>
 
-      {view === 'canvas' ? (
+      {view === 'board' ? (
         <ReactFlowProvider>
           <FlowCanvasInner initialFlow={flow} />
         </ReactFlowProvider>
-      ) : view === 'protocol' ? (
-        <UxFlowModeratedProtocol flow={flow} />
       ) : (
         <section className="audion-flow-blocks">
           <div className="audion-flow-canvas-toolbar">

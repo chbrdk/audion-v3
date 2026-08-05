@@ -49,6 +49,8 @@ export type UxFlowNode = {
   /** Regex source for url_match / title_match gates */
   pattern?: string | null
   measureKey?: SoftScoreKey | null
+  /** Board note / annotation — persisted on Save (Phase 5 interactive flowboard). */
+  note?: string | null
 }
 
 export type UxFlowEdge = {
@@ -153,6 +155,12 @@ export type UxFlowHybridSegmentResult = {
   url: string
   task: string
   nodeId: string
+}
+
+/** Manual gate branch during live Testen — triggers real agent replan. */
+export type UxFlowManualGatePayload = {
+  gateNodeId: string
+  edgeKind: 'when' | 'otherwise'
 }
 
 /** Agent poll extras for Live-Gate progress (optional on job status). */

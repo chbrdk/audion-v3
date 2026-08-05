@@ -296,6 +296,15 @@ describe('ux-flow-replan', () => {
     expect(toFlowGraphSnapshot(flow)?.nodes.length).toBe(flow.nodes!.length)
   })
 
+  it('buildManualGateReplan compiles otherwise segment', async () => {
+    const { buildManualGateReplan } = await import('../lib/ux-flow-replan')
+    const flow = getUxTestFlow('flow-findability')!
+    const gateId = flow.nodes!.find((n) => n.kind === 'gate')!.id
+    const ev = buildManualGateReplan(flow, gateId, 'otherwise')
+    expect(ev?.edgeKind).toBe('otherwise')
+    expect(ev?.remainingTask).toMatch(/LIVE-GATE REPLAN/)
+  })
+
   it('multi-gate: second gate on when-branch can fire after first replan', async () => {
     const { decideMidRunReplan } = await import('../lib/ux-flow-replan')
     const { nextSegmentAfterGate } = await import('../lib/ux-test-flow-graph')
@@ -345,6 +354,20 @@ describe('ux-flow-replan', () => {
     expect(second.shouldReplan).toBe(true)
     expect(second.gateNodeId).toBe('n-g2')
     expect(second.remainingTask).toMatch(/Ziel erreicht/)
+  })
+})
+
+describe('ux-test-flow-graph active path', () => {
+  it('activePathEdgeIds follows gate choices', async () => {
+    const { activePathEdgeIds } = await import('../lib/ux-test-flow-graph')
+    const flow = getUxTestFlow('flow-findability')!
+    const gateId = flow.nodes!.find((n) => n.kind === 'gate')!.id
+    const defaultIds = activePathEdgeIds(flow, {})
+    const whenIds = activePathEdgeIds(flow, { [gateId]: 'when' })
+    expect(whenIds.size).toBeGreaterThan(0)
+    const whenOnly = [...whenIds].filter((id) => !defaultIds.has(id))
+    const defaultOnly = [...defaultIds].filter((id) => !whenIds.has(id))
+    expect(whenOnly.length + defaultOnly.length).toBeGreaterThan(0)
   })
 })
 

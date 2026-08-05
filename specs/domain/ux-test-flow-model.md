@@ -221,6 +221,22 @@ Facade: `apps/web/lib/fixtures/ux-flow-store.ts` — Postgres when `DATABASE_URL
 | Phase 2 | Live-Gate signals (url/title/frustration/consent/goal/time), canvas branch, fixture saved flows | — |
 | Phase 3 | Mid-run replan on gate fire, `ux_saved_flows` Postgres, moderated protocol view | — |
 | **Phase 4 (this slice)** | Multi-gate sequential replan on active path + `replanHistory`; agent-native branch planner (lean compile + next-segment inject); hybrid protocol agent handoff; saved-flow `owner_id`/`org_id` ACL foundation | Org-scoped sharing UI / invite ACLs; multi-agent parallel mid-run orchestration; collaborative multi-user live protocol |
+| **Phase 5 — Interactive board** | Single **Board** mode (design + live test + notes + segment); per-node `note` persisted on Save; path edge highlight; manual gate → `POST …/gate-branch` triggers real `add_new_task` replan | Step scrubber; sticky free notes; org sharing UI |
+
+## Interactive flowboard (Phase 5)
+
+One surface `/studies/flows/[flowId]` — **Board** (default). Liste remains for catalog-only flows.
+
+| Capability | Behavior |
+|------------|----------|
+| **Notes** | `UxFlowNode.note` — editable on every node; persisted in saved flow `flow` jsonb via Save |
+| **Live test** | **Testen** — same Study/Wave loop; active path edges highlighted; gate evidence on node |
+| **Manual gate** | During run: Gate node **Wenn/Sonst → Agent** → `POST /run/{jobId}/gate-branch` → `add_new_task` segment |
+| **Segment** | **Agent-Segment** on runnable nodes when no full test running |
+| **Output → Note** | Append agent output text into node `note` |
+| **Legacy views** | `?view=protocol` / `?view=canvas` redirect to Board |
+
+Agent route: `POST /run/{jobId}/gate-branch` body `{ gateNodeId, edgeKind: "when"|"otherwise" }`.
 
 ## Out of scope (still later)
 

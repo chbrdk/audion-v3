@@ -168,3 +168,20 @@ export function gateChoicesFromReplans(
   }
   return choices
 }
+
+/** Edge ids on the active execution path (for board path highlight). */
+export function activePathEdgeIds(
+  flow: UxTestFlow,
+  gateChoices: Readonly<Record<string, 'when' | 'otherwise'>> = {},
+): Set<string> {
+  const edges = flow.edges ?? []
+  const path = activeExecutionPath(flow, gateChoices)
+  const ids = new Set<string>()
+  for (let i = 0; i < path.length - 1; i++) {
+    const from = path[i].id
+    const to = path[i + 1].id
+    const edge = edges.find((e) => e.from === from && e.to === to)
+    if (edge) ids.add(edge.id)
+  }
+  return ids
+}

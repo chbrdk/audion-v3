@@ -26,8 +26,10 @@ export default async function StudiesFlowDetailPage({
 
   const viewParam = sp.view?.trim()
   const initialView =
-    viewParam === 'protocol' || viewParam === 'list' || viewParam === 'canvas'
-      ? viewParam
+    viewParam === 'protocol' || viewParam === 'canvas' || viewParam === 'board' || viewParam === 'list'
+      ? viewParam === 'list'
+        ? 'list'
+        : 'board'
       : undefined
 
   return (
@@ -48,8 +50,6 @@ export default async function StudiesFlowDetailPage({
         <Chip size="sm" static>
           {flow.primaryArchetype}
         </Chip>
-        {' · '}
-        <Link href={paths.routes.studiesFlowProtocol(flow.id)}>Protokoll</Link>
       </p>
 
       <UxFlowDetailClient flow={flow} initialView={initialView} />

@@ -24,6 +24,17 @@ export type UxFlowRfNodeData = {
   runStateB?: FlowNodeRunState
   /** Latest agent step text/image for this node during Testen. */
   runOutput?: FlowNodeRunOutput | null
+  /** Live gate evaluation for gate nodes (board mode). */
+  gateEvaluation?: {
+    matched?: boolean
+    evidence?: string | null
+    condition?: string | null
+  } | null
+  /** Full test or segment run in progress. */
+  runBusy?: boolean
+  onManualGate?: (edgeKind: 'when' | 'otherwise') => void
+  onPlaySegment?: () => void
+  onOutputToNote?: () => void
 }
 
 export type UxFlowRfEdgeData = {

@@ -226,3 +226,25 @@ export function protocolDefaultPath(flow: UxTestFlow): UxFlowNode[] {
 }
 
 export { whenBranchPath }
+
+/** Build replan event for moderator manual gate choice on the board. */
+export function buildManualGateReplan(
+  flow: UxTestFlow,
+  gateNodeId: string,
+  edgeKind: 'when' | 'otherwise',
+): UxFlowReplanEvent | null {
+  const gate = (flow.nodes ?? []).find((n) => n.id === gateNodeId && n.kind === 'gate')
+  if (!gate) return null
+  const condition = gate.gateCondition ?? 'goal_reached'
+  const remainingTask = compileNextSegmentTask(flow, gateNodeId, {
+    gateCondition: condition,
+    edgeKind,
+  })
+  return {
+    gateNodeId,
+    edgeKind,
+    condition,
+    remainingTask,
+    at: new Date().toISOString(),
+  }
+}
