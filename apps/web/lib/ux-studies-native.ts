@@ -22,7 +22,7 @@ import {
 } from './ux-journey-agent-client'
 import { mapAgentResultToWaveRun } from './ux-wave-scorecard'
 import { deriveFlowVerdict, mergeFlowVerdictIntoWaveRun } from './ux-flow-verdict'
-import type { UxTestFlow } from '@audion-v3/contracts'
+import type { UxTestFlow, UxFlowCursor } from '@audion-v3/contracts'
 
 export async function startUxWaveNativeOrFixture(
   studyId: string,
@@ -170,7 +170,7 @@ export async function syncUxWaveNativeOrFixture(
                 cancelled: status.result?.cancelled,
                 scorecard: (status.result?.scorecard as Record<string, unknown> | null) ?? null,
                 gateSignals: signals,
-                flowCursor: status.flowCursor ?? null,
+                flowCursor: (status.flowCursor as UxFlowCursor | null | undefined) ?? null,
                 jobId: run.jobId,
               })
               mapped = mergeFlowVerdictIntoWaveRun(mapped, verdict)
