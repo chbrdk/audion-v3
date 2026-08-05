@@ -85,6 +85,8 @@ export type FlowRunProgressInput = {
   finalTitle?: string | null
   success?: boolean | null
   error?: string | null
+  summary?: string | null
+  cancelled?: boolean | null
   scorecard?: Record<string, unknown> | null
   /** Agent-emitted Live-Gate signals (preferred over raw URL/title when set). */
   gateSignals?: UxFlowGateSignalBundle | null
@@ -386,6 +388,15 @@ function buildExecPath(
   const nextChoices = { ...choices, [matchedGateId]: 'when' as const }
   path = activeExecutionPath(flow, nextChoices)
   return { path, gateMatched: true }
+}
+
+/** Active execution path for a job snapshot (used by verdict + node states). */
+export function resolveFlowExecPath(
+  flow: UxTestFlow,
+  signals: UxFlowGateSignalBundle,
+  cursor?: UxFlowCursor | null,
+): { path: UxFlowNode[]; gateMatched: boolean } {
+  return buildExecPath(flow, signals, cursor)
 }
 
 function cursorIndex(path: UxFlowNode[], stepCount: number): number {

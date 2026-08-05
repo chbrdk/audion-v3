@@ -224,6 +224,43 @@ Facade: `apps/web/lib/fixtures/ux-flow-store.ts` — Postgres when `DATABASE_URL
 | **Phase 5 — Interactive board** | Single **Board** mode (design + live test + notes + segment); per-node `note` persisted on Save; path edge highlight; manual gate → `POST …/gate-branch` triggers real `add_new_task` replan | Step scrubber; sticky free notes; org sharing UI |
 | **Phase 6a — Node inspector** | Side **Inspector** on node select / note focus: full agent steps per node (action, target, result, reasoning, think-aloud, perception, screenshots); step timing (Δ + elapsed); job-level metrics; gate evaluation + replan history | Step scrubber; Study ↔ Board evaluate loop |
 | **Phase 6c — Inspector UX** | n8n-style inspector: collapsible sections, execution timeline, color-coded field tones (action/target/result/reasoning/perception), action badges, gate/replan cards | Step scrubber |
+| **Phase 7 — Completion & evidence** | `deriveFlowVerdict()`; Board **Verdict** card after Testen; Wave Sync merges flow terminal + gates into `taskCompleted` when `flowGraph` present | Persist `lastRunVerdict` on saved flow; Evaluate shortcut from Board |
+
+## Completion & evidence contract (Phase 7)
+
+After **Testen**, the Board must answer in one place:
+
+| Verdict | Meaning |
+|---------|---------|
+| **Flow completed** | Active execution path reached a terminal node (`success` or honest `abandon`) when the job finished |
+| **Task completed** | `success` terminal **or** `gateSignals.goalReached` **or** scorecard `coverage.goalReached` |
+| **Valid evidence** | Same rules as Study/Wave (`inferValidEvidence` in `ux-wave-scorecard.ts`) — UX substance, no junk/crash |
+| **Gates on path** | Each gate on the active path with `matched` + branch taken (`when` / `otherwise`) |
+
+### Derivation
+
+`deriveFlowVerdict(flow, job)` in `apps/web/lib/ux-flow-run-progress.ts`:
+
+1. Build active path via `buildExecPath` (same as node states / inspector).
+2. Collect gate evaluations on that path (`evaluateFlowGatesOnPath`).
+3. Terminal = last node on path when `status === 'complete'`; kind `success` | `abandon` | other.
+4. `taskCompleted` = terminal is `success` **or** goal signals (agent bundle + scorecard).
+5. `validEvidence` = `inferValidEvidence` from steps/summary/blockers (Study parity).
+6. While `running`: partial verdict — gate list + goalReached if already true; completion flags stay open.
+
+### Board UI
+
+Live Run panel shows **Verdict** below the status strip when a job is active or complete:
+
+- Flow completed ✓/✗ · Task completed ✓/✗ · Valid evidence ✓/✗ (+ caveat)
+- Gate chips (condition + matched)
+- Link **Open wave** → Study Sync / Evaluate (existing)
+
+### Study / Wave sync bridge
+
+When `UxWaveRunItem.flowGraph` is set, `mapAgentResultToWaveRun` calls `deriveFlowVerdict` and **OR**s flow `taskCompleted` into the run field (scorecard path unchanged). `validEvidence` still uses `inferValidEvidence`; flow success terminal can lift `taskCompleted` only.
+
+Deferred: persist `lastRunVerdict` on `ux_saved_flows.flow` metadata; Board → Evaluate one-click.
 
 ## Immersive flow board (Phase 6b)
 

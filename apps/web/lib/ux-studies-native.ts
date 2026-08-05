@@ -21,6 +21,8 @@ import {
   uxJourneyAgentStart,
 } from './ux-journey-agent-client'
 import { mapAgentResultToWaveRun } from './ux-wave-scorecard'
+import { deriveFlowVerdict, mergeFlowVerdictIntoWaveRun } from './ux-flow-verdict'
+import type { UxTestFlow } from '@audion-v3/contracts'
 
 export async function startUxWaveNativeOrFixture(
   studyId: string,
@@ -152,7 +154,30 @@ export async function syncUxWaveNativeOrFixture(
           scorecard: (status.result?.scorecard as Record<string, unknown> | null) ?? null,
           steps,
         })
-        updated.push(mapAgentResultToWaveRun(run, status))
+        updated.push(
+          (() => {
+            let mapped = mapAgentResultToWaveRun(run, status)
+            if (run.flowGraph?.nodes?.length) {
+              const signals = status.result?.gateSignals ?? null
+              const verdict = deriveFlowVerdict(run.flowGraph as UxTestFlow, {
+                status: status.status,
+                steps,
+                finalUrl: signals?.finalUrl ?? status.result?.finalUrl,
+                finalTitle: signals?.finalTitle ?? status.result?.finalTitle,
+                success: status.result?.success,
+                error: status.error ?? status.result?.error,
+                summary: status.result?.summary,
+                cancelled: status.result?.cancelled,
+                scorecard: (status.result?.scorecard as Record<string, unknown> | null) ?? null,
+                gateSignals: signals,
+                flowCursor: status.flowCursor ?? null,
+                jobId: run.jobId,
+              })
+              mapped = mergeFlowVerdictIntoWaveRun(mapped, verdict)
+            }
+            return mapped
+          })(),
+        )
       } catch {
         anyRunning = true
         updated.push(run)

@@ -5004,11 +5004,32 @@ body.audion-flow-board-active .app-main{
 .audion-flow-rf-node-id{opacity:.55;font-size:.62rem;max-width:7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .audion-flow-run-strip{
   display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;
-  margin:0 0 1rem;padding:.55rem .75rem;border-radius:8px;
+  margin:0;padding:.55rem .75rem;border-radius:8px;
   border:1px solid var(--line,rgba(0,0,0,.1));
   background:color-mix(in srgb,var(--surface-2, #f7f5f1) 92%,var(--ink));
   font-size:.85rem;
 }
+.audion-flow-verdict{
+  display:grid;gap:.55rem;margin:.65rem 0 0;padding:.65rem .75rem;
+  border-radius:8px;border:1px solid color-mix(in srgb,var(--flow-accent,#5b8def) 28%,var(--line));
+  background:color-mix(in srgb,var(--flow-accent,#5b8def) 6%,var(--surface-2,#f7f5f1));
+  font-size:.8rem;
+}
+.audion-flow-verdict-lede{margin:0;line-height:1.35;opacity:.92}
+.audion-flow-verdict-grid{display:grid;gap:.35rem}
+@media (min-width:520px){.audion-flow-verdict-grid{grid-template-columns:1fr 1fr}}
+.audion-flow-verdict-row{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem .5rem}
+.audion-flow-verdict-label{min-width:7.5rem;font-size:.72rem;opacity:.8}
+.audion-flow-verdict-caveat{font-size:.68rem;opacity:.75;flex:1 1 100%}
+.audion-flow-verdict-terminal{margin:0;font-size:.72rem;opacity:.85}
+.audion-flow-verdict-gates{display:grid;gap:.3rem}
+.audion-flow-verdict-gates-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.04em;opacity:.65}
+.audion-flow-verdict-gate-chips{display:flex;flex-wrap:wrap;gap:.3rem}
+.audion-flow-verdict-chip--ok{background:color-mix(in srgb,var(--ok,#3d9a6a) 22%,var(--surface-2))}
+.audion-flow-verdict-chip--no{background:color-mix(in srgb,var(--danger,#c45c5c) 18%,var(--surface-2))}
+.audion-flow-verdict-chip--open{opacity:.75}
+.audion-flow-verdict-chip--gate{background:color-mix(in srgb,var(--muted,#888) 16%,var(--surface-2))}
+.audion-flow-verdict-blockers{margin:0;font-size:.68rem;color:var(--danger,#c45c5c)}
 .audion-flow-live-thumb{
   width:168px;height:100px;object-fit:cover;border-radius:4px;
   border:1px solid var(--line,rgba(0,0,0,.12));

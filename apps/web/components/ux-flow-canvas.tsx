@@ -45,6 +45,7 @@ import {
   type FlowNodeRunOutput,
   type FlowNodeRunState,
 } from '../lib/ux-flow-run-progress'
+import { deriveFlowVerdict, type FlowRunVerdict } from '../lib/ux-flow-verdict'
 import { flattenFlowBlocks, gateChoicesFromReplans, activePathEdgeIds } from '../lib/ux-test-flow-graph'
 import { paths } from '../lib/paths'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
@@ -62,6 +63,7 @@ import {
 } from './nav-icons'
 import { UxFlowFloatingPanel } from './ux-flow-floating-panel'
 import { UxFlowNodeInspector } from './ux-flow-node-inspector'
+import { UxFlowVerdictCard } from './ux-flow-verdict-card'
 import { UxFlowRfNode as UxFlowRfNodeView } from './ux-flow-rf-node'
 
 const nodeTypes = { uxFlow: UxFlowRfNodeView }
@@ -92,6 +94,8 @@ type AgentJobPoll = {
     finalUrl?: string | null
     finalTitle?: string | null
     error?: string | null
+    summary?: string | null
+    cancelled?: boolean | null
     gateSignals?: UxFlowGateSignalBundle | null
   } | null
 }
@@ -119,6 +123,7 @@ function FlowCanvasInner({
   const [runOutputs, setRunOutputs] = useState<Record<string, FlowNodeRunOutput>>({})
   const [inspectorByNode, setInspectorByNode] = useState<Record<string, FlowNodeInspectorData>>({})
   const [jobSummary, setJobSummary] = useState<FlowJobRunSummary | null>(null)
+  const [flowVerdict, setFlowVerdict] = useState<FlowRunVerdict | null>(null)
   const [flowCursor, setFlowCursor] = useState<UxFlowCursor | null>(null)
   const [segmentBusy, setSegmentBusy] = useState(false)
   const [runBusy, setRunBusy] = useState(false)
@@ -238,6 +243,8 @@ function FlowCanvasInner({
       finalTitle: signals?.finalTitle ?? job.result?.finalTitle,
       success: job.result?.success,
       error: job.error ?? job.result?.error,
+      summary: job.result?.summary ?? null,
+      cancelled: job.result?.cancelled ?? null,
       scorecard: job.result?.scorecard ?? null,
       gateSignals: signals,
       flowCursor: job.flowCursor ?? null,
@@ -254,6 +261,7 @@ function FlowCanvasInner({
       setRunOutputs(mapJobToFlowNodeOutputs(flow, inputA))
       setInspectorByNode(mapJobToFlowNodeInspector(flow, inputA))
       setJobSummary(buildJobRunSummary(inputA))
+      setFlowVerdict(deriveFlowVerdict(flow, inputA))
       if (jobB) {
         setRunStatesB(mapJobToFlowNodeStates(flow, jobToInput(jobB)))
       } else {
@@ -997,6 +1005,7 @@ function FlowCanvasInner({
                   />
                 ) : null}
               </div>
+              <UxFlowVerdictCard verdict={flowVerdict} />
             </UxFlowFloatingPanel>
           ) : null}
 
