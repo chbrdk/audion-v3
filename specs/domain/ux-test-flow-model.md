@@ -225,7 +225,7 @@ Facade: `apps/web/lib/fixtures/ux-flow-store.ts` — Postgres when `DATABASE_URL
 | **Phase 6a — Node inspector** | Side **Inspector** on node select / note focus: full agent steps per node (action, target, result, reasoning, think-aloud, perception, screenshots); step timing (Δ + elapsed); job-level metrics; gate evaluation + replan history | Step scrubber; Study ↔ Board evaluate loop |
 | **Phase 6c — Inspector UX** | n8n-style inspector: collapsible sections, execution timeline, color-coded field tones (action/target/result/reasoning/perception), action badges, gate/replan cards | Step scrubber |
 | **Phase 7 — Completion & evidence** | `deriveFlowVerdict()`; Board **Verdict** card after Testen; Wave Sync merges flow terminal + gates into `taskCompleted` when `flowGraph` present | Persist `lastRunVerdict` on saved flow; Evaluate shortcut from Board |
-| **Phase 8 — Workspace magazine** | Board chrome → magazine tokens; consume `@msqdx/ui` `FloatingPanel` **+ flow board chrome** (`FlowBoardStage`, `FlowNodeCard`, … — `msqdx-ui/specs/domain/flow-board-chrome.md`); square floats/toolbar/nodes; DS Input/Button | Essay hero on board; RF replacement |
+| **Phase 8 — Workspace magazine** | Board chrome → magazine tokens; consume `@msqdx/ui` `FloatingPanel` **+ flow board chrome** (`FlowBoardStage`, `FlowNodeCard`, … — `msqdx-ui/specs/domain/flow-board-chrome.md`); rounded float shells (12px) + pill Bausteine FAB; DS Input/Button | Essay hero on board; RF replacement |
 
 ## Completion & evidence contract (Phase 7)
 
@@ -288,7 +288,7 @@ The Board is a **functional workspace**, denser than persona/essay magazine, but
 | | |
 |--|--|
 | **Keep** | Immersive stage; SnapDock dock model; React Flow graph; run-state feedback; inspector + verdict data; compact toolbar affordances |
-| **Reshape** | Floats → magazine solid; toolbar → square strip; RF nodes → radius 0 + top-rule kind cue; inspector → hairline disclosure; verdict/run → hairline band |
+| **Reshape** | Floats → solid with 12px radius; toolbar → rounded strip; RF nodes → kind top-rule cue; inspector → hairline disclosure; verdict/run → hairline band; stage → fixed full viewport |
 | **Drop** | Frosted glass floats; pill toolbar/FAB; soft 6–12px card radii; run glow pulse as default; parallel hand-rolled button/input systems |
 
 Domain RF node composition and verdict mapping stay in Audion. Shared overlay shell lives in `msqdx-ui` (`specs/domain/floating-panel.md`).
