@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { UxFlowNode, UxFlowNodeKind } from '@audion-v3/contracts'
 import { Button, Chip, Text } from '@msqdx/ui'
 import type {
@@ -8,6 +9,7 @@ import type {
   FlowNodeInspectorStep,
   FlowNodeRunState,
 } from '../lib/ux-flow-run-progress'
+import { IconClose } from './nav-icons'
 
 const KIND_LABEL: Record<UxFlowNodeKind, string> = {
   start: 'Start',
@@ -21,12 +23,20 @@ const KIND_LABEL: Record<UxFlowNodeKind, string> = {
   measure: 'Measure',
 }
 
+const RUN_STATE_LABEL: Record<FlowNodeRunState, string> = {
+  idle: 'idle',
+  active: 'running',
+  done: 'done',
+  skipped: 'skipped',
+  error: 'error',
+}
+
 function formatSec(sec?: number | null): string {
   if (sec == null || !Number.isFinite(sec)) return '—'
-  if (sec < 60) return `${sec.toFixed(1)} s`
+  if (sec < 60) return `${sec.toFixed(1)}s`
   const m = Math.floor(sec / 60)
   const s = Math.round(sec % 60)
-  return `${m} m ${s} s`
+  return `${m}m ${s}s`
 }
 
 function formatJson(value: unknown): string | null {
@@ -39,75 +49,217 @@ function formatJson(value: unknown): string | null {
   }
 }
 
-function InspectorStepCard({ step }: { step: FlowNodeInspectorStep }) {
-  const think = formatJson(step.thinkAloud)
-  const perception = formatJson(step.perception)
-  const meta = step.reasoningMeta
+function thinkAloudText(value: Record<string, unknown> | null | undefined): string | null {
+  if (!value) return null
+  if (typeof value.now === 'string' && value.now.trim()) return value.now.trim()
+  const parts: string[] = []
+  for (const [k, v] of Object.entries(value)) {
+    if (v == null || v === '') continue
+    parts.push(`${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
+  }
+  return parts.length ? parts.join('\n') : formatJson(value)
+}
+
+function perceptionRows(
+  value: Record<string, unknown> | null | undefined,
+): Array<{ key: string; value: string }> {
+  if (!value) return []
+  const rows: Array<{ key: string; value: string }> = []
+  for (const [k, v] of Object.entries(value)) {
+    if (v == null) continue
+    rows.push({
+      key: k,
+      value: typeof v === 'string' ? v : formatJson(v) ?? String(v),
+    })
+  }
+  return rows
+}
+
+function InspectorField({
+  label,
+  tone,
+  children,
+  mono,
+}: {
+  label: string
+  tone: 'action' | 'target' | 'result' | 'reasoning' | 'think' | 'perception' | 'meta' | 'error'
+  children: ReactNode
+  mono?: boolean
+}) {
   return (
-    <article className="audion-flow-inspector-step">
-      <header className="audion-flow-inspector-step-head">
-        <span className="audion-flow-inspector-step-num">
-          #{step.step ?? '?'}
-        </span>
-        <span className="audion-flow-inspector-step-timing">
-          {step.timestamp ? new Date(step.timestamp).toLocaleTimeString() : '—'}
-          {' · '}
-          +{formatSec(step.elapsedSinceStartSec)}
-          {step.deltaSec != null ? ` (Δ ${formatSec(step.deltaSec)})` : ''}
-        </span>
-      </header>
-      {step.action ? (
-        <p className="audion-flow-inspector-kv">
-          <span>Action</span>
-          <strong>{step.action}</strong>
-        </p>
-      ) : null}
-      {step.target ? (
-        <p className="audion-flow-inspector-kv">
-          <span>Target</span>
-          <code>{step.target}</code>
-        </p>
-      ) : null}
-      {step.result ? (
-        <p className="audion-flow-inspector-block">
-          <span>Result</span>
-          <pre>{step.result}</pre>
-        </p>
-      ) : null}
-      {step.reasoning ? (
-        <p className="audion-flow-inspector-block">
-          <span>Reasoning</span>
-          <pre>{step.reasoning}</pre>
-        </p>
-      ) : null}
-      {think ? (
-        <p className="audion-flow-inspector-block">
-          <span>Think aloud</span>
-          <pre>{think}</pre>
-        </p>
-      ) : null}
-      {perception ? (
-        <p className="audion-flow-inspector-block">
-          <span>Perception</span>
-          <pre>{perception}</pre>
-        </p>
-      ) : null}
-      {meta && Object.keys(meta).length > 0 ? (
-        <p className="audion-flow-inspector-block">
-          <span>Reasoning meta</span>
-          <pre>{formatJson(meta)}</pre>
-        </p>
-      ) : null}
-      {step.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className="audion-flow-inspector-shot"
-          src={step.imageUrl}
-          alt={`Screenshot step ${step.step ?? ''}`}
-        />
-      ) : null}
-    </article>
+    <div className={`audion-flow-inspector-field audion-flow-inspector-field--${tone}`}>
+      <span className="audion-flow-inspector-field-label">{label}</span>
+      <div className={`audion-flow-inspector-field-value${mono ? ' audion-flow-inspector-field-value--mono' : ''}`}>
+        {children}
+      </div>
+    </div>
   )
+}
+
+function InspectorSection({
+  title,
+  tone = 'meta',
+  defaultOpen = true,
+  children,
+  meta,
+}: {
+  title: string
+  tone?: 'meta' | 'gate' | 'design' | 'run'
+  defaultOpen?: boolean
+  children: ReactNode
+  meta?: ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <section className={`audion-flow-inspector-section audion-flow-inspector-section--${tone}`}>
+      <button
+        type="button"
+        className="audion-flow-inspector-section-toggle"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span className="audion-flow-inspector-section-title">{title}</span>
+        {meta ? <span className="audion-flow-inspector-section-meta">{meta}</span> : null}
+        <span className="audion-flow-inspector-chevron" aria-hidden>
+          {open ? '▾' : '▸'}
+        </span>
+      </button>
+      {open ? <div className="audion-flow-inspector-section-body">{children}</div> : null}
+    </section>
+  )
+}
+
+function InspectorStepCard({
+  step,
+  index,
+  isLast,
+  defaultOpen,
+}: {
+  step: FlowNodeInspectorStep
+  index: number
+  isLast: boolean
+  defaultOpen: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  const think = thinkAloudText(step.thinkAloud)
+  const perception = perceptionRows(step.perception)
+  const meta = step.reasoningMeta
+  const actionLabel = step.action ?? 'step'
+  const summary = step.target?.trim() || step.result?.trim()?.slice(0, 48) || '—'
+
+  return (
+    <li className={`audion-flow-inspector-step-item${isLast ? ' is-latest' : ''}`}>
+      <article className="audion-flow-inspector-step">
+        <button
+          type="button"
+          className="audion-flow-inspector-step-toggle"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+        >
+          <span className="audion-flow-inspector-step-num">#{step.step ?? index + 1}</span>
+          <span className={`audion-flow-inspector-action-badge audion-flow-inspector-action-badge--${actionTone(actionLabel)}`}>
+            {actionLabel}
+          </span>
+          <span className="audion-flow-inspector-step-summary" title={summary}>
+            {summary}
+          </span>
+          <span className="audion-flow-inspector-step-timing">
+            {formatSec(step.deltaSec)}
+          </span>
+          <span className="audion-flow-inspector-chevron" aria-hidden>
+            {open ? '▾' : '▸'}
+          </span>
+        </button>
+
+        {open ? (
+          <div className="audion-flow-inspector-step-body">
+            <div className="audion-flow-inspector-step-meta-row">
+              <span>{step.timestamp ? new Date(step.timestamp).toLocaleTimeString() : '—'}</span>
+              <span>+{formatSec(step.elapsedSinceStartSec)}</span>
+            </div>
+
+            {step.action ? (
+              <InspectorField label="Action" tone="action">
+                {step.action}
+              </InspectorField>
+            ) : null}
+
+            {step.target ? (
+              <InspectorField label="Target" tone="target" mono>
+                {step.target}
+              </InspectorField>
+            ) : null}
+
+            {step.result ? (
+              <InspectorField label="Result" tone="result">
+                <pre className="audion-flow-inspector-pre">{step.result}</pre>
+              </InspectorField>
+            ) : null}
+
+            {step.reasoning ? (
+              <InspectorField label="Reasoning" tone="reasoning">
+                <pre className="audion-flow-inspector-pre">{step.reasoning}</pre>
+              </InspectorField>
+            ) : null}
+
+            {think ? (
+              <InspectorField label="Think aloud" tone="think">
+                <pre className="audion-flow-inspector-pre">{think}</pre>
+              </InspectorField>
+            ) : null}
+
+            {perception.length ? (
+              <div className="audion-flow-inspector-field-group">
+                <span className="audion-flow-inspector-field-group-label">Perception</span>
+                {perception.map((row) => (
+                  <InspectorField key={row.key} label={row.key} tone="perception">
+                    <pre className="audion-flow-inspector-pre">{row.value}</pre>
+                  </InspectorField>
+                ))}
+              </div>
+            ) : null}
+
+            {meta?.memory ? (
+              <InspectorField label="Memory" tone="meta">
+                <pre className="audion-flow-inspector-pre">{meta.memory}</pre>
+              </InspectorField>
+            ) : null}
+            {meta?.next_goal ? (
+              <InspectorField label="Next goal" tone="meta">
+                <pre className="audion-flow-inspector-pre">{meta.next_goal}</pre>
+              </InspectorField>
+            ) : null}
+            {meta?.evaluation_previous_goal ? (
+              <InspectorField label="Prev goal eval" tone="meta">
+                <pre className="audion-flow-inspector-pre">{meta.evaluation_previous_goal}</pre>
+              </InspectorField>
+            ) : null}
+
+            {step.imageUrl ? (
+              <InspectorField label="Screenshot" tone="meta">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="audion-flow-inspector-shot"
+                  src={step.imageUrl}
+                  alt={`Screenshot step ${step.step ?? ''}`}
+                />
+              </InspectorField>
+            ) : null}
+          </div>
+        ) : null}
+      </article>
+    </li>
+  )
+}
+
+function actionTone(action: string): string {
+  const a = action.toLowerCase()
+  if (a.includes('click') || a.includes('tap')) return 'click'
+  if (a.includes('type') || a.includes('input') || a.includes('fill')) return 'type'
+  if (a.includes('nav') || a.includes('goto') || a.includes('open')) return 'nav'
+  if (a.includes('scroll')) return 'scroll'
+  if (a.includes('wait') || a.includes('observe')) return 'wait'
+  return 'default'
 }
 
 export function UxFlowNodeInspector({
@@ -126,11 +278,21 @@ export function UxFlowNodeInspector({
   onAppendOutputToNote?: () => void
 }) {
   const steps = inspector?.steps ?? []
-  const nodeElapsed =
-    steps.length >= 2
-      ? (steps[steps.length - 1]?.elapsedSinceStartSec ?? 0) -
+  const [expandedLatest, setExpandedLatest] = useState(true)
+
+  useEffect(() => {
+    setExpandedLatest(true)
+  }, [node.id, steps.length])
+
+  const nodeElapsed = useMemo(() => {
+    if (steps.length >= 2) {
+      return (
+        (steps[steps.length - 1]?.elapsedSinceStartSec ?? 0) -
         (steps[0]?.elapsedSinceStartSec ?? 0)
-      : steps[0]?.deltaSec ?? null
+      )
+    }
+    return steps[0]?.deltaSec ?? null
+  }, [steps])
 
   const lastStep = steps.length ? steps[steps.length - 1] : null
   const canAppend =
@@ -138,136 +300,181 @@ export function UxFlowNodeInspector({
     Boolean(lastStep?.result || lastStep?.reasoning || lastStep?.thinkAloud)
 
   return (
-    <div className="audion-flow-inspector-body" aria-label="Node Inspector">
-        <header className="audion-flow-inspector-head">
-          <div>
-            <Text role="meta" as="p" className="audion-flow-inspector-meta">
-              <Chip size="sm" static>{KIND_LABEL[node.kind]}</Chip>
-              <Chip size="sm" static>{runState}</Chip>
-            </Text>
-            <Text role="headline" as="h2" className="audion-flow-inspector-title">
-              {node.label || node.id}
-            </Text>
-            <p className="audion-flow-inspector-id">{node.id}</p>
+    <div
+      className={`audion-flow-inspector-body audion-flow-inspector-body--${node.kind}`}
+      aria-label="Node Inspector"
+    >
+      <header className="audion-flow-inspector-head">
+        <div className="audion-flow-inspector-head-main">
+          <div className="audion-flow-inspector-badges">
+            <Chip size="sm" static className={`audion-flow-inspector-kind audion-flow-inspector-kind--${node.kind}`}>
+              {KIND_LABEL[node.kind]}
+            </Chip>
+            <Chip
+              size="sm"
+              static
+              className={`audion-flow-inspector-run audion-flow-inspector-run--${runState}`}
+            >
+              {RUN_STATE_LABEL[runState]}
+            </Chip>
           </div>
-          <Button type="button" size="sm" variant="subtle" onClick={onClose}>
-            Schließen
-          </Button>
-        </header>
+          <Text role="headline" as="h2" className="audion-flow-inspector-title">
+            {node.label || node.id}
+          </Text>
+          <p className="audion-flow-inspector-id">{node.id}</p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="audion-flow-toolbar-btn"
+          aria-label="Inspector schließen"
+          title="Schließen"
+          icon={<IconClose />}
+          onClick={onClose}
+        />
+      </header>
 
-        {node.text ? (
-          <section className="audion-flow-inspector-section">
-            <Text role="label" as="h3">Design-Text</Text>
-            <p className="audion-flow-inspector-prose">{node.text}</p>
-          </section>
-        ) : null}
+      {node.text || node.note ? (
+        <InspectorSection title="Design" tone="design" defaultOpen={false}>
+          {node.text ? (
+            <InspectorField label="Text" tone="meta">
+              <pre className="audion-flow-inspector-pre">{node.text}</pre>
+            </InspectorField>
+          ) : null}
+          {node.note ? (
+            <InspectorField label="Note" tone="meta">
+              <pre className="audion-flow-inspector-pre">{node.note}</pre>
+            </InspectorField>
+          ) : null}
+        </InspectorSection>
+      ) : null}
 
-        {node.note ? (
-          <section className="audion-flow-inspector-section">
-            <Text role="label" as="h3">Note</Text>
-            <p className="audion-flow-inspector-prose">{node.note}</p>
-          </section>
-        ) : null}
+      {jobSummary ? (
+        <InspectorSection
+          title="Run"
+          tone="run"
+          defaultOpen
+          meta={
+            <span className="audion-flow-inspector-pill">
+              {jobSummary.status ?? '—'} · {formatSec(jobSummary.elapsedSeconds)}
+            </span>
+          }
+        >
+          <div className="audion-flow-inspector-stats">
+            <div className="audion-flow-inspector-stat">
+              <span>Status</span>
+              <strong>{jobSummary.status ?? '—'}</strong>
+            </div>
+            <div className="audion-flow-inspector-stat">
+              <span>Steps</span>
+              <strong>{jobSummary.stepCount}</strong>
+            </div>
+            <div className="audion-flow-inspector-stat">
+              <span>Dauer</span>
+              <strong>{formatSec(jobSummary.elapsedSeconds)}</strong>
+            </div>
+          </div>
+          {jobSummary.jobId ? (
+            <InspectorField label="Job ID" tone="meta" mono>
+              {jobSummary.jobId}
+            </InspectorField>
+          ) : null}
+          {jobSummary.finalUrl ? (
+            <InspectorField label="Final URL" tone="target" mono>
+              {jobSummary.finalUrl}
+            </InspectorField>
+          ) : null}
+          {jobSummary.error ? (
+            <InspectorField label="Error" tone="error">
+              {jobSummary.error}
+            </InspectorField>
+          ) : null}
+        </InspectorSection>
+      ) : null}
 
-        {jobSummary ? (
-          <section className="audion-flow-inspector-section">
-            <Text role="label" as="h3">Job</Text>
-            <ul className="audion-flow-inspector-metrics">
-              <li>
-                <span>Status</span>
-                <strong>{jobSummary.status ?? '—'}</strong>
-              </li>
-              <li>
-                <span>Steps gesamt</span>
-                <strong>{jobSummary.stepCount}</strong>
-              </li>
-              <li>
-                <span>Dauer (Job)</span>
-                <strong>{formatSec(jobSummary.elapsedSeconds)}</strong>
-              </li>
-              {jobSummary.jobId ? (
-                <li>
-                  <span>Job</span>
-                  <code>{jobSummary.jobId}</code>
-                </li>
+      {steps.length ? (
+        <InspectorSection
+          title="Execution"
+          tone="meta"
+          defaultOpen
+          meta={
+            <span className="audion-flow-inspector-pill">
+              {steps.length} steps · {formatSec(nodeElapsed)}
+            </span>
+          }
+        >
+          {canAppend ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="subtle"
+              className="audion-flow-inspector-append"
+              onClick={onAppendOutputToNote}
+            >
+              Letzten Output → Note
+            </Button>
+          ) : null}
+          <ol className="audion-flow-inspector-steps">
+            {steps.map((s, i) => (
+              <InspectorStepCard
+                key={`${s.step ?? i}-${s.timestamp ?? i}`}
+                step={s}
+                index={i}
+                isLast={i === steps.length - 1}
+                defaultOpen={i === steps.length - 1 && expandedLatest}
+              />
+            ))}
+          </ol>
+        </InspectorSection>
+      ) : (
+        <InspectorSection title="Execution" tone="meta" defaultOpen>
+          <p className="audion-flow-inspector-empty">
+            Noch keine Steps auf dieser Node — Testen oder Agent-Segment starten.
+          </p>
+        </InspectorSection>
+      )}
+
+      {node.kind === 'gate' && (inspector?.gateEvaluation || inspector?.replanEvents?.length) ? (
+        <InspectorSection title="Gate" tone="gate" defaultOpen>
+          {inspector.gateEvaluation ? (
+            <div
+              className={`audion-flow-inspector-gate-card${
+                inspector.gateEvaluation.matched ? ' is-match' : ' is-miss'
+              }`}
+            >
+              <span className="audion-flow-inspector-gate-verdict">
+                {inspector.gateEvaluation.matched ? 'Match' : 'Kein Match'}
+              </span>
+              {inspector.gateEvaluation.condition ? (
+                <InspectorField label="Condition" tone="meta" mono>
+                  {inspector.gateEvaluation.condition}
+                </InspectorField>
               ) : null}
-              {jobSummary.finalUrl ? (
-                <li>
-                  <span>Final URL</span>
-                  <code>{jobSummary.finalUrl}</code>
-                </li>
+              {inspector.gateEvaluation.evidence ? (
+                <InspectorField label="Evidence" tone="result">
+                  {inspector.gateEvaluation.evidence}
+                </InspectorField>
               ) : null}
-              {jobSummary.error ? (
-                <li className="audion-flow-inspector-error">
-                  <span>Error</span>
-                  <strong>{jobSummary.error}</strong>
-                </li>
-              ) : null}
-            </ul>
-          </section>
-        ) : null}
-
-        {steps.length ? (
-          <section className="audion-flow-inspector-section">
-            <Text role="label" as="h3">
-              Agent auf dieser Node ({steps.length} Steps · {formatSec(nodeElapsed)})
-            </Text>
-            {canAppend ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="subtle"
-                className="audion-flow-inspector-append"
-                onClick={onAppendOutputToNote}
-              >
-                Letzten Output → Note
-              </Button>
-            ) : null}
-            <ol className="audion-flow-inspector-steps">
-              {steps.map((s, i) => (
-                <li key={`${s.step ?? i}-${s.timestamp ?? i}`}>
-                  <InspectorStepCard step={s} />
+            </div>
+          ) : null}
+          {inspector.replanEvents?.length ? (
+            <ul className="audion-flow-inspector-replans">
+              {inspector.replanEvents.map((ev, i) => (
+                <li
+                  key={`${ev.gateNodeId}-${i}`}
+                  className={`audion-flow-inspector-replan audion-flow-inspector-replan--${ev.edgeKind ?? 'replan'}`}
+                >
+                  <span className="audion-flow-inspector-replan-kind">{ev.edgeKind ?? 'replan'}</span>
+                  {ev.remainingTask ? (
+                    <pre className="audion-flow-inspector-pre">{ev.remainingTask}</pre>
+                  ) : null}
                 </li>
               ))}
-            </ol>
-          </section>
-        ) : (
-          <section className="audion-flow-inspector-section">
-            <Text role="label" as="h3">Agent-Output</Text>
-            <p className="audion-flow-inspector-empty">
-              Noch keine Steps auf dieser Node — Testen oder Agent-Segment starten.
-            </p>
-          </section>
-        )}
-
-        {node.kind === 'gate' && (inspector?.gateEvaluation || inspector?.replanEvents?.length) ? (
-          <section className="audion-flow-inspector-section">
-            <Text role="label" as="h3">Gate</Text>
-            {inspector.gateEvaluation ? (
-              <p className="audion-flow-inspector-prose">
-                {inspector.gateEvaluation.matched ? 'Match' : 'Kein Match'}
-                {inspector.gateEvaluation.evidence
-                  ? ` · ${inspector.gateEvaluation.evidence}`
-                  : ''}
-                {inspector.gateEvaluation.condition
-                  ? ` · ${inspector.gateEvaluation.condition}`
-                  : ''}
-              </p>
-            ) : null}
-            {inspector.replanEvents?.length ? (
-              <ul className="audion-flow-inspector-replans">
-                {inspector.replanEvents.map((ev, i) => (
-                  <li key={`${ev.gateNodeId}-${i}`}>
-                    <strong>{ev.edgeKind ?? 'replan'}</strong>
-                    {ev.remainingTask ? (
-                      <pre className="audion-flow-inspector-replan-task">{ev.remainingTask}</pre>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </section>
-        ) : null}
+            </ul>
+          ) : null}
+        </InspectorSection>
+      ) : null}
     </div>
   )
 }
