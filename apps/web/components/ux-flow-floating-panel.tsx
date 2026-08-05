@@ -1,41 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react'
-import {
-  readRailDockFromStorage,
-  remToPx,
-  serializeRailDock,
-  type RailDockEdge,
-} from '../lib/msqdx-ui-shell'
+import type { ReactNode } from 'react'
+import { FloatingPanel, type FloatingPanelVariant } from '@msqdx/ui'
+import type { RailDockEdge } from '../lib/msqdx-ui-shell'
 
-type SnapDockLike = ComponentType<{
-  children?: ReactNode
-  className?: string
-  defaultEdge?: RailDockEdge
-  defaultOffset?: number
-  edgePadding?: number
-  snap?: boolean
-  draggable?: boolean
-  onEdgeChange?: (edge: RailDockEdge) => void
-  onOffsetChange?: (offset: number) => void
-  style?: CSSProperties
-}>
-
-function readPanelDock(
-  storageKey: string,
-  defaultEdge: RailDockEdge,
-  defaultOffset: number,
-): { edge: RailDockEdge; offset: number } {
-  try {
-    if (!localStorage.getItem(storageKey)) {
-      return { edge: defaultEdge, offset: defaultOffset }
-    }
-  } catch {
-    /* ignore */
-  }
-  return readRailDockFromStorage(storageKey, defaultEdge)
-}
-
+/**
+ * Thin Audion wrapper — dock keys + flow board classNames on DS FloatingPanel.
+ * @see specs/domain/ux-test-flow-model.md — Workspace magazine (Phase 8)
+ */
 export function UxFlowFloatingPanel({
   children,
   className,
@@ -44,6 +16,7 @@ export function UxFlowFloatingPanel({
   defaultOffset = 0.5,
   title,
   ariaLabel,
+  variant = 'panel',
 }: {
   children: ReactNode
   className?: string
@@ -52,83 +25,20 @@ export function UxFlowFloatingPanel({
   defaultOffset?: number
   title?: string
   ariaLabel?: string
+  variant?: FloatingPanelVariant
 }) {
-  const initial = useMemo(
-    () => readPanelDock(storageKey, defaultEdge, defaultOffset),
-    [storageKey, defaultEdge, defaultOffset],
-  )
-  const [edge, setEdge] = useState<RailDockEdge>(initial.edge)
-  const [offset, setOffset] = useState(initial.offset)
-  const [SnapDock, setSnapDock] = useState<SnapDockLike | null>(null)
-
-  useEffect(() => {
-    let active = true
-    import('react-driftkit')
-      .then((mod) => {
-        if (active && mod.SnapDock) setSnapDock(() => mod.SnapDock as SnapDockLike)
-      })
-      .catch(() => {
-        /* static fallback */
-      })
-    return () => {
-      active = false
-    }
-  }, [])
-
-  const persist = useCallback(
-    (nextEdge: RailDockEdge, nextOffset: number) => {
-      try {
-        localStorage.setItem(storageKey, serializeRailDock({ edge: nextEdge, offset: nextOffset }))
-      } catch {
-        /* ignore */
-      }
-    },
-    [storageKey],
-  )
-
-  const panelClass = ['audion-flow-float-panel', className].filter(Boolean).join(' ')
-  const body = (
-    <div className="audion-flow-float-panel-inner">
-      {title ? (
-        <div className="audion-flow-float-panel-drag" title="Verschieben — wie Navigation">
-          {title}
-        </div>
-      ) : null}
-      {children}
-    </div>
-  )
-
-  if (!SnapDock) {
-    return (
-      <div
-        className={`${panelClass} audion-flow-float-panel--static`}
-        data-edge={edge}
-        aria-label={ariaLabel ?? title}
-      >
-        {body}
-      </div>
-    )
-  }
-
   return (
-    <SnapDock
-      className={panelClass}
-      defaultEdge={initial.edge}
-      defaultOffset={initial.offset}
-      edgePadding={remToPx(1)}
-      snap
-      draggable
-      onEdgeChange={(next) => {
-        setEdge(next)
-        persist(next, offset)
-      }}
-      onOffsetChange={(nextOffset) => {
-        setOffset(nextOffset)
-        persist(edge, nextOffset)
-      }}
-      style={{ zIndex: 35 }}
+    <FloatingPanel
+      storageKey={storageKey}
+      defaultEdge={defaultEdge}
+      defaultOffset={defaultOffset}
+      title={title}
+      ariaLabel={ariaLabel}
+      variant={variant}
+      surface="solid"
+      className={['audion-flow-float-panel', className].filter(Boolean).join(' ')}
     >
-      {body}
-    </SnapDock>
+      {children}
+    </FloatingPanel>
   )
 }

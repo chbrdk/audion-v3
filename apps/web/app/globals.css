@@ -4357,7 +4357,7 @@ main { min-height: 100vh; }
 .audion-flow-block-list{list-style:none;margin:1rem 0 0;padding:0;display:grid;gap:.75rem}
 .audion-flow-block-meta{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 .35rem}
 .audion-flow-block-text{margin:.35rem 0 0;font-size:.9rem}
-.audion-flow-block-panel--list{padding:.75rem 1rem;border:1px solid var(--line,var(--color-border,rgba(0,0,0,.12)));border-radius:8px;background:var(--surface-1,var(--color-bg,#fff))}
+.audion-flow-block-panel--list{padding:.75rem 1rem;border:1px solid var(--line,var(--color-border,rgba(0,0,0,.12)));border-radius:0;background:transparent}
 .audion-flow-create{margin:0 0 1.25rem}
 .audion-flow-create-hint,.audion-flow-create-error{margin:.35rem 0 0;font-size:.85rem}
 .audion-flow-create-error{color:var(--danger,var(--color-danger,#b00020))}
@@ -4416,12 +4416,12 @@ body.audion-flow-board-active .app-main{
   max-width:min(92vw,40rem);
   margin:0;
   padding:.55rem .75rem;
-  border-radius:8px;
+  border-radius:0;
   border:1px solid color-mix(in srgb,var(--danger) 45%,var(--line));
   background:color-mix(in srgb,var(--surface-2) 92%,transparent);
   color:var(--danger,var(--color-danger,#b00020));
   font-size:.85rem;
-  box-shadow:0 10px 32px color-mix(in srgb,var(--ink) 16%,transparent);
+  box-shadow:none;
 }
 .audion-flow-board-empty{
   position:absolute;
@@ -4432,55 +4432,39 @@ body.audion-flow-board-active .app-main{
 }
 .audion-flow-float-panel{
   max-width:min(96vw,44rem);
-  border:1px solid var(--line,var(--color-border,rgba(0,0,0,.12)));
-  border-radius:12px;
-  background:color-mix(in srgb,var(--surface-2) 94%,transparent);
-  box-shadow:
-    0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent),
-    0 12px 40px color-mix(in srgb,var(--ink) 14%,transparent);
-  backdrop-filter:blur(12px);
+  border:none;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
   pointer-events:auto;
+}
+.audion-flow-float-panel .ds-floating-panel-inner{
+  max-height:min(72vh,680px);
+  overflow:auto;
+  border-radius:0;
 }
 .audion-flow-float-panel--palette{max-width:min(92vw,17rem)}
 .audion-flow-float-panel--palette-collapsed{
   max-width:none;
-  border-radius:999px;
-  border:none;
-  background:transparent;
-  box-shadow:none;
-  backdrop-filter:none;
 }
-.audion-flow-float-panel--palette-collapsed .audion-flow-float-panel-inner{
+.audion-flow-float-panel--palette-collapsed .ds-floating-panel-inner{
   padding:0;
   max-height:none;
   overflow:visible;
+  border:none;
+  background:transparent;
 }
-.audion-flow-float-panel--palette-open .audion-flow-float-panel-inner{
+.audion-flow-float-panel--palette-open .ds-floating-panel-inner{
   padding:.45rem .55rem .55rem;
 }
 .audion-flow-palette-fab{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:3.5rem;
-  height:3.5rem;
-  margin:0;
+  width:2.75rem;
+  min-width:2.75rem;
+  height:2.75rem;
   padding:0;
-  border:1px solid var(--line);
-  border-radius:999px;
-  background:color-mix(in srgb,var(--surface-2) 96%,transparent);
-  color:var(--fg,var(--ink));
-  cursor:pointer;
-  box-shadow:
-    0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent),
-    0 12px 36px color-mix(in srgb,var(--ink) 16%,transparent);
-  backdrop-filter:blur(12px);
+  border-radius:0;
 }
-.audion-flow-palette-fab:hover:not(:disabled){
-  background:color-mix(in srgb,var(--accent) 14%,var(--surface-2));
-  border-color:color-mix(in srgb,var(--accent) 40%,var(--line));
-}
-.audion-flow-palette-fab:disabled{opacity:.45;cursor:not-allowed}
 .audion-flow-palette-head{
   display:flex;
   justify-content:flex-end;
@@ -4491,61 +4475,19 @@ body.audion-flow-board-active .app-main{
   max-width:min(92vw,400px);
 }
 .audion-flow-float-panel--run{max-width:min(96vw,52rem)}
-.audion-flow-float-panel--static{
-  position:absolute;
-  z-index:35;
-}
-.audion-flow-float-panel--static[data-edge='top']{
-  top:1rem;
-  left:50%;
-  transform:translateX(-50%);
-}
-.audion-flow-float-panel--static[data-edge='left']{
-  left:1rem;
-  top:38%;
-  transform:translateY(-50%);
-}
-.audion-flow-float-panel--static[data-edge='right']{
-  right:1rem;
-  top:22%;
-}
-.audion-flow-float-panel--static[data-edge='bottom']{
-  bottom:1rem;
-  left:50%;
-  transform:translateX(-50%);
-}
-.audion-flow-float-panel-inner{
-  padding:.45rem .65rem .65rem;
-  max-height:min(72vh,680px);
-  overflow:auto;
-}
-.audion-flow-float-panel--toolbar .audion-flow-float-panel-inner{
-  max-height:none;
-  overflow:visible;
-  padding-top:.35rem;
-}
-.audion-flow-float-panel-drag{
-  cursor:grab;
-  font-size:.62rem;
-  text-transform:uppercase;
-  letter-spacing:.06em;
-  opacity:.72;
-  padding:.15rem .15rem .25rem;
-  user-select:none;
-}
-.audion-flow-float-panel-drag:active{cursor:grabbing}
-.audion-flow-protocol-card{margin:1rem 0;padding:1rem 1.1rem;border:1px solid var(--line,var(--color-border,rgba(0,0,0,.12)));border-radius:8px;background:var(--surface-1,var(--color-bg,#fff));display:grid;gap:.75rem}
+.audion-flow-protocol-card{margin:1rem 0;padding:1rem 1.1rem;border:1px solid var(--line,var(--color-border,rgba(0,0,0,.12)));border-radius:0;background:transparent;display:grid;gap:.75rem}
 .audion-flow-protocol-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
 .audion-flow-protocol-log{list-style:none;margin:1rem 0 0;padding:0;display:grid;gap:.35rem;font-size:.85rem;opacity:.9}
 .audion-flow-protocol-done{display:grid;gap:.75rem;margin-top:1rem}
 .audion-flow-float-panel--toolbar{
   max-width:min(96vw,100%);
-  border-radius:999px;
+  border-radius:0;
 }
-.audion-flow-float-panel--toolbar .audion-flow-float-panel-inner{
+.audion-flow-float-panel--toolbar .ds-floating-panel-inner{
   max-height:none;
   overflow:visible;
-  padding:.3rem .45rem;
+  padding:.3rem .4rem;
+  border-radius:0;
 }
 .audion-flow-canvas-toolbar--compact{
   flex-wrap:nowrap;
@@ -4618,7 +4560,7 @@ body.audion-flow-board-active .app-main{
 .audion-flow-canvas-viewport--fullscreen .react-flow__background{background:transparent!important}
 .audion-flow-canvas-viewport--fullscreen .react-flow__controls{
   border:1px solid var(--line);
-  border-radius:6px;
+  border-radius:0;
   overflow:hidden;
   box-shadow:none;
   background:var(--surface-1,var(--surface-2));
@@ -4631,7 +4573,7 @@ body.audion-flow-board-active .app-main{
 .audion-flow-canvas-viewport--fullscreen .react-flow__minimap{
   background:color-mix(in srgb,var(--surface-2) 92%,transparent);
   border:1px solid var(--line);
-  border-radius:6px;
+  border-radius:0;
 }
 .audion-flow-inspector-body{
   display:grid;
@@ -4654,7 +4596,7 @@ body.audion-flow-board-active .app-main{
   align-items:flex-start;
   padding:.35rem .45rem .5rem;
   border-left:3px solid var(--line);
-  border-radius:4px;
+  border-radius:0;
   background:color-mix(in srgb,var(--surface-2) 88%,transparent);
 }
 .audion-flow-inspector-head-main{min-width:0;flex:1}
@@ -4670,9 +4612,9 @@ body.audion-flow-board-active .app-main{
 .audion-flow-inspector-id{margin:.15rem 0 0;font-size:.65rem;opacity:.6;font-family:var(--font-mono,monospace)}
 .audion-flow-inspector-section{
   border:1px solid var(--line);
-  border-radius:8px;
+  border-radius:0;
   overflow:hidden;
-  background:color-mix(in srgb,var(--surface-2) 70%,transparent);
+  background:transparent;
 }
 .audion-flow-inspector-section--gate{border-color:color-mix(in srgb,var(--danger) 35%,var(--line))}
 .audion-flow-inspector-section--run{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
@@ -4723,9 +4665,9 @@ body.audion-flow-board-active .app-main{
   display:grid;
   gap:.1rem;
   padding:.35rem .4rem;
-  border-radius:6px;
+  border-radius:0;
   border:1px solid var(--line);
-  background:color-mix(in srgb,var(--surface-1,var(--bg0)) 60%,transparent);
+  background:transparent;
   font-size:.72rem;
 }
 .audion-flow-inspector-stat span{opacity:.65;font-size:.6rem;text-transform:uppercase;letter-spacing:.04em}
@@ -4734,9 +4676,9 @@ body.audion-flow-board-active .app-main{
   display:grid;
   gap:.2rem;
   padding:.35rem .45rem;
-  border-radius:6px;
+  border-radius:0;
   border:1px solid var(--line);
-  background:var(--surface-1,var(--bg0));
+  background:transparent;
 }
 .audion-flow-inspector-field--action{border-left:3px solid #5b8def}
 .audion-flow-inspector-field--target{border-left:3px solid #3d9ab8}
@@ -4802,7 +4744,7 @@ body.audion-flow-board-active .app-main{
 .audion-flow-inspector-step-item.is-latest::before{background:var(--accent)}
 .audion-flow-inspector-step{
   border:1px solid var(--line);
-  border-radius:8px;
+  border-radius:0;
   overflow:hidden;
   background:color-mix(in srgb,var(--surface-1,var(--bg0)) 55%,transparent);
 }
@@ -4833,7 +4775,7 @@ body.audion-flow-board-active .app-main{
   text-transform:uppercase;
   letter-spacing:.04em;
   padding:.12rem .35rem;
-  border-radius:4px;
+  border-radius:0;
   white-space:nowrap;
 }
 .audion-flow-inspector-action-badge--click{background:color-mix(in srgb,#5b8def 22%,transparent)}
@@ -4873,14 +4815,14 @@ body.audion-flow-board-active .app-main{
   display:block;
   width:100%;
   height:auto;
-  border-radius:4px;
+  border-radius:0;
   border:1px solid var(--line);
 }
 .audion-flow-inspector-gate-card{
   display:grid;
   gap:.4rem;
   padding:.45rem .5rem;
-  border-radius:6px;
+  border-radius:0;
   border:1px solid var(--line);
 }
 .audion-flow-inspector-gate-card.is-match{
@@ -4908,7 +4850,7 @@ body.audion-flow-board-active .app-main{
   display:grid;
   gap:.25rem;
   padding:.4rem .45rem;
-  border-radius:6px;
+  border-radius:0;
   border:1px solid var(--line);
 }
 .audion-flow-inspector-replan--when{
@@ -4933,7 +4875,7 @@ body.audion-flow-board-active .app-main{
   --flow-viewport-bg:color-mix(in srgb,var(--surface-2,var(--bg0,#f3f1ec)) 88%,var(--ink, #111) 4%);
   height:min(76vh,720px);
   border:1px solid var(--line,var(--color-border,rgba(0,0,0,.12)));
-  border-radius:8px;
+  border-radius:0;
   overflow:hidden;
   background:var(--flow-viewport-bg);
 }
@@ -4942,7 +4884,7 @@ body.audion-flow-board-active .app-main{
 .audion-flow-canvas-viewport .react-flow__background{background:transparent!important}
 .audion-flow-canvas-viewport .react-flow__controls{
   border:1px solid var(--line);
-  border-radius:6px;
+  border-radius:0;
   overflow:hidden;
   box-shadow:none;
   background:var(--surface-1,var(--surface-2));
@@ -4955,7 +4897,7 @@ body.audion-flow-board-active .app-main{
 .audion-flow-canvas-viewport .react-flow__minimap{
   background:color-mix(in srgb,var(--surface-2) 92%,transparent);
   border:1px solid var(--line);
-  border-radius:6px;
+  border-radius:0;
 }
 .audion-flow-rf-node{
   --flow-node-bg:color-mix(in srgb,var(--surface-2, #1f1f1f) 94%,var(--ink));
@@ -4969,32 +4911,29 @@ body.audion-flow-board-active .app-main{
   --flow-danger:var(--danger,#c45c4a);
   position:relative;
   width:260px;
-  border-radius:6px;
+  border-radius:0;
   border:1px solid var(--flow-node-border);
   background:var(--flow-node-bg);
   color:var(--flow-node-fg);
   font-size:.75rem;
-  box-shadow:0 4px 14px color-mix(in srgb,var(--ink,#000) 14%,transparent);
+  box-shadow:none;
   overflow:visible;
 }
-.audion-flow-rf-node.is-selected{box-shadow:0 0 0 2px var(--flow-accent),0 4px 14px color-mix(in srgb,var(--ink,#000) 18%,transparent)}
-.audion-flow-rf-node--run-active{box-shadow:0 0 0 2px var(--flow-accent),0 0 18px color-mix(in srgb,var(--flow-accent) 45%,transparent);animation:audion-flow-pulse 1.4s ease-in-out infinite}
-.audion-flow-rf-node--run-done{box-shadow:0 0 0 2px var(--flow-ok)}
-.audion-flow-rf-node--run-error{box-shadow:0 0 0 2px var(--flow-danger)}
+.audion-flow-rf-node.is-selected{outline:2px solid var(--flow-accent);outline-offset:0;box-shadow:none}
+.audion-flow-rf-node--run-active{outline:2px solid var(--flow-accent);outline-offset:0;box-shadow:none}
+.audion-flow-rf-node--run-done{outline:2px solid var(--flow-ok);outline-offset:0;box-shadow:none}
+.audion-flow-rf-node--run-error{outline:2px solid var(--flow-danger);outline-offset:0;box-shadow:none}
 .audion-flow-rf-node--run-skipped{opacity:.55}
 .audion-flow-rf-node--run-b-active{outline:2px dashed color-mix(in srgb,var(--flow-accent) 70%,var(--ok,#3d9a6a));outline-offset:2px}
 .audion-flow-rf-node--run-b-done{outline:2px solid color-mix(in srgb,var(--flow-ok) 55%,var(--accent));outline-offset:2px}
 .audion-flow-rf-node--run-b-error{outline:2px solid color-mix(in srgb,var(--flow-danger) 70%,var(--accent));outline-offset:2px}
-@keyframes audion-flow-pulse{
-  0%,100%{box-shadow:0 0 0 2px var(--flow-accent),0 0 10px color-mix(in srgb,var(--flow-accent) 35%,transparent)}
-  50%{box-shadow:0 0 0 2px var(--flow-accent),0 0 22px color-mix(in srgb,var(--flow-accent) 55%,transparent)}
-}
 .audion-flow-rf-node-head{
   display:flex;align-items:center;justify-content:space-between;gap:.35rem;
   padding:.4rem .55rem;
   border-bottom:1px solid var(--flow-node-head-border);
-  background:color-mix(in srgb,var(--surface-2) 70%,var(--ink) 8%);
-  border-radius:6px 6px 0 0;
+  border-radius:0;
+  border-top:3px solid var(--flow-accent);
+  background:transparent;
 }
 .audion-flow-rf-node-kind{font-weight:700;letter-spacing:.02em;text-transform:uppercase;font-size:.68rem}
 .audion-flow-rf-node-run{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;opacity:.85;color:var(--flow-accent);min-width:2.5rem;text-align:center}
@@ -5004,15 +4943,17 @@ body.audion-flow-board-active .app-main{
 .audion-flow-rf-node-id{opacity:.55;font-size:.62rem;max-width:7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .audion-flow-run-strip{
   display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;
-  margin:0;padding:.55rem .75rem;border-radius:8px;
-  border:1px solid var(--line,rgba(0,0,0,.1));
-  background:color-mix(in srgb,var(--surface-2, #f7f5f1) 92%,var(--ink));
+  margin:0;padding:.35rem 0;
+  border-radius:0;
+  border:none;
+  border-top:1px solid var(--line,rgba(0,0,0,.1));
+  background:transparent;
   font-size:.85rem;
 }
 .audion-flow-verdict{
-  display:grid;gap:.55rem;margin:.65rem 0 0;padding:.65rem .75rem;
-  border-radius:8px;border:1px solid color-mix(in srgb,var(--flow-accent,#5b8def) 28%,var(--line));
-  background:color-mix(in srgb,var(--flow-accent,#5b8def) 6%,var(--surface-2,#f7f5f1));
+  display:grid;gap:.55rem;margin:.65rem 0 0;padding:.55rem 0 0;
+  border-radius:0;border:none;border-top:1px solid var(--line);
+  background:transparent;
   font-size:.8rem;
 }
 .audion-flow-verdict-lede{margin:0;line-height:1.35;opacity:.92}
@@ -5031,24 +4972,24 @@ body.audion-flow-board-active .app-main{
 .audion-flow-verdict-chip--gate{background:color-mix(in srgb,var(--muted,#888) 16%,var(--surface-2))}
 .audion-flow-verdict-blockers{margin:0;font-size:.68rem;color:var(--danger,#c45c5c)}
 .audion-flow-live-thumb{
-  width:168px;height:100px;object-fit:cover;border-radius:4px;
+  width:168px;height:100px;object-fit:cover;border-radius:0;
   border:1px solid var(--line,rgba(0,0,0,.12));
   background:color-mix(in srgb,var(--bg0,#111) 90%,var(--ink));
 }
 .audion-flow-rf-node-body{display:grid;gap:.4rem;padding:.5rem .55rem .65rem}
 .audion-flow-rf-node.has-output{width:280px}
-.audion-flow-rf-output{display:grid;gap:.35rem;margin-top:.25rem;padding:.45rem;border-radius:4px;border:1px solid color-mix(in srgb,var(--flow-accent) 35%,transparent);background:color-mix(in srgb,var(--flow-accent) 8%,var(--flow-node-bg,#1f1f1f))}
+.audion-flow-rf-output{display:grid;gap:.35rem;margin-top:.25rem;padding:.45rem;border-radius:0;border:1px solid var(--line);background:transparent}
 .audion-flow-rf-output-label{margin:0;font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;opacity:.7}
 .audion-flow-rf-output-headline{margin:0;font-size:.72rem;font-weight:600;line-height:1.25;word-break:break-word}
 .audion-flow-rf-output-text{margin:0;white-space:pre-wrap;word-break:break-word;font:inherit;font-size:.68rem;line-height:1.35;opacity:.92;max-height:7.5rem;overflow:auto}
-.audion-flow-rf-output-img{display:block;width:100%;height:auto;max-height:120px;object-fit:cover;border-radius:3px;border:1px solid color-mix(in srgb,var(--flow-border,#444) 80%,transparent);background:#0a0a0a}
+.audion-flow-rf-output-img{display:block;width:100%;height:auto;max-height:120px;object-fit:cover;border-radius:0;border:1px solid color-mix(in srgb,var(--flow-border,#444) 80%,transparent);background:#0a0a0a}
 .audion-flow-rf-field{display:grid;gap:.15rem;margin:0}
 .audion-flow-rf-field>span{font-size:.62rem;text-transform:uppercase;letter-spacing:.04em;opacity:.65}
 .audion-flow-rf-field--inline{grid-template-columns:1fr auto;align-items:center}
 .audion-flow-rf-input{
   width:100%;box-sizing:border-box;
   border:1px solid var(--flow-input-border);
-  border-radius:4px;
+  border-radius:0;
   background:var(--flow-input-bg);
   color:var(--flow-node-fg);
   padding:.28rem .4rem;font:inherit;
@@ -5061,7 +5002,7 @@ body.audion-flow-board-active .app-main{
 .audion-flow-rf-gate-actions{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.25rem}
 .audion-flow-rf-segment{margin-top:.15rem}
 .audion-flow-rf-btn{
-  font:inherit;font-size:.65rem;padding:.25rem .45rem;border-radius:4px;
+  font:inherit;font-size:.65rem;padding:.25rem .45rem;border-radius:0;
   border:1px solid color-mix(in srgb,var(--flow-accent) 50%,var(--flow-border));
   background:color-mix(in srgb,var(--flow-accent) 12%,var(--flow-node-bg));
   color:var(--flow-node-fg);cursor:pointer;
@@ -5071,19 +5012,36 @@ body.audion-flow-board-active .app-main{
 .audion-flow-rf-btn--muted{border-color:color-mix(in srgb,var(--flow-danger) 45%,var(--flow-border))}
 .audion-flow-rf-btn--inline{margin-top:.25rem;width:100%}
 .audion-flow-rf-select{appearance:auto}
+
+.audion-flow-rf-select{
+  width:100%;box-sizing:border-box;
+  border:none;border-bottom:2px solid var(--line);border-radius:0;
+  background:transparent;color:var(--flow-node-fg);
+  padding:.28rem 0;font:inherit;appearance:auto;
+}
+.audion-flow-rf-select:focus{outline:none;border-bottom-color:var(--flow-accent)}
+.audion-flow-rf-node .ds-input,
+.audion-flow-rf-node .ds-textarea{
+  --control-radius:0;
+  border-radius:0;
+  font-size:.72rem;
+}
+.audion-flow-rf-input--narrow{width:4.5rem;max-width:4.5rem}
+.audion-flow-rf-textarea--note{min-height:2.4rem;font-size:.72rem}
+
 .audion-flow-rf-handle{width:10px;height:10px;border:2px solid var(--flow-node-bg);background:var(--flow-accent)}
 .audion-flow-rf-handle--when{background:var(--flow-ok)}
 .audion-flow-rf-handle--otherwise{background:var(--flow-danger)}
 .audion-flow-rf-port-label{position:absolute;right:14px;font-size:.58rem;opacity:.7;pointer-events:none;text-transform:uppercase}
 .audion-flow-rf-port-label--when{top:calc(38% - .55rem)}
 .audion-flow-rf-port-label--otherwise{top:calc(72% - .55rem)}
-.audion-flow-rf-node--start .audion-flow-rf-node-head{background:color-mix(in srgb,var(--ok,#1f4d3a) 42%,var(--surface-2))}
-.audion-flow-rf-node--prompt .audion-flow-rf-node-head{background:color-mix(in srgb,#2c3e50 38%,var(--surface-2))}
-.audion-flow-rf-node--observe .audion-flow-rf-node-head{background:color-mix(in srgb,#b8860b 32%,var(--surface-2))}
-.audion-flow-rf-node--action .audion-flow-rf-node-head{background:color-mix(in srgb,#c45c1a 34%,var(--surface-2))}
-.audion-flow-rf-node--gate .audion-flow-rf-node-head{background:color-mix(in srgb,var(--danger,#5a2a32) 36%,var(--surface-2))}
-.audion-flow-rf-node--message .audion-flow-rf-node-head{background:color-mix(in srgb,var(--muted,#3a3a3a) 28%,var(--surface-2))}
-.audion-flow-rf-node--success .audion-flow-rf-node-head{background:color-mix(in srgb,var(--ok,#1f5a38) 45%,var(--surface-2))}
-.audion-flow-rf-node--abandon .audion-flow-rf-node-head{background:color-mix(in srgb,#8a4b1f 38%,var(--surface-2))}
-.audion-flow-rf-node--measure .audion-flow-rf-node-head{background:color-mix(in srgb,#1f6a8a 38%,var(--surface-2))}
+.audion-flow-rf-node--start .audion-flow-rf-node-head{border-top-color:var(--ok,#3d9a6a);background:transparent}
+.audion-flow-rf-node--prompt .audion-flow-rf-node-head{border-top-color:#5b8def;background:transparent}
+.audion-flow-rf-node--observe .audion-flow-rf-node-head{border-top-color:#c9a227;background:transparent}
+.audion-flow-rf-node--action .audion-flow-rf-node-head{border-top-color:#d97b3a;background:transparent}
+.audion-flow-rf-node--gate .audion-flow-rf-node-head{border-top-color:var(--danger,#c45c5c);background:transparent}
+.audion-flow-rf-node--message .audion-flow-rf-node-head{border-top-color:var(--muted,#888);background:transparent}
+.audion-flow-rf-node--success .audion-flow-rf-node-head{border-top-color:var(--ok,#3d9a6a);background:transparent}
+.audion-flow-rf-node--abandon .audion-flow-rf-node-head{border-top-color:#b8860b;background:transparent}
+.audion-flow-rf-node--measure .audion-flow-rf-node-head{border-top-color:#3d9ab8;background:transparent}
 

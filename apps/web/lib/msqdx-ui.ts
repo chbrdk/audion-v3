@@ -46,6 +46,12 @@ export type {
 } from '../../../../msqdx-ui/packages/ui/src/components/DivergingBar'
 export { Flyout, useFlyout } from '../../../../msqdx-ui/packages/ui/src/components/Flyout'
 export type { FlyoutProps } from '../../../../msqdx-ui/packages/ui/src/components/Flyout'
+export { FloatingPanel } from '../../../../msqdx-ui/packages/ui/src/components/FloatingPanel'
+export type {
+  FloatingPanelProps,
+  FloatingPanelSurface,
+  FloatingPanelVariant,
+} from '../../../../msqdx-ui/packages/ui/src/components/FloatingPanel'
 export {
   IconShare,
   IconHistory,

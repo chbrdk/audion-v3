@@ -736,6 +736,7 @@ function FlowCanvasInner({
             storageKey={paths.flowBoardToolbarDockKey}
             defaultEdge="top"
             defaultOffset={0.1}
+            variant="toolbar"
             className="audion-flow-float-panel--toolbar"
             ariaLabel="Flow Board"
           >
@@ -814,6 +815,7 @@ function FlowCanvasInner({
             storageKey={paths.flowBoardToolbarDockKey}
             defaultEdge="top"
             defaultOffset={0.06}
+            variant="toolbar"
             className="audion-flow-float-panel--toolbar"
             ariaLabel="Flow Board Aktionen"
           >
@@ -924,6 +926,7 @@ function FlowCanvasInner({
             defaultEdge="left"
             defaultOffset={0.38}
             title={paletteOpen ? 'Bausteine' : undefined}
+            variant={paletteOpen ? 'panel' : 'toolbar'}
             className={
               paletteOpen
                 ? 'audion-flow-float-panel--palette audion-flow-float-panel--palette-open'
@@ -961,16 +964,17 @@ function FlowCanvasInner({
                 </div>
               </div>
             ) : (
-              <button
+              <Button
                 type="button"
+                size="md"
+                variant="subtle"
                 className="audion-flow-palette-fab"
                 aria-label="Bausteine hinzufügen"
                 title="Bausteine"
+                icon={<IconPlus size={22} />}
                 disabled={runBusy}
                 onClick={() => setPaletteOpen(true)}
-              >
-                <IconPlus size={28} />
-              </button>
+              />
             )}
           </UxFlowFloatingPanel>
 
@@ -980,6 +984,7 @@ function FlowCanvasInner({
               defaultEdge="bottom"
               defaultOffset={0.5}
               title="Live Run"
+              variant="strip"
               className="audion-flow-float-panel--run"
               ariaLabel="Live Run Status"
             >

@@ -3,6 +3,7 @@
 import { memo, useCallback, type ChangeEvent, type MouseEvent } from 'react'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import type { UxFlowGateCondition, UxFlowNode, UxFlowNodeKind } from '@audion-v3/contracts'
+import { Button, Input, Textarea } from '@msqdx/ui'
 import { UX_FLOW_GATE_OPTIONS, type UxFlowRfNodeData } from '../lib/ux-flow-canvas'
 
 type UxFlowNodeType = Node<UxFlowRfNodeData, 'uxFlow'>
@@ -99,8 +100,10 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
       <div className="audion-flow-rf-node-body nodrag nopan" onMouseDown={stopDrag}>
         <label className="audion-flow-rf-field">
           <span>Name</span>
-          <input
-            className="audion-flow-rf-input"
+          <Input
+            block
+            size="sm"
+            className="audion-flow-rf-ds-input"
             value={flowNode.label}
             onChange={onLabel}
             placeholder="Node name"
@@ -110,8 +113,10 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
         {kind === 'start' ? (
           <label className="audion-flow-rf-field">
             <span>urlKey</span>
-            <input
-              className="audion-flow-rf-input"
+            <Input
+              block
+              size="sm"
+              className="audion-flow-rf-ds-input"
               value={flowNode.urlKey ?? ''}
               onChange={onUrl}
               placeholder="url key or https://…"
@@ -124,7 +129,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
             <label className="audion-flow-rf-field">
               <span>Condition</span>
               <select
-                className="audion-flow-rf-input audion-flow-rf-select"
+                className="audion-flow-rf-select"
                 value={flowNode.gateCondition ?? 'goal_reached'}
                 onChange={onGate}
               >
@@ -139,8 +144,10 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
               flowNode.gateCondition === 'title_match') && (
               <label className="audion-flow-rf-field">
                 <span>pattern</span>
-                <input
-                  className="audion-flow-rf-input"
+                <Input
+                  block
+                  size="sm"
+                  className="audion-flow-rf-ds-input"
                   value={flowNode.pattern ?? ''}
                   onChange={onPattern}
                   placeholder="regex"
@@ -155,20 +162,17 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
             ) : null}
             {runBusy && onManualGate ? (
               <div className="audion-flow-rf-gate-actions nodrag nopan" onMouseDown={stopDrag}>
-                <button
-                  type="button"
-                  className="audion-flow-rf-btn"
-                  onClick={() => onManualGate('when')}
-                >
+                <Button type="button" size="sm" variant="subtle" onClick={() => onManualGate('when')}>
                   Wenn → Agent
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="audion-flow-rf-btn audion-flow-rf-btn--muted"
+                  size="sm"
+                  variant="ghost"
                   onClick={() => onManualGate('otherwise')}
                 >
                   Sonst → Agent
-                </button>
+                </Button>
               </div>
             ) : null}
           </>
@@ -177,8 +181,9 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
         {kind === 'observe' ? (
           <label className="audion-flow-rf-field audion-flow-rf-field--inline">
             <span>Sekunden</span>
-            <input
-              className="audion-flow-rf-input audion-flow-rf-input--narrow"
+            <Input
+              size="sm"
+              className="audion-flow-rf-ds-input audion-flow-rf-input--narrow"
               type="number"
               min={1}
               value={flowNode.observeSeconds ?? 30}
@@ -190,8 +195,10 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
         {showText ? (
           <label className="audion-flow-rf-field">
             <span>{kind === 'measure' ? 'Frage' : 'Text'}</span>
-            <textarea
-              className="audion-flow-rf-input audion-flow-rf-textarea"
+            <Textarea
+              block
+              size="sm"
+              className="audion-flow-rf-ds-input"
               rows={kind === 'observe' ? 2 : 3}
               value={flowNode.text ?? ''}
               onChange={onText}
@@ -202,8 +209,10 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
 
         <label className="audion-flow-rf-field">
           <span>Note</span>
-          <textarea
-            className="audion-flow-rf-input audion-flow-rf-textarea audion-flow-rf-textarea--note"
+          <Textarea
+            block
+            size="sm"
+            className="audion-flow-rf-ds-input audion-flow-rf-textarea--note"
             rows={2}
             value={flowNode.note ?? ''}
             onChange={onNote}
@@ -214,14 +223,15 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
 
         {showSegmentPlay ? (
           <div className="audion-flow-rf-segment nodrag nopan" onMouseDown={stopDrag}>
-            <button
+            <Button
               type="button"
-              className="audion-flow-rf-btn"
+              size="sm"
+              variant="subtle"
               disabled={runBusy}
               onClick={() => onPlaySegment?.()}
             >
               Agent-Segment
-            </button>
+            </Button>
           </div>
         ) : null}
 
@@ -238,13 +248,14 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
               <pre className="audion-flow-rf-output-text">{runOutput.text}</pre>
             ) : null}
             {runOutput?.text && onOutputToNote ? (
-              <button
+              <Button
                 type="button"
-                className="audion-flow-rf-btn audion-flow-rf-btn--inline"
+                size="sm"
+                variant="ghost"
                 onClick={() => onOutputToNote()}
               >
                 In Note übernehmen
-              </button>
+              </Button>
             ) : null}
             {runOutput?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

@@ -225,6 +225,7 @@ Facade: `apps/web/lib/fixtures/ux-flow-store.ts` — Postgres when `DATABASE_URL
 | **Phase 6a — Node inspector** | Side **Inspector** on node select / note focus: full agent steps per node (action, target, result, reasoning, think-aloud, perception, screenshots); step timing (Δ + elapsed); job-level metrics; gate evaluation + replan history | Step scrubber; Study ↔ Board evaluate loop |
 | **Phase 6c — Inspector UX** | n8n-style inspector: collapsible sections, execution timeline, color-coded field tones (action/target/result/reasoning/perception), action badges, gate/replan cards | Step scrubber |
 | **Phase 7 — Completion & evidence** | `deriveFlowVerdict()`; Board **Verdict** card after Testen; Wave Sync merges flow terminal + gates into `taskCompleted` when `flowGraph` present | Persist `lastRunVerdict` on saved flow; Evaluate shortcut from Board |
+| **Phase 8 — Workspace magazine** | Board chrome → magazine tokens; consume `@msqdx/ui` `FloatingPanel`; square floats/toolbar/nodes; DS Input/Button | Essay hero on board; RF replacement |
 
 ## Completion & evidence contract (Phase 7)
 
@@ -264,7 +265,29 @@ Deferred: persist `lastRunVerdict` on `ux_saved_flows.flow` metadata; Board → 
 
 ## Immersive flow board (Phase 6b)
 
-Board mode uses a fixed full-viewport React Flow stage. Chrome (Testen/Save, Bausteine, Live Run, Inspector) floats in draggable panels via `react-driftkit` SnapDock — same interaction model as the primary NavRail. Dock positions persist in `localStorage` (`paths.flowBoard*DockKey`).
+Board mode uses a fixed full-viewport React Flow stage. Chrome (Testen/Save, Bausteine, Live Run, Inspector) floats in draggable panels via `@msqdx/ui` **`FloatingPanel`** (SnapDock) — same interaction model as the primary NavRail. Dock positions persist in `localStorage` (`paths.flowBoard*DockKey`).
+
+## Workspace magazine (Phase 8)
+
+The Board is a **functional workspace**, denser than persona/essay magazine, but it must speak the **same design language** — not glass SaaS chrome.
+
+| Principle | Board implication |
+|-----------|-------------------|
+| Square / hairline | Floats, nodes, strips: `border-radius: 0`; hairline `--line` |
+| Fill-free / solid | No frosted blur default; solid `--paper`/`--surface` |
+| Underline / DS fields | Prefer `@msqdx/ui` `Input`/`Textarea`/`Field` or underline-fit; drop boxed 4px hand-rolled inputs where density allows |
+| DS atoms | Toolbar/palette/verdict actions via `Button` (square/sm), `Chip`, `Text` |
+| Shared chrome | `FloatingPanel` from `@msqdx/ui` — not app-local SnapDock glass wrappers |
+
+### Keep / reshape / drop
+
+| | |
+|--|--|
+| **Keep** | Immersive stage; SnapDock dock model; React Flow graph; run-state feedback; inspector + verdict data; compact toolbar affordances |
+| **Reshape** | Floats → magazine solid; toolbar → square strip; RF nodes → radius 0 + top-rule kind cue; inspector → hairline disclosure; verdict/run → hairline band |
+| **Drop** | Frosted glass floats; pill toolbar/FAB; soft 6–12px card radii; run glow pulse as default; parallel hand-rolled button/input systems |
+
+Domain RF node composition and verdict mapping stay in Audion. Shared overlay shell lives in `msqdx-ui` (`specs/domain/floating-panel.md`).
 
 ## Node inspector (Phase 6a)
 
