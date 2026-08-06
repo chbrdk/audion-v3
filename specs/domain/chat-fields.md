@@ -78,9 +78,23 @@ Exact wire format follows chat-api; adapter lives in `apps/web/lib/chat/`.
 - Missing `personaId` → block send; prompt persona picker
 - Unknown roles on history load → drop or coerce to `assistant`
 
+## Target-group ask-all (client shapes)
+
+Not persisted conversations — UI round state only.
+
+| Type | Notes |
+|------|--------|
+| `ChatMode` | `persona` \| `target_group` |
+| `ChatTargetGroupRoundSlot` | `personaId`, `personaName`, `role`, `content`, `status` (`pending` \| `streaming` \| `complete` \| `error`), optional `error` |
+| `ChatTargetGroupRound` | `id`, `question`, `createdAt`, `slots: ChatTargetGroupRoundSlot[]` |
+| Cap | `MAX_TG_CHAT_PERSONAS = 10` (constant in app `lib/chat/tg-ask-all.ts`) |
+
+Send still uses per-persona `ChatSendPayload` (required `personaId`) via fan-out.
+
 ## Deferred
 
 - Attachment / document ids on send
 - Moodboard asset refs
 - Share-token conversation persistence
 - Voice / Tavus session ids
+- Persisted TG round history / multi-turn TG sessions

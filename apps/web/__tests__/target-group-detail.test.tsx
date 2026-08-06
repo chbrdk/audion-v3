@@ -25,6 +25,15 @@ describe('TargetGroupDetailPanel hero', () => {
     expect(screen.getByRole('heading', { name: 'Digital Product Leads' })).toBeTruthy()
     expect(container.querySelector('.audion-magazine-portrait')).toBeNull()
   })
+
+  it('links Ask all personas to TG chat', () => {
+    render(<TargetGroupDetailPanel targetGroup={DEMO_TARGET_GROUPS[0]!} />)
+    const link = screen.getByRole('link', { name: /Ask all personas/i })
+    expect(link).toHaveAttribute(
+      'href',
+      paths.routes.chatTargetGroup(DEMO_TARGET_GROUPS[0]!.id),
+    )
+  })
 })
 
 describe('TargetGroupDetailPanel linked personas layout', () => {

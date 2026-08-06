@@ -60,6 +60,14 @@ export function TargetGroupDetailPanel({
           </span>
         </p>
         <div className="audion-magazine-topbar-actions">
+          {targetGroup.linkedPersonas.length > 0 ? (
+            <Link
+              href={paths.routes.chatTargetGroup(targetGroup.id)}
+              className="audion-link audion-magazine-ask-all"
+            >
+              Ask all personas
+            </Link>
+          ) : null}
           <TargetGroupDetailActions targetGroup={targetGroup} />
           <GeneratePersonasAiButton
             targetGroupId={targetGroup.id}

@@ -1,20 +1,26 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type {
   ChatConversationDetail,
+  ChatMode,
   ChatModality,
   ChatShareMoodboard,
   ChatTavusSessionResponse,
   PersonaSummary,
+  TargetGroupDetail,
+  TargetGroupSummary,
 } from '@audion-v3/contracts'
 import { Button, Field, IconMic, IconVideo, Text } from '@msqdx/ui'
 import { AppShell } from './app-shell'
 import { AudionChatPanel } from './audion-chat-panel'
+import { AudionTargetGroupChatPanel } from './audion-target-group-chat-panel'
 import { ChatHistoryFlyout } from './chat-history-flyout'
 import { ChatMoodboardStrip } from './chat-moodboard-strip'
 import { ChatShareFlyout } from './chat-share-flyout'
 import { Select } from '../lib/msqdx-ui-client'
+import { selectTgChatPersonas } from '../lib/chat/tg-ask-all'
 import { paths } from '../lib/paths'
 
 type Props = {
@@ -26,6 +32,9 @@ type Props = {
   shareProjectId?: string | null
   /** Optional moodboard tiles for strip (share or workspace). */
   moodboardTiles?: ChatShareMoodboard['tiles']
+  targetGroups?: TargetGroupSummary[]
+  initialTargetGroup?: TargetGroupDetail | null
+  initialMode?: ChatMode
 }
 
 function iconBtnClass(active?: boolean): string {
@@ -39,6 +48,11 @@ function iconBtnClass(active?: boolean): string {
     .join(' ')
 }
 
+const MODE_OPTIONS = [
+  { value: 'persona', label: 'Persona' },
+  { value: 'target_group', label: 'Zielgruppe' },
+]
+
 export function AudionChatWorkspace({
   personas,
   initialPersonaId,
@@ -46,10 +60,20 @@ export function AudionChatWorkspace({
   initialDraft = null,
   shareProjectId = null,
   moodboardTiles,
+  targetGroups = [],
+  initialTargetGroup = null,
+  initialMode,
 }: Props) {
+  const router = useRouter()
   const shareMode = Boolean(shareProjectId)
+  const [mode, setMode] = useState<ChatMode>(
+    initialMode ?? (initialTargetGroup ? 'target_group' : 'persona'),
+  )
   const [personaId, setPersonaId] = useState(
     initialPersonaId || initialConversation?.personaId || personas[0]?.id || '',
+  )
+  const [targetGroupId, setTargetGroupId] = useState(
+    initialTargetGroup?.id || targetGroups[0]?.id || '',
   )
   const [busy, setBusy] = useState(false)
   const [modality, setModality] = useState<ChatModality>('text')
@@ -62,19 +86,26 @@ export function AudionChatWorkspace({
     [personas],
   )
 
+  const tgOptions = useMemo(
+    () => targetGroups.map((g) => ({ value: g.id, label: g.name })),
+    [targetGroups],
+  )
+
   const persona = useMemo(
     () => personas.find((p) => p.id === personaId) ?? null,
     [personas, personaId],
   )
 
   const projectIdForShare = shareProjectId || persona?.projectId || null
+  const tgPersonaCount = selectTgChatPersonas(initialTargetGroup?.linkedPersonas).length
+  const tgMode = !shareMode && mode === 'target_group'
 
   const toggleModality = useCallback((next: ChatModality) => {
     setModality((prev) => (prev === next ? 'text' : next))
   }, [])
 
   useEffect(() => {
-    if (modality !== 'video' || shareMode) {
+    if (modality !== 'video' || shareMode || tgMode) {
       setTavusUrl(null)
       return
     }
@@ -101,9 +132,31 @@ export function AudionChatWorkspace({
     return () => {
       cancelled = true
     }
-  }, [modality, personaId, shareMode])
+  }, [modality, personaId, shareMode, tgMode])
 
-  const composerLeading = shareMode ? null : (
+  function onModeChange(next: string) {
+    const nextMode = next === 'target_group' ? 'target_group' : 'persona'
+    setMode(nextMode)
+    setBusy(false)
+    if (nextMode === 'target_group') {
+      const id = targetGroupId || targetGroups[0]?.id
+      if (id) {
+        setTargetGroupId(id)
+        router.replace(paths.routes.chatTargetGroup(id))
+      }
+      return
+    }
+    const qs = personaId ? `?personaId=${encodeURIComponent(personaId)}` : ''
+    router.replace(`${paths.routes.chat}${qs}`)
+  }
+
+  function onTargetGroupChange(id: string) {
+    setTargetGroupId(id)
+    setBusy(false)
+    router.replace(paths.routes.chatTargetGroup(id))
+  }
+
+  const composerLeading = shareMode || tgMode ? null : (
     <div className="audion-chat-composer-actions" role="toolbar" aria-label="Chat modality">
       <Button
         type="button"
@@ -148,47 +201,89 @@ export function AudionChatWorkspace({
         ) : (
           <div className="audion-chat-topbar-leading">
             <Field
-              label="Persona"
+              label="Mode"
               size="md"
-              htmlFor="chat-persona"
-              className="audion-chat-persona-field"
+              htmlFor="chat-mode"
+              className="audion-chat-mode-field"
             >
               <Select
-                id="chat-persona"
-                options={personaOptions}
-                value={personaId}
-                onChange={setPersonaId}
-                disabled={busy || !personaOptions.length}
+                id="chat-mode"
+                options={MODE_OPTIONS}
+                value={mode}
+                onChange={onModeChange}
+                disabled={busy}
               />
             </Field>
-            <div className="audion-chat-topbar-actions" role="group" aria-label="Chat links">
-              <ChatMoodboardStrip
-                personaId={personaId}
-                projectId={shareProjectId}
-                tiles={moodboardTiles}
-              />
-              {projectIdForShare ? (
-                <ChatShareFlyout
-                  personaId={personaId}
-                  personaName={persona?.name}
-                  projectId={projectIdForShare}
-                />
-              ) : null}
-              <ChatHistoryFlyout personaId={personaId} />
-            </div>
+            {tgMode ? (
+              <>
+                <Field
+                  label="Zielgruppe"
+                  size="md"
+                  htmlFor="chat-target-group"
+                  className="audion-chat-persona-field"
+                >
+                  <Select
+                    id="chat-target-group"
+                    options={tgOptions}
+                    value={targetGroupId}
+                    onChange={onTargetGroupChange}
+                    disabled={busy || !tgOptions.length}
+                  />
+                </Field>
+                {initialTargetGroup && targetGroupId === initialTargetGroup.id ? (
+                  <Text role="label" className="audion-tg-chat-count">
+                    {tgPersonaCount} persona{tgPersonaCount === 1 ? '' : 's'}
+                  </Text>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <Field
+                  label="Persona"
+                  size="md"
+                  htmlFor="chat-persona"
+                  className="audion-chat-persona-field"
+                >
+                  <Select
+                    id="chat-persona"
+                    options={personaOptions}
+                    value={personaId}
+                    onChange={setPersonaId}
+                    disabled={busy || !personaOptions.length}
+                  />
+                </Field>
+                <div className="audion-chat-topbar-actions" role="group" aria-label="Chat links">
+                  <ChatMoodboardStrip
+                    personaId={personaId}
+                    projectId={shareProjectId}
+                    tiles={moodboardTiles}
+                  />
+                  {projectIdForShare ? (
+                    <ChatShareFlyout
+                      personaId={personaId}
+                      personaName={persona?.name}
+                      projectId={projectIdForShare}
+                    />
+                  ) : null}
+                  <ChatHistoryFlyout personaId={personaId} />
+                </div>
+              </>
+            )}
           </div>
         )
       }
     >
-      <h1 className="visually-hidden">{shareMode ? 'Shared chat' : 'Chat'}</h1>
+      <h1 className="visually-hidden">
+        {shareMode ? 'Shared chat' : tgMode ? 'Target group chat' : 'Chat'}
+      </h1>
 
-      {modality === 'voice' && !shareMode ? (
+      {tgMode ? null : modality === 'voice' && !shareMode ? (
         <p className="audion-edit-lede audion-chat-modality-note" role="status">
           Voice mode stub — mic UI deferred. Text chat still works below.
         </p>
       ) : null}
 
-      {modality === 'video' && !shareMode ? (
+      {tgMode ? null : modality === 'video' && !shareMode ? (
         <div className="audion-chat-tavus" role="status">
           {tavusBusy ? <p className="audion-edit-lede">Starting video session…</p> : null}
           {tavusError ? <p className="audion-edit-error">{tavusError}</p> : null}
@@ -200,16 +295,27 @@ export function AudionChatWorkspace({
         </div>
       ) : null}
 
-      <AudionChatPanel
-        personas={personas}
-        personaId={personaId}
-        onBusyChange={setBusy}
-        initialConversation={initialConversation}
-        initialDraft={initialDraft}
-        shareProjectId={shareProjectId}
-        allowConvert={!shareMode}
-        composerLeading={composerLeading}
-      />
+      {tgMode ? (
+        <AudionTargetGroupChatPanel
+          targetGroup={
+            initialTargetGroup && initialTargetGroup.id === targetGroupId
+              ? initialTargetGroup
+              : null
+          }
+          onBusyChange={setBusy}
+        />
+      ) : (
+        <AudionChatPanel
+          personas={personas}
+          personaId={personaId}
+          onBusyChange={setBusy}
+          initialConversation={initialConversation}
+          initialDraft={initialDraft}
+          shareProjectId={shareProjectId}
+          allowConvert={!shareMode}
+          composerLeading={composerLeading}
+        />
+      )}
     </AppShell>
   )
 }

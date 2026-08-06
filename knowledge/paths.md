@@ -63,6 +63,7 @@
 - Collection binding field on AUDION project: `checkionProjectId` (from Plexon origin / binding)
 - Journey from UX run: `apps/web/lib/journey-from-ux-run.ts` · `paths.routes.apiJourneyFromUxRun`
 - Chat deep-link / F-Fragen prefill: `paths.routes.chatWithContext` · `apps/web/lib/chat/prefill.ts`
+- Chat TG ask-all: `paths.routes.chatTargetGroup` → `/chat?targetGroupId=` · `apps/web/lib/chat/tg-ask-all.ts`
   (`prompt`, `personaId`, `studyId`, `waveId`, `projectId`, `studyName`, `waveKey`)
 - Bosch EBM demo URL: `paths.boschEbikeProduktkombinationenUrl` / `paths.boschEbikeHomeUrl` / `paths.boschEbikePressHubMotorUrl`
 - Research crawl UA: `paths.researchCrawlUserAgent` (CloudFront on bosch-ebike.com blocks bare `node` UA → 403)
@@ -91,7 +92,7 @@
 - Queue dashboard: `/queue` · `paths.routes.queue` · `apiQueueStats` / `apiQueueJobs` / `apiQueueJobDetail` / `apiQueueJobRetry` · store `paths.queueStorePath` · `knowledge/queue-dashboard-2026.md`
 - User prefs keys: `audion.v3.displayName` · `audion.v3.theme` · `audion.v3.locale`
 - Workspace slice clone pattern: `knowledge/workspace-slice-pattern.md`
-- Chat routes: `/chat`, `/chat/history`
+- Chat routes: `/chat`, `/chat/history`, `/chat?targetGroupId=` (ask-all)
 - Chat API proxies: `/api/chat/stream`, `/api/chat/conversations`, `/api/chat/conversations/[id]`
   - Nested under `app/api/chat/*` → import fixtures via `../../../../lib/fixtures/chat-store` (four levels up)
 - Chat API internal default: `paths.chatApiInternalUrl` · env `NEXT_CHAT_API_INTERNAL_URL`

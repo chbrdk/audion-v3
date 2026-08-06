@@ -5,6 +5,7 @@ import { buildChatPrefillDraft } from '../../lib/chat/prefill'
 import { fetchChatConversationDetail } from '../../lib/chat/conversations'
 import { storeShareMoodboard, storeSharePersona } from '../../lib/fixtures/chat-share'
 import { fetchPersonaList } from '../../lib/personas'
+import { fetchTargetGroupDetail, fetchTargetGroupList } from '../../lib/target-groups'
 import type { PersonaSummary } from '@audion-v3/contracts'
 
 export default async function ChatPage({
@@ -19,6 +20,7 @@ export default async function ChatPage({
     projectId?: string
     studyName?: string
     waveKey?: string
+    targetGroupId?: string
   }>
 }) {
   const params = (await searchParams) || {}
@@ -26,6 +28,8 @@ export default async function ChatPage({
   const conversationId =
     typeof params.conversationId === 'string' ? params.conversationId : null
   const projectId = typeof params.projectId === 'string' ? params.projectId : null
+  const targetGroupId =
+    typeof params.targetGroupId === 'string' ? params.targetGroupId : null
   const prompt = typeof params.prompt === 'string' ? params.prompt : ''
   const studyName = typeof params.studyName === 'string' ? params.studyName : null
   const waveKey = typeof params.waveKey === 'string' ? params.waveKey : null
@@ -69,10 +73,15 @@ export default async function ChatPage({
       )
     }
 
-    const [personaResult, conversation] = await Promise.all([
+    const [personaResult, conversation, tgList, tgDetail] = await Promise.all([
       fetchPersonaList(),
       conversationId ? fetchChatConversationDetail(conversationId) : Promise.resolve(null),
+      fetchTargetGroupList(),
+      targetGroupId
+        ? fetchTargetGroupDetail(targetGroupId).then((r) => r.targetGroup)
+        : Promise.resolve(null),
     ])
+
     return (
       <AudionChatWorkspace
         personas={personaResult.items}
@@ -80,6 +89,9 @@ export default async function ChatPage({
         initialConversation={conversation}
         initialDraft={initialDraft}
         shareProjectId={null}
+        targetGroups={tgList.items}
+        initialTargetGroup={tgDetail}
+        initialMode={targetGroupId ? 'target_group' : 'persona'}
       />
     )
   } catch (error) {

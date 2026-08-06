@@ -28,7 +28,7 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 
 - Magazine hero **text-only** (`.audion-magazine-hero--text`): full-width eyebrow, title, segment deck, facets — no portrait column (same as projects)
 - Optional description lede under hero
-- Topbar: breadcrumb + **edit icon** + **Generate with AI** (stub → `personas/generate`)
+- Topbar: breadcrumb + **edit icon** + **Generate with AI** (stub → `personas/generate`) + **Ask all personas** → `/chat?targetGroupId=` (when ≥1 linked persona)
 - Linked personas band (`TargetGroupLinkedPersonas`): **Cards** (default `audion-tg-card` grid) or **List** (numbered `audion-magazine-list`) via layout switch — preference in `sessionStorage` (`paths.tgLinkedPersonasLayoutKey`)
 - Edit opens `TargetGroupEditDialog`
 
@@ -47,6 +47,7 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 
 - Sources explorer, knowledge upload, DE locale fields UI
 - Live persona-api proxy for generate/suggest (Wave 2) — see `knowledge/ai-workflows.md`
+- TG ask-all **persistence** / multi-turn TG sessions (chat surface owns ephemeral rounds — `chat-workspace.md`)
 
 ## Acceptance
 
@@ -55,3 +56,4 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 3. Detail linked personas are readable links into `/personas/[id]`; Cards | List toggle persists for the session.
 4. Index has no redundant title/filter header — cards are the surface.
 5. No hardcoded routes — `paths.ts` + `knowledge/paths.md`.
+6. Detail CTA opens `/chat?targetGroupId=` when the segment has linked personas.

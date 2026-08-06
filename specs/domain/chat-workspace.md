@@ -16,16 +16,17 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 
 | Route | Role |
 |-------|------|
-| `/chat` | Primary chat (authenticated app shell) |
+| `/chat` | Primary chat (authenticated app shell) — default **persona** mode |
 | `/chat?personaId=&projectId=` | Deep-link / share-style entry (MVP may require auth; public share later) |
 | `/chat?prompt=&personaId=&studyId=&waveId=&studyName=&waveKey=` | F-Fragen / study hang: composer prefill + persona select (`lib/chat/prefill.ts`) |
-| `/chat/history` | Simple conversation list |
+| `/chat?targetGroupId=` | **Target-group ask-all** mode — one question → N persona answers side by side |
+| `/chat/history` | Simple conversation list (persona conversations) |
 
 ## Composition (`/chat`)
 
 | Region | Treatment |
 |--------|-----------|
-| Shell topbar | No page title; persona `Select` in `leading` (`.topbar-brand`); History in `topbar-right`; visually-hidden `h1` “Chat” |
+| Shell topbar | No page title; mode control + persona **or** target-group `Select` in `leading` (`.topbar-brand`); History in `topbar-right` (persona mode); visually-hidden `h1` “Chat” |
 | Panel | `.chat-panel.chat-panel-open` (+ thin `.audion-chat-panel` for shell offset) |
 | Message stack | Scroll; assistant via `ChatAnswer`; user `.chat-text` display type, right-aligned |
 | Empty | `@msqdx/ui` `EmptyState` + `.chat-empty` |
@@ -34,17 +35,50 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 | Composer | Underline `Textarea.chat-composer`; expands on hover/focus/`is-expanded`; icon send `.chat-send.chat-send-icon` |
 | Optional | Stop generation while streaming |
 
+## Target-group ask-all (Phase TG)
+
+**Job:** One question to every linked persona of a target group; compare answers side by side. Not a shared multi-user thread.
+
+| Rule | Value |
+|------|--------|
+| Cap | `MAX_TG_CHAT_PERSONAS = 10` (first N linked personas) |
+| Transport | Client fan-out: N× existing `POST /api/chat/stream` with per-persona `personaId` (no TG aggregator API) |
+| Interaction | Round-based: user question once → response **card grid**; stack further rounds |
+| Prompt | One-shot per round (no prior TG answers in stream history for MVP) |
+| Disabled in TG | Voice / video / inspect / attachments / share / moodboard |
+| Entry | Topbar mode **Zielgruppe** + TG select; CTA from TG detail → `/chat?targetGroupId=` |
+| Persistence | Ephemeral UI rounds (not history list) for MVP |
+
+### TG composition
+
+| Region | Treatment |
+|--------|-----------|
+| Topbar | Mode select (Persona \| Zielgruppe) + TG `Select` + persona count |
+| Body | Stack of rounds: user question (`.chat-text`) → grid of persona cards |
+| Card | Name/role label + `ChatAnswer` / `LoadingText` / error |
+| Empty | Pick TG or “no linked personas” |
+| Composer | Same underline composer; send fans out to all slots |
+
+### Keep / reshape / drop (vs AUDION-v2 `/admin/chat`)
+
+| | |
+|--|--|
+| **Keep** | Ask-all job, fan-out, cap ~10, side-by-side cards, round stack |
+| **Reshape** | Editorial topbar + magazine grid on DS open chrome; deep-link + TG detail CTA |
+| **Drop** | MUI Tabs/Paper admin monolith; mixing TG grid into persona thread |
+
 ## Shell integration
 
 - Rail item **Chat** — path `paths.routes.chat`
 - Active rail for `/chat*`
-- Product CSS only for persona field, history link, `--chat-panel-open-min-height`
+- Product CSS only for persona/TG field, history link, `--chat-panel-open-min-height`, TG response grid
 
 ## Data / runtime
 
 - Stream + message POST against chat-api (URL from central config — never hardcode)
 - Next proxy under `paths.routes.apiChat*` when browser must avoid CORS / hide keys
 - Persona context: load summary via existing persona contracts when `personaId` present
+- TG context: load detail via target-group contracts when `targetGroupId` present; members from `linkedPersonas`
 - Fixture mode: canned transcript + fake stream for UI tests without chat-api
 
 ## Non-goals (MVP)
@@ -55,6 +89,8 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 - Public unauthenticated share (middleware `PUBLIC_PATHS`) — follow-on
 - Full adaptive-prompt admin / Qdrant debug panels
 - Journey-in-chat context picker (follow-on once journeys ship)
+- Persisted TG round history / multi-turn TG sessions
+- Voice / inspect / attachments in TG mode
 
 ## Acceptance
 
@@ -64,3 +100,6 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 4. Chat visual chrome comes from `@msqdx/ui` (`chat.css`); answer code reused from ECHON, not reinvented.
 5. No hardcoded chat/API URLs — `paths.ts` + runtime config + `knowledge/paths.md`.
 6. Unit/smoke: open classes + fixture stream smoke (`chat-panel.test.tsx`).
+7. With `targetGroupId`, TG mode shows ask-all grid; send fans out ≤10 streams; cards fill with `ChatAnswer`.
+8. TG detail exposes CTA to `/chat?targetGroupId=`.
+9. TG mode smoke test: fan-out mocked streams → N cards.

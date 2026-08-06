@@ -75,6 +75,29 @@ export type ChatSendPayload = {
   journeyId?: string | null
 }
 
+/** Chat workspace scope — persona thread vs target-group ask-all. */
+export type ChatMode = 'persona' | 'target_group'
+
+export type ChatTargetGroupSlotStatus = 'pending' | 'streaming' | 'complete' | 'error'
+
+/** One persona answer slot inside a TG ask-all round. */
+export type ChatTargetGroupRoundSlot = {
+  personaId: string
+  personaName: string
+  role: string
+  content: string
+  status: ChatTargetGroupSlotStatus
+  error: string | null
+}
+
+/** One question → N persona slots (ephemeral UI; not a conversation row). */
+export type ChatTargetGroupRound = {
+  id: string
+  question: string
+  createdAt: string
+  slots: ChatTargetGroupRoundSlot[]
+}
+
 export type ChatModality = 'text' | 'voice' | 'video'
 
 export type ChatShareMoodboardTile = {
