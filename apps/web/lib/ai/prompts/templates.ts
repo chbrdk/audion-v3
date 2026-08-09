@@ -167,8 +167,16 @@ Generate exactly \${max_items} draft personas for this target group.
 TARGET GROUP:
 \${context}
 
+TRAIT RULES (critical):
+- Each persona needs 5–8 traits as English PascalCase or snake_case keys with scores 0.0–1.0.
+- Trait scores must reflect THIS persona's role, segment, and decision style — not generic B2B defaults.
+- Do NOT reuse the same top trait or near-identical score set across personas in this response.
+- Vary which traits dominate (e.g. one risk-averse buyer vs one impatient innovator vs one detail-driven specialist).
+- Prefer concrete behavioral traits (e.g. Skeptical, TimePressed, DetailOriented, Collaborative, StatusDriven) over vague labels.
+- Never copy example numbers; invent scores that fit the person.
+
 FORMAT:
-{"personas":[{"name":"...","role":"...","archetype":"...","headline":"...","bio":"...","interests":["..."],"goals":[{"label":"...","priority":1}],"frustrations":[{"label":"..."}],"traits":{"Pragmatic":0.82,"Analytical":0.7}}]}`,
+{"personas":[{"name":"...","role":"...","archetype":"...","headline":"...","bio":"...","interests":["..."],"goals":[{"label":"...","priority":1}],"frustrations":[{"label":"..."}],"traits":{"TraitA":0.0,"TraitB":0.0,"TraitC":0.0,"TraitD":0.0,"TraitE":0.0}}]}`,
   },
   'persona.enrich_facets': {
     id: 'persona.enrich_facets',
@@ -184,8 +192,13 @@ Enrich this persona (keep existing signal, add depth):
 
 \${persona_profile}
 
+TRAIT RULES (critical):
+- Return 5–8 traits as English PascalCase or snake_case keys with scores 0.0–1.0.
+- Scores must differentiate this persona's decision style; avoid flat mid scores and generic defaults like Pragmatic≈0.82 / Analytical≈0.7 for everyone.
+- Keep strong existing traits if present, then add complementary traits that deepen the brief.
+
 FORMAT:
-{"interests":["..."],"values":["..."],"goals":[{"label":"..."}],"frustrations":[{"label":"..."}],"traits":{"TraitName":0.0}}`,
+{"interests":["..."],"values":["..."],"goals":[{"label":"..."}],"frustrations":[{"label":"..."}],"traits":{"TraitA":0.0,"TraitB":0.0,"TraitC":0.0,"TraitD":0.0,"TraitE":0.0}}`,
   },
   'persona.derive_agent_profile': {
     id: 'persona.derive_agent_profile',

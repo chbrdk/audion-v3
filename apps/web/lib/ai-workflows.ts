@@ -290,11 +290,30 @@ export async function runStubGeneratePersonas(
           { label: 'Unclear pricing and offers', evidenceCount: 2 },
           { label: 'Hard to compare providers', evidenceCount: 1 },
         ],
-        traits: {
-          Pragmatic: 0.8 - index * 0.05,
-          Analytical: 0.72,
-          Skeptical: 0.65,
-        },
+        traits:
+          index === 0
+            ? {
+                Pragmatic: 0.88,
+                Analytical: 0.74,
+                Skeptical: 0.71,
+                DetailOriented: 0.62,
+                Collaborative: 0.48,
+              }
+            : index === 1
+              ? {
+                  Innovative: 0.86,
+                  Impatient: 0.78,
+                  Decisive: 0.81,
+                  RiskTolerant: 0.69,
+                  StatusDriven: 0.55,
+                }
+              : {
+                  Empathetic: 0.84,
+                  Cautious: 0.79,
+                  Patient: 0.73,
+                  Collaborative: 0.77,
+                  RiskAverse: 0.68,
+                },
       }),
     ),
   )

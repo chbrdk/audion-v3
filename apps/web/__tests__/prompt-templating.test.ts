@@ -67,6 +67,14 @@ describe('assist prompt render', () => {
     expect(ASSIST_TEMPLATES['journey.validate_chat']).toBeTruthy()
     expect(ASSIST_TEMPLATES['persona.chat_system_default']).toBeTruthy()
   })
+
+  it('requires differentiated traits in persona.generate_batch', () => {
+    const t = ASSIST_TEMPLATES['persona.generate_batch']
+    expect(t.prompt).toContain('TRAIT RULES')
+    expect(t.prompt).toMatch(/5–8 traits|5-8 traits/)
+    expect(t.prompt).not.toContain('"Pragmatic":0.82')
+    expect(t.prompt).toContain('Do NOT reuse the same top trait')
+  })
 })
 
 describe('assist prompt overrides', () => {
