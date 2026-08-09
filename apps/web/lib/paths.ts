@@ -197,6 +197,9 @@ export const paths = {
     targetGroupDetail: (id: string) => `/target-groups/${id}`,
     apiTargetGroups: '/api/target-groups',
     apiTargetGroupDetail: (id: string) => `/api/target-groups/${id}`,
+    /** PLEXON / FastAPI-compatible alias of `apiAiGeneratePersonas` (no `/ai` prefix). */
+    apiTargetGroupPersonasGenerate: (tgId: string) =>
+      `/api/target-groups/${tgId}/personas/generate`,
     journeys: '/journeys',
     journeyDetail: (id: string) => `/journeys/${id}`,
     apiJourneys: '/api/journeys',
