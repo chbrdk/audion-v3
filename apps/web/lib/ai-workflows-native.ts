@@ -389,8 +389,12 @@ export async function runNativeGeneratePersonas(
       name?: string
       role?: string
       archetype?: string
+      headline?: string
       bio?: string
       interests?: string[]
+      goals?: Array<{ label?: string; priority?: number } | string>
+      frustrations?: Array<{ label?: string; evidenceCount?: number } | string>
+      traits?: Record<string, number>
     }>
   }>('persona.generate_batch', {
     locale,
@@ -410,23 +414,59 @@ export async function runNativeGeneratePersonas(
     return { error: 'Native generate returned no personas', status: 502 }
   }
   const created = await Promise.all(
-    drafts.map((seed) =>
-      storeCreatePersona({
+    drafts.map((seed) => {
+      const goals = (seed.goals ?? [])
+        .map((g, i) =>
+          typeof g === 'string'
+            ? { label: g.trim(), priority: i + 1 }
+            : { label: String(g.label ?? '').trim(), priority: g.priority ?? i + 1 },
+        )
+        .filter((g) => g.label)
+      const frustrations = (seed.frustrations ?? [])
+        .map((f) =>
+          typeof f === 'string'
+            ? { label: f.trim(), evidenceCount: 1 }
+            : { label: String(f.label ?? '').trim(), evidenceCount: f.evidenceCount ?? 1 },
+        )
+        .filter((f) => f.label)
+      const traits =
+        seed.traits && typeof seed.traits === 'object'
+          ? Object.fromEntries(
+              Object.entries(seed.traits)
+                .map(([k, v]) => [k, Number(v)] as const)
+                .filter(([, v]) => Number.isFinite(v)),
+            )
+          : {}
+      return storeCreatePersona({
         name: seed.name?.trim() || `Persona (${segment})`,
         role: seed.role?.trim() || 'Audience member',
         status: 'draft',
         archetype: seed.archetype?.trim() || segment,
-        bio: seed.bio?.trim() || `Generated for ${tg.name}`,
+        bio: seed.bio?.trim() || seed.headline?.trim() || `Generated for ${tg.name}`,
         projectId: tg.projectId,
         interests: seed.interests?.length ? seed.interests : [segment],
-      }),
-    ),
+        goals,
+        frustrations,
+        traits,
+      })
+    }),
   )
   const linkedIds = [...tg.linkedPersonas.map((p) => p.id), ...created.map((p) => p.id)]
   await storePatchTargetGroup(tgId, { linkedPersonaIds: linkedIds })
   return {
     ...meta,
-    personas: created.map((p) => ({ id: p.id, name: p.name, role: p.role })),
+    personas: created.map((p) => ({
+      id: p.id,
+      name: p.name,
+      role: p.role,
+      bio: p.bio,
+      archetype: p.archetype,
+      headline: p.bio?.split(/[.!?]/)[0]?.trim() || p.role,
+      interests: p.interests,
+      goals: p.goals,
+      frustrations: p.frustrations,
+      traits: p.traits,
+    })),
   }
 }
 

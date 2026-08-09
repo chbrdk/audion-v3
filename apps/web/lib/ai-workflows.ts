@@ -273,7 +273,7 @@ export async function runStubGeneratePersonas(
   const meta = stubMeta('generatePersonas', { tgId }, upstreamBody)
 
   const created = await Promise.all(
-    STUB_PERSONA_NAMES.slice(0, count).map((seed) =>
+    STUB_PERSONA_NAMES.slice(0, count).map((seed, index) =>
       storeCreatePersona({
         name: `${seed.name} (${segment})`,
         role: seed.role,
@@ -281,7 +281,20 @@ export async function runStubGeneratePersonas(
         archetype: segment,
         bio: `Stub persona from AI generate — will call ${meta.target.path}`,
         projectId: tg.projectId,
-        interests: [segment],
+        interests: [segment, 'Digital research'],
+        goals: [
+          { label: `Evaluate ${segment} options`, priority: 1 },
+          { label: 'Reduce decision risk', priority: 2 },
+        ],
+        frustrations: [
+          { label: 'Unclear pricing and offers', evidenceCount: 2 },
+          { label: 'Hard to compare providers', evidenceCount: 1 },
+        ],
+        traits: {
+          Pragmatic: 0.8 - index * 0.05,
+          Analytical: 0.72,
+          Skeptical: 0.65,
+        },
       }),
     ),
   )
@@ -291,7 +304,18 @@ export async function runStubGeneratePersonas(
 
   return {
     ...meta,
-    personas: created.map((p) => ({ id: p.id, name: p.name, role: p.role })),
+    personas: created.map((p) => ({
+      id: p.id,
+      name: p.name,
+      role: p.role,
+      bio: p.bio,
+      archetype: p.archetype,
+      headline: p.role,
+      interests: p.interests,
+      goals: p.goals,
+      frustrations: p.frustrations,
+      traits: p.traits,
+    })),
   }
 }
 

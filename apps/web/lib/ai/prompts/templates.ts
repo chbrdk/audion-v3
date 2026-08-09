@@ -168,7 +168,7 @@ TARGET GROUP:
 \${context}
 
 FORMAT:
-{"personas":[{"name":"...","role":"...","archetype":"...","bio":"...","interests":["..."]}]}`,
+{"personas":[{"name":"...","role":"...","archetype":"...","headline":"...","bio":"...","interests":["..."],"goals":[{"label":"...","priority":1}],"frustrations":[{"label":"..."}],"traits":{"Pragmatic":0.82,"Analytical":0.7}}]}`,
   },
   'persona.enrich_facets': {
     id: 'persona.enrich_facets',

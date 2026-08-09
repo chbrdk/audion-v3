@@ -45,7 +45,18 @@ export type GeneratePersonasRequest = {
 }
 
 export type GeneratePersonasResponse = AiStubMeta & {
-  personas: Array<{ id: string; name: string; role: string }>
+  personas: Array<{
+    id: string
+    name: string
+    role: string
+    bio?: string | null
+    archetype?: string | null
+    headline?: string | null
+    interests?: string[]
+    goals?: Array<{ label: string; priority?: number }>
+    frustrations?: Array<{ label: string; evidenceCount?: number }>
+    traits?: Record<string, number>
+  }>
 }
 
 export type SuggestTargetGroupsRequest = {
