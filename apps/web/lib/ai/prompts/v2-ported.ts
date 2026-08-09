@@ -157,17 +157,19 @@ PERSONA PROFILE: \${persona_profile}
 PERSONA GOALS: \${persona_goals}
 PERSONA PAIN POINTS: \${persona_pain_points}
 
-COMPANY BEING EVALUATED: \${brand_name}
-WEBSITE: \${brand_url}
+CATEGORY CONTEXT (optional): \${target_group_summary}
 
 RULES:
 - Write like a real buyer: first person ("Ich …") or natural search/chat phrasing
 - Questions must match YOUR role and needs — not generic SEO keyword lists
-- Reference the evaluated company or ask for alternatives/comparisons where natural
+- Ask category- and need-based questions (providers, alternatives, comparisons in the field)
+- NEVER name the evaluated company, brand, or website domain — that biases AI search results
+- NEVER name specific competitor domains either
 - NO meta labels or suffixes like "Branche:", "Zielgruppe:", "Bezug:", "Segment:"
 - NO agency jargon or keyword stuffing
 - Maximum 160 characters per question
 - Each question must be a complete, standalone sentence
+- At least one question should ask for alternatives, comparisons, or recommendations in the category
 
 FORMAT:
 {
