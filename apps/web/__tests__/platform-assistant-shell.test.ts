@@ -6,8 +6,11 @@ describe('audion platform assistant shell mount', () => {
   it('AppShell mounts host and paths document env key', () => {
     const root = join(__dirname, '..')
     const shell = readFileSync(join(root, 'components/app-shell.tsx'), 'utf8')
+    const host = readFileSync(join(root, 'components/platform-assistant-host.tsx'), 'utf8')
     const paths = readFileSync(join(root, 'lib/paths.ts'), 'utf8')
     expect(shell).toContain('PlatformAssistantHost')
+    expect(host).toContain('postPlatformAssistantTheme')
+    expect(host).toContain('headerActions')
     expect(paths).toContain('envPlexonPublicUrl')
     expect(paths).toContain('NEXT_PUBLIC_PLEXON_URL')
   })

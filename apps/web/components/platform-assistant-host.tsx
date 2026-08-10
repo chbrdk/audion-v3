@@ -10,6 +10,8 @@ import {
   buildPlatformAssistantEmbedUrl,
   buildPlatformAssistantExpandUrl,
   getPlexonPublicBaseUrl,
+  postPlatformAssistantTheme,
+  readHostThemeId,
 } from '../lib/platform-assistant-paths'
 
 const EMBED_SOURCE = 'plexon-assistant-embed'
@@ -36,6 +38,7 @@ export function PlatformAssistantHost({
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(null)
+  const [themeId, setThemeId] = useState<string | null>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const plexonOrigin = useMemo(() => {
@@ -48,6 +51,15 @@ export function PlatformAssistantHost({
     }
   }, [])
 
+  useEffect(() => {
+    const sync = () => setThemeId(readHostThemeId())
+    sync()
+    const root = document.documentElement
+    const observer = new MutationObserver(sync)
+    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
+
   const embedSrc = useMemo(() => {
     if (!open) return null
     return buildPlatformAssistantEmbedUrl({
@@ -55,8 +67,15 @@ export function PlatformAssistantHost({
       capability,
       pathname,
       conversationId,
+      theme: themeId,
     })
-  }, [open, platformProjectId, capability, pathname, conversationId])
+  }, [open, platformProjectId, capability, pathname, conversationId, themeId])
+
+  const navigateExpand = useCallback(() => {
+    setOpen(false)
+    const url = buildPlatformAssistantExpandUrl(conversationId, platformProjectId)
+    if (url) window.open(url, '_blank', 'noopener,noreferrer')
+  }, [conversationId, platformProjectId])
 
   const onMessage = useCallback(
     (event: MessageEvent) => {
@@ -90,6 +109,11 @@ export function PlatformAssistantHost({
     return () => window.removeEventListener('message', onMessage)
   }, [onMessage])
 
+  useEffect(() => {
+    if (!open || !themeId || !plexonOrigin) return
+    postPlatformAssistantTheme(iframeRef.current?.contentWindow, plexonOrigin, themeId)
+  }, [open, themeId, plexonOrigin, embedSrc])
+
   if (!getPlexonPublicBaseUrl()) return null
 
   return (
@@ -104,7 +128,17 @@ export function PlatformAssistantHost({
         onClick={() => setOpen((v) => !v)}
         icon={<NavIconChat />}
       />
-      <ChatOverlay open={open} onOpenChange={setOpen} title="Assistant" placement="dock-end">
+      <ChatOverlay
+        open={open}
+        onOpenChange={setOpen}
+        title="Assistant"
+        placement="dock-end"
+        headerActions={
+          <Button type="button" variant="subtle" size="sm" onClick={navigateExpand}>
+            Open workspace
+          </Button>
+        }
+      >
         {embedSrc ? (
           <iframe
             ref={iframeRef}

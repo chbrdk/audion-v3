@@ -17,7 +17,7 @@
 - Docker / Coolify: `Dockerfile` · `.dockerignore` · health `paths.routes.apiHealth` (`/api/health`)
 - Shell paths helper: `apps/web/lib/paths.ts` (`paths.routes.*`)
 - Plexon federation Wave 1: `knowledge/plexon-federation.md` · login `/login` · env `PLEXON_AUTH_URL` / `PLEXON_SERVICE_SECRET` / `NEXT_PUBLIC_PLEXON_REGISTER_URL` / `AUTH_SECRET`
-- Central Assistant flyout: `PlatformAssistantHost` · plexon embed `/assistant/embed` · SoT `plexon-v3/specs/domain/central-assistant-flyout.md` · public plexon base from `PLEXON_AUTH_URL` / `NEXT_PUBLIC_PLEXON_URL` (never hardcode) · persona `/chat` stays separate
+- Central Assistant flyout: `PlatformAssistantHost` · plexon embed `/assistant/embed?theme=` + `assistant:theme` · SoT `plexon-v3/specs/domain/central-assistant-flyout.md` · public plexon base from `PLEXON_AUTH_URL` / `NEXT_PUBLIC_PLEXON_URL` (never hardcode) · persona `/chat` stays separate
 - Rail nav icons: `apps/web/components/nav-icons.tsx` · `knowledge/nav-rail-icons.md`
 - Rail dock storage key: `audion.v3.railDock`
 - Comm layout storage key: `audion.v3.commLayout` (`paths.commLayoutStorageKey`)

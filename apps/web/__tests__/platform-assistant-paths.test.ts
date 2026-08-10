@@ -15,6 +15,9 @@ describe('audion platform assistant paths', () => {
     expect(buildPlatformAssistantEmbedUrl({})).toBe(
       'https://plexon-v3.example/assistant/embed?product=audion',
     )
+    expect(buildPlatformAssistantEmbedUrl({ theme: 'msqdx' })).toBe(
+      'https://plexon-v3.example/assistant/embed?product=audion&theme=msqdx',
+    )
     process.env.NEXT_PUBLIC_PLEXON_URL = prev
   })
 })
