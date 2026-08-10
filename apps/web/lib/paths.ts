@@ -344,7 +344,10 @@ export const paths = {
   envAiOpenAiImageModel: 'AI_OPENAI_IMAGE_MODEL',
   /** Plexon federation — knowledge/plexon-federation.md */
   envPlexonAuthUrl: 'PLEXON_AUTH_URL',
+  envPlexonPublicUrl: 'NEXT_PUBLIC_PLEXON_URL',
   envPlexonServiceSecret: 'PLEXON_SERVICE_SECRET',
+  pathAssistantEmbed: '/assistant/embed',
+  pathAssistantExpand: '/assistant',
   envPlexonRegisterUrl: 'NEXT_PUBLIC_PLEXON_REGISTER_URL',
   /** Demo owner/company for machine sync when no session (Coolify). */
   envPlexonDemoOwner: 'PLEXON_DEMO_OWNER_USER_ID',

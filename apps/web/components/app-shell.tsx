@@ -25,6 +25,7 @@ import {
 } from './nav-icons'
 import { paths } from '../lib/paths'
 import { useUserPrefs } from '../lib/user-prefs'
+import { PlatformAssistantHost } from './platform-assistant-host'
 
 const PRIMARY_NAV = [
   {
@@ -161,6 +162,7 @@ export function AppShell({
     >
       {description ? <p className="audion-page-lead">{description}</p> : null}
       {children}
+      <PlatformAssistantHost />
     </AppFrame>
   )
 }

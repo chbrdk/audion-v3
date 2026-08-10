@@ -1,0 +1,120 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { Button } from '../lib/msqdx-ui'
+import { ChatOverlay } from '../lib/msqdx-ui-client'
+import { NavIconChat } from './nav-icons'
+import {
+  ASSISTANT_EMBED_PRODUCT,
+  buildPlatformAssistantEmbedUrl,
+  buildPlatformAssistantExpandUrl,
+  getPlexonPublicBaseUrl,
+} from '../lib/platform-assistant-paths'
+
+const EMBED_SOURCE = 'plexon-assistant-embed'
+
+function isEmbedMessage(data: unknown): data is {
+  source: string
+  type: string
+  conversationId?: string
+  project?: string
+} {
+  if (!data || typeof data !== 'object') return false
+  const row = data as Record<string, unknown>
+  return row.source === EMBED_SOURCE && typeof row.type === 'string'
+}
+
+/** Platform Assistant FAB + ChatOverlay — plexon-v3 central-assistant-flyout. */
+export function PlatformAssistantHost({
+  platformProjectId,
+  capability,
+}: {
+  platformProjectId?: string | null
+  capability?: string | null
+}) {
+  const pathname = usePathname()
+  const [open, setOpen] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+
+  const plexonOrigin = useMemo(() => {
+    const base = getPlexonPublicBaseUrl()
+    if (!base) return ''
+    try {
+      return new URL(base).origin
+    } catch {
+      return base
+    }
+  }, [])
+
+  const embedSrc = useMemo(() => {
+    if (!open) return null
+    return buildPlatformAssistantEmbedUrl({
+      platformProjectId,
+      capability,
+      pathname,
+      conversationId,
+    })
+  }, [open, platformProjectId, capability, pathname, conversationId])
+
+  const onMessage = useCallback(
+    (event: MessageEvent) => {
+      if (plexonOrigin && event.origin !== plexonOrigin) return
+      if (!isEmbedMessage(event.data)) return
+      if (event.data.type === 'assistant:close') {
+        setOpen(false)
+        return
+      }
+      if (
+        (event.data.type === 'assistant:conversation' || event.data.type === 'assistant:ready') &&
+        event.data.conversationId
+      ) {
+        setConversationId(event.data.conversationId)
+        return
+      }
+      if (event.data.type === 'assistant:expand') {
+        setOpen(false)
+        const url = buildPlatformAssistantExpandUrl(
+          event.data.conversationId || conversationId,
+          event.data.project || platformProjectId,
+        )
+        if (url) window.open(url, '_blank', 'noopener,noreferrer')
+      }
+    },
+    [plexonOrigin, conversationId, platformProjectId],
+  )
+
+  useEffect(() => {
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [onMessage])
+
+  if (!getPlexonPublicBaseUrl()) return null
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="primary"
+        size="md"
+        className="platform-assistant-fab"
+        aria-label={open ? 'Close assistant' : 'Open assistant'}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        icon={<NavIconChat />}
+      />
+      <ChatOverlay open={open} onOpenChange={setOpen} title="Assistant" placement="dock-end">
+        {embedSrc ? (
+          <iframe
+            ref={iframeRef}
+            title="Platform assistant"
+            src={embedSrc}
+            className="platform-assistant-embed-frame"
+            data-product={ASSISTANT_EMBED_PRODUCT}
+          />
+        ) : null}
+      </ChatOverlay>
+    </>
+  )
+}
