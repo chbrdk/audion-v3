@@ -3,8 +3,8 @@
 # Build:  docker build -t audion-v3 .
 # Run:    docker run -p 3000:3000 -e AUTH_SECRET=… -e DATABASE_URL=… audion-v3
 #
-# Sibling design system: clones github.com/chbrdk/msqdx-ui next to the app
-# so webpack aliases (`../../../msqdx-ui/…`) and barrels resolve.
+# Sibling design system: fetches github.com/chbrdk/msqdx-ui at MSQDX_UI_REF next
+# to the app so webpack aliases (`../../../msqdx-ui/…`) and barrels resolve.
 # Coolify: Dockerfile path `Dockerfile`, domain https://audion-v3.projects-a.plygrnd.tech
 # (see knowledge/deploy-urls.md).
 
@@ -21,17 +21,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && corepack enable
 
 # ---- Design system (msqdx-ui) ----
+# Pin a commit (not floating `main`) so Coolify cannot reuse a stale `ds` layer
+# that predates ChatOverlay — and so builds stay reproducible.
+# Bump MSQDX_UI_REF whenever audion barrels need a newer primitive from chbrdk/msqdx-ui.
 FROM base AS ds
 ARG MSQDX_UI_REPO=https://github.com/chbrdk/msqdx-ui.git
-ARG MSQDX_UI_BRANCH=main
-# Hoisted linker so node_modules survive COPY into the builder stage (pnpm's
-# default symlink store breaks across Docker stages → Coolify "Module not found"
-# for lucide-react / react-driftkit when Next compiles sibling DS source).
-RUN git clone --depth 1 -b "${MSQDX_UI_BRANCH}" "${MSQDX_UI_REPO}" /workspace/msqdx-ui \
+# Same pin as brandion-v3 / checkion-v3 (ChatOverlay + ReactNode return type).
+ARG MSQDX_UI_REF=5323011442f3665dc72da00ec77ebfb6559e1d3e
+RUN git init /workspace/msqdx-ui \
     && cd /workspace/msqdx-ui \
+    && git remote add origin "${MSQDX_UI_REPO}" \
+    && git fetch --depth 1 origin "${MSQDX_UI_REF}" \
+    && git checkout --force FETCH_HEAD \
+    && test "$(git rev-parse HEAD)" = "${MSQDX_UI_REF}" \
     && printf 'node-linker=hoisted\n' > .npmrc \
     && pnpm install --frozen-lockfile \
-    && pnpm build
+    && pnpm build \
+    # Drop install trees before COPY — full node_modules OOMs Coolify (exit 255).
+    # Builder re-links audion node_modules for @types/react + peer resolution.
+    && rm -rf node_modules \
+    && find . -type d -name node_modules -prune -exec rm -rf {} +
 
 # ---- Builder ----
 FROM base AS builder
@@ -40,16 +49,27 @@ COPY --from=ds /workspace/msqdx-ui /workspace/msqdx-ui
 COPY . /workspace/audion-v3
 WORKDIR /workspace/audion-v3
 
+# --include=dev: Coolify may inject NODE_ENV=production as a build ARG before this
+# stage; without it, typescript/devDeps are omitted and `next build` fails.
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --no-audit --no-fund
+    npm ci --no-audit --no-fund --include=dev
 
-# Ensure sibling layout matches local monorepo: …/GITHUB/audion-v3 + …/GITHUB/msqdx-ui
+# Sibling layout: …/workspace/audion-v3 + …/workspace/msqdx-ui
+# One node_modules for app + DS source (avoids dual @types/react / ChatOverlay JSX break).
+# See msqdx-ui/knowledge/react-types-dedupe.md
 RUN test -d /workspace/msqdx-ui/packages/ui/src \
-    && test -f /workspace/msqdx-ui/packages/ui-tokens/dist/index.js
+    && test -f /workspace/msqdx-ui/packages/ui-tokens/dist/index.js \
+    && test -f /workspace/msqdx-ui/packages/ui/src/components/ChatOverlay.tsx \
+    && grep -q "export { ChatOverlay }" /workspace/msqdx-ui/packages/ui/src/index.ts \
+    && rm -rf /workspace/msqdx-ui/node_modules \
+    && ln -s /workspace/audion-v3/node_modules /workspace/msqdx-ui/node_modules \
+    && test -d /workspace/msqdx-ui/node_modules/@types/react
 
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--max-old-space-size=6144
-RUN npm run build
+RUN npm run build \
+    # Runner must not inherit the absolute symlink into audion node_modules.
+    && rm -f /workspace/msqdx-ui/node_modules
 
 # ---- Runner ----
 FROM ${NODE_IMAGE} AS runner
