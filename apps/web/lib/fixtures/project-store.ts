@@ -124,7 +124,8 @@ async function memoryGetByPlatformProjectId(platformProjectId: string): Promise<
 }
 
 async function memoryProjectList(): Promise<ProjectList> {
-  const items = await Promise.all(projects.map((p) => toSummary(p)))
+  const visible = projects.filter((p) => p.status !== 'archived')
+  const items = await Promise.all(visible.map((p) => toSummary(p)))
   return { items, total: items.length, page: 1, pageSize: 50 }
 }
 
@@ -256,7 +257,12 @@ async function memoryUpsertByPlatformProjectId(
         name: data.name,
         platformCompanyId: data.platformCompanyId,
         ownerPlexonUserId: data.ownerUserId,
-        status: data.status === 'archived' ? 'archived' : existing.status,
+        status:
+          data.status === 'archived'
+            ? 'archived'
+            : existing.status === 'archived'
+              ? 'published'
+              : existing.status,
       })) ?? existing
     )
   }

@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, ne } from 'drizzle-orm'
 import type {
   ProjectCreateOptions,
   ProjectDetail,
@@ -96,7 +96,11 @@ function chaptersFromWrite(
 
 export async function dbProjectList(): Promise<ProjectList> {
   const db = getDb()
-  const rows = await db.select().from(projects).orderBy(desc(projects.updatedAt))
+  const rows = await db
+    .select()
+    .from(projects)
+    .where(ne(projects.status, 'archived'))
+    .orderBy(desc(projects.updatedAt))
   const items = await Promise.all(rows.map(async (row) => toSummary(await rowToDetail(row))))
   return { items, total: items.length, page: 1, pageSize: Math.max(50, items.length) }
 }
@@ -245,12 +249,18 @@ export async function dbUpsertByPlatformProjectId(
 ): Promise<ProjectDetail> {
   const existing = await dbGetByPlatformProjectId(platformProjectId)
   if (existing) {
+    const nextStatus =
+      data.status === 'archived'
+        ? 'archived'
+        : existing.status === 'archived'
+          ? 'published'
+          : existing.status
     return (
       (await dbPatchProject(existing.id, {
         name: data.name,
         platformCompanyId: data.platformCompanyId,
         ownerPlexonUserId: data.ownerUserId,
-        status: data.status === 'archived' ? 'archived' : existing.status,
+        status: nextStatus,
       })) ?? existing
     )
   }
