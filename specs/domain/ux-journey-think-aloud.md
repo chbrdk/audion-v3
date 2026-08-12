@@ -30,7 +30,8 @@ The agent strips the block (and `<<OBSERVATIONS>>`) from voice-over text. Cleane
 | `feel` | Gefühl | `{ label: string, valence: -2 \| -1 \| 0 \| 1 \| 2 }` |
 
 UI order on step cards: Gesehenes → Denken → Schon gewusst → Neu gelernt → Nächster Schritt → Warum → Gefühl.  
-Compact preview: **one open narrative lane only** (prefer Denken; else first useful channel) + feel pill in the header. Do **not** render closed channel summaries on compact cards — label salad (Gesehenes / Denken / … with empty bodies) is unusable. Expand reveals the full ChannelStack.  
+**Compact cards (always):** open **persona moment** channels when they have useful content — Gesehenes, Denken, Nächster Schritt, Warum, Gefühl. Never render empty channel labels. Secondary channels (Schon gewusst, Neu gelernt, Ergebnis) + observations appear on **expand**. Feel also stays as header pill.  
+Do **not** collapse the persona moment down to a single Denken teaser — researchers need see / think / feel / goal-progress per step at a glance.  
 `result` stays action outcome — separate from think-aloud.
 
 **Useless stubs (never show as Denken):** exact bookkeeping tokens such as `Start`, `None`, `Done`, `Success`, `Ok`, single short tokens, or AgentBrain dumps. Prefer cleaned VO → useful `evaluation_previous_goal` → action-beat synthesis from `action`+`target` (e.g. “Ich öffne …”).

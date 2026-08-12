@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { UxJourneyStepsStrip } from '../components/ux-journey-steps-strip'
 
-describe('UxJourneyStepsStrip readable compact preview', () => {
-  it('shows one Denken preview and hides closed channel labels until expand', () => {
+describe('UxJourneyStepsStrip persona moment channels', () => {
+  it('shows Gesehenes / Denken / Gefühl / Ziel channels on compact cards', () => {
     Element.prototype.scrollIntoView = vi.fn()
     Element.prototype.scrollTo = vi.fn() as never
 
@@ -15,13 +15,13 @@ describe('UxJourneyStepsStrip readable compact preview', () => {
             action: 'navigate',
             target: 'https://www.moebel-martin.de/',
             thinkAloud: {
-              seen: 'Hero and category rail',
-              think: 'Ich öffne die Möbel-Martin Startseite.',
-              priorKnow: null,
+              seen: 'Hero and category rail with Gartenmöbel',
+              think: 'Ich öffne die Möbel-Martin Startseite und suche Orientierung.',
+              priorKnow: 'Möbelhäuser verstecken Grillzubehör oft tief in Kategorien',
               learned: 'Home loaded',
-              next: 'Nach Grillplatte suchen',
-              why: null,
-              feel: null,
+              next: 'Nach Grillplatte in der Navigation suchen',
+              why: 'Ohne sichtbaren Einstieg komme ich dem Ziel nicht näher',
+              feel: { label: 'unsicher', valence: -1 },
             },
             result: 'Navigated',
           },
@@ -30,19 +30,23 @@ describe('UxJourneyStepsStrip readable compact preview', () => {
       />,
     )
 
-    expect(screen.getByText('Ich öffne die Möbel-Martin Startseite.')).toBeInTheDocument()
+    expect(screen.getByText('Gesehenes')).toBeInTheDocument()
     expect(screen.getByText('Denken')).toBeInTheDocument()
-    expect(screen.queryByText('Gesehenes')).toBeNull()
-    expect(screen.queryByText('Nächster Schritt')).toBeNull()
+    expect(screen.getByText('Nächster Schritt')).toBeInTheDocument()
+    expect(screen.getByText('Warum')).toBeInTheDocument()
+    expect(screen.getAllByText('Gefühl').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText(/Hero and category rail/)).toBeInTheDocument()
+    expect(screen.getByText(/komme ich dem Ziel nicht näher/)).toBeInTheDocument()
+    // Secondary lanes stay expand-only
+    expect(screen.queryByText('Schon gewusst')).toBeNull()
     expect(screen.queryByText('Ergebnis')).toBeNull()
 
     fireEvent.click(screen.getByLabelText(/Step 01 · Navigate/i))
-    expect(screen.getByText('Gesehenes')).toBeInTheDocument()
-    expect(screen.getByText('Nächster Schritt')).toBeInTheDocument()
+    expect(screen.getByText('Schon gewusst')).toBeInTheDocument()
     expect(screen.getByText('Ergebnis')).toBeInTheDocument()
   })
 
-  it('does not surface bookkeeping Start as Denken when action beat is available', () => {
+  it('does not surface bookkeeping Start as Denken', () => {
     Element.prototype.scrollIntoView = vi.fn()
     Element.prototype.scrollTo = vi.fn() as never
 
@@ -69,8 +73,6 @@ describe('UxJourneyStepsStrip readable compact preview', () => {
     )
 
     expect(screen.queryByText('Start')).toBeNull()
-    // Fallback synthesis happens in toChatUxJourneySteps; strip still filters stubs.
-    // Without remapping, empty think → no Denken lane if only stub.
     expect(screen.queryByText('Denken')).toBeNull()
   })
 })

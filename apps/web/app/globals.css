@@ -2964,8 +2964,17 @@ main { min-height: 100vh; }
 .audion-ux-step-md--compact {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 6;
   overflow: hidden;
+}
+
+/* Persona moment channels: keep VO readable on compact cards */
+.audion-ux-step-channels--persona-moment .ds-channel-lane--compact > .ds-channel-lane-body {
+  -webkit-line-clamp: 8;
+}
+
+.audion-ux-step-channels--persona-moment .audion-ux-step-md--compact {
+  -webkit-line-clamp: 8;
 }
 
 .audion-ux-step-slide--expanded .audion-ux-step-md {
