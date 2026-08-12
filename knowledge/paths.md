@@ -17,7 +17,7 @@
 - Docker / Coolify: `Dockerfile` · `.dockerignore` · health `paths.routes.apiHealth` (`/api/health`)
 - Shell paths helper: `apps/web/lib/paths.ts` (`paths.routes.*`)
 - Plexon federation Wave 1: `knowledge/plexon-federation.md` · login `/login` · env `PLEXON_AUTH_URL` / `PLEXON_SERVICE_SECRET` / `NEXT_PUBLIC_PLEXON_REGISTER_URL` / `AUTH_SECRET`
-- Central Assistant flyout: `PlatformAssistantHost` · plexon embed `/assistant/embed?theme=` + `assistant:theme` · SoT `plexon-v3/specs/domain/central-assistant-flyout.md` · public plexon base from `PLEXON_AUTH_URL` / `NEXT_PUBLIC_PLEXON_URL` (never hardcode) · persona `/chat` stays separate
+- Central Assistant flyout: `PlatformAssistantHost` · plexon embed `/assistant/embed?theme=` + `assistant:theme` · SoT `plexon-v3/specs/domain/central-assistant-flyout.md` · public plexon base from `PLEXON_AUTH_URL` / `NEXT_PUBLIC_PLEXON_URL` (never hardcode) · persona `/chat` stays separate; EQC hosts `/chat/embed` in its own overlay
 - Rail nav icons: `apps/web/components/nav-icons.tsx` · `knowledge/nav-rail-icons.md`
 - Rail dock storage key: `audion.v3.railDock`
 - Comm layout storage key: `audion.v3.commLayout` (`paths.commLayoutStorageKey`)
@@ -51,8 +51,8 @@
 - Chat step strip readable compact preview: `knowledge/chat-step-strip-readable-preview-2026-08-12.md`
 - Chat step strip persona moment channels: `knowledge/chat-step-strip-persona-moment-2026-08-12.md`
 - Browse/find explore-before-abandon: `knowledge/browse-explore-before-abandon-2026-08-12.md` · env `UX_JOURNEY_BROWSE_MIN_SCROLLS`
+- Browse/find explore-before-site-search (category-first): `knowledge/browse-explore-before-site-search-2026-08-12.md` · Gate 5c
 - Perception natural voice (shopper think-aloud): `knowledge/perception-natural-voice-2026-08-12.md`
-
 - Wave scorecard / validEvidence: `apps/web/lib/ux-wave-scorecard.ts`
 - UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts` · `ux-studies-native.ts`
 - UX Study knowledge: `knowledge/ux-studies.md`
@@ -99,7 +99,9 @@
 - Queue dashboard: `/queue` · `paths.routes.queue` · `apiQueueStats` / `apiQueueJobs` / `apiQueueJobDetail` / `apiQueueJobRetry` · store `paths.queueStorePath` · `knowledge/queue-dashboard-2026.md`
 - User prefs keys: `audion.v3.displayName` · `audion.v3.theme` · `audion.v3.locale`
 - Workspace slice clone pattern: `knowledge/workspace-slice-pattern.md`
-- Chat routes: `/chat`, `/chat/history`, `/chat?targetGroupId=` (ask-all)
+- Chat routes: `/chat`, `/chat/embed`, `/chat/history`, `/chat?targetGroupId=` (ask-all)
+- Chat embed (EQC overlay): `specs/domain/chat-embed.md` · `paths.routes.chatEmbed` / `buildChatEmbedHref` · CSP `frame-ancestors` via `AUDION_CHAT_EMBED_FRAME_ANCESTORS` or `NEXT_PUBLIC_PLEXON_URL` / `PLEXON_AUTH_URL`
+- Guest chat budgets: `apps/web/lib/chat/guest-budget.ts` — `GUEST_CHAT_MAX_USER_TURNS=5`, `GUEST_CHAT_MAX_CHARS=800`, `GUEST_CHAT_TTL_MS=30m` · cookie `audion_guest_chat` · gate unauthenticated `POST /api/chat/stream`
 - Chat API proxies: `/api/chat/stream`, `/api/chat/conversations`, `/api/chat/conversations/[id]`
   - Nested under `app/api/chat/*` → import fixtures via `../../../../lib/fixtures/chat-store` (four levels up)
 - Chat API internal default: `paths.chatApiInternalUrl` · env `NEXT_CHAT_API_INTERNAL_URL`
@@ -107,7 +109,7 @@
 - Chat answer port: `apps/web/lib/chat/`
 - Chat surface (editorial open): `knowledge/chat-surface.md`
 - Chat modalities (share / moodboard / inspect / Voice·Tavus hooks): `knowledge/chat-modalities-2026.md`
-- Chat share helper: `apps/web/lib/chat/share.ts` · `paths.routes.chatShare` · `paths.routes.chatConversation`
+- Chat share helper: `apps/web/lib/chat/share.ts` · `paths.routes.chatShare` · `paths.routes.chatEmbed` · `paths.routes.chatConversation`
 - Upstream Tavus (live): `paths.routes.upstreamPersonaAdminTavusSession`
 - Chat flyouts: product share / history / moodboard compose DS `Flyout` (`knowledge/flyout-ds-2026-07-30.md`)
 - Chat workspace spec: `specs/domain/chat-workspace.md`

@@ -1424,6 +1424,7 @@ def _apply_persona_perception_finalize(
     exploratory = 0
     clarity_trend: list[int] = []
     browse_scrolls = 0
+    browse_cats = 0
     current_url = start_url
     try_before = ux_perception.try_before_abandon_required(
         time_pressure, exploration=exploration
@@ -1437,6 +1438,13 @@ def _apply_persona_perception_finalize(
         target = step.get("target")
         if isinstance(target, str) and target.startswith("http"):
             current_url = target
+        if action == "click" and isinstance(target, str):
+            fake = {"click": {"element": target}}
+            if ux_perception.is_category_nav_action(
+                fake, step.get("perception") if isinstance(step.get("perception"), dict) else None,
+                task=task,
+            ):
+                browse_cats += 1
         perc = step.get("perception")
         if not isinstance(perc, dict):
             continue
@@ -1453,6 +1461,7 @@ def _apply_persona_perception_finalize(
             task=task,
             current_url=current_url,
             browse_scroll_attempts=browse_scrolls,
+            browse_category_nav_attempts=browse_cats,
         )
         if finalized:
             step["perception"] = finalized
@@ -3677,8 +3686,9 @@ async def run_agent(
                     "AUDION_COMPLETION:\n"
                     f"Persona time_pressure={persona_tp:.2f} — Step-Budget eng "
                     f"(max {max_steps}, soft min {min_steps}). "
-                    "BROWSE/FIND: Erst mindestens 2× scrollen und sichtbar nach dem Ziel suchen, "
-                    "dann erst ehrlich abbrechen wenn kein Einstieg (Kategorie, Suche, Produkt) sichtbar wird. "
+                    "BROWSE/FIND: Erst mindestens 2× scrollen und sichtbar nach dem Ziel suchen "
+                    "(Kategorie wie Garten vor Site-Suche), "
+                    "dann erst ehrlich abbrechen wenn kein Einstieg sichtbar wird. "
                     "Sprich wie ein echter Shopper — keine UX-Fachbegriffe.\n"
                     f"{nav_home_rule}"
                 )
@@ -3987,6 +3997,32 @@ async def run_agent(
                     felt_state["lastObservedUrl"] = current_url
                 lab_b_gold_allowed = ux_perception.lab_b_gold_context_allowed(current_url, task)
 
+                def _stance_and_search_filter(
+                    actions_in: list[Any], perc_in: dict[str, Any] | None
+                ) -> tuple[list[Any], str]:
+                    filtered_local, reason_local = ux_perception.filter_actions_for_stance(
+                        actions_in, perc_in, task=task
+                    )
+                    filtered_local, search_reason = (
+                        ux_perception.filter_actions_block_early_site_search(
+                            filtered_local,
+                            perc_in,
+                            task=task,
+                            scroll_attempts=int(
+                                felt_state.get("browseScrollAttempts") or 0
+                            ),
+                            category_nav_attempts=int(
+                                felt_state.get("browseCategoryNavAttempts") or 0
+                            ),
+                            current_url=current_url,
+                        )
+                    )
+                    if search_reason.startswith("browse_block_site_search"):
+                        if isinstance(perc_in, dict):
+                            perc_in["browseSearchBlocked"] = True
+                        reason_local = search_reason
+                    return filtered_local, reason_local
+
                 async def _once() -> dict[str, Any] | None:
                     await _orig_get_next(browser_state_summary)
                     mo = getattr(getattr(agent, "state", None), "last_model_output", None)
@@ -4026,6 +4062,9 @@ async def run_agent(
                         current_url=current_url,
                         browse_scroll_attempts=int(
                             felt_state.get("browseScrollAttempts") or 0
+                        ),
+                        browse_category_nav_attempts=int(
+                            felt_state.get("browseCategoryNavAttempts") or 0
                         ),
                     )
                     if upgraded:
@@ -4336,9 +4375,7 @@ async def run_agent(
                         return
                     mo_d = getattr(getattr(agent, "state", None), "last_model_output", None)
                     actions_d = list(getattr(mo_d, "action", None) or []) if mo_d else []
-                    filtered_d, _reason_d = ux_perception.filter_actions_for_stance(
-                        actions_d, perc_done
-                    )
+                    filtered_d, _reason_d = _stance_and_search_filter(actions_d, perc_done)
                     if not filtered_d:
                         # Stance abandon with no done tool in output — leave empty; schema is Done-only.
                         await _apply_actions([])
@@ -4401,7 +4438,28 @@ async def run_agent(
 
                 mo = getattr(getattr(agent, "state", None), "last_model_output", None)
                 actions = list(getattr(mo, "action", None) or []) if mo else []
-                filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
+                filtered, reason = _stance_and_search_filter(actions, perc)
+                if reason.startswith("browse_block_site_search") and not filtered:
+                    filtered = _typed_scroll_fallback()
+                    if filtered:
+                        reason = "browse_block_site_search_scroll"
+                        if isinstance(perc, dict):
+                            perc = dict(perc)
+                            perc["browseSearchBlocked"] = True
+                            perc["browseExploreAllowCategoryClick"] = True
+                            hints = ux_perception.browse_category_hints(task)
+                            if hints:
+                                perc["browseCategoryHints"] = hints
+                            if not perc.get("intent"):
+                                goal = (
+                                    ux_perception.browse_find_target_keywords(task) or ["Ziel"]
+                                )[0]
+                                lead = hints[0] if hints else None
+                                perc["intent"] = (
+                                    f"Ich schaue nach {lead} oder scrolle weiter."
+                                    if lead
+                                    else f"Ich scrolle weiter und suche nach {goal}."
+                                )
 
                 # Try-then-quit / browse-explore: never accept done on the soften turn.
                 # Prefer an exploratory click/scroll; if the model only emitted done, nudge
@@ -4430,8 +4488,9 @@ async def run_agent(
                         if perc.get("browseExploreRequired"):
                             await _nudge(
                                 "AUDION_BROWSE_EXPLORE: Ziel noch nicht sichtbar — done/abandon "
-                                "ist VERBOTEN. Scrolle mindestens zweimal nach unten und prüfe "
-                                "den sichtbaren Bereich (stance=hesitate), mit gültigem <<PERCEPTION>>."
+                                "ist VERBOTEN. Scrolle nach unten ODER klicke eine passende "
+                                "Kategorie (z.B. Garten), stance=hesitate, mit gültigem "
+                                "<<PERCEPTION>>. Site-Suche erst danach."
                             )
                         else:
                             await _nudge(
@@ -4455,7 +4514,7 @@ async def run_agent(
                                 perc = perc2
                         mo = getattr(getattr(agent, "state", None), "last_model_output", None)
                         actions = list(getattr(mo, "action", None) or []) if mo else []
-                        filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
+                        filtered, reason = _stance_and_search_filter(actions, perc)
                         filtered = _strip_done(filtered) if filtered else _strip_done(actions)
                         if not filtered and perc.get("browseExploreRequired"):
                             filtered = _typed_scroll_fallback()
@@ -4477,6 +4536,9 @@ async def run_agent(
                         if soft_only:
                             await _apply_actions(soft_only)
                             ux_perception.note_browse_scroll_attempts(felt_state, soft_only)
+                            ux_perception.note_browse_category_nav_attempts(
+                                felt_state, soft_only, perc, task=task
+                            )
                             ux_perception.update_felt_state(felt_state, perc)
                             print(
                                 f"ux-journey: job={job_id} try-then-quit soft_only={soft_reason}",
@@ -4489,6 +4551,9 @@ async def run_agent(
                                 reason = "browse_explore_scroll"
                                 await _apply_actions(filtered)
                                 ux_perception.note_browse_scroll_attempts(felt_state, filtered)
+                                ux_perception.note_browse_category_nav_attempts(
+                                    felt_state, filtered, perc, task=task
+                                )
                                 ux_perception.update_felt_state(felt_state, perc)
                                 print(
                                     f"ux-journey: job={job_id} browse-explore forced scroll",
@@ -4532,9 +4597,7 @@ async def run_agent(
                                 perc = perc2
                                 mo = getattr(getattr(agent, "state", None), "last_model_output", None)
                                 actions = list(getattr(mo, "action", None) or []) if mo else []
-                                filtered, reason = ux_perception.filter_actions_for_stance(
-                                    actions, perc
-                                )
+                                filtered, reason = _stance_and_search_filter(actions, perc)
                                 filtered = [
                                     a
                                     for a in (filtered or [])
@@ -4557,9 +4620,7 @@ async def run_agent(
                             )
                             if upgraded and perc_ab:
                                 perc = perc_ab
-                                filtered, reason = ux_perception.filter_actions_for_stance(
-                                    actions, perc
-                                )
+                                filtered, reason = _stance_and_search_filter(actions, perc)
                                 print(
                                     f"ux-journey: job={job_id} align_drop → abandon upgrade",
                                     flush=True,
@@ -4575,9 +4636,7 @@ async def run_agent(
                                     perc = perc2
                                     mo = getattr(getattr(agent, "state", None), "last_model_output", None)
                                     actions = list(getattr(mo, "action", None) or []) if mo else []
-                                    filtered, reason = ux_perception.filter_actions_for_stance(
-                                        actions, perc
-                                    )
+                                    filtered, reason = _stance_and_search_filter(actions, perc)
                                     filtered, _ = ux_perception.filter_actions_intent_align(
                                         filtered, perc
                                     )
@@ -4711,9 +4770,7 @@ async def run_agent(
                                 perc = perc2
                                 mo = getattr(getattr(agent, "state", None), "last_model_output", None)
                                 actions = list(getattr(mo, "action", None) or []) if mo else []
-                                filtered, reason = ux_perception.filter_actions_for_stance(
-                                    actions, perc
-                                )
+                                filtered, reason = _stance_and_search_filter(actions, perc)
                                 if (
                                     reason.startswith("proceed")
                                     or reason == "hesitate_filter"
@@ -4830,9 +4887,7 @@ async def run_agent(
                             perc = perc2
                             mo = getattr(getattr(agent, "state", None), "last_model_output", None)
                             actions = list(getattr(mo, "action", None) or []) if mo else []
-                            filtered, reason = ux_perception.filter_actions_for_stance(
-                                actions, perc
-                            )
+                            filtered, reason = _stance_and_search_filter(actions, perc)
                             if (
                                 reason.startswith("proceed")
                                 or reason == "hesitate_filter"
@@ -4924,6 +4979,9 @@ async def run_agent(
 
                 await _apply_actions(filtered)
                 ux_perception.note_browse_scroll_attempts(felt_state, filtered)
+                ux_perception.note_browse_category_nav_attempts(
+                    felt_state, filtered, perc, task=task
+                )
                 ux_perception.update_felt_state(felt_state, perc)
                 felt_block = ux_perception.felt_state_prompt_block(felt_state)
                 if felt_block:
@@ -4933,7 +4991,8 @@ async def run_agent(
                     f"noticed={perc.get('noticedUsed')}/{perc.get('salienceBudget')} "
                     f"gate={reason} upgraded={bool(perc.get('stanceUpgraded'))} "
                     f"softened={bool(perc.get('stanceSoftened'))} "
-                    f"browseScrolls={felt_state.get('browseScrollAttempts')}",
+                    f"browseScrolls={felt_state.get('browseScrollAttempts')} "
+                    f"browseCatNav={felt_state.get('browseCategoryNavAttempts')}",
                     flush=True,
                 )
 

@@ -2226,6 +2226,150 @@ def browse_min_scrolls_required() -> int:
     return max(1, min(n, 6))
 
 
+# Soft product → shop-category priors for browse/find (Gate 5c). Not site-specific URLs.
+_CATEGORY_HINT_RULES: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
+    (
+        (
+            "grillplatte",
+            "grill",
+            "barbecue",
+            "bbq",
+            "pizzastein",
+            "pizza",
+            "feuerstelle",
+            "rauch",
+        ),
+        ("garten", "outdoor", "grill", "terrasse", "balkon", "freizeit", "gartenmöbel"),
+    ),
+    (
+        ("rasenmäher", "rasen", "hecke", "gartenstuhl", "sonnenschirm"),
+        ("garten", "outdoor", "terrasse", "balkon"),
+    ),
+    (
+        ("sofa", "couch", "sessel", "wohnwand"),
+        ("wohnzimmer", "wohnen", "möbel"),
+    ),
+    (
+        ("matratze", "bett", "nachttisch"),
+        ("schlafzimmer", "schlafen", "möbel"),
+    ),
+    (
+        ("schrank", "kommode", "regal"),
+        ("möbel", "wohnen", "aufbewahrung"),
+    ),
+)
+
+_SITE_SEARCH_CUES = (
+    "suche",
+    "search",
+    "suchfeld",
+    "suchleiste",
+    "suchbox",
+    "magnifying",
+    "lupe",
+    "query",
+    "type_text",
+)
+
+_CATEGORY_NAV_CUES = (
+    "kategorie",
+    "kategorien",
+    "menü",
+    "menu",
+    "navigation",
+    "nav",
+    "bereich",
+    "abteilung",
+    "garten",
+    "outdoor",
+    "wohnen",
+    "möbel",
+    "freizeit",
+    "terrasse",
+    "balkon",
+)
+
+
+def browse_category_hints(task: str | None) -> list[str]:
+    """Likely shop sections for the find target (soft prior, not invented UI)."""
+    if not task:
+        return []
+    blob = f"{task} {' '.join(browse_find_target_keywords(task))}".lower()
+    hints: list[str] = []
+    for products, cats in _CATEGORY_HINT_RULES:
+        if any(p in blob for p in products):
+            for c in cats:
+                if c not in hints:
+                    hints.append(c)
+    return hints[:6]
+
+
+def _action_text_blob(action: Any) -> str:
+    if hasattr(action, "model_dump"):
+        try:
+            return json.dumps(action.model_dump(exclude_none=True), ensure_ascii=False).lower()
+        except Exception:
+            return str(action).lower()
+    if isinstance(action, dict):
+        try:
+            return json.dumps(action, ensure_ascii=False).lower()
+        except Exception:
+            return str(action).lower()
+    return str(action).lower()
+
+
+def is_site_search_action(action: Any) -> bool:
+    """True for typing into search or clicking a search control."""
+    name = action_tool_name(action)
+    blob = _action_text_blob(action)
+    if name in ("input", "type", "input_text", "type_text"):
+        return True
+    if name == "send_keys" and any(c in blob for c in _SITE_SEARCH_CUES):
+        return True
+    if name == "click" and any(c in blob for c in _SITE_SEARCH_CUES):
+        return True
+    return False
+
+
+def is_category_nav_action(
+    action: Any,
+    perception: dict[str, Any] | None,
+    *,
+    task: str | None = None,
+) -> bool:
+    """True when a click targets a category/nav cue from hints or noticed."""
+    if action_tool_name(action) != "click":
+        return False
+    blob = _action_text_blob(action)
+    hints = list((perception or {}).get("browseCategoryHints") or [])
+    if not hints:
+        hints = browse_category_hints(task)
+    for h in hints:
+        if h and h.lower() in blob:
+            return True
+    noticed_blob = " ".join(
+        str(n.get("what") or "")
+        for n in ((perception or {}).get("noticed") or [])
+        if isinstance(n, dict)
+    ).lower()
+    cue_pool = " ".join([noticed_blob, " ".join(hints), blob])
+    return any(c in cue_pool and c in blob for c in _CATEGORY_NAV_CUES)
+
+
+def browse_search_unlocked(
+    *,
+    scroll_attempts: int,
+    category_nav_attempts: int,
+    target_visible: bool,
+) -> bool:
+    """Site search allowed after explore budget or when the target is already visible."""
+    if target_visible:
+        return True
+    if int(category_nav_attempts or 0) >= 1:
+        return True
+    return int(scroll_attempts or 0) >= browse_min_scrolls_required()
+
+
 def browse_target_visible(
     perception: dict[str, Any] | None,
     *,
@@ -2270,19 +2414,44 @@ def count_scroll_actions(actions: list[Any] | None) -> int:
 
 
 def _soften_browse_explore(perception: dict[str, Any], *, task: str | None) -> dict[str, Any]:
-    """Force scroll exploration before abandon on browse/find tasks."""
+    """Force scroll / category exploration before abandon on browse/find tasks."""
     out = dict(perception)
     keys = browse_find_target_keywords(task)
     goal = keys[0] if keys else "dem Ziel"
+    hints = browse_category_hints(task)
     out["stance"] = "hesitate"
     out["stanceSoftened"] = True
     out["browseExploreRequired"] = True
+    out["browseExploreAllowCategoryClick"] = True
     out["tryThenQuit"] = True
     out["confusion"] = None
-    out["intent"] = f"Ich scroll runter und suche nach {goal}."
-    out["why"] = "Oben sehe ich noch nicht genug — erst weiter schauen."
-    out["think"] = f"{goal.capitalize()} sehe ich oben noch nicht; ich scroll weiter."
+    if hints:
+        lead = hints[0]
+        out["browseCategoryHints"] = hints
+        out["intent"] = (
+            f"Ich schaue nach {lead} oder scrolle weiter — dort könnte {goal} liegen."
+        )
+        out["why"] = f"{goal.capitalize()} gehört eher zu {lead}, nicht als erstes in die Suche."
+        out["think"] = (
+            f"{goal.capitalize()} sehe ich noch nicht; ich prüfe {lead} "
+            "oder scrolle den sichtbaren Bereich."
+        )
+    else:
+        out["intent"] = f"Ich scroll runter und suche nach {goal}."
+        out["why"] = "Oben sehe ich noch nicht genug — erst weiter schauen."
+        out["think"] = f"{goal.capitalize()} sehe ich oben noch nicht; ich scroll weiter."
     noticed = list(out.get("noticed") or [])
+    if hints and not any(
+        isinstance(n, dict) and any(h in str(n.get("what") or "").lower() for h in hints)
+        for n in noticed
+    ):
+        noticed.append(
+            {
+                "what": f"Vermutlich Kategorie {hints[0]}",
+                "where": "Nav/Header",
+                "relevance": "high",
+            }
+        )
     if not any(
         isinstance(n, dict) and "scroll" in str(n.get("what") or "").lower()
         for n in noticed
@@ -2294,7 +2463,7 @@ def _soften_browse_explore(perception: dict[str, Any], *, task: str | None) -> d
                 "relevance": "high",
             }
         )
-        out["noticed"] = noticed[:6]
+    out["noticed"] = noticed[:6]
     return out
 
 
@@ -2304,12 +2473,13 @@ def apply_browse_explore_before_abandon(
     task: str | None,
     scroll_attempts: int = 0,
     current_url: str | None = None,
+    category_nav_attempts: int = 0,
 ) -> tuple[dict[str, Any] | None, bool]:
     """
     Block early abandon on browse/find until min scrolls (or target visible).
 
     Returns (perception, blocked) where blocked means abandon/soften was redirected
-    to scroll explore.
+    to scroll/category explore.
     """
     if perception is None:
         return None, False
@@ -2324,13 +2494,62 @@ def apply_browse_explore_before_abandon(
     if browse_explore_satisfied(
         scroll_attempts=scroll_attempts, target_visible=visible
     ):
-        return perception, False
+        # Still annotate hints for later steps (search may unlock via category too).
+        out = dict(perception)
+        hints = browse_category_hints(task)
+        if hints and not out.get("browseCategoryHints"):
+            out["browseCategoryHints"] = hints
+        return out, False
     stance = str(perception.get("stance") or "")
-    # Soften hard abandon, and also re-steer try-then-quit softens toward scroll.
+    # Soften hard abandon, and also re-steer try-then-quit softens toward scroll/category.
     if stance == "abandon" or perception.get("stanceSoftened"):
         return _soften_browse_explore(perception, task=task), True
-    return perception, False
+    # Early browse: allow category click under hesitate even without abandon soften.
+    out = dict(perception)
+    hints = browse_category_hints(task)
+    if hints:
+        out["browseCategoryHints"] = hints
+        out["browseExploreAllowCategoryClick"] = True
+    if not browse_search_unlocked(
+        scroll_attempts=scroll_attempts,
+        category_nav_attempts=category_nav_attempts,
+        target_visible=visible,
+    ):
+        out["browseSearchBlocked"] = True
+    return out, False
 
+
+def filter_actions_block_early_site_search(
+    actions: list[Any],
+    perception: dict[str, Any] | None,
+    *,
+    task: str | None = None,
+    scroll_attempts: int = 0,
+    category_nav_attempts: int = 0,
+    current_url: str | None = None,
+) -> tuple[list[Any], str]:
+    """
+    Gate 5c: strip site-search until scrolls/category unlock (browse/find only).
+    """
+    if not actions or not is_browse_find_task(task):
+        return actions, "search_gate_off"
+    if lab_b_gold_context_allowed(current_url, task):
+        return actions, "search_gate_lab_b"
+    visible = browse_target_visible(
+        perception, task=task, current_url=current_url
+    )
+    if browse_search_unlocked(
+        scroll_attempts=scroll_attempts,
+        category_nav_attempts=category_nav_attempts,
+        target_visible=visible,
+    ):
+        return actions, "search_unlocked"
+    kept = [a for a in actions if not is_site_search_action(a)]
+    if len(kept) == len(actions):
+        return actions, "no_search_action"
+    if kept:
+        return kept, "browse_block_site_search"
+    return [], "browse_block_site_search_empty"
 
 def lab_b_gold_context_allowed(current_url: str | None, task: str | None) -> bool:
     """
@@ -2567,6 +2786,7 @@ def finalize_perception_for_persona(
     task: str | None = None,
     current_url: str | None = None,
     browse_scroll_attempts: int = 0,
+    browse_category_nav_attempts: int = 0,
 ) -> tuple[dict[str, Any] | None, bool]:
     """Enrich noticed from own text, then try-then-quit / browse-explore / hard-upgrade abandon."""
     if perception is None:
@@ -2593,6 +2813,7 @@ def finalize_perception_for_persona(
         task=task,
         scroll_attempts=browse_scroll_attempts,
         current_url=current_url,
+        category_nav_attempts=browse_category_nav_attempts,
     )
     if browse_blocked:
         upgraded = False
@@ -2615,6 +2836,8 @@ def try_then_quit_blocks_force_done(perception: dict[str, Any] | None) -> bool:
 def filter_actions_for_stance(
     actions: list[Any],
     perception: dict[str, Any] | None,
+    *,
+    task: str | None = None,
 ) -> tuple[list[Any], str]:
     """
     Return (filtered_actions, reason).
@@ -2634,6 +2857,12 @@ def filter_actions_for_stance(
 
     if stance == "hesitate":
         kept = [a for a in actions if action_tool_name(a) in HESITATE_ACTIONS]
+        if perception.get("browseExploreAllowCategoryClick") or perception.get(
+            "browseExploreRequired"
+        ):
+            for a in actions:
+                if is_category_nav_action(a, perception, task=task):
+                    kept.append(a)
         if kept:
             return kept, "hesitate_filter"
         # No soft action — keep wait-like or force done
@@ -2767,6 +2996,27 @@ def note_browse_scroll_attempts(state: dict[str, Any], actions: list[Any] | None
     return int(state.get("browseScrollAttempts") or 0)
 
 
+def note_browse_category_nav_attempts(
+    state: dict[str, Any],
+    actions: list[Any] | None,
+    perception: dict[str, Any] | None = None,
+    *,
+    task: str | None = None,
+) -> int:
+    """Increment category/nav click counter for Gate 5c search unlock."""
+    if not actions:
+        return int(state.get("browseCategoryNavAttempts") or 0)
+    added = 0
+    for a in actions:
+        if is_category_nav_action(a, perception, task=task):
+            added += 1
+    if added:
+        state["browseCategoryNavAttempts"] = (
+            int(state.get("browseCategoryNavAttempts") or 0) + added
+        )
+    return int(state.get("browseCategoryNavAttempts") or 0)
+
+
 def felt_state_prompt_block(state: dict[str, Any] | None) -> str:
     if not state or not state.get("stepsWithPerception"):
         return ""
@@ -2781,6 +3031,7 @@ def felt_state_prompt_block(state: dict[str, Any] | None) -> str:
         f"- Confusion-Momente bisher: {state.get('confusionCount')}",
         f"- Explorative Versuche nach Verwirrung: {state.get('exploratoryAttempts')}",
         f"- Browse-Scrolls (Find-Tasks): {state.get('browseScrollAttempts') or 0}",
+        f"- Kategorie/Nav-Klicks (Find-Tasks): {state.get('browseCategoryNavAttempts') or 0}",
         f"- Letzte Stance: {state.get('lastStance')}",
         f"- Zuletzt bemerkt: {state.get('lastNoticedDigest') or '—'}",
     ]
@@ -2824,8 +3075,21 @@ def perception_prompt_extension(
     if browse_find:
         persona_lines.append(
             "- Browse/Find: beschreibe konkret was du auf dem Screen siehst und ob du dein Ziel findest. "
-            "Beispiel-Ton: „Oben nur Werbung — ich scroll nach Garten/Grill.“"
+            "Beispiel-Ton: „Oben nur Werbung — ich schaue nach Garten/Grill oder scrolle weiter.“"
         )
+        hints = browse_category_hints(task)
+        if hints:
+            persona_lines.append(
+                "- Kategorie-Prior (Weltwissen, nicht erfundene UI): Ziel wirkt nach "
+                + "/".join(hints[:4])
+                + ". Wenn so eine Kategorie/Nav sichtbar ist → zuerst dorthin klicken oder "
+                "dahin scrollen. Site-Suche (Suchfeld) erst NACH Scroll/Kategorie-Versuch."
+            )
+        else:
+            persona_lines.append(
+                "- Browse/Find: erst sichtbare Kategorien/Nav und Scroll prüfen; "
+                "Site-Suche (Suchfeld) ist kein erster Schritt."
+            )
     if impatient and not browse_find:
         try_n = try_before_abandon_required(tp, exploration=exploration)
         persona_lines.append(
@@ -2891,7 +3155,7 @@ def perception_prompt_extension(
             '"taskReminder":"Ich suche eine Grillplatte auf der Seite",'
             '"noticed":['
             '{"what":"Hero mit Aktionen und Kategorien","where":"oben","relevance":"high"},'
-            '{"what":"Suchfeld oder Garten-Kategorie","where":"Header","relevance":"high"}'
+            '{"what":"Garten-Kategorie in der Navigation","where":"Header","relevance":"high"}'
             '],'
             '"ignoredGuess":"Footer und Fein-Tooltips lese ich nicht",'
             '"think":"Oben sehe ich viel Werbung — die Grillplatte springt mir noch nicht ins Auge.",'
@@ -2899,8 +3163,8 @@ def perception_prompt_extension(
             '"feel":{"label":"unsicher","valence":-1},'
             '"confusion":null,'
             '"stance":"hesitate",'
-            '"intent":"Ich scroll runter und schaue, ob Garten oder Grill auftauchen.",'
-            '"why":"Ohne Kategorie oder Suche finde ich das Produkt so nicht."'
+            '"intent":"Ich schaue nach Garten/Grill oder scrolle weiter.",'
+            '"why":"Grillzeug liegt eher im Gartenbereich — Suche kommt später."'
             "}<</PERCEPTION>>\n"
         )
     elif lab_b_gold_context_allowed:
@@ -2956,11 +3220,14 @@ def perception_prompt_extension(
         "think, clarity 0-3, feel{label,valence -2..2}, "
         "confusion (disabled_option_unexplained|filter_cause_unknown|selection_order_surprise|null), "
         "stance (proceed|hesitate|abandon), intent, why.\n"
-        "stance=abandon → nur done. stance=hesitate → nur scroll/wait. "
+        "stance=abandon → nur done. stance=hesitate → scroll/wait, bei Browse/Find auch "
+        "Kategorie-Klick aus noticed/Hints. "
         "stance=proceed → Klick nur auf etwas aus noticed.\n"
         "BROWSE/FIND: Wenn die Aufgabe etwas auf der Seite suchen/finden soll und das Ziel "
         "noch nicht in noticed/URL ist — VOR stance=abandon mindestens zweimal nach unten "
         "scrollen und den sichtbaren Bereich prüfen. Ohne Scroll ist abandon VERBOTEN.\n"
+        "BROWSE/FIND Suche: Site-Suchfeld/Eingabe erst NACH Scroll oder Kategorie-Klick — "
+        "nicht als erster Shortcut. Preferiere sichtbare Kategorie (z.B. Garten für Grill).\n"
         "HARD: done/click/input/navigate OHNE gültigen <<PERCEPTION>>-Block ist VERBOTEN. "
         "Runtime verwirft solche Actions — Perception wird NICHT aus freiem Text erfunden.\n"
         "VO in thinking: 1–3 Sätze Erste Person Präsens mit aktivem Verb.\n"

@@ -923,6 +923,88 @@ def test_finalize_browse_explore_after_impatient(monkeypatch):
     assert out is not None
     assert out.get("browseExploreRequired") is True
     assert out["stance"] == "hesitate"
+    assert out.get("browseExploreAllowCategoryClick") is True
+    assert "garten" in [h.lower() for h in (out.get("browseCategoryHints") or [])]
+
+
+def test_browse_category_hints_grill_and_pizza():
+    hints = P.browse_category_hints("suche nach Grillplatte")
+    assert "garten" in hints
+    hints2 = P.browse_category_hints("finde einen Pizzastein")
+    assert "garten" in hints2 or "outdoor" in hints2
+
+
+def test_block_early_site_search_until_scrolls(monkeypatch):
+    monkeypatch.setenv("UX_JOURNEY_BROWSE_MIN_SCROLLS", "2")
+    task = "suche nach Grillplatte"
+    perc = {
+        "noticed": [{"what": "Suchfeld", "relevance": "high"}],
+        "stance": "proceed",
+        "intent": "Ich tippe Grillplatte in die Suche.",
+        "think": "Suche ist schnell.",
+        "why": "Shortcut.",
+        "clarity": 2,
+        "feel": {"label": "neutral", "valence": 0},
+    }
+    actions = [{"input": {"text": "Grillplatte", "index": 3}}]
+    kept, reason = P.filter_actions_block_early_site_search(
+        actions,
+        perc,
+        task=task,
+        scroll_attempts=0,
+        category_nav_attempts=0,
+        current_url="https://www.moebel-martin.de/",
+    )
+    assert kept == []
+    assert reason.startswith("browse_block_site_search")
+
+    kept2, reason2 = P.filter_actions_block_early_site_search(
+        actions,
+        perc,
+        task=task,
+        scroll_attempts=2,
+        category_nav_attempts=0,
+        current_url="https://www.moebel-martin.de/",
+    )
+    assert kept2 == actions
+    assert reason2 == "search_unlocked"
+
+
+def test_hesitate_allows_category_click_during_browse_explore():
+    task = "suche nach Grillplatte"
+    perc = {
+        "stance": "hesitate",
+        "browseExploreRequired": True,
+        "browseExploreAllowCategoryClick": True,
+        "browseCategoryHints": ["garten", "outdoor"],
+        "noticed": [{"what": "Garten Kategorie", "where": "Nav", "relevance": "high"}],
+        "intent": "Ich klicke Garten.",
+        "think": "Grillzeug liegt im Garten.",
+        "why": "Kategorie zuerst.",
+        "clarity": 1,
+        "feel": {"label": "neutral", "valence": 0},
+    }
+    actions = [
+        {"input": {"text": "Grillplatte"}},
+        {"click": {"element": "Garten", "index": 12}},
+        {"scroll": {"down": True}},
+    ]
+    kept, reason = P.filter_actions_for_stance(actions, perc, task=task)
+    names = [P.action_tool_name(a) for a in kept]
+    assert "scroll" in names
+    assert "click" in names
+    assert "input" not in names
+    assert reason == "hesitate_filter"
+
+    kept2, _ = P.filter_actions_block_early_site_search(
+        kept,
+        perc,
+        task=task,
+        scroll_attempts=0,
+        category_nav_attempts=0,
+        current_url="https://shop.example/",
+    )
+    assert any(P.action_tool_name(a) == "click" for a in kept2)
 
 
 def test_prompt_forbids_done_without_perception():
