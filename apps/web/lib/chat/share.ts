@@ -93,11 +93,51 @@ export function extractInspectGoalFromMessage(message: string, url: string): str
   return t
 }
 
+const BROWSE_FIND_CUES_RE =
+  /\b(suche|such(?:e)?|finde|find(?:e)?|look for|g(?:rill|arten)|produkt|kategorie)\b/i
+
+function isWeakInspectGoal(goal: string, url: string): boolean {
+  const g = goal.trim().toLowerCase()
+  if (!g) return true
+  const host = url.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '')
+  if (host && g.includes(host.replace(/^www\./i, '')) && !BROWSE_FIND_CUES_RE.test(g)) {
+    return true
+  }
+  if (/^(?:ok,?\s*)?(?:schau(?:e)?(?: mal)?(?: auf| an)?|guck(?:e)?(?: mal)?(?: auf| an)?)\b/i.test(g)) {
+    return !BROWSE_FIND_CUES_RE.test(g)
+  }
+  return false
+}
+
+/** Scan recent user turns (newest first) for a browse/find goal tied to the URL. */
+export function extractInspectGoalFromMessages(messages: string[], url: string): string | null {
+  const pool = [...messages].reverse()
+  for (const msg of pool) {
+    if (!BROWSE_FIND_CUES_RE.test(msg)) continue
+    const goal = extractInspectGoalFromMessage(msg, url)
+    if (goal && !isWeakInspectGoal(goal, url)) return goal
+  }
+  for (const msg of pool) {
+    const goal = extractInspectGoalFromMessage(msg, url)
+    if (goal && !isWeakInspectGoal(goal, url)) return goal
+  }
+  return null
+}
+
+export function buildInspectAgentTaskFromGoal(url: string, goal: string): string {
+  return `Starte auf ${url}. Aufgabe: ${goal}. Verfolge diese Aufgabe in jedem Schritt.`
+}
+
 /** Task string for the UX journey agent — preserves browse/find goals from chat. */
-export function buildInspectAgentTask(message: string, url: string): string {
-  const goal = extractInspectGoalFromMessage(message, url)
+export function buildInspectAgentTask(
+  message: string,
+  url: string,
+  contextMessages?: string[] | null,
+): string {
+  const pool = [...(contextMessages ?? []), message].filter(Boolean)
+  const goal = extractInspectGoalFromMessages(pool, url)
   if (goal) {
-    return `Starte auf ${url}. Aufgabe: ${goal}. Verfolge diese Aufgabe in jedem Schritt.`
+    return buildInspectAgentTaskFromGoal(url, goal)
   }
   return `Inspect ${url} as this persona and note journey friction.`
 }

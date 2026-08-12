@@ -44,6 +44,10 @@ export async function POST(request: Request, { params }: Params) {
     if (pending?.url) {
       const personaId = body.personaId || pending.personaId
       const projectId = body.projectId ?? pending.projectId
+      const task =
+        body.agentTask?.trim() ||
+        pending.agentTask?.trim() ||
+        `Inspect ${pending.url} as this persona and note journey friction.`
       const stream = new ReadableStream({
         async start(controller) {
           const encoder = new TextEncoder()
@@ -54,7 +58,7 @@ export async function POST(request: Request, { params }: Params) {
               personaId,
               projectId,
               conversationId: pending.conversationId,
-              task: pending.agentTask,
+              task,
             })) {
               controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
             }

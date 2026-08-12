@@ -47,6 +47,12 @@ type Props = {
   allowConvert?: boolean
   /** Icon toolbar left of the composer (modality / share / history). */
   composerLeading?: React.ReactNode
+  guestBudget?: {
+    sessionId: string
+    remainingTurns: number
+    maxTurns: number
+    maxChars: number
+  } | null
 }
 
 function UserTurnBody({ content }: { content: string }) {
@@ -98,6 +104,7 @@ export function AudionChatPanel({
   shareProjectId = null,
   allowConvert = true,
   composerLeading = null,
+  guestBudget = null,
 }: Props) {
   const router = useRouter()
   const [conversationId, setConversationId] = useState<string | null>(
@@ -108,6 +115,7 @@ export function AudionChatPanel({
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [composerError, setComposerError] = useState<string | null>(null)
+  const [guestRemaining, setGuestRemaining] = useState(guestBudget?.remainingTurns ?? null)
   const [pendingTool, setPendingTool] = useState<ChatToolProposedEvent | null>(null)
   const [toolBusy, setToolBusy] = useState(false)
   const [toolProgress, setToolProgress] = useState<string[]>([])
@@ -289,6 +297,16 @@ export function AudionChatPanel({
       setErr('Pick a persona before chatting.')
       return
     }
+    if (guestBudget && guestRemaining != null && guestRemaining <= 0) {
+      setComposerError(
+        `Guest chat limit reached (${guestBudget.maxTurns} messages). Open in Audion for a full session.`,
+      )
+      return
+    }
+    if (guestBudget && message.length > guestBudget.maxChars) {
+      setComposerError(`Message is too long (max ${guestBudget.maxChars} characters).`)
+      return
+    }
 
     const selected =
       selectedStepIndex != null && selectedStepIndex >= 0 && selectedStepIndex < inspectSteps.length
@@ -342,10 +360,14 @@ export function AudionChatPanel({
           message: composed.api,
           conversationId,
           projectId: shareProjectId ?? persona?.projectId ?? null,
+          guestSessionId: guestBudget?.sessionId ?? null,
         },
         (event) => handleStreamEvent(streamingId, event),
         controller.signal,
       )
+      if (guestRemaining != null) {
+        setGuestRemaining((n) => (n == null ? n : Math.max(0, n - 1)))
+      }
     } catch (error) {
       if ((error as Error).name === 'AbortError') return
       setErr(error instanceof Error ? error.message : 'Stream failed')
@@ -367,6 +389,7 @@ export function AudionChatPanel({
           conversationId,
           personaId,
           projectId: shareProjectId ?? persona?.projectId ?? null,
+          agentTask: pendingTool.agentTask ?? null,
         }),
       })
       if (!res.ok || !res.body) {
@@ -597,6 +620,13 @@ export function AudionChatPanel({
           </div>
         ) : null}
         {composerLeading}
+        {guestBudget ? (
+          <p className="audion-edit-lede" role="status" data-testid="guest-budget-hint">
+            {guestRemaining != null && guestRemaining <= 0
+              ? `Guest limit reached (${guestBudget.maxTurns} messages).`
+              : `${guestRemaining ?? guestBudget.remainingTurns} of ${guestBudget.maxTurns} guest messages left`}
+          </p>
+        ) : null}
         <Field label="Message" error={composerError ?? undefined} htmlFor="chat-composer">
           <Textarea
             id="chat-composer"
@@ -605,6 +635,7 @@ export function AudionChatPanel({
             rows={1}
             className="chat-composer"
             value={draft}
+            maxLength={guestBudget?.maxChars}
             onChange={(ev) => {
               setDraft(ev.target.value)
               if (composerError) setComposerError(null)
@@ -615,7 +646,7 @@ export function AudionChatPanel({
                 ? 'Ask the persona about this step…'
                 : 'Ask about goals, channels, or paste a URL to inspect…'
             }
-            disabled={busy || toolBusy}
+            disabled={busy || toolBusy || (guestRemaining != null && guestRemaining <= 0)}
             autoComplete="off"
             aria-label="Chat message"
           />
@@ -638,7 +669,12 @@ export function AudionChatPanel({
             size="sm"
             className="chat-send chat-send-icon"
             icon={<IconSend />}
-            disabled={draft.trim().length < 1 || !personaId || toolBusy}
+            disabled={
+              draft.trim().length < 1 ||
+              !personaId ||
+              toolBusy ||
+              (guestRemaining != null && guestRemaining <= 0)
+            }
             aria-label="Send"
           />
         )}

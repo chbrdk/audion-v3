@@ -100,6 +100,16 @@ describe('chat share helpers', () => {
     expect(task).toContain('Grillplatte')
     expect(task).toContain('Verfolge diese Aufgabe')
   })
+
+  it('finds inspect goal from earlier chat turn when URL is in a later message', () => {
+    const url = 'https://www.moebel-martin.de/'
+    const task = buildInspectAgentTask('https://www.moebel-martin.de/', url, [
+      'Ich suche nach einer Grillplatte für den Garten.',
+      'Ok, schau mal auf moebel-martin.de',
+    ])
+    expect(task).toContain('Grillplatte')
+    expect(task).toContain('Aufgabe:')
+  })
 })
 
 describe('chat share fixtures', () => {

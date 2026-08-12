@@ -87,6 +87,36 @@ export function browseGoalFromTask(task?: string | null): string | null {
   return null
 }
 
+/** Product/search token for copy (e.g. „Grillplatte“ from „suche nach Grillplatte“). */
+export function browseGoalKeywordFromTask(task?: string | null): string | null {
+  const phrase = browseGoalFromTask(task)
+  if (!phrase) return null
+  const nach = phrase.match(/\bnach\s+(.+)$/i)?.[1]?.trim()
+  if (nach && nach.length >= 3) return nach
+  const forEn = phrase.match(/\bfor\s+(.+)$/i)?.[1]?.trim()
+  if (forEn && forEn.length >= 3) return forEn
+  return phrase
+}
+
+function taskGoalMentionedInText(text: string, taskGoal: string, task?: string | null): boolean {
+  const blob = text.toLowerCase()
+  if (blob.includes(taskGoal.toLowerCase())) return true
+  const kw = browseGoalKeywordFromTask(task)
+  return Boolean(kw && blob.includes(kw.toLowerCase()))
+}
+
+function thinkNeedsTaskAnchor(
+  think: string | null | undefined,
+  taskGoal: string | null,
+  task?: string | null,
+): boolean {
+  if (!taskGoal) return false
+  const t = think?.trim() || ''
+  if (!t || isUselessPersonaStub(t)) return true
+  if (/^ich öffne https?:\/\//i.test(t)) return true
+  return !taskGoalMentionedInText(t, taskGoal, task)
+}
+
 /** Last-resort first-person beat when VO / evaluation are empty stubs. */
 export function synthesizeActionBeat(
   action?: string | null,
@@ -143,7 +173,7 @@ function enrichThinkAloudNext(
   thinkAloud: NonNullable<ChatUxJourneyStep['thinkAloud']>,
   nextGoal: string | null,
 ): NonNullable<ChatUxJourneyStep['thinkAloud']> {
-  const cleaned = cleanNextGoalForPersona(nextGoal)
+  const cleaned = usefulPersonaText(cleanNextGoalForPersona(nextGoal))
   if (!cleaned) return thinkAloud
   const current = thinkAloud.next?.trim() || ''
   const currentCore = current.replace(/[.…]+$/u, '').trim()
@@ -276,6 +306,7 @@ export function toChatUxJourneySteps(
 ): ChatUxJourneyStep[] {
   if (!Array.isArray(steps) || !steps.length) return []
   const taskGoal = browseGoalFromTask(opts?.task)
+  const taskKeyword = browseGoalKeywordFromTask(opts?.task) ?? taskGoal
   return steps.map((s) => {
     const rm = s.reasoningMeta
     const evaluation = trimMetaField(rm?.evaluation_previous_goal)
@@ -304,13 +335,21 @@ export function toChatUxJourneySteps(
     } else {
       thinkAloud = enrichThinkAloudNext(thinkAloud, nextGoal)
       const thinkClean = usefulPersonaText(thinkAloud.think) || cleanedReasoning
-      const think =
+      let think =
         thinkClean ||
         usefulPersonaText(evaluation) ||
-        synthesizeActionBeat(s.action, s.target, taskGoal)
+        synthesizeActionBeat(s.action, s.target, taskKeyword)
+      if (thinkNeedsTaskAnchor(think, taskGoal, opts?.task)) {
+        think =
+          synthesizeActionBeat(s.action, s.target, taskKeyword) ||
+          `Ich verfolge meine Aufgabe: ${taskGoal}.`
+      }
       let next = usefulPersonaText(thinkAloud.next)
-      if ((!next || thinkAloudNextIsWeak(next)) && taskGoal) {
-        next = `Ich suche weiter nach ${taskGoal}.`
+      if ((!next || thinkAloudNextIsWeak(next)) && taskKeyword) {
+        next =
+          s.action === 'scroll'
+            ? `Ich scrolle weiter und suche nach ${taskKeyword}.`
+            : `Ich suche weiter nach ${taskKeyword}.`
       }
       thinkAloud = {
         ...thinkAloud,

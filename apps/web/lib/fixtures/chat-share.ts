@@ -210,10 +210,11 @@ export function maybeProposeInspectWebsite(
   personaId: string,
   projectId: string | null,
   conversationId: string | null,
+  contextMessages?: string[] | null,
 ): ChatToolProposedEvent | null {
   const url = extractUrlFromMessage(message)
   if (!url) return null
-  const agentTask = buildInspectAgentTask(message, url)
+  const agentTask = buildInspectAgentTask(message, url, contextMessages)
   const goal = agentTask.includes('Aufgabe:')
     ? agentTask.split('Aufgabe:')[1]?.split('. Verfolge')[0]?.trim()
     : null
@@ -227,6 +228,7 @@ export function maybeProposeInspectWebsite(
       ? `${goal} — ${url}`
       : `Browse and summarize ${url} for journey signals.`,
     url,
+    agentTask,
   }
   storeRegisterToolProposal(event, {
     personaId,

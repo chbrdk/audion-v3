@@ -96,11 +96,16 @@ export async function* nativeChatStreamEvents(
       }
     }
 
+    const detail = await storeChatConversationDetail(turn.conversationId)
     const proposal = maybeProposeInspectWebsite(
       message,
       payload.personaId,
       payload.projectId ?? null,
       turn.conversationId,
+      (detail?.messages ?? [])
+        .filter((m) => m.role === 'user')
+        .map((m) => m.content)
+        .slice(-8),
     )
     if (proposal) yield proposal
 

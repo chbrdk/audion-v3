@@ -73,6 +73,8 @@ export type ChatSendPayload = {
   conversationId?: string | null
   projectId?: string | null
   journeyId?: string | null
+  /** Guest embed session id (cookie fallback when third-party cookies blocked). */
+  guestSessionId?: string | null
 }
 
 /** Chat workspace scope — persona thread vs target-group ask-all. */
@@ -210,6 +212,8 @@ export type ChatToolProposedEvent = {
   title: string
   detail: string
   url?: string | null
+  /** Full UX-journey agent task (includes browse/find goal from chat). */
+  agentTask?: string | null
 }
 
 export type ChatToolStartedEvent = {
@@ -267,6 +271,8 @@ export type ChatToolDecisionPayload = {
   conversationId?: string | null
   personaId?: string | null
   projectId?: string | null
+  /** Echo from tool_proposed so approve survives stateless BFF instances. */
+  agentTask?: string | null
 }
 
 export type ChatStreamDeltaEvent = { type: 'delta'; text: string }

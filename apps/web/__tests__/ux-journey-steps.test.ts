@@ -113,12 +113,16 @@ describe('ux journey step media helpers', () => {
           target: 'https://www.moebel-martin.de/',
           reasoning: 'Start',
           reasoningMeta: { next_goal: 'Initial navigation' },
+          thinkAloud: {
+            think: 'Ich öffne https://www.moebel-martin.de/.',
+            next: 'Initial navigation',
+          },
         },
       ],
       { task },
     )
-    expect(steps[0]?.thinkAloud?.think).toContain('Grillplatte')
-    expect(steps[0]?.thinkAloud?.next).toContain('Grillplatte')
+    expect(steps[0]?.thinkAloud?.think?.toLowerCase()).toContain('grillplatte')
+    expect(steps[0]?.thinkAloud?.next?.toLowerCase()).toContain('grillplatte')
     expect(steps[0]?.thinkAloud?.next).not.toBe('Initial navigation')
   })
 
