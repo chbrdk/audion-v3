@@ -5,9 +5,11 @@ import {
   chatUxJourneyStepShotSrc,
   composeMessageWithUxStepContext,
   formatScorecardSummary,
+  isUselessPersonaStub,
   parseScorecardMeta,
   parseUxStepFollowUpDisplay,
   rewriteAgentMediaUrl,
+  synthesizeActionBeat,
   synthesizeThinkAloudFallback,
   toChatUxJourneySteps,
 } from '../lib/chat/ux-journey-steps'
@@ -70,6 +72,33 @@ describe('ux journey step media helpers', () => {
     expect(steps[0]?.thinkAloud?.learned).toBe('Home loaded')
     expect(steps[0]?.thinkAloud?.next).toBe('Open catalog')
     expect(steps[0]?.thinkAloud?.think).not.toContain('thinking=None')
+  })
+
+  it('rejects evaluation stub Start and synthesizes an action beat', () => {
+    const steps = toChatUxJourneySteps([
+      {
+        step: 1,
+        action: 'navigate',
+        target: 'https://www.moebel-martin.de/',
+        reasoning: "thinking=None evaluation_previous_goal='Start' memory='' next_goal=''",
+        reasoningMeta: {
+          evaluation_previous_goal: 'Start',
+          memory: null,
+          next_goal: null,
+        },
+      },
+    ])
+    expect(steps[0]?.thinkAloud?.think).toBe('Ich öffne https://www.moebel-martin.de/.')
+    expect(steps[0]?.thinkAloud?.think).not.toBe('Start')
+  })
+
+  it('marks Start / None as useless persona stubs', () => {
+    expect(isUselessPersonaStub('Start')).toBe(true)
+    expect(isUselessPersonaStub('None')).toBe(true)
+    expect(isUselessPersonaStub('Home loaded')).toBe(false)
+    expect(synthesizeActionBeat('scroll', '1 Seite nach unten')).toBe(
+      'Ich scrolle: 1 Seite nach unten.',
+    )
   })
 
   it('keeps product thinkAloud channels when the agent emits them', () => {

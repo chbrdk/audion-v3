@@ -30,8 +30,10 @@ The agent strips the block (and `<<OBSERVATIONS>>`) from voice-over text. Cleane
 | `feel` | Gefühl | `{ label: string, valence: -2 \| -1 \| 0 \| 1 \| 2 }` |
 
 UI order on step cards: Gesehenes → Denken → Schon gewusst → Neu gelernt → Nächster Schritt → Warum → Gefühl.  
-Compact preview: Denken open (+ feel pill); other channels closed until expand.  
+Compact preview: **one open narrative lane only** (prefer Denken; else first useful channel) + feel pill in the header. Do **not** render closed channel summaries on compact cards — label salad (Gesehenes / Denken / … with empty bodies) is unusable. Expand reveals the full ChannelStack.  
 `result` stays action outcome — separate from think-aloud.
+
+**Useless stubs (never show as Denken):** exact bookkeeping tokens such as `Start`, `None`, `Done`, `Success`, `Ok`, single short tokens, or AgentBrain dumps. Prefer cleaned VO → useful `evaluation_previous_goal` → action-beat synthesis from `action`+`target` (e.g. “Ich öffne …”).
 
 ## Observations (research flags)
 
@@ -61,13 +63,14 @@ Chat inspect dock (v1, compact — not full magazine spider):
 
 | Channel | Source |
 |---------|--------|
-| `think` | `reasoning` |
-| `learned` | `reasoningMeta.memory` |
-| `next` | `reasoningMeta.next_goal` (index markers like `[12]` stripped) |
+| `think` | useful `reasoning` → useful `evaluation_previous_goal` → action-beat from action/target |
+| `learned` | `reasoningMeta.memory` (if useful) |
+| `next` | `reasoningMeta.next_goal` (index markers like `[12]` stripped; drop if useless stub) |
 | `seen`, `priorKnow`, `why` | `null` |
 | `feel` | optional map from first observation polarity |
 
-If `thinkAloud.next` is present but **weak** (under ~28 chars, trailing ellipsis, or a single token), web + agent backfill from cleaned `next_goal`.
+If `thinkAloud.next` is present but **weak** (under ~28 chars, trailing ellipsis, or a single token), web + agent backfill from cleaned `next_goal`.  
+If `think` would be a bookkeeping stub (`Start`, `None`, …), treat as missing and use the cascade above — never surface the stub.
 
 ## Perception-in-the-Loop (2026-08-03)
 

@@ -387,6 +387,8 @@ describe('audion chat panel', () => {
     expect(container.querySelector('.audion-ux-step-md .chat-answer strong')?.textContent).toBe(
       'home',
     )
+    // Compact strip shows one preview lane; expand reveals Neu gelernt markdown.
+    fireEvent.click(screen.getByLabelText(/Step 01 · Navigate/i))
     expect(container.querySelector('.audion-ux-step-md .chat-answer em')?.textContent).toBe('CTA')
     expect(container.querySelector('.audion-chat-persona-policy')?.textContent).toMatch(/Policy/)
     expect(screen.getByLabelText('Persona policy')).toBeInTheDocument()

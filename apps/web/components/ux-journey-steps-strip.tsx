@@ -15,6 +15,7 @@ import { ChatAnswer } from '../lib/chat/chat-answer'
 import {
   chatUxJourneyStepLabel,
   chatUxJourneyStepShotSrc,
+  isUselessPersonaStub,
   synthesizeThinkAloudFallback,
 } from '../lib/chat/ux-journey-steps'
 
@@ -41,6 +42,12 @@ function StepMarkdown({ text, compact }: { text: string; compact: boolean }) {
       <ChatAnswer answer={text} />
     </div>
   )
+}
+
+function usableChannelText(text: string | null | undefined): string {
+  const t = text?.trim() || ''
+  if (!t || isUselessPersonaStub(t)) return ''
+  return t
 }
 
 /**
@@ -110,14 +117,15 @@ export function UxJourneyStepsStrip({
         const n = s.step ?? idx + 1
         const shot = chatUxJourneyStepShotSrc(s)
         const ta = s.thinkAloud ?? synthesizeThinkAloudFallback(s)
-        const gesehenes = ta.seen?.trim() || ''
-        const denken = ta.think?.trim() || s.reasoning?.trim() || ''
-        const priorKnow = ta.priorKnow?.trim() || ''
-        const learned = ta.learned?.trim() || ''
-        const nextStep = ta.next?.trim() || ''
-        const why = ta.why?.trim() || ''
+        const gesehenes = usableChannelText(ta.seen)
+        const denken = usableChannelText(ta.think) || usableChannelText(s.reasoning)
+        const priorKnow = usableChannelText(ta.priorKnow)
+        const learned = usableChannelText(ta.learned)
+        const nextStep = usableChannelText(ta.next)
+        const why = usableChannelText(ta.why)
         const feel = ta.feel
         const result = s.result?.trim() || ''
+        // Results are action outcomes, not persona VO — only drop dumps / empty.
         const target = s.target?.trim() || ''
         const observations = expandedIdx === idx ? s.observations ?? [] : []
         const title = actionLabel(s.action)
@@ -133,7 +141,7 @@ export function UxJourneyStepsStrip({
           lanes.push({
             key: 'seen',
             label: 'Gesehenes',
-            open: expanded,
+            open: false,
             body: <StepMarkdown text={gesehenes} compact={!expanded} />,
           })
         }
@@ -141,7 +149,7 @@ export function UxJourneyStepsStrip({
           lanes.push({
             key: 'think',
             label: 'Denken',
-            open: true,
+            open: false,
             body: <StepMarkdown text={denken} compact={!expanded} />,
           })
         }
@@ -149,7 +157,7 @@ export function UxJourneyStepsStrip({
           lanes.push({
             key: 'prior',
             label: 'Schon gewusst',
-            open: expanded,
+            open: false,
             body: <StepMarkdown text={priorKnow} compact={!expanded} />,
           })
         }
@@ -157,7 +165,7 @@ export function UxJourneyStepsStrip({
           lanes.push({
             key: 'learned',
             label: 'Neu gelernt',
-            open: expanded,
+            open: false,
             body: <StepMarkdown text={learned} compact={!expanded} />,
           })
         }
@@ -165,7 +173,7 @@ export function UxJourneyStepsStrip({
           lanes.push({
             key: 'next',
             label: 'Nächster Schritt',
-            open: expanded,
+            open: false,
             body: <StepMarkdown text={nextStep} compact={!expanded} />,
           })
         }
@@ -173,7 +181,7 @@ export function UxJourneyStepsStrip({
           lanes.push({
             key: 'why',
             label: 'Warum',
-            open: expanded,
+            open: false,
             body: <StepMarkdown text={why} compact={!expanded} />,
           })
         }
@@ -194,15 +202,27 @@ export function UxJourneyStepsStrip({
           lanes.push({
             key: 'result',
             label: 'Ergebnis',
-            open: expanded,
+            open: false,
             body: <StepMarkdown text={result} compact={!expanded} />,
           })
         }
-        // Compact cards: if Denken is empty, open the first useful channel so the strip is not a blank Target-only card.
-        if (!expanded && !denken && lanes.length) {
-          const preview = lanes.find((l) => l.key !== 'feel')
-          if (preview) preview.open = true
+
+        // Compact: one open narrative lane only (prefer Denken). Expanded: all open.
+        const previewOrder = ['think', 'seen', 'next', 'why', 'learned', 'prior', 'result']
+        if (expanded) {
+          for (const lane of lanes) {
+            if (lane.key !== 'feel') lane.open = true
+          }
+        } else if (lanes.length) {
+          const previewKey =
+            previewOrder.find((k) => lanes.some((l) => l.key === k)) ?? lanes[0]?.key
+          for (const lane of lanes) {
+            lane.open = lane.key === previewKey
+          }
         }
+
+        // Compact cards must not render closed lane chrome (label salad).
+        const visibleLanes = expanded ? lanes : lanes.filter((l) => l.open)
 
         return (
           <StepStripItem
@@ -290,9 +310,9 @@ export function UxJourneyStepsStrip({
                 </div>
               ) : null}
 
-              {lanes.length ? (
+              {visibleLanes.length ? (
                 <ChannelStack className="audion-ux-step-channels" aria-label="Think aloud">
-                  {lanes.map((lane) => (
+                  {visibleLanes.map((lane) => (
                     <ChannelLane
                       key={lane.key}
                       className="audion-journey-slide-section audion-ux-step-section"

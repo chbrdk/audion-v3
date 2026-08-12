@@ -35,10 +35,57 @@ export function looksLikeAgentBookkeepingDump(text: string | null | undefined): 
   return false
 }
 
+/**
+ * Bookkeeping / stub tokens that must never appear as persona Denken
+ * (e.g. evaluation_previous_goal='Start' on the first navigate).
+ */
+export function isUselessPersonaStub(text: string | null | undefined): boolean {
+  const s = (text || '').trim()
+  if (!s) return true
+  if (looksLikeAgentBookkeepingDump(s)) return true
+  if (/^(start|none|n\/a|na|unknown|success|done|ok|failed|error|null|undefined)$/i.test(s)) {
+    return true
+  }
+  // Single short token without sentence shape
+  if (!/\s/.test(s) && s.length < 24) return true
+  // Tiny fragments even with spaces ("ok .")
+  if (s.length < 8) return true
+  return false
+}
+
 function cleanReasoningForUi(text: string | null | undefined): string | null {
   const t = trimMetaField(text)
-  if (!t || looksLikeAgentBookkeepingDump(t)) return null
+  if (!t || looksLikeAgentBookkeepingDump(t) || isUselessPersonaStub(t)) return null
   return t
+}
+
+function usefulPersonaText(text: string | null | undefined): string | null {
+  const t = trimMetaField(text)
+  if (!t || isUselessPersonaStub(t)) return null
+  return t
+}
+
+/** Last-resort first-person beat when VO / evaluation are empty stubs. */
+export function synthesizeActionBeat(
+  action?: string | null,
+  target?: string | null,
+): string | null {
+  const a = (action || '').toLowerCase().trim()
+  const t = target?.trim() || ''
+  if (a === 'navigate' && t) return `Ich öffne ${t}.`
+  if (a === 'navigate') return 'Ich öffne die Seite.'
+  if (a === 'scroll' && t) return `Ich scrolle: ${t}.`
+  if (a === 'scroll') return 'Ich scrolle weiter auf der Seite.'
+  if ((a === 'click' || a === 'tap') && t) return `Ich klicke auf „${t}“.`
+  if (a === 'click' || a === 'tap') return 'Ich klicke das nächste sinnvolle Element.'
+  if ((a === 'input' || a === 'type' || a === 'send_keys') && t) {
+    return `Ich tippe „${t}“.`
+  }
+  if (a === 'input' || a === 'type' || a === 'send_keys') return 'Ich tippe etwas ein.'
+  if (a === 'done') return 'Ich beende den Besuch hier.'
+  if (a && t) return `Ich führe „${a}“ aus: ${t}.`
+  if (a) return `Ich führe „${a}“ aus.`
+  return null
 }
 
 /** Strip bot index markers so next_goal can backfill a weak thinkAloud.next. */
@@ -163,16 +210,19 @@ function normalizeThinkAloud(raw: unknown): ChatUxJourneyStep['thinkAloud'] {
 
 /** Legacy runs: synthesize thinkAloud from reasoning + reasoningMeta. */
 export function synthesizeThinkAloudFallback(step: {
+  action?: string | null
+  target?: string | null
   reasoning?: string | null
   reasoningMeta?: ChatUxJourneyStep['reasoningMeta']
   observations?: ChatUxJourneyStep['observations']
 }): NonNullable<ChatUxJourneyStep['thinkAloud']> {
-  const evaluation = trimMetaField(step.reasoningMeta?.evaluation_previous_goal)
+  const evaluation = usefulPersonaText(step.reasoningMeta?.evaluation_previous_goal)
   const think =
     cleanReasoningForUi(step.reasoning) ||
-    (evaluation && !looksLikeAgentBookkeepingDump(evaluation) ? evaluation : null)
-  const learned = trimMetaField(step.reasoningMeta?.memory)
-  const next = cleanNextGoalForPersona(step.reasoningMeta?.next_goal ?? null)
+    evaluation ||
+    synthesizeActionBeat(step.action, step.target)
+  const learned = usefulPersonaText(step.reasoningMeta?.memory)
+  const next = usefulPersonaText(cleanNextGoalForPersona(step.reasoningMeta?.next_goal ?? null))
   const feel = feelFromObservations(step.observations ?? null)
   return {
     seen: null,
@@ -205,17 +255,27 @@ export function toChatUxJourneySteps(steps: UxJourneyAgentStep[] | undefined | n
     const cleanedReasoning = cleanReasoningForUi(s.reasoning)
     if (!thinkAloud) {
       thinkAloud = synthesizeThinkAloudFallback({
+        action: s.action,
+        target: s.target,
         reasoning: cleanedReasoning,
         reasoningMeta,
         observations,
       })
     } else {
       thinkAloud = enrichThinkAloudNext(thinkAloud, nextGoal)
-      if (looksLikeAgentBookkeepingDump(thinkAloud.think)) {
-        thinkAloud = {
-          ...thinkAloud,
-          think: evaluation || cleanedReasoning,
-        }
+      const thinkClean = usefulPersonaText(thinkAloud.think) || cleanedReasoning
+      const think =
+        thinkClean ||
+        usefulPersonaText(evaluation) ||
+        synthesizeActionBeat(s.action, s.target)
+      thinkAloud = {
+        ...thinkAloud,
+        think,
+        seen: usefulPersonaText(thinkAloud.seen),
+        priorKnow: usefulPersonaText(thinkAloud.priorKnow),
+        learned: usefulPersonaText(thinkAloud.learned) || usefulPersonaText(memory),
+        next: usefulPersonaText(thinkAloud.next),
+        why: usefulPersonaText(thinkAloud.why),
       }
     }
     return {
