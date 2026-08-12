@@ -1957,6 +1957,194 @@ def is_lab_b_matrix_task(task: str | None) -> bool:
     return False
 
 
+def is_browse_find_task(task: str | None) -> bool:
+    """
+    True when the persona should search/find something on a live page
+    (chat inspect, product find) — scroll before honest abandon.
+    """
+    if not task:
+        return False
+    if is_ui_path_finding_task(task):
+        return True
+    t = str(task).lower()
+    cues = (
+        "suche nach",
+        "such nach",
+        "suche eine",
+        "suche einen",
+        "suche die",
+        "finde ",
+        "find ",
+        "look for",
+        "search for",
+        "gucke",
+        "guck auf",
+        "schaue",
+        "schau auf",
+        "auf der seite",
+        "auf der website",
+        "auf der webpage",
+        "browse",
+    )
+    return any(c in t for c in cues)
+
+
+def browse_find_target_keywords(task: str | None) -> list[str]:
+    """Destination / product words from find phrasing + existing target keys."""
+    keys = list(_task_target_keywords(task))
+    t = str(task or "")
+    patterns = (
+        r"suche\s+nach\s+(?:einer?\s+|einem\s+|der\s+|dem\s+|das\s+|die\s+)?"
+        r"([A-Za-zÄÖÜäöüß0-9][A-Za-zÄÖÜäöüß0-9\-]{2,})",
+        r"finde\s+(?:eine?\s+|einen?\s+|die\s+|den\s+|das\s+)?"
+        r"([A-Za-zÄÖÜäöüß0-9][A-Za-zÄÖÜäöüß0-9\-]{2,})",
+        r"search\s+for\s+(?:a\s+|an\s+|the\s+)?"
+        r"([A-Za-z0-9][A-Za-z0-9\-]{2,})",
+        r"look\s+for\s+(?:a\s+|an\s+|the\s+)?"
+        r"([A-Za-z0-9][A-Za-z0-9\-]{2,})",
+    )
+    skip = {
+        "seite",
+        "website",
+        "webpage",
+        "page",
+        "site",
+        "etwas",
+        "etwasem",
+        "produkt",
+        "produkte",
+    }
+    for pat in patterns:
+        for m in re.finditer(pat, t, re.I):
+            tok = m.group(1).lower().strip("-")
+            if len(tok) < 3 or tok in skip:
+                continue
+            if tok not in keys:
+                keys.append(tok)
+    return keys
+
+
+def browse_min_scrolls_required() -> int:
+    raw = (os.environ.get("UX_JOURNEY_BROWSE_MIN_SCROLLS") or "2").strip()
+    try:
+        n = int(raw)
+    except ValueError:
+        n = 2
+    return max(1, min(n, 6))
+
+
+def browse_target_visible(
+    perception: dict[str, Any] | None,
+    *,
+    task: str | None,
+    current_url: str | None,
+) -> bool:
+    """True when URL or noticed[] already names the find target (not mere denial in think)."""
+    keys = browse_find_target_keywords(task)
+    if not keys:
+        return False
+    if _url_contains_any(current_url, keys):
+        return True
+    noticed = (perception or {}).get("noticed") or []
+    blob = " ".join(
+        str(n.get("what") or "")
+        for n in noticed
+        if isinstance(n, dict)
+    ).lower()
+    return any(k in blob for k in keys)
+
+
+def browse_explore_satisfied(
+    *,
+    scroll_attempts: int,
+    target_visible: bool,
+) -> bool:
+    if target_visible:
+        return True
+    return int(scroll_attempts or 0) >= browse_min_scrolls_required()
+
+
+def count_scroll_actions(actions: list[Any] | None) -> int:
+    """Count scroll tool calls (prefer down; any scroll counts for the budget)."""
+    if not actions:
+        return 0
+    n = 0
+    for action in actions:
+        name = action_tool_name(action)
+        if name in ("scroll", "scroll_down", "scroll_up"):
+            n += 1
+    return n
+
+
+def _soften_browse_explore(perception: dict[str, Any], *, task: str | None) -> dict[str, Any]:
+    """Force scroll exploration before abandon on browse/find tasks."""
+    out = dict(perception)
+    keys = browse_find_target_keywords(task)
+    goal = keys[0] if keys else "dem Ziel"
+    out["stance"] = "hesitate"
+    out["stanceSoftened"] = True
+    out["browseExploreRequired"] = True
+    out["tryThenQuit"] = True
+    out["confusion"] = None
+    out["intent"] = (
+        f"Ich scrolle die Seite nach unten und suche sichtbar nach {goal}."
+    )
+    out["why"] = (
+        "Ohne Scroll kenne ich nur den oberen Screen — erst suchen, dann ggf. aufgeben."
+    )
+    out["think"] = (
+        f"Ich habe {goal} oben noch nicht gesehen; ich scrolle weiter, bevor ich aufgebe."
+    )
+    noticed = list(out.get("noticed") or [])
+    if not any(
+        isinstance(n, dict) and "scroll" in str(n.get("what") or "").lower()
+        for n in noticed
+    ):
+        noticed.append(
+            {
+                "what": "Unterer Seitenbereich noch nicht geprüft",
+                "where": "Viewport",
+                "relevance": "high",
+            }
+        )
+        out["noticed"] = noticed[:6]
+    return out
+
+
+def apply_browse_explore_before_abandon(
+    perception: dict[str, Any] | None,
+    *,
+    task: str | None,
+    scroll_attempts: int = 0,
+    current_url: str | None = None,
+) -> tuple[dict[str, Any] | None, bool]:
+    """
+    Block early abandon on browse/find until min scrolls (or target visible).
+
+    Returns (perception, blocked) where blocked means abandon/soften was redirected
+    to scroll explore.
+    """
+    if perception is None:
+        return None, False
+    if not is_browse_find_task(task):
+        return perception, False
+    # Lab B destination tool: keep grey-filter abandon (no forced homepage scroll).
+    if lab_b_gold_context_allowed(current_url, task):
+        return perception, False
+    visible = browse_target_visible(
+        perception, task=task, current_url=current_url
+    )
+    if browse_explore_satisfied(
+        scroll_attempts=scroll_attempts, target_visible=visible
+    ):
+        return perception, False
+    stance = str(perception.get("stance") or "")
+    # Soften hard abandon, and also re-steer try-then-quit softens toward scroll.
+    if stance == "abandon" or perception.get("stanceSoftened"):
+        return _soften_browse_explore(perception, task=task), True
+    return perception, False
+
+
 def lab_b_gold_context_allowed(current_url: str | None, task: str | None) -> bool:
     """
     When False: disable Lab-B gold enrich/prompt bias so path-finding home
@@ -2192,8 +2380,11 @@ def finalize_perception_for_persona(
     exploration: float | None = None,
     clarity_trend: list[Any] | None = None,
     lab_b_gold_context_allowed: bool = True,
+    task: str | None = None,
+    current_url: str | None = None,
+    browse_scroll_attempts: int = 0,
 ) -> tuple[dict[str, Any] | None, bool]:
-    """Enrich noticed from own text, then try-then-quit / hard-upgrade abandon."""
+    """Enrich noticed from own text, then try-then-quit / browse-explore / hard-upgrade abandon."""
     if perception is None:
         return None, False
     enriched = (
@@ -2204,7 +2395,7 @@ def finalize_perception_for_persona(
         )
         or perception
     )
-    return apply_impatient_abandon_stance(
+    out, upgraded = apply_impatient_abandon_stance(
         enriched,
         time_pressure,
         felt_confusion_count=felt_confusion_count,
@@ -2213,11 +2404,23 @@ def finalize_perception_for_persona(
         exploration=exploration,
         clarity_trend=clarity_trend,
     )
+    out2, browse_blocked = apply_browse_explore_before_abandon(
+        out,
+        task=task,
+        scroll_attempts=browse_scroll_attempts,
+        current_url=current_url,
+    )
+    if browse_blocked:
+        upgraded = False
+    return out2, upgraded
 
 
 def try_then_quit_blocks_force_done(perception: dict[str, Any] | None) -> bool:
     """True when the soften turn must not collapse into force-done."""
-    return bool(perception and perception.get("stanceSoftened"))
+    return bool(
+        perception
+        and (perception.get("stanceSoftened") or perception.get("browseExploreRequired"))
+    )
 
 
 def filter_actions_for_stance(
@@ -2316,6 +2519,8 @@ def new_felt_state() -> dict[str, Any]:
         "missingPerceptionClears": 0,
         "exploratoryAttempts": 0,
         "tryThenQuitSoftens": 0,
+        "browseScrollAttempts": 0,
+        "browseExploreSoftens": 0,
         "lowClarityStreak": 0,
     }
 
@@ -2355,12 +2560,22 @@ def update_felt_state(state: dict[str, Any], perception: dict[str, Any] | None) 
     stance = str(perception.get("stance") or "")
     confused_now = bool(perception.get("confusion")) or has_grey_filter_signal(perception)
     # Count exploratory tries after (or on) confusion cues — try-then-quit budget.
-    if perception.get("stanceSoftened"):
+    if perception.get("stanceSoftened") or perception.get("browseExploreRequired"):
         state["exploratoryAttempts"] = int(state.get("exploratoryAttempts") or 0) + 1
         state["tryThenQuitSoftens"] = int(state.get("tryThenQuitSoftens") or 0) + 1
+        if perception.get("browseExploreRequired"):
+            state["browseExploreSoftens"] = int(state.get("browseExploreSoftens") or 0) + 1
     elif stance in ("hesitate", "proceed") and (had_confusion_before or confused_now):
         state["exploratoryAttempts"] = int(state.get("exploratoryAttempts") or 0) + 1
     return state
+
+
+def note_browse_scroll_attempts(state: dict[str, Any], actions: list[Any] | None) -> int:
+    """Increment felt-state scroll counter from applied actions; return new total."""
+    added = count_scroll_actions(actions)
+    if added:
+        state["browseScrollAttempts"] = int(state.get("browseScrollAttempts") or 0) + added
+    return int(state.get("browseScrollAttempts") or 0)
 
 
 def felt_state_prompt_block(state: dict[str, Any] | None) -> str:
@@ -2376,6 +2591,7 @@ def felt_state_prompt_block(state: dict[str, Any] | None) -> str:
         f"- Letztes Gefühl valence: {state.get('lastValence')}",
         f"- Confusion-Momente bisher: {state.get('confusionCount')}",
         f"- Explorative Versuche nach Verwirrung: {state.get('exploratoryAttempts')}",
+        f"- Browse-Scrolls (Find-Tasks): {state.get('browseScrollAttempts') or 0}",
         f"- Letzte Stance: {state.get('lastStance')}",
         f"- Zuletzt bemerkt: {state.get('lastNoticedDigest') or '—'}",
     ]
@@ -2523,6 +2739,9 @@ def perception_prompt_extension(
         "stance (proceed|hesitate|abandon), intent, why.\n"
         "stance=abandon → nur done. stance=hesitate → nur scroll/wait. "
         "stance=proceed → Klick nur auf etwas aus noticed.\n"
+        "BROWSE/FIND: Wenn die Aufgabe etwas auf der Seite suchen/finden soll und das Ziel "
+        "noch nicht in noticed/URL ist — VOR stance=abandon mindestens zweimal nach unten "
+        "scrollen und den sichtbaren Bereich prüfen. Ohne Scroll ist abandon VERBOTEN.\n"
         "HARD: done/click/input/navigate OHNE gültigen <<PERCEPTION>>-Block ist VERBOTEN. "
         "Runtime verwirft solche Actions — Perception wird NICHT aus freiem Text erfunden.\n"
         "VO in thinking: 1–3 Sätze Erste Person Präsens mit aktivem Verb.\n"

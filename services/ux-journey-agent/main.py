@@ -1440,6 +1440,9 @@ def _apply_persona_perception_finalize(
             exploration=exploration,
             clarity_trend=list(clarity_trend),
             lab_b_gold_context_allowed=lab_b_gold_context_allowed,
+            task=None,
+            current_url=None,
+            browse_scroll_attempts=0,
         )
         if finalized:
             step["perception"] = finalized
@@ -3982,11 +3985,23 @@ async def run_agent(
                         exploration=persona_dims.get("exploration"),
                         clarity_trend=list(felt_state.get("clarityTrend") or []),
                         lab_b_gold_context_allowed=lab_b_gold_allowed,
+                        task=task,
+                        current_url=current_url,
+                        browse_scroll_attempts=int(
+                            felt_state.get("browseScrollAttempts") or 0
+                        ),
                     )
                     if upgraded:
                         print(
                             f"ux-journey: job={job_id} perception stance upgraded → abandon "
                             f"(tp={persona_tp} explor={felt_state.get('exploratoryAttempts')})",
+                            flush=True,
+                        )
+                    elif perc_out and perc_out.get("browseExploreRequired"):
+                        print(
+                            f"ux-journey: job={job_id} browse-explore soften → scroll "
+                            f"(scrolls={felt_state.get('browseScrollAttempts')}/"
+                            f"{ux_perception.browse_min_scrolls_required()})",
                             flush=True,
                         )
                     elif perc_out and perc_out.get("stanceSoftened"):
@@ -4351,10 +4366,10 @@ async def run_agent(
                 actions = list(getattr(mo, "action", None) or []) if mo else []
                 filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
 
-                # Try-then-quit: never accept done on the soften turn. Prefer an
-                # exploratory click/scroll; if the model only emitted done, nudge
+                # Try-then-quit / browse-explore: never accept done on the soften turn.
+                # Prefer an exploratory click/scroll; if the model only emitted done, nudge
                 # and re-ask once in the same turn (empty actions often stop the run).
-                if perc and perc.get("stanceSoftened"):
+                if perc and (perc.get("stanceSoftened") or perc.get("browseExploreRequired")):
                     done_names = ("done", "complete", "finish")
 
                     def _strip_done(acts: list[Any]) -> list[Any]:
@@ -4365,24 +4380,38 @@ async def run_agent(
                         ]
 
                     explore = dict(perc)
-                    explore["stance"] = "proceed"
+                    if perc.get("browseExploreRequired"):
+                        explore["stance"] = "hesitate"
+                        explore["browseExploreRequired"] = True
+                    else:
+                        explore["stance"] = "proceed"
                     explore["stanceSoftened"] = True
                     explore["tryThenQuit"] = True
                     perc = explore
                     filtered = _strip_done(filtered) if filtered else _strip_done(actions)
                     if not filtered:
-                        await _nudge(
-                            "AUDION_TRY_THEN_QUIT: Erste Verwirrung — done ist VERBOTEN in diesem Step. "
-                            "Wähle scroll oder einen explorativen Klick (stance=proceed), "
-                            "mit gültigem <<PERCEPTION>>. Abbruch erst nach dem Try-Budget."
-                        )
+                        if perc.get("browseExploreRequired"):
+                            await _nudge(
+                                "AUDION_BROWSE_EXPLORE: Ziel noch nicht sichtbar — done/abandon "
+                                "ist VERBOTEN. Scrolle mindestens zweimal nach unten und prüfe "
+                                "den sichtbaren Bereich (stance=hesitate), mit gültigem <<PERCEPTION>>."
+                            )
+                        else:
+                            await _nudge(
+                                "AUDION_TRY_THEN_QUIT: Erste Verwirrung — done ist VERBOTEN in diesem Step. "
+                                "Wähle scroll oder einen explorativen Klick (stance=proceed), "
+                                "mit gültigem <<PERCEPTION>>. Abbruch erst nach dem Try-Budget."
+                            )
                         felt_state["retries"] = int(felt_state.get("retries") or 0) + 1
                         perc2 = await _once()
                         if perc2:
                             # Keep softened if still under budget
-                            if perc2.get("stanceSoftened") or str(perc2.get("stance")) != "abandon":
+                            if perc2.get("browseExploreRequired") or perc2.get("stanceSoftened") or str(perc2.get("stance")) != "abandon":
                                 perc = dict(perc2)
-                                perc["stance"] = "proceed"
+                                if perc.get("browseExploreRequired"):
+                                    perc["stance"] = "hesitate"
+                                else:
+                                    perc["stance"] = "proceed"
                                 perc["stanceSoftened"] = True
                                 perc["tryThenQuit"] = True
                             else:
@@ -4391,23 +4420,44 @@ async def run_agent(
                         actions = list(getattr(mo, "action", None) or []) if mo else []
                         filtered, reason = ux_perception.filter_actions_for_stance(actions, perc)
                         filtered = _strip_done(filtered) if filtered else _strip_done(actions)
+                        if not filtered and perc.get("browseExploreRequired"):
+                            filtered = _typed_scroll_fallback()
+                            reason = "browse_explore_scroll"
                         print(
-                            f"ux-journey: job={job_id} try-then-quit exploratory retry "
-                            f"n={len(filtered)}",
+                            f"ux-journey: job={job_id} "
+                            f"{'browse-explore' if perc.get('browseExploreRequired') else 'try-then-quit'} "
+                            f"exploratory retry n={len(filtered)}",
                             flush=True,
                         )
                     if filtered:
-                        reason = "try_then_quit_explore"
+                        reason = (
+                            "browse_explore_scroll"
+                            if perc.get("browseExploreRequired")
+                            else "try_then_quit_explore"
+                        )
                     else:
                         soft_only, soft_reason = ux_perception.clear_decision_actions(actions)
                         if soft_only:
                             await _apply_actions(soft_only)
+                            ux_perception.note_browse_scroll_attempts(felt_state, soft_only)
                             ux_perception.update_felt_state(felt_state, perc)
                             print(
                                 f"ux-journey: job={job_id} try-then-quit soft_only={soft_reason}",
                                 flush=True,
                             )
                             return
+                        if perc.get("browseExploreRequired"):
+                            filtered = _typed_scroll_fallback()
+                            if filtered:
+                                reason = "browse_explore_scroll"
+                                await _apply_actions(filtered)
+                                ux_perception.note_browse_scroll_attempts(felt_state, filtered)
+                                ux_perception.update_felt_state(felt_state, perc)
+                                print(
+                                    f"ux-journey: job={job_id} browse-explore forced scroll",
+                                    flush=True,
+                                )
+                                return
                         await _apply_actions([])
                         await _nudge(
                             "AUDION_TRY_THEN_QUIT: Kein explorativer Tool-Call — nächster Step "
@@ -4426,6 +4476,7 @@ async def run_agent(
                     or reason == "hesitate_filter"
                     or reason == "abandon_done"
                     or reason == "try_then_quit_explore"
+                    or reason == "browse_explore_scroll"
                 ):
                     filtered2, align_reason = ux_perception.filter_actions_intent_align(
                         filtered, perc
@@ -4631,6 +4682,7 @@ async def run_agent(
                                     or reason == "hesitate_filter"
                                     or reason == "abandon_done"
                                     or reason == "try_then_quit_explore"
+                                    or reason == "browse_explore_scroll"
                                 ):
                                     filtered, _ = ux_perception.filter_actions_intent_align(
                                         filtered, perc
@@ -4749,6 +4801,7 @@ async def run_agent(
                                 or reason == "hesitate_filter"
                                 or reason == "abandon_done"
                                 or reason == "try_then_quit_explore"
+                                or reason == "browse_explore_scroll"
                             ):
                                 filtered, _ = ux_perception.filter_actions_intent_align(
                                     filtered, perc
@@ -4833,6 +4886,7 @@ async def run_agent(
                     return
 
                 await _apply_actions(filtered)
+                ux_perception.note_browse_scroll_attempts(felt_state, filtered)
                 ux_perception.update_felt_state(felt_state, perc)
                 felt_block = ux_perception.felt_state_prompt_block(felt_state)
                 if felt_block:
@@ -4841,7 +4895,8 @@ async def run_agent(
                     f"ux-journey: job={job_id} perception stance={perc.get('stance')} "
                     f"noticed={perc.get('noticedUsed')}/{perc.get('salienceBudget')} "
                     f"gate={reason} upgraded={bool(perc.get('stanceUpgraded'))} "
-                    f"softened={bool(perc.get('stanceSoftened'))}",
+                    f"softened={bool(perc.get('stanceSoftened'))} "
+                    f"browseScrolls={felt_state.get('browseScrollAttempts')}",
                     flush=True,
                 )
 

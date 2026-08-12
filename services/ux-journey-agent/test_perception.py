@@ -809,12 +809,129 @@ def test_try_then_quit_blocks_force_done_flag():
     assert P.try_then_quit_blocks_force_done(hard) is False
 
 
+def test_browse_find_classifier_and_keywords():
+    task = "Bitte gucke auf der Seite und suche nach einer Grillplatte."
+    assert P.is_browse_find_task(task) is True
+    keys = P.browse_find_target_keywords(task)
+    assert "grillplatte" in keys
+
+
+def test_browse_explore_blocks_abandon_until_scrolls(monkeypatch):
+    monkeypatch.setenv("UX_JOURNEY_BROWSE_MIN_SCROLLS", "2")
+    task = "Suche nach einer Grillplatte auf der Startseite."
+    perc = {
+        "noticed": [{"what": "Hero Banner", "relevance": "high"}],
+        "think": "Oben sehe ich keine Grillplatte.",
+        "clarity": 1,
+        "feel": {"label": "ungeduldig", "valence": -1},
+        "confusion": None,
+        "stance": "abandon",
+        "intent": "Ich gebe auf.",
+        "why": "Nicht gefunden.",
+    }
+    soft, blocked = P.apply_browse_explore_before_abandon(
+        perc, task=task, scroll_attempts=0, current_url="https://shop.example/"
+    )
+    assert blocked is True
+    assert soft is not None
+    assert soft["stance"] == "hesitate"
+    assert soft.get("browseExploreRequired") is True
+    assert "scroll" in soft["intent"].lower() or "scrolle" in soft["intent"].lower()
+    assert P.try_then_quit_blocks_force_done(soft) is True
+
+    done, blocked2 = P.apply_browse_explore_before_abandon(
+        {**perc, "stance": "abandon"},
+        task=task,
+        scroll_attempts=2,
+        current_url="https://shop.example/",
+    )
+    assert blocked2 is False
+    assert done is not None
+    assert done["stance"] == "abandon"
+
+
+def test_browse_explore_allows_abandon_when_target_noticed(monkeypatch):
+    monkeypatch.setenv("UX_JOURNEY_BROWSE_MIN_SCROLLS", "2")
+    task = "Suche nach einer Grillplatte."
+    perc = {
+        "noticed": [{"what": "Grillplatte Kategorie", "relevance": "high"}],
+        "think": "Da ist die Grillplatte.",
+        "clarity": 2,
+        "stance": "abandon",
+        "intent": "Fertig.",
+        "why": "Gefunden.",
+    }
+    out, blocked = P.apply_browse_explore_before_abandon(
+        perc, task=task, scroll_attempts=0, current_url="https://shop.example/"
+    )
+    assert blocked is False
+    assert out is not None
+    assert out["stance"] == "abandon"
+
+
+def test_browse_explore_skips_lab_b_destination(monkeypatch):
+    monkeypatch.setenv("UX_JOURNEY_BROWSE_MIN_SCROLLS", "2")
+    task = (
+        "Lab-Persona: Du bist ungeduldig.\n"
+        "Finde kompatible Displays; brich nach höchstens zwei Momenten ab."
+    )
+    perc = {
+        "noticed": [{"what": "grau Displays", "relevance": "high"}],
+        "think": "unklar warum",
+        "clarity": 0,
+        "confusion": "disabled_option_unexplained",
+        "stance": "abandon",
+        "intent": "Ich breche ab.",
+        "why": "Grau.",
+    }
+    out, blocked = P.apply_browse_explore_before_abandon(
+        perc,
+        task=task,
+        scroll_attempts=0,
+        current_url="https://example.com/produktkombinationen",
+    )
+    assert blocked is False
+    assert out is not None
+    assert out["stance"] == "abandon"
+
+
+def test_finalize_browse_explore_after_impatient(monkeypatch):
+    monkeypatch.setenv("UX_JOURNEY_BROWSE_MIN_SCROLLS", "2")
+    task = "Gucke auf der Website und suche nach einer Grillplatte."
+    perc = {
+        "taskReminder": "Grillplatte finden",
+        "noticed": [{"what": "Header", "relevance": "high"}],
+        "think": "Nichts oben.",
+        "clarity": 1,
+        "feel": {"label": "ungeduldig", "valence": -1},
+        "confusion": None,
+        "stance": "abandon",
+        "intent": "Aufgeben.",
+        "why": "Nicht da.",
+    }
+    out, upgraded = P.finalize_perception_for_persona(
+        perc,
+        budget=4,
+        time_pressure=0.9,
+        exploratory_attempts=0,
+        try_before_abandon=4,
+        task=task,
+        current_url="https://www.moebel-martin.de/",
+        browse_scroll_attempts=0,
+    )
+    assert upgraded is False
+    assert out is not None
+    assert out.get("browseExploreRequired") is True
+    assert out["stance"] == "hesitate"
+
+
 def test_prompt_forbids_done_without_perception():
     block = P.perception_prompt_extension(time_pressure=0.9)
     assert "VERBOTEN" in block
     assert "unklar warum" in block
     assert "Filter" in block
     assert "Try-then-quit" in block or "try-then-quit" in block.lower()
+    assert "BROWSE/FIND" in block or "scrollen" in block.lower()
 
 
 def test_enrich_at_full_budget_promotes_filter_and_cause():
