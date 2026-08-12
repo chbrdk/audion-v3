@@ -198,6 +198,11 @@ export function UxJourneyStepsStrip({
             body: <StepMarkdown text={result} compact={!expanded} />,
           })
         }
+        // Compact cards: if Denken is empty, open the first useful channel so the strip is not a blank Target-only card.
+        if (!expanded && !denken && lanes.length) {
+          const preview = lanes.find((l) => l.key !== 'feel')
+          if (preview) preview.open = true
+        }
 
         return (
           <StepStripItem

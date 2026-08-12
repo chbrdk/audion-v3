@@ -20,6 +20,27 @@ function trimMetaField(value: unknown): string | null {
   return t || null
 }
 
+/** Raw AgentBrain/AgentOutput repr leaked into reasoning — never show as Denken. */
+export function looksLikeAgentBookkeepingDump(text: string | null | undefined): boolean {
+  const s = (text || '').trim()
+  if (!s) return false
+  if (s.includes('thinking=None') && s.includes('evaluation_previous_goal=')) return true
+  if (
+    s.startsWith('thinking=') &&
+    s.includes('evaluation_previous_goal=') &&
+    s.includes('next_goal=')
+  ) {
+    return true
+  }
+  return false
+}
+
+function cleanReasoningForUi(text: string | null | undefined): string | null {
+  const t = trimMetaField(text)
+  if (!t || looksLikeAgentBookkeepingDump(t)) return null
+  return t
+}
+
 /** Strip bot index markers so next_goal can backfill a weak thinkAloud.next. */
 export function cleanNextGoalForPersona(goal: string | null | undefined): string | null {
   if (!goal?.trim()) return null
@@ -146,7 +167,10 @@ export function synthesizeThinkAloudFallback(step: {
   reasoningMeta?: ChatUxJourneyStep['reasoningMeta']
   observations?: ChatUxJourneyStep['observations']
 }): NonNullable<ChatUxJourneyStep['thinkAloud']> {
-  const think = trimMetaField(step.reasoning)
+  const evaluation = trimMetaField(step.reasoningMeta?.evaluation_previous_goal)
+  const think =
+    cleanReasoningForUi(step.reasoning) ||
+    (evaluation && !looksLikeAgentBookkeepingDump(evaluation) ? evaluation : null)
   const learned = trimMetaField(step.reasoningMeta?.memory)
   const next = cleanNextGoalForPersona(step.reasoningMeta?.next_goal ?? null)
   const feel = feelFromObservations(step.observations ?? null)
@@ -178,21 +202,28 @@ export function toChatUxJourneySteps(steps: UxJourneyAgentStep[] | undefined | n
         : null
     const observations = normalizeObservations(s.observations)
     let thinkAloud = normalizeThinkAloud((s as { thinkAloud?: unknown }).thinkAloud)
+    const cleanedReasoning = cleanReasoningForUi(s.reasoning)
     if (!thinkAloud) {
       thinkAloud = synthesizeThinkAloudFallback({
-        reasoning: s.reasoning,
+        reasoning: cleanedReasoning,
         reasoningMeta,
         observations,
       })
     } else {
       thinkAloud = enrichThinkAloudNext(thinkAloud, nextGoal)
+      if (looksLikeAgentBookkeepingDump(thinkAloud.think)) {
+        thinkAloud = {
+          ...thinkAloud,
+          think: evaluation || cleanedReasoning,
+        }
+      }
     }
     return {
       step: s.step,
       action: s.action,
       target: s.target,
       result: typeof s.result === 'string' ? s.result : undefined,
-      reasoning: s.reasoning,
+      reasoning: cleanedReasoning ?? undefined,
       reasoningMeta,
       thinkAloud,
       observations,

@@ -47,6 +47,7 @@
 - Template findability pack: `paths.labTemplateFindabilityPackId` · URL keys `lab.template.findability.*` → example.org / example.com
 - Persona Lab pack: `paths.personaLabPackId` · correlator `paths.personaLabCorrelatePath` · playbook `paths.personaLabKnowledgePath`
 - Perception-in-the-Loop: `paths.uxJourneyPerceptionPath` · spec `paths.uxJourneyPerceptionSpecPath` · knowledge `paths.uxJourneyPerceptionKnowledgePath` · human gold `paths.perceptionHumanGoldPath`
+- Chat step strip thinness (bookkeeping dump): `knowledge/chat-step-strip-thinness-2026-08-12.md`
 - Wave scorecard / validEvidence: `apps/web/lib/ux-wave-scorecard.ts`
 - UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts` · `ux-studies-native.ts`
 - UX Study knowledge: `knowledge/ux-studies.md`

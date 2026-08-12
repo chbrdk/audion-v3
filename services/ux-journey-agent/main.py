@@ -384,11 +384,24 @@ def _decode_repr_escapes(value: str) -> str:
         )
 
 
+def _looks_like_agent_bookkeeping_dump(text: str) -> bool:
+    """True when a string is a flattened AgentBrain/AgentOutput repr, not persona VO."""
+    s = (text or "").strip()
+    if not s:
+        return False
+    if "thinking=None" in s and "evaluation_previous_goal=" in s:
+        return True
+    if s.startswith("thinking=") and "evaluation_previous_goal=" in s and "next_goal=" in s:
+        return True
+    return False
+
+
 def _extract_thinking_text(text: str) -> str:
     """
     browser-use sometimes returns a flattened string like:
     thinking='...' evaluation_previous_goal='...' memory='...' next_goal='...'
-    We only want the human-readable thinking.
+    We only want the human-readable thinking — never the whole dump, and never
+    when thinking is literally None (common when the model skips VO).
     """
     s = (text or "").strip()
     if not s:
@@ -398,11 +411,22 @@ def _extract_thinking_text(text: str) -> str:
         try:
             import re
 
-            m = re.search(r"thinking=(?:'|\")(?P<v>.*?)(?:'|\")\s*(?:evaluation_previous_goal=|memory=|next_goal=|$)", s, re.DOTALL)
+            # thinking=None (no quotes) — empty VO; do not return the dump.
+            if re.search(r"thinking\s*=\s*None\b", s):
+                return ""
+            m = re.search(
+                r"thinking=(?:'|\")(?P<v>.*?)(?:'|\")\s*(?:evaluation_previous_goal=|memory=|next_goal=|$)",
+                s,
+                re.DOTALL,
+            )
             if m and m.group("v") is not None:
                 return _decode_repr_escapes(m.group("v")).strip()
+            # Unparseable bookkeeping dump — never surface as Denken.
+            if _looks_like_agent_bookkeeping_dump(s):
+                return ""
         except Exception:
-            pass
+            if _looks_like_agent_bookkeeping_dump(s):
+                return ""
     # Some providers may return {"thought": "..."} like strings
     if s.startswith("{") and s.endswith("}"):
         try:
@@ -411,9 +435,81 @@ def _extract_thinking_text(text: str) -> str:
                 v = obj.get("thinking") or obj.get("thought") or obj.get("reasoning")
                 if isinstance(v, str):
                     return v.strip()
+                return ""
         except Exception:
             pass
+    if _looks_like_agent_bookkeeping_dump(s):
+        return ""
     return s
+
+
+def _structured_from_model_object(item: Any) -> dict[str, str] | None:
+    """Pull evaluation/memory/next/thinking from AgentBrain / AgentOutput / dict."""
+    data: dict[str, Any] | None = None
+    if isinstance(item, dict):
+        data = item
+    elif hasattr(item, "model_dump") and callable(getattr(item, "model_dump")):
+        try:
+            dumped = item.model_dump()
+            data = dumped if isinstance(dumped, dict) else None
+        except Exception:
+            data = None
+    if data is None and all(
+        hasattr(item, k) for k in ("evaluation_previous_goal", "memory", "next_goal")
+    ):
+        data = {
+            "thinking": getattr(item, "thinking", None),
+            "evaluation_previous_goal": getattr(item, "evaluation_previous_goal", None),
+            "memory": getattr(item, "memory", None),
+            "next_goal": getattr(item, "next_goal", None),
+        }
+    if not data:
+        return None
+
+    def _as_str(val: Any) -> str:
+        if val is None:
+            return ""
+        return str(val).strip()
+
+    out = {
+        "thinking": _as_str(data.get("thinking")),
+        "evaluation_previous_goal": _as_str(data.get("evaluation_previous_goal")),
+        "memory": _as_str(data.get("memory")),
+        "next_goal": _as_str(data.get("next_goal")),
+    }
+    if any(out.values()):
+        return out
+    return None
+
+
+def _thought_entry_from_history_item(item: Any) -> dict[str, Any]:
+    """Normalize history.model_thoughts / model_outputs items into thinking + structured."""
+    if isinstance(item, str):
+        structured = _extract_structured_model_output(item)
+        return {
+            "thinking": _extract_thinking_text(item),
+            "structured": structured,
+            "raw": item,
+        }
+    structured = _structured_from_model_object(item)
+    if structured is not None:
+        thinking = structured.get("thinking") or ""
+        # If VO empty, still allow <<PERCEPTION>> embedded in meta fields.
+        if not thinking:
+            blob = "\n".join(
+                structured.get(k) or ""
+                for k in ("evaluation_previous_goal", "memory", "next_goal")
+            )
+            if "<<PERCEPTION>>" in blob or "<<THINK_ALOUD>>" in blob:
+                thinking = blob
+        return {"thinking": thinking, "structured": structured, "raw": item}
+    s = str(item)
+    structured = _extract_structured_model_output(s)
+    return {
+        "thinking": _extract_thinking_text(s),
+        "structured": structured,
+        "raw": s,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -719,9 +815,14 @@ def _extract_structured_model_output(text: str) -> dict[str, str] | None:
             import re
 
             def _pick(key: str) -> str:
+                # Quoted string value
                 m = re.search(rf"{key}=(?:'|\")(?P<v>.*?)(?:'|\")", s, re.DOTALL)
-                raw = m.group("v") if m and m.group("v") is not None else ""
-                return _decode_repr_escapes(raw).strip()
+                if m and m.group("v") is not None:
+                    return _decode_repr_escapes(m.group("v")).strip()
+                # Explicit None — empty, not the literal "None"
+                if re.search(rf"{key}\s*=\s*None\b", s):
+                    return ""
+                return ""
 
             out = {
                 "thinking": _pick("thinking"),
@@ -1280,28 +1381,19 @@ def _get_model_thoughts(history: Any) -> list[dict[str, Any]]:
             raw = list(history.model_thoughts())
             if isinstance(raw, list):
                 for item in raw:
-                    if isinstance(item, str):
-                        structured = _extract_structured_model_output(item)
-                        out.append({"thinking": _extract_thinking_text(item), "structured": structured, "raw": item})
-                    elif item is not None:
-                        s = str(item)
-                        structured = _extract_structured_model_output(s)
-                        out.append({"thinking": _extract_thinking_text(s), "structured": structured, "raw": s})
+                    if item is None:
+                        continue
+                    out.append(_thought_entry_from_history_item(item))
         if not out and hasattr(history, "model_outputs") and callable(history.model_outputs):
             raw = list(history.model_outputs())
             if isinstance(raw, list):
                 for item in raw:
-                    if isinstance(item, str):
-                        structured = _extract_structured_model_output(item)
-                        out.append({"thinking": _extract_thinking_text(item), "structured": structured, "raw": item})
-                    elif isinstance(item, dict) and item.get("thought"):
-                        s = str(item["thought"])
-                        structured = _extract_structured_model_output(s)
-                        out.append({"thinking": _extract_thinking_text(s), "structured": structured, "raw": s})
-                    elif item is not None:
-                        s = str(item)
-                        structured = _extract_structured_model_output(s)
-                        out.append({"thinking": _extract_thinking_text(s), "structured": structured, "raw": s})
+                    if item is None:
+                        continue
+                    if isinstance(item, dict) and item.get("thought"):
+                        out.append(_thought_entry_from_history_item(str(item["thought"])))
+                    else:
+                        out.append(_thought_entry_from_history_item(item))
     except Exception:
         pass
     return out
@@ -1415,20 +1507,31 @@ def _history_to_steps(
                 step_entry["error"] = _smart_trim(str(err), limit=800)
             if i < len(thoughts):
                 thinking = str(thoughts[i].get("thinking") or "").strip()
+                if _looks_like_agent_bookkeeping_dump(thinking):
+                    thinking = ""
                 structured = thoughts[i].get("structured")
                 structured_dict = structured if isinstance(structured, dict) else None
-                if thinking:
+                # Hunt perception in VO *or* structured meta (models sometimes skip thinking).
+                search_blob = thinking
+                if structured_dict:
+                    meta_blob = "\n".join(
+                        str(structured_dict.get(k) or "")
+                        for k in ("evaluation_previous_goal", "memory", "next_goal", "thinking")
+                    )
+                    if "<<PERCEPTION>>" in meta_blob or "<<THINK_ALOUD>>" in meta_blob:
+                        search_blob = f"{thinking}\n{meta_blob}".strip()
+                if search_blob:
                     # Extract perception (or legacy think-aloud) + observations BEFORE trim.
-                    perception = ux_perception.extract_perception_from_thinking(thinking)
+                    perception = ux_perception.extract_perception_from_thinking(search_blob)
                     perception = ux_perception.scope_nav_home_perception(
                         perception,
                         current_url=current_url,
                         task=task,
                         budget=perception_budget,
                     )
-                    think_aloud = _extract_think_aloud(thinking)
-                    observations, invalid_obs = _extract_observations(thinking)
-                    cleaned_thinking = _strip_thinking_blocks(thinking)
+                    think_aloud = _extract_think_aloud(search_blob)
+                    observations, invalid_obs = _extract_observations(search_blob)
+                    cleaned_thinking = _strip_thinking_blocks(thinking) if thinking else ""
                     if perception:
                         step_entry["perception"] = perception
                         think_aloud = ux_perception.perception_to_think_aloud(perception)
@@ -1444,11 +1547,14 @@ def _history_to_steps(
                             f"observations parsed={len(observations)} invalid={invalid_obs}",
                             flush=True,
                         )
-                    # Server-side safety net for `thinking`. Generous so we only
-                    # trip on real LLM monologues (>3–4 sentences), not on
-                    # legitimate dense reasoning. The prompt does the actual
-                    # brevity work; this is just a guardrail.
-                    step_entry["reasoning"] = _smart_trim(cleaned_thinking, limit=600)
+                    # Prefer cleaned VO; else perception.think / evaluation — never a bookkeeping dump.
+                    vo = cleaned_thinking
+                    if not vo and think_aloud and isinstance(think_aloud.get("think"), str):
+                        vo = think_aloud["think"]
+                    if not vo and structured_dict:
+                        vo = str(structured_dict.get("evaluation_previous_goal") or "").strip()
+                    if vo and not _looks_like_agent_bookkeeping_dump(vo):
+                        step_entry["reasoning"] = _smart_trim(vo, limit=600)
                 if structured_dict and any(str(v or "").strip() for v in structured_dict.values()):
                     # Caps for the structured sections. Earlier we used 140–180
                     # which was clipping legitimate fact-dense content (specs,
@@ -3845,6 +3951,16 @@ async def run_agent(
                     await _orig_get_next(browser_state_summary)
                     mo = getattr(getattr(agent, "state", None), "last_model_output", None)
                     thinking = str(getattr(mo, "thinking", None) or "") if mo else ""
+                    if not thinking and mo is not None:
+                        # Models sometimes skip thinking but still embed <<PERCEPTION>> in meta.
+                        thinking = "\n".join(
+                            str(getattr(mo, k, None) or "")
+                            for k in (
+                                "evaluation_previous_goal",
+                                "memory",
+                                "next_goal",
+                            )
+                        )
                     raw_perc = ux_perception.extract_perception_from_thinking(
                         thinking, budget=_perc_budget
                     )

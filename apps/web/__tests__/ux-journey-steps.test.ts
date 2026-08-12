@@ -49,6 +49,29 @@ describe('ux journey step media helpers', () => {
     )
   })
 
+  it('rejects AgentBrain bookkeeping dumps and falls back to evaluation', () => {
+    const dump =
+      "thinking=None evaluation_previous_goal='Start' memory='Home loaded' next_goal='Open catalog'"
+    const steps = toChatUxJourneySteps([
+      {
+        step: 1,
+        action: 'navigate',
+        target: 'https://www.moebel-martin.de/',
+        reasoning: dump,
+        reasoningMeta: {
+          evaluation_previous_goal: 'Start — landed on the storefront.',
+          memory: 'Home loaded',
+          next_goal: 'Open catalog [3]',
+        },
+      },
+    ])
+    expect(steps[0]?.reasoning).toBeUndefined()
+    expect(steps[0]?.thinkAloud?.think).toBe('Start — landed on the storefront.')
+    expect(steps[0]?.thinkAloud?.learned).toBe('Home loaded')
+    expect(steps[0]?.thinkAloud?.next).toBe('Open catalog')
+    expect(steps[0]?.thinkAloud?.think).not.toContain('thinking=None')
+  })
+
   it('keeps product thinkAloud channels when the agent emits them', () => {
     const steps = toChatUxJourneySteps([
       {
