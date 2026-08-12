@@ -51,6 +51,8 @@
 - Chat step strip readable compact preview: `knowledge/chat-step-strip-readable-preview-2026-08-12.md`
 - Chat step strip persona moment channels: `knowledge/chat-step-strip-persona-moment-2026-08-12.md`
 - Browse/find explore-before-abandon: `knowledge/browse-explore-before-abandon-2026-08-12.md` · env `UX_JOURNEY_BROWSE_MIN_SCROLLS`
+- Perception natural voice (shopper think-aloud): `knowledge/perception-natural-voice-2026-08-12.md`
+
 - Wave scorecard / validEvidence: `apps/web/lib/ux-wave-scorecard.ts`
 - UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts` · `ux-studies-native.ts`
 - UX Study knowledge: `knowledge/ux-studies.md`

@@ -596,7 +596,7 @@ def test_impatient_abandon_upgrade_from_proceed():
     assert out is not None
     assert out["stance"] == "abandon"
     assert out.get("stanceUpgraded") is True
-    assert "abbrech" in (out.get("intent") or "").lower() or "sicher" in (out.get("intent") or "").lower()
+    assert "abbrech" in (out.get("intent") or "").lower() or "breche ab" in (out.get("intent") or "").lower()
 
 
 def test_try_then_quit_softens_first_confused_step():
@@ -1024,6 +1024,32 @@ def test_scope_nav_home_perception_rewrites_tool_bias_on_home():
     assert "startseite" in joined
     assert "filter" not in joined
     assert "bosch" not in joined
+    assert "Navigation" in (out.get("think") or "")
+    assert P.looks_like_research_script(out.get("think")) is False
+
+
+def test_humanize_perception_voice_rewrites_research_script():
+    task = "Suche nach einer Grillplatte auf moebel-martin.de"
+    perc = {
+        "noticed": [
+            {"what": "Hero mit Kategorien", "where": "oben", "relevance": "high"},
+        ],
+        "think": "Ohne Erklärung zur Ursache bleibe ich unsicher.",
+        "intent": "Ich prüfe kurz weitere sichtbare Bereiche, bevor ich entscheide.",
+        "why": "Filterursache unklar, ich brauche noch einen kurzen sichtbaren Seitencheck.",
+        "stance": "hesitate",
+        "feel": {"label": "unsicher", "valence": -1},
+    }
+    out = P.humanize_perception_voice(
+        perc,
+        task=task,
+        lab_b_gold_context_allowed=False,
+    )
+    assert P.looks_like_research_script(out["think"]) is False
+    assert P.looks_like_research_script(out["intent"]) is False
+    assert P.looks_like_research_script(out["why"]) is False
+    assert "grillplatte" in out["think"].lower()
+    assert "scroll" in out["intent"].lower()
 
 
 def test_scope_nav_home_perception_skips_on_tool_url():

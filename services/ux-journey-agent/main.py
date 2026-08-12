@@ -3647,19 +3647,32 @@ async def run_agent(
             )
         if persona_tp is not None and persona_tp >= 0.75:
             abandon_n = int(confusion_abandon.get("threshold") or 2)
-            completion_block = (
-                "AUDION_COMPLETION:\n"
-                f"Persona time_pressure={persona_tp:.2f} — Step-Budget eng "
-                f"(max {max_steps}, soft min {min_steps}). "
-                f"TRY-THEN-QUIT: nach erster Verwirrung erst {try_before_n}× kurz "
-                "zögern/explorieren, DANN Abbruch. "
-                f"HARD RULE: Nach {abandon_n} unerklärten grau/disabled/Filter-Momenten "
-                f"UND {try_before_n} explorativen Versuchen "
-                "sofort done mit Teil-Finding (Verwirrung ehrlich benennen). "
-                "Runtime erzwingt Abbruch — NICHT endlos suchen oder Side-Quests.\n"
-                "Markiere done erst mit verifiziertem Ergebnis ODER ehrlichem Abbruchgrund.\n"
-                f"{nav_home_rule}"
-            )
+            if ux_perception.is_browse_find_task(task) and not ux_perception.lab_b_gold_context_allowed(
+                url, task
+            ):
+                completion_block = (
+                    "AUDION_COMPLETION:\n"
+                    f"Persona time_pressure={persona_tp:.2f} — Step-Budget eng "
+                    f"(max {max_steps}, soft min {min_steps}). "
+                    "BROWSE/FIND: Erst mindestens 2× scrollen und sichtbar nach dem Ziel suchen, "
+                    "dann erst ehrlich abbrechen wenn kein Einstieg (Kategorie, Suche, Produkt) sichtbar wird. "
+                    "Sprich wie ein echter Shopper — keine UX-Fachbegriffe.\n"
+                    f"{nav_home_rule}"
+                )
+            else:
+                completion_block = (
+                    "AUDION_COMPLETION:\n"
+                    f"Persona time_pressure={persona_tp:.2f} — Step-Budget eng "
+                    f"(max {max_steps}, soft min {min_steps}). "
+                    f"TRY-THEN-QUIT: nach erster Verwirrung erst {try_before_n}× kurz "
+                    "zögern/explorieren, DANN Abbruch. "
+                    f"HARD RULE: Nach {abandon_n} unerklärten grau/disabled/Filter-Momenten "
+                    f"UND {try_before_n} explorativen Versuchen "
+                    "sofort done mit Teil-Finding (Verwirrung ehrlich benennen). "
+                    "Runtime erzwingt Abbruch — NICHT endlos suchen oder Side-Quests.\n"
+                    "Markiere done erst mit verifiziertem Ergebnis ODER ehrlichem Abbruchgrund.\n"
+                    f"{nav_home_rule}"
+                )
         else:
             completion_block = (
                 "AUDION_COMPLETION:\n"
@@ -3676,6 +3689,7 @@ async def run_agent(
             felt_state=None,  # live updates via felt-state context messages
             completion_block=completion_block,
             lab_b_gold_context_allowed=ux_perception.lab_b_gold_context_allowed(url, task),
+            task=task,
         )
         # Keep optional OBSERVATIONS for scorecard research flags (max 2).
         audion_brevity_extension += (

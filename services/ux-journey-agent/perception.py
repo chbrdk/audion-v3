@@ -1798,18 +1798,12 @@ def _soften_to_hesitate(perception: dict[str, Any]) -> dict[str, Any]:
     out["tryThenQuit"] = True
     intent = str(out.get("intent") or "").lower()
     if any(tok in intent for tok in ("abbrech", "abbruch", "aufgeb", "fertig")):
-        out["intent"] = (
-            "Ich prüfe noch einmal kurz (scroll/klick), bevor ich aufgebe."
-        )
+        out["intent"] = "Ich probiere noch kurz scrollen oder klicken, bevor ich aufgebe."
     elif len(str(out.get("intent") or "").strip()) < 12:
-        out["intent"] = (
-            "Ich zögere und versuche eine kurze Exploration, bevor ich abbreche."
-        )
+        out["intent"] = "Ich schaue mir das noch kurz an, bevor ich aufgebe."
     why = str(out.get("why") or "").strip()
-    if len(why) < 12:
-        out["why"] = (
-            "Erste Verwirrung — ich probiere kurz, statt sofort aufzugeben."
-        )
+    if len(why) < 12 or looks_like_research_script(why):
+        out["why"] = "Noch nicht sicher — ich schaue mir das kurz an."
     return out
 
 
@@ -1820,16 +1814,13 @@ def _hard_upgrade_abandon(perception: dict[str, Any]) -> dict[str, Any]:
     out["tryThenQuit"] = True
     out.pop("stanceSoftened", None)
     why = str(out.get("why") or "").strip()
-    if len(why) < 12:
+    if len(why) < 12 or looks_like_research_script(why):
         out["why"] = (
-            "Unerklärte graue/Filter-Lage — unter Zeitdruck breche ich ab, "
-            "statt weiter zu raten."
+            "Die ausgegrauten Optionen erklären sich nicht — ich breche ab."
         )
     intent = str(out.get("intent") or "").lower()
     if not any(tok in intent for tok in ("abbrech", "abbruch", "aufgeb", "stoppe", "fertig")):
-        out["intent"] = (
-            "Ich breche ab und sage ehrlich, dass ich keine sichere Antwort habe."
-        )
+        out["intent"] = "Ich breche ab — so komme ich nicht weiter."
     feel = out.get("feel")
     if not isinstance(feel, dict) or feel.get("valence") is None:
         out["feel"] = {"label": "frustriert", "valence": -2}
@@ -1937,6 +1928,127 @@ _LAB_B_GOLD_PROMOTE_LABELS = frozenset(
     }
 )
 
+_RESEARCH_SCRIPT_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"ohne erkl[aä]rung zur ursache", re.I),
+    re.compile(r"filterursache", re.I),
+    re.compile(r"unklar warum", re.I),
+    re.compile(r"sichtbar(er|en)?\s+seiten(check|bereich)", re.I),
+    re.compile(r"weitere sichtbare bereiche", re.I),
+    re.compile(r"prüfe kurz weitere", re.I),
+    re.compile(r"ursache unklar", re.I),
+    re.compile(r"keine sichere antwort", re.I),
+    re.compile(r"sichtbaren bereich prüfen", re.I),
+    re.compile(r"erkl[aä]rung zur ursache", re.I),
+    re.compile(r"sichtbaren navigations-einstieg", re.I),
+)
+
+
+def looks_like_research_script(text: str | None) -> bool:
+    """True when copy reads like UX-research template, not shopper think-aloud."""
+    s = (text or "").strip()
+    if len(s) < 8:
+        return False
+    return any(p.search(s) for p in _RESEARCH_SCRIPT_PATTERNS)
+
+
+def _noticed_ui_digest(noticed: list[Any], *, limit: int = 2) -> str:
+    parts: list[str] = []
+    for entry in noticed:
+        if not isinstance(entry, dict):
+            continue
+        what = str(entry.get("what") or "").strip()
+        if len(what) < 3 or looks_like_research_script(what):
+            continue
+        where = str(entry.get("where") or "").strip()
+        parts.append(f"{what} ({where})" if where else what)
+        if len(parts) >= limit:
+            break
+    return "; ".join(parts)
+
+
+def humanize_perception_voice(
+    perception: dict[str, Any],
+    *,
+    task: str | None = None,
+    lab_b_gold_context_allowed: bool = True,
+) -> dict[str, Any]:
+    """
+    Rewrite research-script think/intent/why into colloquial shopper copy.
+    Uses noticed[] + task goal — never invents UI off-screen.
+    """
+    out = dict(perception)
+    noticed = [n for n in (out.get("noticed") or []) if isinstance(n, dict)]
+    if not lab_b_gold_context_allowed:
+        cleaned: list[dict[str, Any]] = []
+        for n in noticed:
+            what = str(n.get("what") or "")
+            if looks_like_research_script(what):
+                continue
+            cleaned.append(n)
+        if cleaned:
+            noticed = cleaned
+            out["noticed"] = noticed
+
+    digest = _noticed_ui_digest(noticed)
+    goal_keys = browse_find_target_keywords(task)
+    goal = goal_keys[0] if goal_keys else "mein Ziel"
+    stance = str(out.get("stance") or "proceed")
+    browse = is_browse_find_task(task) and not lab_b_gold_context_allowed
+
+    def rewrite_think() -> str:
+        if digest:
+            if browse:
+                return f"Ich sehe {digest} — {goal} finde ich so noch nicht."
+            return f"Ich sehe {digest} und überlege, wie es weitergeht."
+        if browse:
+            return f"Ich schaue mich um und suche nach {goal}."
+        return "Ich schaue mir an, was auf dem Screen passiert."
+
+    def rewrite_intent() -> str:
+        if stance == "abandon":
+            if browse:
+                return f"Ich gebe es auf — {goal} finde ich hier nicht."
+            return "Ich breche ab, weil ich nicht weiterkomme."
+        if stance == "hesitate" or out.get("browseExploreRequired"):
+            if browse:
+                return f"Ich scroll weiter und suche nach {goal}."
+            return "Ich schaue mir erst noch den restlichen Screen an."
+        if digest:
+            lead = digest.split(";")[0].strip()
+            return f"Ich mache als Nächstes einen Schritt Richtung {lead}."
+        return "Ich mache den nächsten sichtbaren Schritt."
+
+    def rewrite_why() -> str:
+        if stance == "abandon":
+            if browse:
+                return f"So finde ich {goal} nicht — mir fehlt ein klarer Einstieg."
+            return "Ich komme hier nicht weiter und will nicht raten."
+        if out.get("browseExploreRequired"):
+            return "Oben reicht der Blick noch nicht — erst weiter schauen."
+        feel = out.get("feel")
+        if isinstance(feel, dict) and int(feel.get("valence") or 0) < 0:
+            return "Das wirkt gerade unübersichtlich für mich."
+        if digest:
+            return f"Erst muss klar werden, wo {goal} überhaupt startet."
+        return "Ich will erst verstehen, was ich hier sehe."
+
+    think = str(out.get("think") or "").strip()
+    intent = str(out.get("intent") or "").strip()
+    why = str(out.get("why") or "").strip()
+
+    if looks_like_research_script(think) or (
+        not lab_b_gold_context_allowed and "unklar warum" in think.lower()
+    ):
+        out["think"] = rewrite_think()
+    if looks_like_research_script(intent) or "prüfe kurz" in intent.lower():
+        out["intent"] = rewrite_intent()
+    if looks_like_research_script(why) or (
+        not lab_b_gold_context_allowed and "filter" in why.lower() and "ursache" in why.lower()
+    ):
+        out["why"] = rewrite_why()
+
+    return out
+
 
 def is_lab_b_matrix_task(task: str | None) -> bool:
     """
@@ -1994,7 +2106,7 @@ def browse_find_target_keywords(task: str | None) -> list[str]:
     keys = list(_task_target_keywords(task))
     t = str(task or "")
     patterns = (
-        r"suche\s+nach\s+(?:einer?\s+|einem\s+|der\s+|dem\s+|das\s+|die\s+)?"
+        r"suche\s+(?:auf\s+(?:der\s+)?(?:seite|website|webpage)\s+)?nach\s+(?:einer?\s+|einem\s+|der\s+|dem\s+|das\s+|die\s+)?"
         r"([A-Za-zÄÖÜäöüß0-9][A-Za-zÄÖÜäöüß0-9\-]{2,})",
         r"finde\s+(?:eine?\s+|einen?\s+|die\s+|den\s+|das\s+)?"
         r"([A-Za-zÄÖÜäöüß0-9][A-Za-zÄÖÜäöüß0-9\-]{2,})",
@@ -2086,15 +2198,9 @@ def _soften_browse_explore(perception: dict[str, Any], *, task: str | None) -> d
     out["browseExploreRequired"] = True
     out["tryThenQuit"] = True
     out["confusion"] = None
-    out["intent"] = (
-        f"Ich scrolle die Seite nach unten und suche sichtbar nach {goal}."
-    )
-    out["why"] = (
-        "Ohne Scroll kenne ich nur den oberen Screen — erst suchen, dann ggf. aufgeben."
-    )
-    out["think"] = (
-        f"Ich habe {goal} oben noch nicht gesehen; ich scrolle weiter, bevor ich aufgebe."
-    )
+    out["intent"] = f"Ich scroll runter und suche nach {goal}."
+    out["why"] = "Oben sehe ich noch nicht genug — erst weiter schauen."
+    out["think"] = f"{goal.capitalize()} sehe ich oben noch nicht; ich scroll weiter."
     noticed = list(out.get("noticed") or [])
     if not any(
         isinstance(n, dict) and "scroll" in str(n.get("what") or "").lower()
@@ -2223,13 +2329,10 @@ def scope_nav_home_perception(
     out["noticed"] = noticed[: max(2, budget)]
     goal = target_keys[0] if target_keys else "Ziel"
     out["taskReminder"] = f"Ich suche den Weg zu {goal}."
-    out["intent"] = "Ich suche den sichtbaren Navigations-Einstieg zum Ziel."
-    out["why"] = "Auf der Startseite zählt zuerst der Weg zum Ziel, nicht die Ziel-Bedienung."
-    # Drop destination-tool confusion / filter hallucinations that burn try budget.
+    out["intent"] = f"Ich öffne das Menü und suche einen Einstieg zu {goal}."
+    out["why"] = f"Auf der Startseite muss ich erst den Weg zu {goal} finden."
+    out["think"] = "Ich bin auf der Startseite und suche in der Navigation einen passenden Einstieg."
     out["confusion"] = None
-    out["think"] = (
-        "Ich sehe die Startseite und suche den sichtbaren Menü-Einstieg zum Ziel."
-    )
     feel = out.get("feel")
     if isinstance(feel, dict):
         label = str(feel.get("label") or "").lower()
@@ -2412,7 +2515,12 @@ def finalize_perception_for_persona(
     )
     if browse_blocked:
         upgraded = False
-    return out2, upgraded
+    out3 = humanize_perception_voice(
+        out2 or {},
+        task=task,
+        lab_b_gold_context_allowed=lab_b_gold_context_allowed,
+    )
+    return out3, upgraded
 
 
 def try_then_quit_blocks_force_done(perception: dict[str, Any] | None) -> bool:
@@ -2614,19 +2722,30 @@ def perception_prompt_extension(
     felt_state: dict[str, Any] | None = None,
     completion_block: str = "",
     lab_b_gold_context_allowed: bool = True,
+    task: str | None = None,
 ) -> str:
     """System-message block replacing AUDION_THINK_ALOUD for perception-first steps."""
     budget = salience_budget(time_pressure, detail_orientation)
     tp = 0.5 if time_pressure is None else float(time_pressure)
     impatient = tp >= 0.75
     patient = tp <= 0.35
+    browse_find = is_browse_find_task(task) and not lab_b_gold_context_allowed
 
     persona_lines = [
         f"- Salience-Budget: maximal {budget} Einträge in noticed[] (Persona time_pressure={tp:.2f}).",
         "- Blind Spot: Handle NUR auf Basis von noticed. Erfinde keine UI außerhalb von noticed.",
         "- ignoredGuess: sag kurz, was du bewusst überspringst / nicht prüfst.",
+        "- SPRACHE: think/intent/why = umgangssprachlich wie ein echter Nutzer (Menü, Kategorie, Banner, Suchfeld). "
+        "Keine UX-Fachsprache (VERBOTEN: „Filterursache“, „unklar warum“, „Erklärung zur Ursache“, "
+        "„Seitencheck“, „sichtbare Bereiche prüfen“, „keine sichere Antwort“). "
+        "confusion-Tags sind intern — nicht wörtlich in think/why wiederholen.",
     ]
-    if impatient:
+    if browse_find:
+        persona_lines.append(
+            "- Browse/Find: beschreibe konkret was du auf dem Screen siehst und ob du dein Ziel findest. "
+            "Beispiel-Ton: „Oben nur Werbung — ich scroll nach Garten/Grill.“"
+        )
+    if impatient and not browse_find:
         try_n = try_before_abandon_required(tp, exploration=exploration)
         persona_lines.append(
             f"- Try-then-quit: nach erster Verwirrung (grau/Filter) erst {try_n}× "
@@ -2647,22 +2766,19 @@ def perception_prompt_extension(
             )
             persona_lines.append(
                 "- Bei unerklärtem Grau: confusion=disabled_option_unexplained oder "
-                "filter_cause_unknown setzen und in think/why „unklar warum“ sagen."
-            )
-        else:
-            persona_lines.append(
-                f"- Nutze das Budget ({budget}): trenne Filter-/Ursache-Teile und nutze "
-                "die Wörter „Filter“ und „unklar warum“, erfinde aber keine Lab-B Goldwörter "
-                "(z.B. „Performance Line“ oder „grau/disabled Displays“)."
-            )
-            persona_lines.append(
-                "- Wenn Filter-/Ursache unklar bleibt: confusion=filter_cause_unknown setzen "
-                "und in think/why „unklar warum“ sagen."
+                "filter_cause_unknown setzen — in think/why natürlich sagen "
+                "(„ausgegraut und ich verstehe nicht warum“), nicht Schablonen copy-pasten."
             )
         if felt_state and clarity_persistently_low(felt_state.get("clarityTrend"), min_steps=2):
             persona_lines.append(
                 "- Felt-State: Klarheit bleibt niedrig — Abbruch ist wahrscheinlicher als Optimieren."
             )
+    elif impatient and browse_find:
+        try_n = try_before_abandon_required(tp, exploration=exploration)
+        persona_lines.append(
+            f"- Ungeduldig, aber Browse/Find: erst mindestens 2× scrollen und sichtbar suchen, "
+            f"dann erst Abbruch. Try-Budget ≈{try_n} kurze Versuche."
+        )
     elif patient:
         try_n = try_before_abandon_required(tp, exploration=exploration)
         persona_lines.append(
@@ -2685,41 +2801,59 @@ def perception_prompt_extension(
     felt = felt_state_prompt_block(felt_state)
     felt_section = f"{felt}\n" if felt else ""
 
-    if lab_b_gold_context_allowed:
+    if browse_find:
+        sample_perception_block = (
+            "<<PERCEPTION>>{"
+            '"taskReminder":"Ich suche eine Grillplatte auf der Seite",'
+            '"noticed":['
+            '{"what":"Hero mit Aktionen und Kategorien","where":"oben","relevance":"high"},'
+            '{"what":"Suchfeld oder Garten-Kategorie","where":"Header","relevance":"high"}'
+            '],'
+            '"ignoredGuess":"Footer und Fein-Tooltips lese ich nicht",'
+            '"think":"Oben sehe ich viel Werbung — die Grillplatte springt mir noch nicht ins Auge.",'
+            '"clarity":1,'
+            '"feel":{"label":"unsicher","valence":-1},'
+            '"confusion":null,'
+            '"stance":"hesitate",'
+            '"intent":"Ich scroll runter und schaue, ob Garten oder Grill auftauchen.",'
+            '"why":"Ohne Kategorie oder Suche finde ich das Produkt so nicht."'
+            "}<</PERCEPTION>>\n"
+        )
+    elif lab_b_gold_context_allowed:
         sample_perception_block = (
             "<<PERCEPTION>>{"
             '"taskReminder":"Ich will kompatible Displays finden",'
             '"noticed":['
-            '{"what":"Display-Karten grau/disabled","where":"rechts","relevance":"high"},'
-            '{"what":"Filter-Ursache unklar warum","where":"Kompatibilitätswahl","relevance":"high"},'
+            '{"what":"Display-Karten sind ausgegraut","where":"rechts","relevance":"high"},'
+            '{"what":"Kompatibilitätsfilter ohne Erklärung","where":"Auswahl","relevance":"high"},'
             '{"what":"Performance Line Karte","where":"Drive Unit","relevance":"med"}'
             '],'
             '"ignoredGuess":"Feine Tooltips und Footer lese ich nicht",'
-            '"think":"Ohne Erklärung warum grau komme ich nicht weiter.",'
+            '"think":"Die Karten sind grau und ich verstehe nicht, warum ich sie nicht wählen kann.",'
             '"clarity":0,'
             '"feel":{"label":"frustriert","valence":-2},'
             '"confusion":"disabled_option_unexplained",'
             '"stance":"abandon",'
-            '"intent":"Ich breche ab und sage ehrlich, dass ich keine sichere Antwort habe.",'
-            '"why":"Unerklärte graue Display-Optionen — keine sichere Antwort."'
+            '"intent":"Ich breche ab — so komme ich nicht weiter.",'
+            '"why":"Ausgegraute Optionen ohne Erklärung — ich will nicht raten."'
             "}<</PERCEPTION>>\n"
         )
     else:
         sample_perception_block = (
             "<<PERCEPTION>>{"
-            '"taskReminder":"Ich will kompatible Displays finden",'
+            '"taskReminder":"Ich suche den Weg zum Produktkombinationen-Tool",'
             '"noticed":['
-            '{"what":"Filter/Ursache prüfen","where":"Tool","relevance":"high"},'
-            '{"what":"Filter-Ursache unklar warum","where":"Kompatibilitätswahl","relevance":"high"}'
+            '{"what":"Startseite mit Hauptnavigation","where":"oben","relevance":"high"},'
+            '{"what":"Service-Menüpunkt","where":"Nav","relevance":"high"}'
             '],'
-            '"ignoredGuess":"Feine Tooltips und Footer lese ich nicht",'
-            '"think":"Ohne Erklärung zur Ursache bleibe ich unsicher.",'
-            '"clarity":0,'
-            '"feel":{"label":"frustriert","valence":-2},'
-            '"confusion":"filter_cause_unknown",'
-            '"stance":"abandon",'
-            '"intent":"Ich breche ab und sage ehrlich, dass ich keine sichere Antwort habe.",'
-            '"why":"Filter-Ursache unklar — keine sichere Antwort."'
+            '"ignoredGuess":"Footer lese ich nicht",'
+            '"think":"Ich bin auf der Startseite und suche in der Navigation einen Einstieg.",'
+            '"clarity":1,'
+            '"feel":{"label":"neutral","valence":0},'
+            '"confusion":null,'
+            '"stance":"proceed",'
+            '"intent":"Ich klicke auf Service und schaue, ob Produktkombinationen auftaucht.",'
+            '"why":"Über die Navigation komme ich normalerweise zum Ziel."'
             "}<</PERCEPTION>>\n"
         )
 

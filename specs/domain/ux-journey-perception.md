@@ -32,6 +32,17 @@ Emitted inside `thinking`:
 | `intent` | string | What I will do next (first person) |
 | `why` | string | Justification |
 
+### Natural voice (product)
+
+`think`, `intent`, and `why` are **shopper think-aloud**, not UX-research notes.
+
+- Use concrete UI nouns from `noticed` (Menü, Kategorie, Banner, Suchfeld, Button).
+- Colloquial German, first person present — short sentences a real user would say aloud.
+- **Forbidden in think/intent/why** (unless Lab-B destination tool with real grey/filter on screen):  
+  `Filterursache`, `unklar warum`, `Erklärung zur Ursache`, `Seitencheck`, `sichtbare Bereiche prüfen`, `keine sichere Antwort`, `Ursache unklar`.
+- `confusion` tags are **internal** — do not copy tag names or template phrases into persona channels.
+- Runtime `humanize_perception_voice` rewrites research-script stubs before UI mapping.
+
 ### Confusion tags
 
 `disabled_option_unexplained` | `filter_cause_unknown` | `selection_order_surprise`
