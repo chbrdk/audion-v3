@@ -12,13 +12,14 @@ import type {
   ChatUxJourneyStep,
 } from '@audion-v3/contracts'
 import { DEMO_PERSONAS } from './personas'
-import { extractUrlFromMessage } from '../chat/share'
+import { extractUrlFromMessage, buildInspectAgentTask } from '../chat/share'
 import { inspectFromToolComplete } from '../chat/messages-column'
 
 type PendingTool = ChatToolProposedEvent & {
   personaId: string
   projectId: string | null
   conversationId: string | null
+  agentTask: string
 }
 
 const pending = new Map<string, PendingTool>()
@@ -71,7 +72,12 @@ export function storeShareMoodboard(
 
 export function storeRegisterToolProposal(
   event: ChatToolProposedEvent,
-  meta: { personaId: string; projectId: string | null; conversationId: string | null },
+  meta: {
+    personaId: string
+    projectId: string | null
+    conversationId: string | null
+    agentTask: string
+  },
 ): void {
   pending.set(event.callId, { ...event, ...meta })
 }
@@ -152,7 +158,7 @@ export async function* storeChatToolDecisionStream(
     jobId: `chat-inspect-${callId}`,
     personaId: tool.personaId,
     url,
-    task: `Inspect ${url}`,
+    task: tool.agentTask || `Inspect ${url}`,
     source: 'chat_inspect' as const,
   }
   const personaPolicy = {
@@ -207,15 +213,26 @@ export function maybeProposeInspectWebsite(
 ): ChatToolProposedEvent | null {
   const url = extractUrlFromMessage(message)
   if (!url) return null
+  const agentTask = buildInspectAgentTask(message, url)
+  const goal = agentTask.includes('Aufgabe:')
+    ? agentTask.split('Aufgabe:')[1]?.split('. Verfolge')[0]?.trim()
+    : null
   const callId = `tool-${Date.now().toString(36)}`
   const event: ChatToolProposedEvent = {
     type: 'tool_proposed',
     callId,
     tool: 'inspect_website',
     title: 'Inspect website',
-    detail: `Browse and summarize ${url} for journey signals.`,
+    detail: goal
+      ? `${goal} — ${url}`
+      : `Browse and summarize ${url} for journey signals.`,
     url,
   }
-  storeRegisterToolProposal(event, { personaId, projectId, conversationId })
+  storeRegisterToolProposal(event, {
+    personaId,
+    projectId,
+    conversationId,
+    agentTask,
+  })
   return event
 }

@@ -1028,6 +1028,32 @@ def test_scope_nav_home_perception_rewrites_tool_bias_on_home():
     assert P.looks_like_research_script(out.get("think")) is False
 
 
+def test_anchor_task_to_perception_injects_browse_goal():
+    task = (
+        "Starte auf https://www.moebel-martin.de/. "
+        "Aufgabe: suche nach Grillplatte. Verfolge diese Aufgabe in jedem Schritt."
+    )
+    perc = {
+        "noticed": [{"what": "Hero mit Kategorien", "where": "oben", "relevance": "high"}],
+        "think": "Ich öffne https://www.moebel-martin.de/.",
+        "intent": "Initial navigation",
+        "why": "Start",
+        "stance": "proceed",
+        "clarity": 1,
+        "feel": {"label": "neutral", "valence": 0},
+    }
+    out = P.anchor_task_to_perception(
+        perc,
+        task=task,
+        lab_b_gold_context_allowed=False,
+    )
+    assert out is not None
+    assert "grillplatte" in (out.get("taskReminder") or "").lower()
+    assert "grillplatte" in (out.get("think") or "").lower()
+    assert "grillplatte" in (out.get("intent") or "").lower()
+    assert "initial navigation" not in (out.get("intent") or "").lower()
+
+
 def test_humanize_perception_voice_rewrites_research_script():
     task = "Suche nach einer Grillplatte auf moebel-martin.de"
     perc = {

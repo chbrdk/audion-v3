@@ -1416,17 +1416,27 @@ def _apply_persona_perception_finalize(
     budget: int,
     exploration: float | None = None,
     lab_b_gold_context_allowed: bool = True,
+    task: str | None = None,
+    start_url: str | None = None,
 ) -> list[dict[str, Any]]:
     """Re-apply enrich + try-then-quit / impatient abandon so stored steps match the live gate."""
     confusion_so_far = 0
     exploratory = 0
     clarity_trend: list[int] = []
+    browse_scrolls = 0
+    current_url = start_url
     try_before = ux_perception.try_before_abandon_required(
         time_pressure, exploration=exploration
     )
     for step in steps:
         if not isinstance(step, dict):
             continue
+        action = str(step.get("action") or "").lower()
+        if action in ("scroll", "scroll_down", "scroll_up"):
+            browse_scrolls += 1
+        target = step.get("target")
+        if isinstance(target, str) and target.startswith("http"):
+            current_url = target
         perc = step.get("perception")
         if not isinstance(perc, dict):
             continue
@@ -1440,9 +1450,9 @@ def _apply_persona_perception_finalize(
             exploration=exploration,
             clarity_trend=list(clarity_trend),
             lab_b_gold_context_allowed=lab_b_gold_context_allowed,
-            task=None,
-            current_url=None,
-            browse_scroll_attempts=0,
+            task=task,
+            current_url=current_url,
+            browse_scroll_attempts=browse_scrolls,
         )
         if finalized:
             step["perception"] = finalized
@@ -2929,6 +2939,19 @@ async def _publish_partial_steps(
             perception_budget=ux_perception.salience_budget(
                 persona_tp, persona_dims.get("detail_orientation")
             ),
+        )
+        steps_now = _apply_persona_perception_finalize(
+            steps_now,
+            time_pressure=persona_tp,
+            budget=ux_perception.salience_budget(
+                persona_tp, persona_dims.get("detail_orientation")
+            ),
+            exploration=persona_dims.get("exploration"),
+            lab_b_gold_context_allowed=ux_perception.lab_b_gold_context_allowed(
+                None, task
+            ),
+            task=task,
+            start_url=None,
         )
         steps_now = steps_now[-60:]
         mono_now = time.monotonic()
@@ -5184,6 +5207,8 @@ async def run_agent(
             ),
             exploration=persona_dims.get("exploration"),
             lab_b_gold_context_allowed=ux_perception.lab_b_gold_context_allowed(url, task),
+            task=task,
+            start_url=url,
         )
         _annotate_steps_with_video_offsets(job_id, steps)
         success = _history_success(history)

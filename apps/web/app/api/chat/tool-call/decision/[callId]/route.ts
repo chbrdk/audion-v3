@@ -54,7 +54,7 @@ export async function POST(request: Request, { params }: Params) {
               personaId,
               projectId,
               conversationId: pending.conversationId,
-              task: pending.detail || `Inspect ${pending.url}`,
+              task: pending.agentTask,
             })) {
               controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
             }

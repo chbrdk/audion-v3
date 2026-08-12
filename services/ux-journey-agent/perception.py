@@ -1966,6 +1966,87 @@ def _noticed_ui_digest(noticed: list[Any], *, limit: int = 2) -> str:
     return "; ".join(parts)
 
 
+def task_reminder_from_task(task: str | None) -> str | None:
+    """Short first-person task anchor for taskReminder."""
+    if not task:
+        return None
+    keys = browse_find_target_keywords(task)
+    if keys:
+        return f"Ich suche nach {keys[0]}."
+    match = re.search(r"Aufgabe:\s*([^.\n]+)", str(task))
+    if match:
+        bit = match.group(1).strip()
+        return bit[:200] if bit else None
+    t = str(task).strip()
+    if is_browse_find_task(task) and len(t) <= 200:
+        return t
+    return None
+
+
+def _goal_in_perception(perception: dict[str, Any], goal: str) -> bool:
+    """True when think/intent/why already mention the browse goal (not taskReminder)."""
+    voice = " ".join(
+        [
+            str(perception.get("think") or ""),
+            str(perception.get("intent") or ""),
+            str(perception.get("why") or ""),
+        ]
+    )
+    return goal.lower() in voice.lower()
+
+
+_AGENT_VOICE_STUBS = frozenset(
+    {
+        "start",
+        "none",
+        "initial navigation",
+        "navigate",
+        "navigation",
+    }
+)
+
+
+def is_agent_voice_stub(text: str | None) -> bool:
+    t = str(text or "").strip().lower()
+    return not t or t in _AGENT_VOICE_STUBS
+
+
+def anchor_task_to_perception(
+    perception: dict[str, Any] | None,
+    *,
+    task: str | None,
+    lab_b_gold_context_allowed: bool = True,
+) -> dict[str, Any] | None:
+    """Ensure browse/find tasks stay visible in think/intent/why — then naturalize voice."""
+    if perception is None or not task:
+        return perception
+    out = dict(perception)
+    reminder = task_reminder_from_task(task)
+    if reminder:
+        out["taskReminder"] = reminder
+    keys = browse_find_target_keywords(task)
+    goal = keys[0] if keys else None
+    if goal and is_browse_find_task(task) and not _goal_in_perception(out, goal):
+        stance = str(out.get("stance") or "proceed")
+        if stance == "abandon":
+            out["think"] = f"So finde ich {goal} hier nicht."
+            out["intent"] = f"Ich gebe die Suche nach {goal} auf."
+            out["why"] = "Mir fehlt ein klarer Einstieg zum Ziel."
+        elif stance == "hesitate" or out.get("browseExploreRequired"):
+            out["think"] = f"Ich sehe {goal} noch nicht — ich scroll weiter."
+            out["intent"] = f"Ich scrolle weiter und suche nach {goal}."
+            out["why"] = "Oben reicht der Blick noch nicht."
+        else:
+            out["think"] = f"Ich bin auf der Seite und suche nach {goal}."
+            out["intent"] = f"Ich mache den nächsten Schritt Richtung {goal}."
+            out["why"] = f"Erst muss klar werden, wo ich {goal} finde."
+    return humanize_perception_voice(
+        out,
+        task=task,
+        lab_b_gold_context_allowed=lab_b_gold_context_allowed,
+    )
+
+
 def humanize_perception_voice(
     perception: dict[str, Any],
     *,
@@ -2036,13 +2117,13 @@ def humanize_perception_voice(
     intent = str(out.get("intent") or "").strip()
     why = str(out.get("why") or "").strip()
 
-    if looks_like_research_script(think) or (
+    if looks_like_research_script(think) or is_agent_voice_stub(think) or (
         not lab_b_gold_context_allowed and "unklar warum" in think.lower()
     ):
         out["think"] = rewrite_think()
-    if looks_like_research_script(intent) or "prüfe kurz" in intent.lower():
+    if looks_like_research_script(intent) or is_agent_voice_stub(intent) or "prüfe kurz" in intent.lower():
         out["intent"] = rewrite_intent()
-    if looks_like_research_script(why) or (
+    if looks_like_research_script(why) or is_agent_voice_stub(why) or (
         not lab_b_gold_context_allowed and "filter" in why.lower() and "ursache" in why.lower()
     ):
         out["why"] = rewrite_why()
@@ -2515,8 +2596,8 @@ def finalize_perception_for_persona(
     )
     if browse_blocked:
         upgraded = False
-    out3 = humanize_perception_voice(
-        out2 or {},
+    out3 = anchor_task_to_perception(
+        out2,
         task=task,
         lab_b_gold_context_allowed=lab_b_gold_context_allowed,
     )
@@ -2800,6 +2881,9 @@ def perception_prompt_extension(
 
     felt = felt_state_prompt_block(felt_state)
     felt_section = f"{felt}\n" if felt else ""
+    task_section = ""
+    if task and str(task).strip():
+        task_section = f"AUFTRAG (jeder Schritt): {str(task).strip()[:240]}\n"
 
     if browse_find:
         sample_perception_block = (
@@ -2861,6 +2945,7 @@ def perception_prompt_extension(
         "AUDION_PERCEPTION:\n"
         "ROLLENBILD: Du bist die Persona. Reihenfolge PFLICHT: erst wahrnehmen & bewerten, "
         "dann erst Action wählen. Perception steuert die Entscheidung IN DIESEM Schritt.\n"
+        f"{task_section}"
         f"{felt_section}"
         "Persona-Filter:\n"
         + "\n".join(persona_lines)

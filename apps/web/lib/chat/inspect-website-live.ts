@@ -59,9 +59,7 @@ export async function* runLiveInspectWebsiteStream(input: {
   maxSteps?: number | null
 }): AsyncGenerator<ChatStreamEvent> {
   const url = input.url.trim()
-  const task = (
-    input.task?.trim() || `Inspect ${url} as this persona and note journey friction.`
-  ).trim()
+  const task = (input.task?.trim() || `Inspect ${url} as this persona and note journey friction.`).trim()
 
   yield {
     type: 'tool_started',
@@ -111,7 +109,7 @@ export async function* runLiveInspectWebsiteStream(input: {
     for (;;) {
       const status = await uxJourneyAgentGet(jobId)
       const steps = status.result?.steps ?? []
-      const chatSteps = toChatUxJourneySteps(steps)
+      const chatSteps = toChatUxJourneySteps(steps, { task })
       const fp = stepsFingerprint(status)
       if (fp !== lastFp) {
         lastFp = fp

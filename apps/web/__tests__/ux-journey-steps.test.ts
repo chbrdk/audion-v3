@@ -95,10 +95,31 @@ describe('ux journey step media helpers', () => {
   it('marks Start / None as useless persona stubs', () => {
     expect(isUselessPersonaStub('Start')).toBe(true)
     expect(isUselessPersonaStub('None')).toBe(true)
+    expect(isUselessPersonaStub('Initial navigation')).toBe(true)
     expect(isUselessPersonaStub('Home loaded')).toBe(false)
-    expect(synthesizeActionBeat('scroll', '1 Seite nach unten')).toBe(
-      'Ich scrolle: 1 Seite nach unten.',
+    expect(synthesizeActionBeat('scroll', '1 Seite nach unten', 'Grillplatte')).toBe(
+      'Ich scrolle weiter und suche nach Grillplatte.',
     )
+  })
+
+  it('anchors browse task into step think-aloud', () => {
+    const task =
+      'Starte auf https://www.moebel-martin.de/. Aufgabe: suche nach Grillplatte. Verfolge diese Aufgabe in jedem Schritt.'
+    const steps = toChatUxJourneySteps(
+      [
+        {
+          step: 1,
+          action: 'navigate',
+          target: 'https://www.moebel-martin.de/',
+          reasoning: 'Start',
+          reasoningMeta: { next_goal: 'Initial navigation' },
+        },
+      ],
+      { task },
+    )
+    expect(steps[0]?.thinkAloud?.think).toContain('Grillplatte')
+    expect(steps[0]?.thinkAloud?.next).toContain('Grillplatte')
+    expect(steps[0]?.thinkAloud?.next).not.toBe('Initial navigation')
   })
 
   it('keeps product thinkAloud channels when the agent emits them', () => {

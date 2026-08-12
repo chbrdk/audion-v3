@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ChatStreamEvent, PersonaSummary } from '@audion-v3/contracts'
 import { AudionChatPanel } from '../components/audion-chat-panel'
 import { ChatMoodboardStrip } from '../components/chat-moodboard-strip'
-import { buildChatShareHref, extractUrlFromMessage } from '../lib/chat/share'
+import { buildChatShareHref, extractUrlFromMessage, extractInspectGoalFromMessage, buildInspectAgentTask } from '../lib/chat/share'
 import {
   maybeProposeInspectWebsite,
   resetChatToolStore,
@@ -90,6 +90,15 @@ describe('chat share helpers', () => {
     expect(maybeProposeInspectWebsite('msqdx.com', 'persona-alex-morgan', null, null)?.url).toBe(
       'https://msqdx.com',
     )
+  })
+
+  it('extracts inspect goal and builds agent task', () => {
+    const message = 'suche auf https://www.moebel-martin.de/ nach Grillplatte'
+    const url = 'https://www.moebel-martin.de/'
+    expect(extractInspectGoalFromMessage(message, url)).toBe('suche nach Grillplatte')
+    const task = buildInspectAgentTask(message, url)
+    expect(task).toContain('Grillplatte')
+    expect(task).toContain('Verfolge diese Aufgabe')
   })
 })
 
