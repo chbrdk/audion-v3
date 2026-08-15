@@ -248,7 +248,7 @@ def _build_openai_llm():
     except ImportError:
         from audion_agent.llm.openai import ChatOpenAI
     # Default: gpt-5.6-luna (Lab A/B 2026-08-03). Override via UX_JOURNEY_OPENAI_MODEL
-    # (e.g. gpt-5.4-mini / gpt-5.4-nano) if AgentOutput validation gets flaky —
+    # (e.g. gpt-5.4-mini / gpt-5.6-luna) if AgentOutput validation gets flaky —
     # GPT-5.4 family has occasionally emitted trailing braces that Pydantic rejects.
     return ChatOpenAI(
         model=os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.6-luna"),
@@ -3995,6 +3995,7 @@ async def run_agent(
                     current_url = None
                 if current_url:
                     felt_state["lastObservedUrl"] = current_url
+                ux_perception.note_look_before_act_url(felt_state, current_url or url)
                 lab_b_gold_allowed = ux_perception.lab_b_gold_context_allowed(current_url, task)
 
                 def _stance_and_search_filter(
@@ -4021,6 +4022,13 @@ async def run_agent(
                         if isinstance(perc_in, dict):
                             perc_in["browseSearchBlocked"] = True
                         reason_local = search_reason
+                    filtered_local, look_reason = (
+                        ux_perception.filter_actions_look_before_act(
+                            filtered_local, perc_in
+                        )
+                    )
+                    if look_reason.startswith("look_before_act"):
+                        reason_local = look_reason
                     return filtered_local, reason_local
 
                 async def _once() -> dict[str, Any] | None:
@@ -4066,11 +4074,20 @@ async def run_agent(
                         browse_category_nav_attempts=int(
                             felt_state.get("browseCategoryNavAttempts") or 0
                         ),
+                        look_before_act_pending=ux_perception.look_before_act_pending(
+                            felt_state
+                        ),
                     )
                     if upgraded:
                         print(
                             f"ux-journey: job={job_id} perception stance upgraded → abandon "
                             f"(tp={persona_tp} explor={felt_state.get('exploratoryAttempts')})",
+                            flush=True,
+                        )
+                    elif perc_out and perc_out.get("lookBeforeActRequired"):
+                        print(
+                            f"ux-journey: job={job_id} look-before-act → dwell "
+                            f"{perc_out.get('dwellSeconds')}s",
                             flush=True,
                         )
                     elif perc_out and perc_out.get("browseExploreRequired"):
@@ -4460,11 +4477,28 @@ async def run_agent(
                                     if lead
                                     else f"Ich scrolle weiter und suche nach {goal}."
                                 )
+                if reason.startswith("look_before_act") and not filtered:
+                    dwell = int(
+                        (perc or {}).get("dwellSeconds")
+                        or ux_perception.dwell_seconds_for_persona(persona_tp)
+                    )
+                    filtered = _typed_action("wait", {"seconds": dwell})
+                    if filtered:
+                        reason = "look_before_act_dwell"
+                        if isinstance(perc, dict):
+                            perc = dict(perc)
+                            perc["lookBeforeActRequired"] = True
+                            perc["stance"] = "hesitate"
+                            perc["dwellSeconds"] = dwell
 
                 # Try-then-quit / browse-explore: never accept done on the soften turn.
                 # Prefer an exploratory click/scroll; if the model only emitted done, nudge
                 # and re-ask once in the same turn (empty actions often stop the run).
-                if perc and (perc.get("stanceSoftened") or perc.get("browseExploreRequired")):
+                if perc and (
+                    perc.get("stanceSoftened")
+                    or perc.get("browseExploreRequired")
+                    or perc.get("lookBeforeActRequired")
+                ):
                     done_names = ("done", "complete", "finish")
 
                     def _strip_done(acts: list[Any]) -> list[Any]:
@@ -4475,9 +4509,12 @@ async def run_agent(
                         ]
 
                     explore = dict(perc)
-                    if perc.get("browseExploreRequired"):
+                    if perc.get("lookBeforeActRequired") or perc.get("browseExploreRequired"):
                         explore["stance"] = "hesitate"
-                        explore["browseExploreRequired"] = True
+                        if perc.get("browseExploreRequired"):
+                            explore["browseExploreRequired"] = True
+                        if perc.get("lookBeforeActRequired"):
+                            explore["lookBeforeActRequired"] = True
                     else:
                         explore["stance"] = "proceed"
                     explore["stanceSoftened"] = True
@@ -4485,7 +4522,17 @@ async def run_agent(
                     perc = explore
                     filtered = _strip_done(filtered) if filtered else _strip_done(actions)
                     if not filtered:
-                        if perc.get("browseExploreRequired"):
+                        if perc.get("lookBeforeActRequired"):
+                            dwell = int(
+                                perc.get("dwellSeconds")
+                                or ux_perception.dwell_seconds_for_persona(persona_tp)
+                            )
+                            await _nudge(
+                                "AUDION_LOOK_BEFORE_ACT: Erst den Screen betrachten — "
+                                f"wait(~{dwell}s) oder leicht scrollen (stance=hesitate). "
+                                "Cookie-Banner darf weg. Kein Click/Suche in diesem Step."
+                            )
+                        elif perc.get("browseExploreRequired"):
                             await _nudge(
                                 "AUDION_BROWSE_EXPLORE: Ziel noch nicht sichtbar — done/abandon "
                                 "ist VERBOTEN. Scrolle nach unten ODER klicke eine passende "
@@ -4502,9 +4549,16 @@ async def run_agent(
                         perc2 = await _once()
                         if perc2:
                             # Keep softened if still under budget
-                            if perc2.get("browseExploreRequired") or perc2.get("stanceSoftened") or str(perc2.get("stance")) != "abandon":
+                            if (
+                                perc2.get("lookBeforeActRequired")
+                                or perc2.get("browseExploreRequired")
+                                or perc2.get("stanceSoftened")
+                                or str(perc2.get("stance")) != "abandon"
+                            ):
                                 perc = dict(perc2)
-                                if perc.get("browseExploreRequired"):
+                                if perc.get("lookBeforeActRequired") or perc.get(
+                                    "browseExploreRequired"
+                                ):
                                     perc["stance"] = "hesitate"
                                 else:
                                     perc["stance"] = "proceed"
@@ -4516,21 +4570,29 @@ async def run_agent(
                         actions = list(getattr(mo, "action", None) or []) if mo else []
                         filtered, reason = _stance_and_search_filter(actions, perc)
                         filtered = _strip_done(filtered) if filtered else _strip_done(actions)
-                        if not filtered and perc.get("browseExploreRequired"):
+                        if not filtered and perc.get("lookBeforeActRequired"):
+                            dwell = int(
+                                perc.get("dwellSeconds")
+                                or ux_perception.dwell_seconds_for_persona(persona_tp)
+                            )
+                            filtered = _typed_action("wait", {"seconds": dwell})
+                            reason = "look_before_act_dwell"
+                        elif not filtered and perc.get("browseExploreRequired"):
                             filtered = _typed_scroll_fallback()
                             reason = "browse_explore_scroll"
                         print(
                             f"ux-journey: job={job_id} "
-                            f"{'browse-explore' if perc.get('browseExploreRequired') else 'try-then-quit'} "
+                            f"{'look-before-act' if perc.get('lookBeforeActRequired') else ('browse-explore' if perc.get('browseExploreRequired') else 'try-then-quit')} "
                             f"exploratory retry n={len(filtered)}",
                             flush=True,
                         )
                     if filtered:
-                        reason = (
-                            "browse_explore_scroll"
-                            if perc.get("browseExploreRequired")
-                            else "try_then_quit_explore"
-                        )
+                        if perc.get("lookBeforeActRequired"):
+                            reason = "look_before_act"
+                        elif perc.get("browseExploreRequired"):
+                            reason = "browse_explore_scroll"
+                        else:
+                            reason = "try_then_quit_explore"
                     else:
                         soft_only, soft_reason = ux_perception.clear_decision_actions(actions)
                         if soft_only:
@@ -4539,12 +4601,31 @@ async def run_agent(
                             ux_perception.note_browse_category_nav_attempts(
                                 felt_state, soft_only, perc, task=task
                             )
+                            ux_perception.note_look_before_act_satisfied(felt_state, soft_only)
                             ux_perception.update_felt_state(felt_state, perc)
                             print(
                                 f"ux-journey: job={job_id} try-then-quit soft_only={soft_reason}",
                                 flush=True,
                             )
                             return
+                        if perc.get("lookBeforeActRequired"):
+                            dwell = int(
+                                perc.get("dwellSeconds")
+                                or ux_perception.dwell_seconds_for_persona(persona_tp)
+                            )
+                            filtered = _typed_action("wait", {"seconds": dwell})
+                            if filtered:
+                                reason = "look_before_act_dwell"
+                                await _apply_actions(filtered)
+                                ux_perception.note_look_before_act_satisfied(
+                                    felt_state, filtered
+                                )
+                                ux_perception.update_felt_state(felt_state, perc)
+                                print(
+                                    f"ux-journey: job={job_id} look-before-act forced dwell={dwell}s",
+                                    flush=True,
+                                )
+                                return
                         if perc.get("browseExploreRequired"):
                             filtered = _typed_scroll_fallback()
                             if filtered:
@@ -4553,6 +4634,9 @@ async def run_agent(
                                 ux_perception.note_browse_scroll_attempts(felt_state, filtered)
                                 ux_perception.note_browse_category_nav_attempts(
                                     felt_state, filtered, perc, task=task
+                                )
+                                ux_perception.note_look_before_act_satisfied(
+                                    felt_state, filtered
                                 )
                                 ux_perception.update_felt_state(felt_state, perc)
                                 print(
@@ -4982,6 +5066,7 @@ async def run_agent(
                 ux_perception.note_browse_category_nav_attempts(
                     felt_state, filtered, perc, task=task
                 )
+                ux_perception.note_look_before_act_satisfied(felt_state, filtered)
                 ux_perception.update_felt_state(felt_state, perc)
                 felt_block = ux_perception.felt_state_prompt_block(felt_state)
                 if felt_block:
@@ -4992,7 +5077,8 @@ async def run_agent(
                     f"gate={reason} upgraded={bool(perc.get('stanceUpgraded'))} "
                     f"softened={bool(perc.get('stanceSoftened'))} "
                     f"browseScrolls={felt_state.get('browseScrollAttempts')} "
-                    f"browseCatNav={felt_state.get('browseCategoryNavAttempts')}",
+                    f"browseCatNav={felt_state.get('browseCategoryNavAttempts')} "
+                    f"look={'pending' if felt_state.get('lookBeforeActPending') else 'done'}",
                     flush=True,
                 )
 

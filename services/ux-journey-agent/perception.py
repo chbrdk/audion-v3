@@ -2551,6 +2551,210 @@ def filter_actions_block_early_site_search(
         return kept, "browse_block_site_search"
     return [], "browse_block_site_search_empty"
 
+
+# --- Gate 5d: look-before-act + persona dwell ---------------------------------
+
+LOOK_SOFT_ACTIONS = frozenset(
+    {"scroll", "wait", "extract", "extract_page_content", "screenshot"}
+)
+LOOK_DEEP_ACTIONS = frozenset(
+    {
+        "done",
+        "complete",
+        "finish",
+        "click",
+        "input",
+        "type",
+        "input_text",
+        "type_text",
+        "navigate",
+        "go_to_url",
+        "select_dropdown",
+        "send_keys",
+    }
+)
+_COOKIE_CONSENT_CUES = (
+    "cookie",
+    "consent",
+    "ablehnen",
+    "reject",
+    "akzeptieren",
+    "accept",
+    "einverstanden",
+    "datenschutz",
+    "privacy",
+)
+
+
+def look_before_act_enabled() -> bool:
+    return _env_truthy("UX_JOURNEY_LOOK_BEFORE_ACT", "1")
+
+
+def dwell_seconds_for_persona(time_pressure: float | None) -> int:
+    """Human-ish pause before acting; impatient shorter, patient longer."""
+    tp = 0.5 if time_pressure is None else float(time_pressure)
+
+    def _env_int(name: str, default: int) -> int:
+        raw = (os.environ.get(name) or "").strip()
+        if not raw:
+            return default
+        try:
+            return max(1, min(int(raw), 8))
+        except ValueError:
+            return default
+
+    if tp >= 0.75:
+        return _env_int("UX_JOURNEY_DWELL_SECONDS_IMPATIENT", 2)
+    if tp <= 0.35:
+        return _env_int("UX_JOURNEY_DWELL_SECONDS_PATIENT", 4)
+    return _env_int("UX_JOURNEY_DWELL_SECONDS_MID", 3)
+
+
+def note_look_before_act_url(state: dict[str, Any], current_url: str | None) -> bool:
+    """
+    Arm look-before-act when URL changes (or first observed URL).
+    Returns True when a look turn is now pending.
+    """
+    if not look_before_act_enabled():
+        state["lookBeforeActPending"] = False
+        return False
+    if not current_url:
+        if state.get("lookBeforeActPending") is None:
+            state["lookBeforeActPending"] = True
+        return bool(state.get("lookBeforeActPending"))
+    prev = state.get("lookUrl")
+    if prev != current_url:
+        state["lookUrl"] = current_url
+        state["lookBeforeActPending"] = True
+        state["lookBeforeActSatisfied"] = False
+    elif state.get("lookBeforeActPending") is None and not state.get(
+        "lookBeforeActSatisfied"
+    ):
+        state["lookBeforeActPending"] = True
+    return bool(state.get("lookBeforeActPending"))
+
+
+def look_before_act_pending(state: dict[str, Any] | None) -> bool:
+    if not look_before_act_enabled():
+        return False
+    if not state:
+        return True
+    return bool(state.get("lookBeforeActPending")) and not bool(
+        state.get("lookBeforeActSatisfied")
+    )
+
+
+def is_cookie_consent_action(action: Any) -> bool:
+    if action_tool_name(action) != "click":
+        return False
+    blob = _action_text_blob(action)
+    return any(c in blob for c in _COOKIE_CONSENT_CUES)
+
+
+def apply_look_before_act(
+    perception: dict[str, Any] | None,
+    *,
+    pending: bool,
+    time_pressure: float | None = None,
+) -> tuple[dict[str, Any] | None, bool]:
+    """
+    Soften to hesitate + look intent while Gate 5d look turn is armed.
+    Returns (perception, softened).
+    """
+    if perception is None or not pending or not look_before_act_enabled():
+        return perception, False
+    out = dict(perception)
+    # Honest abandon after looking is fine later; on the look turn itself steer to look.
+    stance = str(out.get("stance") or "proceed")
+    if stance == "abandon" and out.get("browseExploreRequired"):
+        # browse explore already owns abandon soften
+        out["lookBeforeActRequired"] = True
+        out["dwellSeconds"] = dwell_seconds_for_persona(time_pressure)
+        return out, False
+    dwell = dwell_seconds_for_persona(time_pressure)
+    out["stance"] = "hesitate"
+    out["lookBeforeActRequired"] = True
+    out["lookBeforeActSoftened"] = True
+    out["dwellSeconds"] = dwell
+    if stance == "abandon":
+        out["stanceSoftened"] = True
+    out["intent"] = "Ich schaue mir erst den Screen an."
+    out["think"] = "Erstmal kurz betrachten, was hier sichtbar ist."
+    out["why"] = "Bevor ich klicke, will ich den Ausschnitt verstehen."
+    noticed = list(out.get("noticed") or [])
+    if not any(
+        isinstance(n, dict)
+        and any(
+            tok in str(n.get("what") or "").lower()
+            for tok in ("screen", "sichtbar", "viewport", "ausschnitt", "betrachte")
+        )
+        for n in noticed
+    ):
+        noticed.insert(
+            0,
+            {
+                "what": "Erster Blick auf den sichtbaren Ausschnitt",
+                "where": "Viewport",
+                "relevance": "high",
+            },
+        )
+        out["noticed"] = noticed[:6]
+    return out, True
+
+
+def filter_actions_look_before_act(
+    actions: list[Any],
+    perception: dict[str, Any] | None,
+) -> tuple[list[Any], str]:
+    """Gate 5d: strip deep actions while look turn is required."""
+    if not actions:
+        return actions, "look_empty"
+    if not perception or not perception.get("lookBeforeActRequired"):
+        return actions, "look_off"
+    kept: list[Any] = []
+    for a in actions:
+        name = action_tool_name(a)
+        if name in LOOK_SOFT_ACTIONS:
+            kept.append(a)
+        elif name == "click" and is_cookie_consent_action(a):
+            kept.append(a)
+    if kept:
+        return kept, "look_before_act"
+    return [], "look_before_act_empty"
+
+
+def actions_satisfy_look_before_act(actions: list[Any] | None) -> bool:
+    """True when applied actions count as a look turn (wait/scroll/extract; not cookie-only)."""
+    if not actions:
+        return False
+    soft = False
+    for a in actions:
+        name = action_tool_name(a)
+        if name in LOOK_SOFT_ACTIONS:
+            soft = True
+        elif name == "click" and is_cookie_consent_action(a):
+            continue
+        elif name in LOOK_DEEP_ACTIONS:
+            return False
+    return soft
+
+
+def note_look_before_act_satisfied(
+    state: dict[str, Any],
+    actions: list[Any] | None,
+) -> bool:
+    """Mark look turn done after soft look actions; cookie-only does not clear the pending look."""
+    if not look_before_act_enabled():
+        return False
+    if not state.get("lookBeforeActPending"):
+        return bool(state.get("lookBeforeActSatisfied"))
+    if actions_satisfy_look_before_act(actions):
+        state["lookBeforeActPending"] = False
+        state["lookBeforeActSatisfied"] = True
+        return True
+    return False
+
+
 def lab_b_gold_context_allowed(current_url: str | None, task: str | None) -> bool:
     """
     When False: disable Lab-B gold enrich/prompt bias so path-finding home
@@ -2787,8 +2991,9 @@ def finalize_perception_for_persona(
     current_url: str | None = None,
     browse_scroll_attempts: int = 0,
     browse_category_nav_attempts: int = 0,
+    look_before_act_pending: bool = False,
 ) -> tuple[dict[str, Any] | None, bool]:
-    """Enrich noticed from own text, then try-then-quit / browse-explore / hard-upgrade abandon."""
+    """Enrich noticed from own text, then try-then-quit / browse-explore / look / hard-upgrade abandon."""
     if perception is None:
         return None, False
     enriched = (
@@ -2817,8 +3022,15 @@ def finalize_perception_for_persona(
     )
     if browse_blocked:
         upgraded = False
-    out3 = anchor_task_to_perception(
+    out2b, look_softened = apply_look_before_act(
         out2,
+        pending=look_before_act_pending,
+        time_pressure=time_pressure,
+    )
+    if look_softened:
+        upgraded = False
+    out3 = anchor_task_to_perception(
+        out2b,
         task=task,
         lab_b_gold_context_allowed=lab_b_gold_context_allowed,
     )
@@ -2829,7 +3041,11 @@ def try_then_quit_blocks_force_done(perception: dict[str, Any] | None) -> bool:
     """True when the soften turn must not collapse into force-done."""
     return bool(
         perception
-        and (perception.get("stanceSoftened") or perception.get("browseExploreRequired"))
+        and (
+            perception.get("stanceSoftened")
+            or perception.get("browseExploreRequired")
+            or perception.get("lookBeforeActRequired")
+        )
     )
 
 
@@ -2862,6 +3078,11 @@ def filter_actions_for_stance(
         ):
             for a in actions:
                 if is_category_nav_action(a, perception, task=task):
+                    kept.append(a)
+        # Cookie/consent while looking or hesitating — banner must not block the turn.
+        if perception.get("lookBeforeActRequired"):
+            for a in actions:
+                if is_cookie_consent_action(a) and a not in kept:
                     kept.append(a)
         if kept:
             return kept, "hesitate_filter"
@@ -2938,8 +3159,12 @@ def new_felt_state() -> dict[str, Any]:
         "exploratoryAttempts": 0,
         "tryThenQuitSoftens": 0,
         "browseScrollAttempts": 0,
+        "browseCategoryNavAttempts": 0,
         "browseExploreSoftens": 0,
         "lowClarityStreak": 0,
+        "lookBeforeActPending": True,
+        "lookBeforeActSatisfied": False,
+        "lookUrl": None,
     }
 
 
@@ -3032,6 +3257,7 @@ def felt_state_prompt_block(state: dict[str, Any] | None) -> str:
         f"- Explorative Versuche nach Verwirrung: {state.get('exploratoryAttempts')}",
         f"- Browse-Scrolls (Find-Tasks): {state.get('browseScrollAttempts') or 0}",
         f"- Kategorie/Nav-Klicks (Find-Tasks): {state.get('browseCategoryNavAttempts') or 0}",
+        f"- Look-before-act: {'pending' if state.get('lookBeforeActPending') else ('done' if state.get('lookBeforeActSatisfied') else '—')}",
         f"- Letzte Stance: {state.get('lastStance')}",
         f"- Zuletzt bemerkt: {state.get('lastNoticedDigest') or '—'}",
     ]
@@ -3090,6 +3316,12 @@ def perception_prompt_extension(
                 "- Browse/Find: erst sichtbare Kategorien/Nav und Scroll prüfen; "
                 "Site-Suche (Suchfeld) ist kein erster Schritt."
             )
+    if look_before_act_enabled():
+        dwell = dwell_seconds_for_persona(time_pressure)
+        persona_lines.append(
+            f"- Look-before-act: Nach Landen auf einer URL erst ~{dwell}s den Screen betrachten "
+            "(wait/scroll, stance=hesitate) — nicht sofort klicken. Cookie-Banner Ausnahme."
+        )
     if impatient and not browse_find:
         try_n = try_before_abandon_required(tp, exploration=exploration)
         persona_lines.append(
@@ -3228,6 +3460,9 @@ def perception_prompt_extension(
         "scrollen und den sichtbaren Bereich prüfen. Ohne Scroll ist abandon VERBOTEN.\n"
         "BROWSE/FIND Suche: Site-Suchfeld/Eingabe erst NACH Scroll oder Kategorie-Klick — "
         "nicht als erster Shortcut. Preferiere sichtbare Kategorie (z.B. Garten für Grill).\n"
+        "LOOK-BEFORE-ACT: Nach dem Laden einer URL zuerst den sichtbaren Ausschnitt betrachten "
+        "(stance=hesitate, wait/scroll). Cookie-Banner darf weggeklickt werden. "
+        "Erst danach Klicks/Eingaben. Denk zuerst, handle danach.\n"
         "HARD: done/click/input/navigate OHNE gültigen <<PERCEPTION>>-Block ist VERBOTEN. "
         "Runtime verwirft solche Actions — Perception wird NICHT aus freiem Text erfunden.\n"
         "VO in thinking: 1–3 Sätze Erste Person Präsens mit aktivem Verb.\n"

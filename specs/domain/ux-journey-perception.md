@@ -73,6 +73,8 @@ Extra −1 when `detail_orientation` < 0.35 (min 2). Extra +1 when ≥ 0.75 (max
 
 5c. **Browse / find explore-before-site-search (category-first):** Same browse/find tasks as 5b. Until site-search is **unlocked**, runtime **strips** site-search actions (`input`/`type`/`send_keys`, and clicks whose target looks like Suche/Search/Suchfeld). Unlock when any of: target visible in URL/`noticed`, `browseScrollAttempts ≥ UX_JOURNEY_BROWSE_MIN_SCROLLS`, or ≥1 **category/nav click** from `noticed` / task category hints. Soft category hints (e.g. Grillplatte/Pizzastein → Garten/Outdoor/Grill) are injected into the perception prompt and onto softened perception (`browseCategoryHints`). While `browseExploreRequired` / early browse phase: `stance=hesitate` may keep a **category click** that overlaps hints or category-ish `noticed` (not only scroll/wait). Blind mega-menu thrash is still discouraged via intent-align + path rules; preferred sequence is **see → infer category → scroll or click that category → only then site search**. Lab-B destination-tool surfaces stay exempt.
 
+5d. **Look-before-act + persona dwell:** On **first model turn after landing** on a URL (initial load or URL change), force a **look turn** before deep actions. Soften perception to `hesitate` with `lookBeforeActRequired` and first-person “Ich schaue mir erst den Screen an.” Runtime **strips** `click`/`input`/`type`/`navigate`/`done` on that turn; keep `wait`/`scroll`/`extract` (and **cookie/consent dismiss** clicks so banners don’t block looking). If the model emitted only deep actions, inject a typed `wait` with **persona dwell** seconds (`dwellSeconds`): impatient `time_pressure ≥ 0.75` → ~1–2s, mid → ~2–3s, patient `≤ 0.35` → ~3–4s (env `UX_JOURNEY_LOOK_BEFORE_ACT`, default on; `UX_JOURNEY_DWELL_SECONDS_*` optional overrides). After a soft look action is applied (or dwell wait), mark `lookBeforeActSatisfied` for that URL. Preferred human sequence: **land → look/dwell → then act**.
+
 6. Noticed enrich: cues already in perception think/why/intent may be promoted into `noticed[]` up to salience budget (no invented UI, no free-thinking invent).  
 7. L2 regex confusion-abandon remains safety net — also gated on try-then-quit exploratory budget.  
 8. Felt-state continuity: `clarityTrend` / `exploratoryAttempts` injected next step; prefer abandon when clarity stays low across steps after try budget.
@@ -105,7 +107,7 @@ step.thinkAloud  // legacy alias mapped from perception (seen←noticed digest, 
 
 Cross-step digest injected into the next user context:
 
-`clarityTrend`, `lastValence`, `confusionCount`, `openQuestions[]`, `lastNoticedDigest`, `exploratoryAttempts`, `lowClarityStreak`
+`clarityTrend`, `lastValence`, `confusionCount`, `openQuestions[]`, `lastNoticedDigest`, `exploratoryAttempts`, `lowClarityStreak`, `browseScrollAttempts`, `browseCategoryNavAttempts`, `lookBeforeActPending` / `lookBeforeActSatisfied` / `lookUrl`
 
 ## Soft-Q
 

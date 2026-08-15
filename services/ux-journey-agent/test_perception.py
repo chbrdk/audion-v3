@@ -1007,6 +1007,93 @@ def test_hesitate_allows_category_click_during_browse_explore():
     assert any(P.action_tool_name(a) == "click" for a in kept2)
 
 
+def test_dwell_seconds_by_persona():
+    assert P.dwell_seconds_for_persona(0.9) <= 2
+    assert P.dwell_seconds_for_persona(0.2) >= 3
+    assert 2 <= P.dwell_seconds_for_persona(0.5) <= 4
+
+
+def test_look_before_act_softens_and_strips_clicks(monkeypatch):
+    monkeypatch.setenv("UX_JOURNEY_LOOK_BEFORE_ACT", "1")
+    perc = {
+        "noticed": [{"what": "Hero", "relevance": "high"}],
+        "stance": "proceed",
+        "intent": "Ich klicke gleich die Suche.",
+        "think": "Schnell finden.",
+        "why": "Shortcut.",
+        "clarity": 2,
+        "feel": {"label": "neutral", "valence": 0},
+    }
+    out, soft = P.apply_look_before_act(perc, pending=True, time_pressure=0.5)
+    assert soft is True
+    assert out is not None
+    assert out["stance"] == "hesitate"
+    assert out.get("lookBeforeActRequired") is True
+    assert isinstance(out.get("dwellSeconds"), int)
+
+    actions = [
+        {"click": {"index": 3, "element": "Suche"}},
+        {"wait": {"seconds": 2}},
+        {"click": {"index": 9, "element": "Alles ablehnen Cookie"}},
+    ]
+    kept, reason = P.filter_actions_look_before_act(actions, out)
+    names = [P.action_tool_name(a) for a in kept]
+    assert "wait" in names
+    assert "click" in names  # cookie
+    assert names.count("click") == 1
+    assert reason == "look_before_act"
+    deep_only = [{"click": {"index": 1, "element": "Produkt"}}, {"input": {"text": "x"}}]
+    empty, reason2 = P.filter_actions_look_before_act(deep_only, out)
+    assert empty == []
+    assert reason2 == "look_before_act_empty"
+
+
+def test_look_before_act_url_arms_and_satisfies(monkeypatch):
+    monkeypatch.setenv("UX_JOURNEY_LOOK_BEFORE_ACT", "1")
+    state = P.new_felt_state()
+    assert P.look_before_act_pending(state) is True
+    P.note_look_before_act_url(state, "https://shop.example/")
+    assert state["lookBeforeActPending"] is True
+    # cookie-only does not satisfy
+    assert (
+        P.note_look_before_act_satisfied(
+            state, [{"click": {"element": "Alles ablehnen Cookie"}}]
+        )
+        is False
+    )
+    assert P.look_before_act_pending(state) is True
+    assert P.note_look_before_act_satisfied(state, [{"wait": {"seconds": 3}}]) is True
+    assert P.look_before_act_pending(state) is False
+    # new URL re-arms
+    P.note_look_before_act_url(state, "https://shop.example/garten")
+    assert P.look_before_act_pending(state) is True
+
+
+def test_finalize_look_before_act_on_land(monkeypatch):
+    monkeypatch.setenv("UX_JOURNEY_LOOK_BEFORE_ACT", "1")
+    perc = {
+        "noticed": [{"what": "Header", "relevance": "high"}],
+        "think": "Ich öffne die Seite.",
+        "clarity": 2,
+        "feel": {"label": "neutral", "valence": 0},
+        "stance": "proceed",
+        "intent": "Ich klicke Menü.",
+        "why": "Weiter.",
+    }
+    out, upgraded = P.finalize_perception_for_persona(
+        perc,
+        budget=4,
+        time_pressure=0.5,
+        task="Inspect https://shop.example/",
+        current_url="https://shop.example/",
+        look_before_act_pending=True,
+    )
+    assert upgraded is False
+    assert out is not None
+    assert out.get("lookBeforeActRequired") is True
+    assert out["stance"] == "hesitate"
+
+
 def test_prompt_forbids_done_without_perception():
     block = P.perception_prompt_extension(time_pressure=0.9)
     assert "VERBOTEN" in block

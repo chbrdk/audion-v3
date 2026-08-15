@@ -52,6 +52,7 @@
 - Chat step strip persona moment channels: `knowledge/chat-step-strip-persona-moment-2026-08-12.md`
 - Browse/find explore-before-abandon: `knowledge/browse-explore-before-abandon-2026-08-12.md` · env `UX_JOURNEY_BROWSE_MIN_SCROLLS`
 - Browse/find explore-before-site-search (category-first): `knowledge/browse-explore-before-site-search-2026-08-12.md` · Gate 5c
+- Look-before-act + persona dwell: `knowledge/look-before-act-dwell-2026-08-15.md` · Gate 5d · env `UX_JOURNEY_LOOK_BEFORE_ACT`
 - Perception natural voice (shopper think-aloud): `knowledge/perception-natural-voice-2026-08-12.md`
 - Wave scorecard / validEvidence: `apps/web/lib/ux-wave-scorecard.ts`
 - UX Study lib: `apps/web/lib/ux-studies.ts` · `ux-studies-proxy.ts` · `ux-studies-native.ts`
