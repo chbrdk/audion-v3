@@ -81,6 +81,7 @@ export function AudionChatWorkspace({
   const [modality, setModality] = useState<ChatModality>('text')
   const [tavusSession, setTavusSession] = useState<{
     conversationUrl: string
+    conversationId: string | null
     meetingToken: string | null
   } | null>(null)
   const [tavusError, setTavusError] = useState<string | null>(null)
@@ -137,6 +138,7 @@ export function AudionChatWorkspace({
         if (!cancelled) {
           setTavusSession({
             conversationUrl: data.conversationUrl,
+            conversationId: data.conversationId ?? null,
             meetingToken: data.meetingToken,
           })
         }

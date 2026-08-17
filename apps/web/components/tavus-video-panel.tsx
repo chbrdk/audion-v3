@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Text } from '@msqdx/ui'
+import { paths } from '../lib/paths'
 import { tavusEmbedUrl } from '../lib/tavus/ids'
 
 export type TavusSessionConfig = {
@@ -17,6 +18,20 @@ type Props = {
 
 export function TavusVideoPanel({ session, personaName }: Props) {
   const url = session.conversationUrl?.trim()
+  const conversationId = session.conversationId?.trim() || null
+
+  useEffect(() => {
+    if (!conversationId) return
+    return () => {
+      void fetch(paths.routes.apiChatTavusSession, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId }),
+        keepalive: true,
+      })
+    }
+  }, [conversationId])
+
   if (!url) {
     return (
       <div className="audion-tavus-video-panel audion-tavus-video-panel--empty" role="status">

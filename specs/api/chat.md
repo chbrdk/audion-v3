@@ -39,7 +39,8 @@ Wire names follow existing v2 proxies; confirm against live OpenAPI when impleme
 | `POST` | `/api/chat/stream` (`paths.routes.apiChatStream`) | Proxy stream to chat-api or fixture fake-stream |
 | `GET` | `/api/chat/conversations` | List (fixture or proxy) |
 | `GET` | `/api/chat/conversations/[id]` | Detail |
-| `POST` | `/api/chat/tavus/session` (`paths.routes.apiChatTavusSession`) | Create Tavus CVI session from persona `tavusReplicaId` |
+| `POST` | `/api/chat/tavus/session` (`paths.routes.apiChatTavusSession`) | Create Tavus CVI session from persona `tavusReplicaId` (ends leftover active rooms first) |
+| `DELETE` | `/api/chat/tavus/session` | End a Tavus conversation `{ conversationId }` |
 
 ## Runtime rules
 

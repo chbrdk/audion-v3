@@ -341,6 +341,13 @@ export const paths = {
   /** Canonical Tavus API host when TAVUS_API_BASE is unset. */
   tavusApiDefaultBase: 'https://tavusapi.com',
   tavusConversationsPath: '/v2/conversations',
+  tavusConversationEndSuffix: '/end',
+  tavusConversationsListLimit: 50,
+  tavusConversationNamePrefix: 'AUDION · ',
+  /** Idle room must free the plan concurrency slot (Tavus default absent timeout is 300s). */
+  tavusParticipantAbsentTimeoutSec: 90,
+  tavusParticipantLeftTimeoutSec: 30,
+  tavusMaxCallDurationSec: 1800,
   envAiRuntime: 'NEXT_AI_RUNTIME',
   envOpenAiApiKey: 'OPENAI_API_KEY',
   envOpenAiApiBaseUrl: 'OPENAI_API_BASE_URL',

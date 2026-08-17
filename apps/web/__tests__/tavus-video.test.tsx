@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { POST } from '../app/api/chat/tavus/session/route'
+import { DELETE, POST } from '../app/api/chat/tavus/session/route'
 import { TavusVideoPanel } from '../components/tavus-video-panel'
 import {
   resetPersonaStore,
@@ -8,7 +8,15 @@ import {
   storePatchPersona,
 } from '../lib/fixtures/persona-store'
 import { paths } from '../lib/paths'
-import { buildTavusConversationPayload, tavusConversationsUrl } from '../lib/tavus/client'
+import {
+  buildTavusConversationPayload,
+  isTavusConcurrencyLimit,
+  selectConversationsToEnd,
+  tavusConversationEndUrl,
+  tavusConversationName,
+  tavusConversationsListUrl,
+  tavusConversationsUrl,
+} from '../lib/tavus/client'
 import { tavusEmbedUrl } from '../lib/tavus/ids'
 
 afterEach(() => {
@@ -27,8 +35,23 @@ function sessionRequest(personaId?: string) {
   })
 }
 
+function endRequest(conversationId?: string) {
+  return new Request(`http://localhost${paths.routes.apiChatTavusSession}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(conversationId ? { conversationId } : {}),
+  })
+}
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
 describe('tavus conversation payload', () => {
-  it('sends face_id and pal_id without legacy aliases', () => {
+  it('sends face_id and pal_id without legacy aliases, plus idle timeouts', () => {
     expect(
       buildTavusConversationPayload({
         replicaId: 'r5e781e37a8d',
@@ -39,6 +62,11 @@ describe('tavus conversation payload', () => {
       face_id: 'r5e781e37a8d',
       pal_id: 'pcb7a34da5fe',
       conversation_name: 'AUDION · Alex',
+      properties: {
+        max_call_duration: paths.tavusMaxCallDurationSec,
+        participant_left_timeout: paths.tavusParticipantLeftTimeoutSec,
+        participant_absent_timeout: paths.tavusParticipantAbsentTimeoutSec,
+      },
     })
   })
 
@@ -53,10 +81,38 @@ describe('tavus conversation payload', () => {
     expect(payload.pal_id).toBe('pdad1aea8aab')
   })
 
-  it('builds the conversations URL from paths, not a hardcoded host in callers', () => {
+  it('builds conversation URLs from paths, not a hardcoded host in callers', () => {
     expect(tavusConversationsUrl(paths.tavusApiDefaultBase)).toBe(
       `${paths.tavusApiDefaultBase}${paths.tavusConversationsPath}`,
     )
+    expect(tavusConversationEndUrl('c-old', paths.tavusApiDefaultBase)).toBe(
+      `${paths.tavusApiDefaultBase}${paths.tavusConversationsPath}/c-old${paths.tavusConversationEndSuffix}`,
+    )
+    expect(tavusConversationsListUrl('active', 1, paths.tavusApiDefaultBase)).toContain('status=active')
+    expect(tavusConversationName('Sabine Koller')).toBe(`${paths.tavusConversationNamePrefix}Sabine Koller`)
+  })
+
+  it('selects AUDION-named or same-face active rooms to end', () => {
+    expect(
+      selectConversationsToEnd(
+        [
+          {
+            conversation_id: 'c-audion',
+            conversation_name: 'AUDION · Sabine Koller',
+            status: 'active',
+          },
+          { conversation_id: 'c-other', conversation_name: 'BSH', status: 'active' },
+          { conversation_id: 'c-ended', conversation_name: 'AUDION · Old', status: 'ended' },
+          { conversation_id: 'c-face', face_id: 'r0a8102ab353', status: 'active' },
+        ],
+        { replicaId: 'r0a8102ab353' },
+      ),
+    ).toEqual(['c-audion', 'c-face'])
+  })
+
+  it('detects the Tavus concurrent-conversation 400', () => {
+    expect(isTavusConcurrencyLimit('User has reached maximum concurrent conversations')).toBe(true)
+    expect(isTavusConcurrencyLimit('Cannot have both persona_id and pal_id')).toBe(false)
   })
 
   it('appends meeting token to the embed URL', () => {
@@ -107,25 +163,42 @@ describe('POST /api/chat/tavus/session', () => {
     })
   })
 
-  it('creates a live conversation and does not return a stub URL', async () => {
+  it('ends leftover active rooms then creates a live conversation', async () => {
     process.env[paths.envTavusApiKey] = 'test-tavus-key'
     const created = await storeCreatePersona({ name: 'Alex Video', role: 'Lead' })
     await storePatchPersona(created.id, { tavusReplicaId: 'r5e781e37a8d' })
 
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(String(input)).toBe(`${paths.tavusApiDefaultBase}${paths.tavusConversationsPath}`)
+      const url = String(input)
+      const method = (init?.method || 'GET').toUpperCase()
       expect(init?.headers).toMatchObject({ 'x-api-key': 'test-tavus-key' })
-      const body = JSON.parse(String(init?.body)) as Record<string, string>
+      if (method === 'GET') {
+        expect(url).toContain('status=active')
+        return jsonResponse({
+          data: [
+            {
+              conversation_id: 'c-old',
+              conversation_name: 'AUDION · Alex Video',
+              status: 'active',
+              face_id: 'r5e781e37a8d',
+            },
+          ],
+        })
+      }
+      if (url.endsWith(`/c-old${paths.tavusConversationEndSuffix}`)) {
+        return jsonResponse({})
+      }
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>
       expect(body.face_id).toBe('r5e781e37a8d')
       expect(body).not.toHaveProperty('replica_id')
-      return new Response(
-        JSON.stringify({
-          conversation_url: 'https://tavus.daily.co/cvi-live',
-          conversation_id: 'c123',
-          meeting_token: 'mtok',
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
-      )
+      expect(body.properties).toMatchObject({
+        participant_absent_timeout: paths.tavusParticipantAbsentTimeoutSec,
+      })
+      return jsonResponse({
+        conversation_url: 'https://tavus.daily.co/cvi-live',
+        conversation_id: 'c123',
+        meeting_token: 'mtok',
+      })
     })
     vi.stubGlobal('fetch', fetchMock)
 
@@ -138,6 +211,70 @@ describe('POST /api/chat/tavus/session', () => {
       conversationId: 'c123',
       personaId: created.id,
     })
+    const urls = fetchMock.mock.calls.map(([input]) => String(input))
+    expect(urls.some((url) => url.includes('status=active'))).toBe(true)
+    expect(urls.some((url) => url.endsWith(`/c-old${paths.tavusConversationEndSuffix}`))).toBe(true)
+  })
+
+  it('retries create after ending all active rooms on a concurrent-limit 400', async () => {
+    process.env[paths.envTavusApiKey] = 'test-tavus-key'
+    const created = await storeCreatePersona({ name: 'Sabine', role: 'Lead' })
+    await storePatchPersona(created.id, { tavusReplicaId: 'r0a8102ab353' })
+
+    let createAttempts = 0
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = (init?.method || 'GET').toUpperCase()
+      if (method === 'GET') {
+        return jsonResponse({
+          data:
+            createAttempts === 0
+              ? []
+              : [{ conversation_id: 'c-hidden', conversation_name: 'Other', status: 'active' }],
+        })
+      }
+      if (url.endsWith(`/c-hidden${paths.tavusConversationEndSuffix}`)) {
+        return jsonResponse({})
+      }
+      createAttempts += 1
+      if (createAttempts === 1) {
+        return jsonResponse({ message: 'User has reached maximum concurrent conversations' }, 400)
+      }
+      return jsonResponse({
+        conversation_url: 'https://tavus.daily.co/cvi-retry',
+        conversation_id: 'c-new',
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await POST(sessionRequest(created.id))
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      conversationUrl: 'https://tavus.daily.co/cvi-retry',
+      conversationId: 'c-new',
+    })
+    expect(createAttempts).toBe(2)
+  })
+})
+
+describe('DELETE /api/chat/tavus/session', () => {
+  it('requires conversationId', async () => {
+    const res = await DELETE(endRequest())
+    expect(res.status).toBe(400)
+  })
+
+  it('ends the Tavus conversation', async () => {
+    process.env[paths.envTavusApiKey] = 'test-tavus-key'
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      expect(String(input)).toBe(
+        `${paths.tavusApiDefaultBase}${paths.tavusConversationsPath}/c-end${paths.tavusConversationEndSuffix}`,
+      )
+      return jsonResponse({})
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const res = await DELETE(endRequest('c-end'))
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toEqual({ ok: true, conversationId: 'c-end' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
@@ -156,5 +293,29 @@ describe('TavusVideoPanel', () => {
     expect(frame.getAttribute('allow')).toContain('camera')
     expect(frame.getAttribute('allow')).toContain('microphone')
     expect(screen.getByText('Video call with Alex Morgan')).toBeInTheDocument()
+  })
+
+  it('ends the conversation when the panel unmounts', () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ ok: true }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { unmount } = render(
+      <TavusVideoPanel
+        session={{
+          conversationUrl: 'https://tavus.daily.co/cvi-live',
+          conversationId: 'c-end',
+          meetingToken: 'mtok',
+        }}
+        personaName="Sabine Koller"
+      />,
+    )
+    unmount()
+    expect(fetchMock).toHaveBeenCalledWith(
+      paths.routes.apiChatTavusSession,
+      expect.objectContaining({
+        method: 'DELETE',
+        keepalive: true,
+        body: JSON.stringify({ conversationId: 'c-end' }),
+      }),
+    )
   })
 })

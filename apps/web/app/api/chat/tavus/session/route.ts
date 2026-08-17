@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
 import type { ChatTavusSessionResponse } from '@audion-v3/contracts'
 import { storePersonaDetail } from '../../../../../lib/fixtures/persona-store'
-import { createTavusConversation, TavusApiError } from '../../../../../lib/tavus/client'
+import {
+  createTavusConversation,
+  endTavusConversation,
+  tavusConversationName,
+  TavusApiError,
+} from '../../../../../lib/tavus/client'
 import { personaTavusIds } from '../../../../../lib/tavus/ids'
 
 export async function POST(request: Request) {
@@ -39,7 +44,7 @@ export async function POST(request: Request) {
     const session = await createTavusConversation({
       replicaId,
       palId,
-      conversationName: `AUDION · ${persona.name}`,
+      conversationName: tavusConversationName(persona.name),
       conversationalContext: contextParts.join(' — '),
     })
     const response: ChatTavusSessionResponse = {
@@ -59,6 +64,29 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Tavus session failed' },
+      { status: 502 },
+    )
+  }
+}
+
+export async function DELETE(request: Request) {
+  const body = (await request.json().catch(() => null)) as { conversationId?: string } | null
+  const conversationId = body?.conversationId?.trim()
+  if (!conversationId) {
+    return NextResponse.json({ error: 'conversationId required' }, { status: 400 })
+  }
+  try {
+    await endTavusConversation(conversationId)
+    return NextResponse.json({ ok: true, conversationId })
+  } catch (error) {
+    if (error instanceof TavusApiError) {
+      return NextResponse.json(
+        { error: error.message, detail: error.detail },
+        { status: error.status },
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Tavus end failed' },
       { status: 502 },
     )
   }

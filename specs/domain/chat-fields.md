@@ -103,7 +103,7 @@ Send still uses per-persona `ChatSendPayload` (required `personaId`) via fan-out
 | `conversationId` | nullable Tavus conversation id |
 | `personaId` | Audion persona id |
 
-Missing replica → 400. Missing `TAVUS_API_KEY` → 503.
+Missing replica → 400. Missing `TAVUS_API_KEY` → 503. Session create ends leftover active Tavus rooms first (plan concurrency). `DELETE` `{ conversationId }` ends a room.
 
 ## Deferred
 

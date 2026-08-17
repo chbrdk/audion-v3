@@ -25,15 +25,18 @@ Editable on the persona magazine profile. Empty string clears to `null`.
 1. Load the Audion persona (`storePersonaDetail`).
 2. Require `tavusReplicaId` (or `tavusPersonaId` when a PAL already has a default face) — else **400**.
 3. Require `TAVUS_API_KEY` — else **503**.
-4. `POST {TAVUS_API_BASE}/v2/conversations` with `face_id` and optional `pal_id` only (do **not** also send `replica_id` / `persona_id` — Tavus treats them as aliases and 400s).
-5. Return `{ stubbed: false, conversationUrl, meetingToken, conversationId, personaId }`.
+4. End leftover **active** Tavus conversations for this API key (names with `paths.tavusConversationNamePrefix`, or the same `face_id`) via `POST {TAVUS_API_BASE}/v2/conversations/{id}/end`. Plans often allow only **one** concurrent call — retries 400 with `User has reached maximum concurrent conversations` otherwise.
+5. `POST {TAVUS_API_BASE}/v2/conversations` with `face_id` and optional `pal_id` only (do **not** also send `replica_id` / `persona_id` — Tavus treats them as aliases and 400s). Include `properties.participant_absent_timeout` / `participant_left_timeout` / `max_call_duration` from `paths` so idle rooms free the concurrency slot.
+6. If create still 400s on the concurrent-conversation limit, end remaining active conversations and retry **once**.
+7. Return `{ stubbed: false, conversationUrl, meetingToken, conversationId, personaId }`.
+8. `DELETE /api/chat/tavus/session` `{ conversationId }` ends that room (chat video off / unmount).
 
 Never return a stub conversation URL.
 
 ## Chat UI
 
 - Persona `/chat` only. Off on public share, target-group ask-all, and `/chat/embed`.
-- Video toggle embeds an iframe (`allow="camera; microphone; fullscreen; display-capture"`).
+- Video toggle embeds an iframe (`allow="camera; microphone; fullscreen; display-capture"`). Turning video off ends the Tavus conversation.
 - Optional `meetingToken` → `conversationUrl?t=TOKEN`.
 - No MUI; product CSS + `@msqdx/ui` chrome.
 
