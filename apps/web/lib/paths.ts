@@ -4,8 +4,10 @@ import { buildChatHref, type ChatPrefillContext } from './chat/prefill'
 import { buildChatTargetGroupHref } from './chat/tg-ask-all'
 import {
   buildChatConversationHref,
+  buildChatEmbedHref,
   buildChatShareHref,
   type ChatConversationHrefParams,
+  type ChatEmbedParams,
   type ChatShareParams,
 } from './chat/share'
 
@@ -157,7 +159,7 @@ export const paths = {
   aiRuntime: 'auto' as const,
   /** Cheap default for chat/assist — override via AI_OPENAI_MODEL */
   aiOpenAiModel: 'gpt-5.4-nano',
-  /** UX Journey Agent OpenAI — Lab A/B 2026-08-03; override via UX_JOURNEY_OPENAI_MODEL */
+  /** UX Journey Agent OpenAI — default gpt-5.6-luna; override via UX_JOURNEY_OPENAI_MODEL */
   uxJourneyOpenAiModel: 'gpt-5.6-luna',
   aiOpenAiImageModel: 'gpt-image-1-mini',
   /** Easy Setup optional website fetch (SSRF-safe) — knowledge/easy-setup-2026.md */
@@ -245,6 +247,9 @@ export const paths = {
     chatTargetGroup: (targetGroupId: string) => buildChatTargetGroupHref(targetGroupId),
     /** Public share: /chat?personaId=&projectId= */
     chatShare: (params: ChatShareParams) => buildChatShareHref(params),
+    /** Embed iframe: /chat/embed?personaId=&projectId=&embed=1 */
+    chatEmbed: (params: ChatEmbedParams) => buildChatEmbedHref(params),
+    chatEmbedPath: '/chat/embed',
     /** Resume conversation: /chat?conversationId=&personaId= */
     chatConversation: (params: ChatConversationHrefParams) => buildChatConversationHref(params),
     apiChatStream: '/api/chat/stream',
@@ -364,6 +369,8 @@ export const paths = {
   envPlexonAuthUrl: 'PLEXON_AUTH_URL',
   envPlexonPublicUrl: 'NEXT_PUBLIC_PLEXON_URL',
   envPlexonServiceSecret: 'PLEXON_SERVICE_SECRET',
+  /** Space-separated origins allowed to iframe `/chat/embed` (CSP frame-ancestors). */
+  envChatEmbedFrameAncestors: 'AUDION_CHAT_EMBED_FRAME_ANCESTORS',
   pathAssistantEmbed: '/assistant/embed',
   pathAssistantExpand: '/assistant',
   envPlexonRegisterUrl: 'NEXT_PUBLIC_PLEXON_REGISTER_URL',

@@ -71,6 +71,7 @@ export function AppShell({
   leading,
   actions,
   status,
+  presentation = 'default',
 }: {
   children: ReactNode
   /** Page title in the topbar left. Omit when using `leading` instead. */
@@ -84,20 +85,23 @@ export function AppShell({
   leading?: ReactNode
   actions?: ReactNode
   status?: ReactNode
+  /** Embed: no nav rail / brand corner / platform assistant. Spec: chat-embed.md */
+  presentation?: 'default' | 'embed'
 }) {
   const pathname = usePathname()
   const { displayName } = useUserPrefs()
   const [railEdge, setRailEdge] = useState<RailDockEdge>(paths.railDockEdge)
+  const embed = presentation === 'embed'
 
   const frameStyle = useMemo(
     () =>
       shellFrameStyle({
-        railInsetRem: paths.railInsetRem,
-        railGapRem: paths.railGapRem,
-        railWidthRem: paths.railWidthRem,
-        mainGutterRem: paths.mainGutterRem,
+        railInsetRem: embed ? 0 : paths.railInsetRem,
+        railGapRem: embed ? 0 : paths.railGapRem,
+        railWidthRem: embed ? 0 : paths.railWidthRem,
+        mainGutterRem: embed ? 1 : paths.mainGutterRem,
       }),
-    [],
+    [embed],
   )
 
   function isActive(href: string): boolean {
@@ -127,29 +131,32 @@ export function AppShell({
     <AppFrame
       railEdge={railEdge}
       style={frameStyle}
+      data-presentation={presentation}
       rail={
-        <NavRail
-          dockable
-          dockStorageKey={paths.railDockStorageKey}
-          defaultDockEdge={paths.railDockEdge}
-          onDockEdgeChange={setRailEdge}
-          logo={<MsqdxLogoMark size={26} title="MSQ DX" />}
-          logoLabel="AUDION home"
-          linkComponent={Link}
-          items={PRIMARY_NAV.map((item) => ({ ...item, active: isActive(item.href) }))}
-          footerItems={[
-            {
-              id: 'settings',
-              label: 'Settings',
-              href: paths.routes.settings,
-              active: isActive(paths.routes.settings),
-              ariaLabel: 'Settings',
-              icon: <Avatar name={displayName} size="sm" className="rail-avatar" />,
-            },
-          ]}
-        />
+        embed ? null : (
+          <NavRail
+            dockable
+            dockStorageKey={paths.railDockStorageKey}
+            defaultDockEdge={paths.railDockEdge}
+            onDockEdgeChange={setRailEdge}
+            logo={<MsqdxLogoMark size={26} title="MSQ DX" />}
+            logoLabel="AUDION home"
+            linkComponent={Link}
+            items={PRIMARY_NAV.map((item) => ({ ...item, active: isActive(item.href) }))}
+            footerItems={[
+              {
+                id: 'settings',
+                label: 'Settings',
+                href: paths.routes.settings,
+                active: isActive(paths.routes.settings),
+                ariaLabel: 'Settings',
+                icon: <Avatar name={displayName} size="sm" className="rail-avatar" />,
+              },
+            ]}
+          />
+        )
       }
-      brandCorner={<BrandCorner label="AUDION" />}
+      brandCorner={embed ? null : <BrandCorner label="AUDION" />}
       topbar={
         <>
           <div className="topbar-brand">{brandContent}</div>
@@ -162,7 +169,7 @@ export function AppShell({
     >
       {description ? <p className="audion-page-lead">{description}</p> : null}
       {children}
-      <PlatformAssistantHost />
+      {embed ? null : <PlatformAssistantHost />}
     </AppFrame>
   )
 }

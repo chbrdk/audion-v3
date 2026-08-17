@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { auth } from './auth'
+import { chatEmbedContentSecurityPolicy } from './lib/chat/embed-frame-ancestors'
+import {
+  createGuestSessionId,
+  GUEST_CHAT_COOKIE,
+  GUEST_CHAT_TTL_MS,
+} from './lib/chat/guest-budget'
 import { isPlexonAuthConfigured } from './lib/plexon-auth'
 import { paths } from './lib/paths'
 
@@ -44,6 +50,28 @@ async function isValidAudionApiBearer(
   }
 }
 
+function withEmbedHeaders(req: NextRequest, res: NextResponse): NextResponse {
+  const pathname = req.nextUrl.pathname
+  if (
+    pathname === paths.routes.chatEmbedPath ||
+    pathname.startsWith(`${paths.routes.chatEmbedPath}/`)
+  ) {
+    res.headers.set('Content-Security-Policy', chatEmbedContentSecurityPolicy())
+    if (!req.cookies.get(GUEST_CHAT_COOKIE)?.value) {
+      const secure =
+        req.nextUrl.protocol === 'https:' || process.env.NODE_ENV === 'production'
+      res.cookies.set(GUEST_CHAT_COOKIE, createGuestSessionId(), {
+        path: '/',
+        maxAge: Math.floor(GUEST_CHAT_TTL_MS / 1000),
+        sameSite: secure ? 'none' : 'lax',
+        secure,
+        httpOnly: false,
+      })
+    }
+  }
+  return res
+}
+
 const gated = auth(async (req) => {
   const { pathname } = req.nextUrl
   const isPublic =
@@ -54,10 +82,14 @@ const gated = auth(async (req) => {
     pathname === paths.routes.apiSettingsTokenVerify ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/fixtures') ||
-    pathname === '/favicon.ico'
+    pathname === '/favicon.ico' ||
+    pathname === paths.routes.chatEmbedPath ||
+    pathname.startsWith(`${paths.routes.chatEmbedPath}/`) ||
+    pathname.startsWith('/api/share/personas') ||
+    pathname === paths.routes.apiChatStream
 
   if (isPublic) {
-    return NextResponse.next()
+    return withEmbedHeaders(req, NextResponse.next())
   }
 
   const authorization = req.headers.get('authorization')
@@ -79,7 +111,7 @@ const gated = auth(async (req) => {
 /** Open when Plexon unset; protect app routes when federated. */
 export default function middleware(req: NextRequest) {
   if (!isPlexonAuthConfigured()) {
-    return NextResponse.next()
+    return withEmbedHeaders(req, NextResponse.next())
   }
   return gated(req, {} as never)
 }

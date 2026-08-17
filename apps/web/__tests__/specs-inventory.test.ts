@@ -16,6 +16,7 @@ const requiredSpecs = [
   'specs/domain/ux-study-fields.md',
   'specs/domain/chat-workspace.md',
   'specs/domain/chat-fields.md',
+  'specs/domain/chat-embed.md',
   'specs/domain/tavus-video-chat.md',
   'knowledge/tavus-video-chat.md',
   'specs/domain/project-workspace.md',
@@ -53,8 +54,10 @@ describe('specs inventory', () => {
     expect(paths.routes.apiStudies).toBe('/api/studies')
     expect(paths.routes.chat).toBe('/chat')
     expect(paths.routes.chatHistory).toBe('/chat/history')
+    expect(paths.routes.chatEmbedPath).toBe('/chat/embed')
     expect(paths.routes.apiChatStream).toBe('/api/chat/stream')
     expect(paths.envChatApiInternal).toBe('NEXT_CHAT_API_INTERNAL_URL')
+    expect(paths.envChatEmbedFrameAncestors).toBe('AUDION_CHAT_EMBED_FRAME_ANCESTORS')
     expect(paths.routes.apiChatTavusSession).toBe('/api/chat/tavus/session')
     expect(paths.envTavusApiKey).toBe('TAVUS_API_KEY')
     expect(paths.tavusConversationsPath).toBe('/v2/conversations')

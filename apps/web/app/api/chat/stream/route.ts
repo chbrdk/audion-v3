@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server'
 import type { ChatSendPayload } from '@audion-v3/contracts'
 import { auth } from '../../../../auth'
+import {
+  checkGuestBudget,
+  consumeGuestTurn,
+  createGuestSessionId,
+  GUEST_CHAT_COOKIE,
+  GUEST_CHAT_TTL_MS,
+  getGuestBudgetState,
+  guestBudgetKey,
+  remainingGuestTurns,
+} from '../../../../lib/chat/guest-budget'
 import { nativeChatNdjsonResponse } from '../../../../lib/chat/native-stream'
 import { storeChatFakeStream } from '../../../../lib/fixtures/chat-store'
 import {
@@ -30,6 +40,24 @@ function fixtureStream(body: ChatSendPayload): Response {
   })
 }
 
+function readCookie(request: Request, name: string): string | null {
+  const raw = request.headers.get('cookie')
+  if (!raw) return null
+  for (const part of raw.split(';')) {
+    const [k, ...rest] = part.trim().split('=')
+    if (k === name) return decodeURIComponent(rest.join('=').trim())
+  }
+  return null
+}
+
+function resolveGuestSessionId(request: Request, body: ChatSendPayload): string {
+  const fromBody = body.guestSessionId?.trim()
+  if (fromBody) return fromBody
+  const fromCookie = readCookie(request, GUEST_CHAT_COOKIE)?.trim()
+  if (fromCookie) return fromCookie
+  return createGuestSessionId()
+}
+
 export async function POST(request: Request) {
   const body = (await request.json()) as ChatSendPayload
   if (!body?.message?.trim()) {
@@ -40,6 +68,8 @@ export async function POST(request: Request) {
   }
 
   const session = await auth()
+  const isGuest = !session?.user?.id
+
   if (session?.user?.id) {
     reportUsage({
       userId: session.user.id,
@@ -48,6 +78,67 @@ export async function POST(request: Request) {
         persona_id: body.personaId,
         message_chars: body.message.trim().length,
       },
+    })
+  }
+
+  let guestSessionId: string | null = null
+  if (isGuest) {
+    const projectId = body.projectId?.trim() || ''
+    if (!projectId) {
+      return NextResponse.json(
+        {
+          error: 'projectId is required for guest chat',
+          code: 'GUEST_PROJECT_REQUIRED',
+        },
+        { status: 400 },
+      )
+    }
+    guestSessionId = resolveGuestSessionId(request, body)
+    const key = guestBudgetKey(guestSessionId, body.personaId, projectId)
+    const state = getGuestBudgetState(key)
+    const check = checkGuestBudget({ state, message: body.message })
+    if (!check.ok) {
+      return NextResponse.json(
+        { error: check.message, code: check.code, remaining: check.remaining },
+        { status: check.status },
+      )
+    }
+    const next = consumeGuestTurn(key)
+    const remaining = remainingGuestTurns(next)
+
+    let response: Response
+    if (shouldUseChatFixtures() || !shouldPreferChatLive()) {
+      response = fixtureStream(body)
+    } else {
+      try {
+        response = nativeChatNdjsonResponse(body)
+      } catch (error) {
+        if (shouldRequireChatLive()) {
+          return NextResponse.json(
+            {
+              error: 'Native chat unavailable',
+              detail: error instanceof Error ? error.message : 'unknown',
+              hint: `Set ${paths.envOpenAiApiKey} and ${paths.envAiRuntime}=auto|native`,
+            },
+            { status: 502 },
+          )
+        }
+        response = fixtureStream(body)
+      }
+    }
+
+    const headers = new Headers(response.headers)
+    headers.set('X-Audion-Guest-Remaining', String(remaining))
+    headers.append(
+      'Set-Cookie',
+      `${GUEST_CHAT_COOKIE}=${encodeURIComponent(guestSessionId)}; Path=/; Max-Age=${Math.floor(
+        GUEST_CHAT_TTL_MS / 1000,
+      )}; SameSite=None; Secure`,
+    )
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
     })
   }
 

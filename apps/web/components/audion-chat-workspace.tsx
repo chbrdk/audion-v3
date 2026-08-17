@@ -37,6 +37,14 @@ type Props = {
   targetGroups?: TargetGroupSummary[]
   initialTargetGroup?: TargetGroupDetail | null
   initialMode?: ChatMode
+  /** Chrome-stripped iframe presentation. Spec: chat-embed.md */
+  presentation?: 'default' | 'embed'
+  guestBudget?: {
+    sessionId: string
+    remainingTurns: number
+    maxTurns: number
+    maxChars: number
+  } | null
 }
 
 function iconBtnClass(active?: boolean): string {
@@ -65,9 +73,12 @@ export function AudionChatWorkspace({
   targetGroups = [],
   initialTargetGroup = null,
   initialMode,
+  presentation = 'default',
+  guestBudget = null,
 }: Props) {
   const router = useRouter()
   const shareMode = Boolean(shareProjectId)
+  const embedMode = presentation === 'embed'
   const [mode, setMode] = useState<ChatMode>(
     initialMode ?? (initialTargetGroup ? 'target_group' : 'persona'),
   )
@@ -179,7 +190,8 @@ export function AudionChatWorkspace({
     router.replace(paths.routes.chatTargetGroup(id))
   }
 
-  const composerLeading = shareMode || tgMode ? null : (
+  const composerLeading =
+    shareMode || tgMode || embedMode ? null : (
     <div className="audion-chat-composer-actions" role="toolbar" aria-label="Chat modality">
       <Button
         type="button"
@@ -206,21 +218,28 @@ export function AudionChatWorkspace({
     </div>
   )
 
+  const shareLeading = (
+    <div className="audion-chat-topbar-leading">
+      <Text role="label" className="audion-chat-share-label">
+        {persona?.name || 'Shared persona'}
+      </Text>
+      <span className="audion-chat-share-badge">{embedMode ? 'Guest chat' : 'Public share'}</span>
+      {embedMode ? null : (
+        <ChatMoodboardStrip
+          personaId={personaId}
+          projectId={shareProjectId}
+          tiles={moodboardTiles}
+        />
+      )}
+    </div>
+  )
+
   return (
     <AppShell
+      presentation={presentation}
       leading={
-        shareMode ? (
-          <div className="audion-chat-topbar-leading">
-            <Text role="label" className="audion-chat-share-label">
-              {persona?.name || 'Shared persona'}
-            </Text>
-            <span className="audion-chat-share-badge">Public share</span>
-            <ChatMoodboardStrip
-              personaId={personaId}
-              projectId={shareProjectId}
-              tiles={moodboardTiles}
-            />
-          </div>
+        shareMode || embedMode ? (
+          shareLeading
         ) : (
           <div className="audion-chat-topbar-leading">
             <Field
@@ -297,16 +316,22 @@ export function AudionChatWorkspace({
       }
     >
       <h1 className="visually-hidden">
-        {shareMode ? 'Shared chat' : tgMode ? 'Target group chat' : 'Chat'}
+        {embedMode
+          ? 'Embedded chat'
+          : shareMode
+            ? 'Shared chat'
+            : tgMode
+              ? 'Target group chat'
+              : 'Chat'}
       </h1>
 
-      {tgMode ? null : modality === 'voice' && !shareMode ? (
+      {tgMode || embedMode ? null : modality === 'voice' && !shareMode ? (
         <p className="audion-edit-lede audion-chat-modality-note" role="status">
           Voice mode stub — mic UI deferred. Text chat still works below.
         </p>
       ) : null}
 
-      {tgMode ? null : modality === 'video' && !shareMode ? (
+      {tgMode || embedMode ? null : modality === 'video' && !shareMode ? (
         <div className="audion-chat-tavus" role="status">
           {tavusBusy ? <p className="audion-edit-lede">Starting video session…</p> : null}
           {tavusError ? <p className="audion-edit-error">{tavusError}</p> : null}
@@ -325,7 +350,7 @@ export function AudionChatWorkspace({
         </div>
       ) : null}
 
-      {tgMode ? (
+      {tgMode && !embedMode ? (
         <AudionTargetGroupChatPanel
           targetGroup={
             initialTargetGroup && initialTargetGroup.id === targetGroupId
@@ -342,8 +367,9 @@ export function AudionChatWorkspace({
           initialConversation={initialConversation}
           initialDraft={initialDraft}
           shareProjectId={shareProjectId}
-          allowConvert={!shareMode}
+          allowConvert={!shareMode && !embedMode}
           composerLeading={composerLeading}
+          guestBudget={guestBudget}
         />
       )}
     </AppShell>

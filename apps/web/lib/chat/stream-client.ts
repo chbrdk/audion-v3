@@ -13,8 +13,15 @@ export async function postChatStream(
     signal,
   })
   if (!response.ok) {
-    const err = (await response.json().catch(() => null)) as { error?: string } | null
-    onEvent({ type: 'error', message: err?.error || `Stream failed (${response.status})` })
+    const err = (await response.json().catch(() => null)) as {
+      error?: string
+      code?: string
+      remaining?: number
+    } | null
+    onEvent({
+      type: 'error',
+      message: err?.error || `Stream failed (${response.status})`,
+    })
     return
   }
   if (!response.body) {
