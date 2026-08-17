@@ -35,6 +35,7 @@
 - `knowledgeEntries[]`, `documents[]`
 - `tavusReplicaId` — Tavus Face / replica id (nullable; e.g. `r5e781e37a8d`). Required to start a video call.
 - `tavusPersonaId` — Tavus PAL id (nullable). Auto-upserted from magazine when replica + API key are set (`specs/domain/tavus-video-chat.md`).
+- `tavusLanguage` — `de` | `en` | null. Spoken CVI language; null infers from bio.
 - inherits summary fields
 
 ## Journey behavior (`PersonaJourneyBehavior`)
@@ -63,6 +64,7 @@ Used by create / PATCH dialogs and `/api/personas*`:
 | `journeyBehavior` | optional incl. `heuristics` |
 | `tavusReplicaId` | optional nullable Face / replica id |
 | `tavusPersonaId` | optional nullable PAL / persona id |
+| `tavusLanguage` | optional `de` / `en` / null |
 | `avatarUrl` | optional; empty/`null` clears to initials |
 | `projectId` | optional nullable |
 
@@ -81,7 +83,7 @@ Used by create / PATCH dialogs and `/api/personas*`:
 | sections (all) | folded into `extraInstructions` (+ Mindset/Working-with priority) |
 | journeyBehavior dims/dos/donts/extra/heuristics | dimensionOverrides, dos, donts, extra, heuristics |
 
-**Not sent:** avatarUrl, visuals, colorPalette, mediaAffinity, profileDe, status, projectId, tavusReplicaId, tavusPersonaId.
+**Not sent:** avatarUrl, visuals, colorPalette, mediaAffinity, profileDe, status, projectId, tavusReplicaId, tavusPersonaId, tavusLanguage.
 
 ## Validation / normalize
 
@@ -93,3 +95,4 @@ Used by create / PATCH dialogs and `/api/personas*`:
 - Nested v2 `{ profile, moodboard }` unwrapped in `normalizePersonaDetail`
 - Legacy `goals`/`frustrations`/`pain_points` as `string[]` coerced to objects
 - Tavus ids accept `tavusReplicaId` / `tavus_replica_id` / `face_id` and `tavusPersonaId` / `tavus_persona_id` / `pal_id` (do **not** coerce Audion `persona_id`)
+- `tavusLanguage` accepts `de` / `en` / `German` / `English`; empty → null (infer at session)

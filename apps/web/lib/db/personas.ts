@@ -7,6 +7,7 @@ import type {
 } from '@audion-v3/contracts'
 import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from '../persona-coerce'
 import { normalizePersonaSections } from '../persona-notes'
+import { parseTavusLanguage } from '../tavus/language'
 import { getDb } from './client'
 import { personas, type PersonaRow } from './schema'
 
@@ -40,6 +41,7 @@ const DETAIL_ONLY_KEYS = [
   'documents',
   'tavusReplicaId',
   'tavusPersonaId',
+  'tavusLanguage',
 ] as const
 
 function emptyDefaults(): Pick<
@@ -61,6 +63,7 @@ function emptyDefaults(): Pick<
   | 'visuals'
   | 'tavusReplicaId'
   | 'tavusPersonaId'
+  | 'tavusLanguage'
 > {
   return {
     gender: null,
@@ -80,6 +83,7 @@ function emptyDefaults(): Pick<
     visuals: null,
     tavusReplicaId: null,
     tavusPersonaId: null,
+    tavusLanguage: null,
   }
 }
 
@@ -137,6 +141,7 @@ function rowToDetail(row: PersonaRow): PersonaDetail {
     documents: payload.documents ?? [],
     tavusReplicaId: payload.tavusReplicaId ?? null,
     tavusPersonaId: payload.tavusPersonaId ?? null,
+    tavusLanguage: parseTavusLanguage(payload.tavusLanguage),
   }
 }
 
@@ -175,6 +180,7 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
       documents: [],
       tavusReplicaId: null,
       tavusPersonaId: null,
+      tavusLanguage: null,
     } satisfies PersonaDetail)
 
   return {
@@ -237,6 +243,10 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
           ? payload.tavusPersonaId.trim()
           : null
         : base.tavusPersonaId ?? null,
+    tavusLanguage:
+      payload.tavusLanguage !== undefined
+        ? parseTavusLanguage(payload.tavusLanguage)
+        : base.tavusLanguage ?? null,
     avatarUrl:
       payload.avatarUrl !== undefined
         ? payload.avatarUrl?.trim()

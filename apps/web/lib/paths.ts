@@ -351,7 +351,12 @@ export const paths = {
   tavusPalPipelineMode: 'full' as const,
   tavusPalSystemPromptMaxChars: 4000,
   tavusPalPromptPath: 'apps/web/lib/tavus/prompt.ts',
+  tavusPalLanguagePath: 'apps/web/lib/tavus/language.ts',
   tavusPalSyncPath: 'apps/web/lib/tavus/sync.ts',
+  /** Audion magazine codes. Tavus `properties.language` needs the full name in `tavusLanguageNames`. */
+  tavusLanguageChoices: ['de', 'en'] as const,
+  tavusLanguageNames: { de: 'German', en: 'English' } as const,
+  tavusLanguageDocsPath: 'https://docs.tavus.io/sections/conversational-video-interface/language-support',
   tavusConversationEndSuffix: '/end',
   tavusConversationsListLimit: 50,
   tavusConversationNamePrefix: 'AUDION · ',

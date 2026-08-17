@@ -130,6 +130,8 @@ export type PersonaDetail = PersonaSummary & {
   tavusReplicaId: string | null
   /** Optional Tavus PAL / persona id. */
   tavusPersonaId: string | null
+  /** Spoken CVI language. `de` / `en`; null infers from magazine bio. */
+  tavusLanguage: 'de' | 'en' | null
 }
 
 /** Create / PATCH body — magazine edit wave */
@@ -171,4 +173,5 @@ export type PersonaWritePayload = {
   documents?: import('./knowledge-entries').DocumentSource[]
   tavusReplicaId?: string | null
   tavusPersonaId?: string | null
+  tavusLanguage?: 'de' | 'en' | null
 }

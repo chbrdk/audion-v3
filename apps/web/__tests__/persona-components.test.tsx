@@ -86,6 +86,7 @@ const detail: PersonaDetail = {
   documents: [],
   tavusReplicaId: null,
   tavusPersonaId: null,
+  tavusLanguage: null,
 }
 
 const tgList: TargetGroupList = {

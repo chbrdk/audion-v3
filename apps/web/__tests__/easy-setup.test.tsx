@@ -87,6 +87,7 @@ const bootstrapResponse: ProjectEasySetupResponse = {
     documents: [],
     tavusReplicaId: null,
     tavusPersonaId: null,
+    tavusLanguage: null,
   },
 }
 

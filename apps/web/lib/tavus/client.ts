@@ -13,6 +13,7 @@ export type TavusConversationPayload = {
     max_call_duration?: number
     participant_left_timeout?: number
     participant_absent_timeout?: number
+    language?: string
   }
 }
 
@@ -55,6 +56,7 @@ export function buildTavusConversationPayload(input: {
   palId?: string | null
   conversationName?: string | null
   conversationalContext?: string | null
+  language?: string | null
 }): TavusConversationPayload {
   const replicaId = trimTavusId(input.replicaId)
   const palId = trimTavusId(input.palId)
@@ -76,6 +78,8 @@ export function buildTavusConversationPayload(input: {
     participant_left_timeout: paths.tavusParticipantLeftTimeoutSec,
     participant_absent_timeout: paths.tavusParticipantAbsentTimeoutSec,
   }
+  const language = trimTavusId(input.language)
+  if (language) payload.properties.language = language
   return payload
 }
 
@@ -273,6 +277,7 @@ export async function createTavusConversation(input: {
   palId?: string | null
   conversationName?: string | null
   conversationalContext?: string | null
+  language?: string | null
 }): Promise<TavusConversationResult> {
   const apiKey = requireApiKey()
   const payload = buildTavusConversationPayload(input)

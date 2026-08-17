@@ -137,6 +137,7 @@ describe('persona contracts', () => {
     expect(detail?.visuals?.tiles[0]?.imageUrl).toBe('/fixtures/personas/visuals/tone-warm.svg')
     expect(detail?.tavusReplicaId).toBeNull()
     expect(detail?.tavusPersonaId).toBeNull()
+    expect(detail?.tavusLanguage).toBeNull()
   })
 
   it('normalizes Tavus replica and PAL ids from snake_case aliases', async () => {
@@ -146,9 +147,11 @@ describe('persona contracts', () => {
       role: 'Tester',
       tavus_replica_id: 'r5e781e37a8d',
       pal_id: 'pcb7a34da5fe',
+      tavus_language: 'German',
     })
     expect(detail?.tavusReplicaId).toBe('r5e781e37a8d')
     expect(detail?.tavusPersonaId).toBe('pcb7a34da5fe')
+    expect(detail?.tavusLanguage).toBe('de')
   })
 
   it('does not treat Audion persona_id as a Tavus PAL id', async () => {
@@ -188,9 +191,13 @@ describe('persona contracts', () => {
     const patched = await storePatchPersona(created.id, {
       tavusReplicaId: 'r5e781e37a8d',
       tavusPersonaId: 'pcb7a34da5fe',
+      tavusLanguage: 'de',
     })
     expect(patched?.tavusReplicaId).toBe('r5e781e37a8d')
     expect(patched?.tavusPersonaId).toBe('pcb7a34da5fe')
+    expect(patched?.tavusLanguage).toBe('de')
+    const english = await storePatchPersona(created.id, { tavusLanguage: 'en' })
+    expect(english?.tavusLanguage).toBe('en')
     const cleared = await storePatchPersona(created.id, { tavusReplicaId: '  ', tavusPersonaId: '' })
     expect(cleared?.tavusReplicaId).toBeNull()
     expect(cleared?.tavusPersonaId).toBeNull()

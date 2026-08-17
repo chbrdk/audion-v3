@@ -1,12 +1,16 @@
 import type { PersonaCommunicationStyle, PersonaJourneyBehavior } from '@audion-v3/contracts'
 import { paths } from '../paths'
+import {
+  resolveTavusLanguage,
+  tavusConversationLanguageName,
+  tavusSpokenLanguageRule,
+  type TavusLanguageSource,
+} from './language'
 
-export type TavusPalPromptSource = {
+export type TavusPalPromptSource = TavusLanguageSource & {
   name: string
   role?: string | null
-  bio?: string | null
   age?: string | null
-  location?: string | null
   gender?: string | null
   emotionalBaseline?: string | null
   attentionSpan?: string | null
@@ -18,8 +22,6 @@ export type TavusPalPromptSource = {
   stressTriggers?: string[]
   communicationStyle?: PersonaCommunicationStyle | null
   journeyBehavior?: PersonaJourneyBehavior | null
-  profileDe?: { bio?: string | null; headline?: string | null } | null
-  headlineDe?: string | null
 }
 
 function clip(text: string, max: number): string {
@@ -47,19 +49,6 @@ function bulletBlock(
   const values = lines(items, max)
   if (!values.length) return ''
   return `${title}\n${values.map((value) => `- ${value}`).join('\n')}`
-}
-
-function prefersGerman(persona: TavusPalPromptSource): boolean {
-  const haystack = [
-    persona.bio,
-    persona.location,
-    persona.headlineDe,
-    persona.profileDe?.bio,
-    persona.profileDe?.headline,
-  ]
-    .filter(Boolean)
-    .join(' ')
-  return /[äöüÄÖÜß]|deutschland|germany|österreich|schweiz/i.test(haystack)
 }
 
 /** Spoken CVI system prompt — identity only, not a JSON dump. Spec: tavus-video-chat.md */
@@ -109,9 +98,7 @@ export function buildTavusPalSystemPrompt(persona: TavusPalPromptSource): string
       'Spoken video rules:',
       '- Short turns. One thought, then pause. One question at a time.',
       '- Sound like a real person, not a briefing. No markdown, no lists out loud.',
-      prefersGerman(persona)
-        ? '- Default to German; switch if the user uses another language.'
-        : '- Match the user’s language.',
+      tavusSpokenLanguageRule(resolveTavusLanguage(persona)),
       '- You are this persona in a product-research conversation. Do not mention Audion, Tavus, or being an AI unless asked.',
       '- When unsure, say so in character rather than inventing facts.',
     ].join('\n'),
@@ -124,6 +111,10 @@ export function tavusPalName(personaName: string): string {
   return `${paths.tavusConversationNamePrefix}${personaName.trim() || 'Persona'}`
 }
 
-export function tavusSessionConversationalContext(personaName: string): string {
-  return `Product-research video call. Stay in character as ${personaName.trim() || 'the persona'}. Short spoken turns.`
+export function tavusSessionConversationalContext(
+  personaName: string,
+  language = resolveTavusLanguage({}),
+): string {
+  const spoken = tavusConversationLanguageName(language)
+  return `Product-research video call in ${spoken}. Stay in character as ${personaName.trim() || 'the persona'}. Short spoken turns.`
 }

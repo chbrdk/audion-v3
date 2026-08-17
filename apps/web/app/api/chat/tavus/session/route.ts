@@ -8,6 +8,10 @@ import {
   TavusApiError,
 } from '../../../../../lib/tavus/client'
 import { personaTavusIds } from '../../../../../lib/tavus/ids'
+import {
+  resolveTavusLanguage,
+  tavusConversationLanguageName,
+} from '../../../../../lib/tavus/language'
 import { tavusSessionConversationalContext } from '../../../../../lib/tavus/prompt'
 import { syncPersonaTavusPal } from '../../../../../lib/tavus/sync'
 
@@ -40,12 +44,14 @@ export async function POST(request: Request) {
     )
   }
 
+  const language = resolveTavusLanguage(working)
   try {
     const session = await createTavusConversation({
       replicaId,
       palId,
       conversationName: tavusConversationName(working.name),
-      conversationalContext: tavusSessionConversationalContext(working.name),
+      conversationalContext: tavusSessionConversationalContext(working.name, language),
+      language: tavusConversationLanguageName(language),
     })
     const response: ChatTavusSessionResponse = {
       stubbed: false,

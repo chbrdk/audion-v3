@@ -14,6 +14,11 @@ import {
   upsertTavusPal,
 } from '../lib/tavus/pals'
 import { buildTavusPalSystemPrompt, tavusPalName } from '../lib/tavus/prompt'
+import {
+  parseTavusLanguage,
+  resolveTavusLanguage,
+  tavusConversationLanguageName,
+} from '../lib/tavus/language'
 
 afterEach(() => {
   resetPersonaStore()
@@ -48,7 +53,7 @@ describe('tavus PAL prompt', () => {
     expect(prompt).toContain('You are Sabine Koller, Einkäuferin')
     expect(prompt).toContain('Schnell eine klare Empfehlung')
     expect(prompt).toContain('Zu viele Filter')
-    expect(prompt).toContain('Default to German')
+    expect(prompt).toContain('Speak German')
     expect(prompt).not.toContain('traits')
     expect(prompt.length).toBeLessThanOrEqual(paths.tavusPalSystemPromptMaxChars)
   })
@@ -67,6 +72,32 @@ describe('tavus PAL prompt', () => {
     expect(
       buildTavusPalSystemPrompt({ name: 'Alex', role: 'Lead', bio: 'Ships briefs.' }),
     ).not.toMatch(/knowledgeEntries|visuals|moodboard/i)
+    expect(
+      buildTavusPalSystemPrompt({
+        name: 'Alex',
+        role: 'Lead',
+        bio: 'Kauft in München.',
+        tavusLanguage: 'en',
+      }),
+    ).toContain('Speak English')
+    expect(
+      buildTavusPalSystemPrompt({
+        name: 'Sam',
+        role: 'Lead',
+        bio: 'Ships briefs in London.',
+        tavusLanguage: 'de',
+      }),
+    ).toContain('Speak German')
+  })
+
+  it('maps Audion de/en to Tavus full language names', () => {
+    expect(parseTavusLanguage('Deutsch')).toBe('de')
+    expect(parseTavusLanguage('English')).toBe('en')
+    expect(parseTavusLanguage('')).toBeNull()
+    expect(resolveTavusLanguage({ location: 'München, Deutschland' })).toBe('de')
+    expect(resolveTavusLanguage({ bio: 'Ships briefs in London.' })).toBe('en')
+    expect(tavusConversationLanguageName('de')).toBe(paths.tavusLanguageNames.de)
+    expect(tavusConversationLanguageName('en')).toBe(paths.tavusLanguageNames.en)
   })
 })
 

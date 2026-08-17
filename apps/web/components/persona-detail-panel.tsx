@@ -138,6 +138,11 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
           personaId={persona.id}
           tavusReplicaId={persona.tavusReplicaId}
           tavusPersonaId={persona.tavusPersonaId}
+          tavusLanguage={persona.tavusLanguage}
+          bio={persona.bio}
+          location={persona.location}
+          headlineDe={persona.headlineDe}
+          profileDe={persona.profileDe}
         />
 
         <div className="signal-stage audion-magazine-stage ds-motion-reveal">

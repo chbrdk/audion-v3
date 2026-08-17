@@ -70,6 +70,24 @@ describe('tavus conversation payload', () => {
     })
   })
 
+  it('sends Tavus full language names, not de/en codes', () => {
+    expect(
+      buildTavusConversationPayload({
+        replicaId: 'r5e781e37a8d',
+        language: paths.tavusLanguageNames.de,
+      }).properties?.language,
+    ).toBe('German')
+    expect(
+      buildTavusConversationPayload({
+        replicaId: 'r5e781e37a8d',
+        language: paths.tavusLanguageNames.en,
+      }).properties?.language,
+    ).toBe('English')
+    expect(
+      buildTavusConversationPayload({ replicaId: 'r5e781e37a8d' }).properties,
+    ).not.toHaveProperty('language')
+  })
+
   it('does not send replica_id/persona_id aliases (Tavus 400s on both)', () => {
     const payload = buildTavusConversationPayload({
       replicaId: 'r0a8102ab353',
@@ -203,6 +221,7 @@ describe('POST /api/chat/tavus/session', () => {
       expect(body).not.toHaveProperty('replica_id')
       expect(body.properties).toMatchObject({
         participant_absent_timeout: paths.tavusParticipantAbsentTimeoutSec,
+        language: 'English',
       })
       return jsonResponse({
         conversation_url: 'https://tavus.daily.co/cvi-live',
@@ -224,6 +243,34 @@ describe('POST /api/chat/tavus/session', () => {
     const urls = fetchMock.mock.calls.map(([input]) => String(input))
     expect(urls.some((url) => url.includes('status=active'))).toBe(true)
     expect(urls.some((url) => url.endsWith(`/c-old${paths.tavusConversationEndSuffix}`))).toBe(true)
+  })
+
+  it('sends German as Tavus properties.language when the persona language is de', async () => {
+    process.env[paths.envTavusApiKey] = 'test-tavus-key'
+    const created = await storeCreatePersona({ name: 'Sabine Koller', role: 'Einkäuferin' })
+    await storePatchPersona(created.id, { tavusReplicaId: 'r0a8102ab353', tavusLanguage: 'de' })
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = (init?.method || 'GET').toUpperCase()
+      if (url.includes(paths.tavusPalsPath)) {
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>
+        expect(String(body.system_prompt)).toContain('Speak German')
+        return jsonResponse({ pal_id: 'p-de' })
+      }
+      if (method === 'GET') return jsonResponse({ data: [] })
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>
+      expect(body.properties).toMatchObject({ language: 'German' })
+      expect(String(body.conversational_context)).toContain('German')
+      return jsonResponse({
+        conversation_url: 'https://tavus.daily.co/cvi-de',
+        conversation_id: 'c-de',
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await POST(sessionRequest(created.id))
+    expect(res.status).toBe(200)
   })
 
   it('retries create after ending all active rooms on a concurrent-limit 400', async () => {

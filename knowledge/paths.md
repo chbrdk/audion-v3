@@ -111,7 +111,7 @@
 - Chat surface (editorial open): `knowledge/chat-surface.md`
 - Chat modalities (share / moodboard / inspect / Voice·Tavus): `knowledge/chat-modalities-2026.md`
 - Tavus CVI (persona replica id + chat iframe): `knowledge/tavus-video-chat.md` · spec `specs/domain/tavus-video-chat.md`
-- Tavus env: `TAVUS_API_KEY` (`paths.envTavusApiKey`) · `TAVUS_API_BASE` (`paths.envTavusApiBase`, default `paths.tavusApiDefaultBase`) · conversations `paths.tavusConversationsPath` (`/v2/conversations`) · pals `paths.tavusPalsPath` (`/v2/pals`) · end suffix `paths.tavusConversationEndSuffix` (`/end`) · name prefix `paths.tavusConversationNamePrefix`
+- Tavus env: `TAVUS_API_KEY` (`paths.envTavusApiKey`) · `TAVUS_API_BASE` (`paths.envTavusApiBase`, default `paths.tavusApiDefaultBase`) · conversations `paths.tavusConversationsPath` (`/v2/conversations`) · pals `paths.tavusPalsPath` (`/v2/pals`) · end suffix `paths.tavusConversationEndSuffix` (`/end`) · name prefix `paths.tavusConversationNamePrefix` · spoken language `paths.tavusLanguageChoices` (`de`/`en`) mapped to Tavus full names in `paths.tavusLanguageNames` (`German`/`English`)
 - Chat share helper: `apps/web/lib/chat/share.ts` · `paths.routes.chatShare` · `paths.routes.chatEmbed` · `paths.routes.chatConversation`
 - Tavus session BFF: `paths.routes.apiChatTavusSession` (`/api/chat/tavus/session`) POST create / DELETE end · client `paths.tavusClientPath` · panel `paths.tavusVideoPanelPath`
 - Chat flyouts: product share / history / moodboard compose DS `Flyout` (`knowledge/flyout-ds-2026-07-30.md`)

@@ -14,6 +14,7 @@ Persona `/chat` starts a real Tavus CVI video call. Personas store a Face / repl
 |----------|----------------------|
 | `tavusReplicaId` | `tavus_replica_id`, `face_id` |
 | `tavusPersonaId` (optional PAL) | `tavus_persona_id`, `pal_id` |
+| `tavusLanguage` (`de` / `en`, optional) | `tavus_language` |
 
 Do **not** treat Audion `persona_id` as a Tavus PAL id.
 
@@ -29,7 +30,7 @@ Magazine editor: `apps/web/components/persona-editable-tavus.tsx`. Persistence i
 4. 503 if `TAVUS_API_KEY` unset.
 5. Upsert PAL from magazine (`POST /v2/pals` or `PATCH …/pals/{id}?target=live`) and persist `tavusPersonaId`.
 6. End leftover **active** conversations (`GET …/v2/conversations?status=active`, then `POST …/v2/conversations/{id}/end`) whose name starts with `paths.tavusConversationNamePrefix` or that use the same Face. Tavus plans cap concurrent rooms (often **1**); leaving a prior iframe open 400s the next start with `User has reached maximum concurrent conversations`.
-7. `POST {TAVUS_API_BASE}/v2/conversations` with `face_id` and optional `pal_id` only. Do not send legacy `replica_id` / `persona_id` in the same body — [Tavus create conversation](https://docs.tavus.io/api-reference/conversations/create-conversation) treats them as aliases and returns 400. Create payload includes idle timeouts (`paths.tavusParticipantAbsentTimeoutSec` default **90s**, left **30s**) so an unjoined iframe does not occupy the plan’s concurrent slot for Tavus’s 5-minute default.
+7. `POST {TAVUS_API_BASE}/v2/conversations` with `face_id` and optional `pal_id` only. Do not send legacy `replica_id` / `persona_id` in the same body — [Tavus create conversation](https://docs.tavus.io/api-reference/conversations/create-conversation) treats them as aliases and returns 400. Create payload includes idle timeouts (`paths.tavusParticipantAbsentTimeoutSec` default **90s**, left **30s**) so an unjoined iframe does not occupy the plan’s concurrent slot for Tavus’s 5-minute default. `properties.language` is the **full name** (`German` / `English` from `paths.tavusLanguageNames`) — Tavus rejects `de`/`en`. See [language support](https://docs.tavus.io/sections/conversational-video-interface/language-support).
 8. On concurrent-limit 400, end remaining active conversations and retry once.
 9. Return `{ stubbed: false, conversationUrl, meetingToken, conversationId, personaId }`.
 10. `DELETE /api/chat/tavus/session` `{ conversationId }` — chat video off / panel unmount.
@@ -46,7 +47,9 @@ Tavus splits **Face** (look + voice, `face_id` / replica) from **PAL** (how it t
 
 **Do not** create a new PAL on every Video click, and **do not** dump the full Audion JSON (traits, tiles, knowledge entries, documents) into `conversational_context` (we cap at 1500 chars; spoken CVI wants a short identity prompt).
 
-**Sync:** Audion stays SSOT. With a replica + `TAVUS_API_KEY`, persona PATCH/create and chat session upsert `POST/PATCH /v2/pals?target=live` (`system_prompt` from magazine, `default_face_id` = replica) and write `pal_id` back to `tavusPersonaId`. Persona save still succeeds if Tavus fails. Knowledge/docs → Tavus `document_ids` later.
+**Sync:** Audion stays SSOT. With a replica + `TAVUS_API_KEY`, persona PATCH/create and chat session upsert `POST/PATCH /v2/pals?target=live` (`system_prompt` from magazine including speak-German/English from `tavusLanguage`, `default_face_id` = replica) and write `pal_id` back to `tavusPersonaId`. Persona save still succeeds if Tavus fails. Knowledge/docs → Tavus `document_ids` later.
+
+Unset `tavusLanguage` infers from bio/location (umlauts / Deutschland / Germany / Österreich / Schweiz → German). Magazine toggle Deutsch / English persists `de` / `en`. Helper: `paths.tavusPalLanguagePath`.
 
 A pasted `tavusPersonaId` is the PAL we **update** on the next sync — not a frozen Maker prompt.
 
@@ -62,6 +65,7 @@ Never expose the key to the browser. Public share, TG ask-all, and `/chat/embed`
 ## Docs
 
 - [Create conversation](https://docs.tavus.io/api-reference/conversations/create-conversation)
+- [Language support](https://docs.tavus.io/sections/conversational-video-interface/language-support) (`properties.language` = full name)
 - [List conversations](https://docs.tavus.io/api-reference/conversations/get-conversations)
 - [End conversation](https://docs.tavus.io/api-reference/conversations/end-conversation)
 - [Create PAL](https://docs.tavus.io/api-reference/pals/create-pal)

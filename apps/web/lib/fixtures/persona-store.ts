@@ -11,6 +11,7 @@ import type {
 import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from '../persona-coerce'
 import { normalizePersonaSections } from '../persona-notes'
 import { isProjectsDatabaseConfigured } from '../db/config'
+import { parseTavusLanguage } from '../tavus/language'
 import { DEMO_PERSONAS } from './personas'
 
 async function dbApi() {
@@ -49,6 +50,7 @@ const DETAIL_ONLY_KEYS = [
   'documents',
   'tavusReplicaId',
   'tavusPersonaId',
+  'tavusLanguage',
 ] as const
 
 function toSummary(persona: PersonaDetail) {
@@ -78,6 +80,7 @@ function emptyDefaults(): Pick<
   | 'visuals'
   | 'tavusReplicaId'
   | 'tavusPersonaId'
+  | 'tavusLanguage'
 > {
   return {
     gender: null,
@@ -97,6 +100,7 @@ function emptyDefaults(): Pick<
     visuals: null,
     tavusReplicaId: null,
     tavusPersonaId: null,
+    tavusLanguage: null,
   }
 }
 
@@ -125,6 +129,7 @@ function memoryPersonaDetail(id: string): PersonaDetail | null {
     documents: found.documents ?? [],
     tavusReplicaId: found.tavusReplicaId ?? null,
     tavusPersonaId: found.tavusPersonaId ?? null,
+    tavusLanguage: found.tavusLanguage ?? null,
   }
 }
 
@@ -169,6 +174,7 @@ function memoryCreatePersona(payload: PersonaWritePayload): PersonaDetail {
     documents: payload.documents ?? [],
     tavusReplicaId: payload.tavusReplicaId?.trim() ? payload.tavusReplicaId.trim() : null,
     tavusPersonaId: payload.tavusPersonaId?.trim() ? payload.tavusPersonaId.trim() : null,
+    tavusLanguage: parseTavusLanguage(payload.tavusLanguage),
   }
   personas = [created, ...personas]
   return created
@@ -240,6 +246,10 @@ function memoryPatchPersona(id: string, payload: Partial<PersonaWritePayload>): 
           ? payload.tavusPersonaId.trim()
           : null
         : current.tavusPersonaId ?? null,
+    tavusLanguage:
+      payload.tavusLanguage !== undefined
+        ? parseTavusLanguage(payload.tavusLanguage)
+        : current.tavusLanguage ?? null,
     avatarUrl:
       payload.avatarUrl !== undefined
         ? payload.avatarUrl?.trim()
