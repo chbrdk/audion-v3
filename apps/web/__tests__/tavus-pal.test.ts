@@ -53,14 +53,20 @@ describe('tavus PAL prompt', () => {
     expect(prompt.length).toBeLessThanOrEqual(paths.tavusPalSystemPromptMaxChars)
   })
 
-  it('does not dump knowledge or tiles', () => {
-    const prompt = buildTavusPalSystemPrompt({
-      name: 'Alex',
-      role: 'Lead',
-      bio: 'Ships briefs.',
-    })
-    expect(prompt).toContain('Alex')
-    expect(prompt).not.toMatch(/knowledgeEntries|visuals|moodboard/i)
+  it('accepts optional magazine arrays without throwing', () => {
+    expect(
+      buildTavusPalSystemPrompt({
+        name: 'Alex',
+        role: 'Lead',
+        values: undefined,
+        interests: undefined,
+        stressTriggers: undefined,
+        journeyBehavior: null,
+      }),
+    ).toContain('You are Alex, Lead')
+    expect(
+      buildTavusPalSystemPrompt({ name: 'Alex', role: 'Lead', bio: 'Ships briefs.' }),
+    ).not.toMatch(/knowledgeEntries|visuals|moodboard/i)
   })
 })
 

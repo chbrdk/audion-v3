@@ -39,7 +39,11 @@ function lines(items: Array<string | null | undefined> | null | undefined, max =
   return out
 }
 
-function bulletBlock(title: string, items: Array<string | null | undefined>, max = 5): string {
+function bulletBlock(
+  title: string,
+  items?: Array<string | null | undefined> | null,
+  max = 5,
+): string {
   const values = lines(items, max)
   if (!values.length) return ''
   return `${title}\n${values.map((value) => `- ${value}`).join('\n')}`
