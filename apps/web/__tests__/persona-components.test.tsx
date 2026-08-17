@@ -84,6 +84,8 @@ const detail: PersonaDetail = {
   journeyBehavior: null,
   knowledgeEntries: [],
   documents: [],
+  tavusReplicaId: null,
+  tavusPersonaId: null,
 }
 
 const tgList: TargetGroupList = {
@@ -159,6 +161,8 @@ describe('persona workspace components', () => {
     expect(screen.getByText('Communication')).toBeInTheDocument()
     expect(screen.getByText('Research profile')).toBeInTheDocument()
     expect(screen.getByText('Journey behaviour')).toBeInTheDocument()
+    expect(screen.getByText('Video (Tavus)')).toBeInTheDocument()
+    expect(screen.getByLabelText('Tavus replica ID')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Derive' }).length).toBeGreaterThanOrEqual(2)
     expect(screen.getAllByRole('button', { name: 'Suggest' }).length).toBeGreaterThanOrEqual(5)
     expect(screen.getByRole('button', { name: 'Suggest vocab' })).toBeInTheDocument()

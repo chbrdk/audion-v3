@@ -20,6 +20,7 @@
 | UX Test Flow Model (nodes/gates/compile) | `specs/domain/ux-test-flow-model.md` |
 | Chat workspace | `specs/domain/chat-workspace.md` |
 | Chat fields | `specs/domain/chat-fields.md` |
+| Tavus video chat | `specs/domain/tavus-video-chat.md` |
 | Project workspace | `specs/domain/project-workspace.md` |
 | Project fields | `specs/domain/project-fields.md` |
 | Knowledge Pack publish (→ Plexon Collection) | `specs/domain/knowledge-pack-publish.md` |
@@ -72,7 +73,8 @@ Persona locked-tile rebuild: `knowledge/persona-locked-tiles-2026.md`
 Journey phase AI + validate: `knowledge/journey-phase-ai-validate-2026.md`  
 Project research SSE polish: `knowledge/project-research-sse-2026.md`  
 TG + persona knowledge / profile_de: `knowledge/tg-persona-knowledge-profile-de-2026.md`  
-Chat modalities (share / moodboard / inspect / convert): `knowledge/chat-modalities-2026.md`  
+Chat modalities (share / moodboard / inspect / convert / Tavus): `knowledge/chat-modalities-2026.md`  
+Tavus CVI: `knowledge/tavus-video-chat.md`  
 Scenario packs (EBM Leitfaden → Study/Wave): `knowledge/scenario-packs.md`  
 Canonical URLs/paths: see `knowledge/paths.md`.  
 Collection Knowledge Pack (Plexon SoT): `plexon-v3/specs/domain/collection-knowledge-pack.md` · Audion publish: `specs/domain/knowledge-pack-publish.md`.

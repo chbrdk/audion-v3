@@ -135,6 +135,30 @@ describe('persona contracts', () => {
     expect(detail?.goals).toEqual([{ label: 'Bessere Briefings', priority: 1 }])
     expect(detail?.communicationStyle?.vocabulary).toEqual(['Wärmepumpe', 'Energie'])
     expect(detail?.visuals?.tiles[0]?.imageUrl).toBe('/fixtures/personas/visuals/tone-warm.svg')
+    expect(detail?.tavusReplicaId).toBeNull()
+    expect(detail?.tavusPersonaId).toBeNull()
+  })
+
+  it('normalizes Tavus replica and PAL ids from snake_case aliases', async () => {
+    const detail = normalizePersonaDetail({
+      id: 'persona-tavus',
+      name: 'Video Persona',
+      role: 'Tester',
+      tavus_replica_id: 'r5e781e37a8d',
+      pal_id: 'pcb7a34da5fe',
+    })
+    expect(detail?.tavusReplicaId).toBe('r5e781e37a8d')
+    expect(detail?.tavusPersonaId).toBe('pcb7a34da5fe')
+  })
+
+  it('does not treat Audion persona_id as a Tavus PAL id', async () => {
+    const detail = normalizePersonaDetail({
+      persona_id: 'persona-1',
+      name: 'Alex Morgan',
+      role: 'Product Lead',
+    })
+    expect(detail?.id).toBe('persona-1')
+    expect(detail?.tavusPersonaId).toBeNull()
   })
 
   it('provides local demo fixtures with list and detail lookup', async () => {
@@ -156,6 +180,20 @@ describe('persona contracts', () => {
     expect((await storePersonaDetail(created.id))?.goals).toEqual([{ label: 'Ship briefs', priority: 0 }])
     const patched = await storePatchPersona(created.id, { bio: 'Updated bio' })
     expect(patched?.bio).toBe('Updated bio')
+  })
+
+  it('patches Tavus replica and PAL ids on a persona', async () => {
+    const created = await storeCreatePersona({ name: 'Video Face', role: 'Replica' })
+    expect(created.tavusReplicaId).toBeNull()
+    const patched = await storePatchPersona(created.id, {
+      tavusReplicaId: 'r5e781e37a8d',
+      tavusPersonaId: 'pcb7a34da5fe',
+    })
+    expect(patched?.tavusReplicaId).toBe('r5e781e37a8d')
+    expect(patched?.tavusPersonaId).toBe('pcb7a34da5fe')
+    const cleared = await storePatchPersona(created.id, { tavusReplicaId: '  ', tavusPersonaId: '' })
+    expect(cleared?.tavusReplicaId).toBeNull()
+    expect(cleared?.tavusPersonaId).toBeNull()
   })
 
   it('replaces goals frustrations and channels via partial patch', async () => {

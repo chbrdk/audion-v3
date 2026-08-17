@@ -47,6 +47,8 @@ const DETAIL_ONLY_KEYS = [
   'journeyBehavior',
   'knowledgeEntries',
   'documents',
+  'tavusReplicaId',
+  'tavusPersonaId',
 ] as const
 
 function toSummary(persona: PersonaDetail) {
@@ -74,6 +76,8 @@ function emptyDefaults(): Pick<
   | 'socialMediaUsage'
   | 'communicationStyle'
   | 'visuals'
+  | 'tavusReplicaId'
+  | 'tavusPersonaId'
 > {
   return {
     gender: null,
@@ -91,6 +95,8 @@ function emptyDefaults(): Pick<
     socialMediaUsage: [],
     communicationStyle: null,
     visuals: null,
+    tavusReplicaId: null,
+    tavusPersonaId: null,
   }
 }
 
@@ -117,6 +123,8 @@ function memoryPersonaDetail(id: string): PersonaDetail | null {
     journeyBehavior: found.journeyBehavior ?? null,
     knowledgeEntries: found.knowledgeEntries ?? [],
     documents: found.documents ?? [],
+    tavusReplicaId: found.tavusReplicaId ?? null,
+    tavusPersonaId: found.tavusPersonaId ?? null,
   }
 }
 
@@ -159,6 +167,8 @@ function memoryCreatePersona(payload: PersonaWritePayload): PersonaDetail {
     journeyBehavior: coerceJourneyBehavior(payload.journeyBehavior) ?? null,
     knowledgeEntries: payload.knowledgeEntries ?? [],
     documents: payload.documents ?? [],
+    tavusReplicaId: payload.tavusReplicaId?.trim() ? payload.tavusReplicaId.trim() : null,
+    tavusPersonaId: payload.tavusPersonaId?.trim() ? payload.tavusPersonaId.trim() : null,
   }
   personas = [created, ...personas]
   return created
@@ -218,6 +228,18 @@ function memoryPatchPersona(id: string, payload: Partial<PersonaWritePayload>): 
         ? payload.knowledgeEntries
         : current.knowledgeEntries ?? [],
     documents: payload.documents !== undefined ? payload.documents : current.documents ?? [],
+    tavusReplicaId:
+      payload.tavusReplicaId !== undefined
+        ? payload.tavusReplicaId?.trim()
+          ? payload.tavusReplicaId.trim()
+          : null
+        : current.tavusReplicaId ?? null,
+    tavusPersonaId:
+      payload.tavusPersonaId !== undefined
+        ? payload.tavusPersonaId?.trim()
+          ? payload.tavusPersonaId.trim()
+          : null
+        : current.tavusPersonaId ?? null,
     avatarUrl:
       payload.avatarUrl !== undefined
         ? payload.avatarUrl?.trim()

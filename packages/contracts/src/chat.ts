@@ -296,5 +296,6 @@ export type ChatTavusSessionResponse = {
   stubbed: boolean
   conversationUrl: string
   meetingToken: string | null
+  conversationId: string | null
   personaId: string
 }

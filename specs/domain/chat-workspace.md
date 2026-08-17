@@ -3,7 +3,7 @@
 **Status:** Accepted — 2026-07-29 · Open surface on DS 2026-07-29  
 **Routes:** `/chat`, `/chat/history`  
 **Contracts:** `packages/contracts/src/chat.ts`  
-**Knowledge:** `knowledge/chat-surface.md`, `knowledge/chat-migration-map.md`, `knowledge/journeys-chat-gaps.md`, `knowledge/paths.md`  
+**Knowledge:** `knowledge/chat-surface.md`, `knowledge/chat-migration-map.md`, `knowledge/journeys-chat-gaps.md`, `knowledge/paths.md`, `knowledge/tavus-video-chat.md`  
 **DS chrome:** `msqdx-ui/specs/domain/msqdx-ui-chat-chrome.md` · `.chat-panel-open`  
 **ECHON reference:** `msqdx-echon/v3/apps/web-ui/src/chat/` (`ChatPanel`, `ChatAnswer`, Overlay, Thinking)  
 **Legacy:** AUDION-v2 `/admin/chat`, `/chat` · `knowledge/admin-chat-layout.md` · `chat-share-paths.md`
@@ -46,6 +46,7 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 | Interaction | Round-based: user question once → response **card grid**; stack further rounds |
 | Prompt | One-shot per round (no prior TG answers in stream history for MVP) |
 | Disabled in TG | Voice / video / inspect / attachments / share / moodboard |
+
 | Entry | Topbar mode **Zielgruppe** + TG select; CTA from TG detail → `/chat?targetGroupId=` |
 | Persistence | Ephemeral UI rounds (not history list) for MVP |
 
@@ -81,11 +82,17 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 - TG context: load detail via target-group contracts when `targetGroupId` present; members from `linkedPersonas`
 - Fixture mode: canned transcript + fake stream for UI tests without chat-api
 
+## Video (Tavus CVI)
+
+Persona mode only (off on public share, TG, and embed). Composer **Video** toggle starts `POST /api/chat/tavus/session` with the selected Audion `personaId`. The persona must have `tavusReplicaId` (Face / replica, e.g. `r5e781e37a8d`). The BFF creates a Tavus conversation server-side (`TAVUS_API_KEY`) and the workspace embeds `conversationUrl` in an iframe (`camera; microphone; fullscreen; display-capture`). Optional `meetingToken` is appended as `?t=`.
+
+See `specs/domain/tavus-video-chat.md` · `knowledge/tavus-video-chat.md`.
+
 ## Non-goals (MVP)
 
 - Moodboard drawer
 - Docs / knowledge upload in composer
-- Tavus video / Whisper voice
+- Whisper voice (mic UI)
 - Public unauthenticated share (middleware `PUBLIC_PATHS`) — follow-on
 - Full adaptive-prompt admin / Qdrant debug panels
 - Journey-in-chat context picker (follow-on once journeys ship)
@@ -103,3 +110,4 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 7. With `targetGroupId`, TG mode shows ask-all grid; send fans out ≤10 streams; cards fill with `ChatAnswer`.
 8. TG detail exposes CTA to `/chat?targetGroupId=`.
 9. TG mode smoke test: fan-out mocked streams → N cards.
+10. Persona video toggle with `tavusReplicaId` embeds a Tavus CVI iframe (not a stub URL).

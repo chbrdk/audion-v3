@@ -33,6 +33,8 @@
 - `visuals` — `{ styleKeywords[], tiles[{ id, imageUrl, category, caption }] }` or null
 - `journeyBehavior` — soft journey DSL (see below)
 - `knowledgeEntries[]`, `documents[]`
+- `tavusReplicaId` — Tavus Face / replica id (nullable; e.g. `r5e781e37a8d`). Required to start a video call.
+- `tavusPersonaId` — optional Tavus PAL / persona id (nullable)
 - inherits summary fields
 
 ## Journey behavior (`PersonaJourneyBehavior`)
@@ -59,6 +61,8 @@ Used by create / PATCH dialogs and `/api/personas*`:
 | `sections` | optional Notes cards `{ id?, title, body }` |
 | `visuals` | optional moodboard or `null` to clear |
 | `journeyBehavior` | optional incl. `heuristics` |
+| `tavusReplicaId` | optional nullable Face / replica id |
+| `tavusPersonaId` | optional nullable PAL / persona id |
 | `avatarUrl` | optional; empty/`null` clears to initials |
 | `projectId` | optional nullable |
 
@@ -77,7 +81,7 @@ Used by create / PATCH dialogs and `/api/personas*`:
 | sections (all) | folded into `extraInstructions` (+ Mindset/Working-with priority) |
 | journeyBehavior dims/dos/donts/extra/heuristics | dimensionOverrides, dos, donts, extra, heuristics |
 
-**Not sent:** avatarUrl, visuals, colorPalette, mediaAffinity, profileDe, status, projectId.
+**Not sent:** avatarUrl, visuals, colorPalette, mediaAffinity, profileDe, status, projectId, tavusReplicaId, tavusPersonaId.
 
 ## Validation / normalize
 
@@ -88,3 +92,4 @@ Used by create / PATCH dialogs and `/api/personas*`:
 - Avatar accepts `avatarUrl` / `avatar_url` / `imageUrl` / `image_url` on read
 - Nested v2 `{ profile, moodboard }` unwrapped in `normalizePersonaDetail`
 - Legacy `goals`/`frustrations`/`pain_points` as `string[]` coerced to objects
+- Tavus ids accept `tavusReplicaId` / `tavus_replica_id` / `face_id` and `tavusPersonaId` / `tavus_persona_id` / `pal_id` (do **not** coerce Audion `persona_id`)

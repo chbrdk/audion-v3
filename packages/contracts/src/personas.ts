@@ -126,6 +126,10 @@ export type PersonaDetail = PersonaSummary & {
   journeyBehavior: PersonaJourneyBehavior | null
   knowledgeEntries: import('./knowledge-entries').KnowledgeEntry[]
   documents: import('./knowledge-entries').DocumentSource[]
+  /** Tavus Face / replica id (e.g. r5e781e37a8d). Required for video chat. */
+  tavusReplicaId: string | null
+  /** Optional Tavus PAL / persona id. */
+  tavusPersonaId: string | null
 }
 
 /** Create / PATCH body — magazine edit wave */
@@ -165,4 +169,6 @@ export type PersonaWritePayload = {
   journeyBehavior?: PersonaJourneyBehavior | null
   knowledgeEntries?: import('./knowledge-entries').KnowledgeEntry[]
   documents?: import('./knowledge-entries').DocumentSource[]
+  tavusReplicaId?: string | null
+  tavusPersonaId?: string | null
 }

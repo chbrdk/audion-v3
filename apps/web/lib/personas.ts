@@ -8,6 +8,7 @@ import type {
 } from '@audion-v3/contracts'
 import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from './persona-coerce'
 import { normalizePersonaSections } from './persona-notes'
+import { firstTavusId } from './tavus/ids'
 import { storePersonaDetail, storePersonaList } from './fixtures/persona-store'
 import {
   allowPersonaFixtureFallback,
@@ -230,6 +231,8 @@ export function normalizePersonaDetail(raw: unknown): PersonaDetail | null {
     documents: Array.isArray(item.documents)
       ? (item.documents as PersonaDetail['documents'])
       : [],
+    tavusReplicaId: firstTavusId(item.tavusReplicaId, item.tavus_replica_id, item.face_id, item.replica_id),
+    tavusPersonaId: firstTavusId(item.tavusPersonaId, item.tavus_persona_id, item.pal_id),
   }
 }
 

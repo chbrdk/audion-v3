@@ -38,6 +38,8 @@ const DETAIL_ONLY_KEYS = [
   'journeyBehavior',
   'knowledgeEntries',
   'documents',
+  'tavusReplicaId',
+  'tavusPersonaId',
 ] as const
 
 function emptyDefaults(): Pick<
@@ -57,6 +59,8 @@ function emptyDefaults(): Pick<
   | 'socialMediaUsage'
   | 'communicationStyle'
   | 'visuals'
+  | 'tavusReplicaId'
+  | 'tavusPersonaId'
 > {
   return {
     gender: null,
@@ -74,6 +78,8 @@ function emptyDefaults(): Pick<
     socialMediaUsage: [],
     communicationStyle: null,
     visuals: null,
+    tavusReplicaId: null,
+    tavusPersonaId: null,
   }
 }
 
@@ -129,6 +135,8 @@ function rowToDetail(row: PersonaRow): PersonaDetail {
     journeyBehavior: coerceJourneyBehavior(payload.journeyBehavior),
     knowledgeEntries: payload.knowledgeEntries ?? [],
     documents: payload.documents ?? [],
+    tavusReplicaId: payload.tavusReplicaId ?? null,
+    tavusPersonaId: payload.tavusPersonaId ?? null,
   }
 }
 
@@ -165,6 +173,8 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
       journeyBehavior: null,
       knowledgeEntries: [],
       documents: [],
+      tavusReplicaId: null,
+      tavusPersonaId: null,
     } satisfies PersonaDetail)
 
   return {
@@ -215,6 +225,18 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
         ? payload.knowledgeEntries
         : base.knowledgeEntries ?? [],
     documents: payload.documents !== undefined ? payload.documents : base.documents ?? [],
+    tavusReplicaId:
+      payload.tavusReplicaId !== undefined
+        ? payload.tavusReplicaId?.trim()
+          ? payload.tavusReplicaId.trim()
+          : null
+        : base.tavusReplicaId ?? null,
+    tavusPersonaId:
+      payload.tavusPersonaId !== undefined
+        ? payload.tavusPersonaId?.trim()
+          ? payload.tavusPersonaId.trim()
+          : null
+        : base.tavusPersonaId ?? null,
     avatarUrl:
       payload.avatarUrl !== undefined
         ? payload.avatarUrl?.trim()

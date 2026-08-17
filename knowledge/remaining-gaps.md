@@ -25,7 +25,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | **Journey phase AI + validate** | Generate moments on phases; Validate topbar report |
 | **Research SSE polish** | Poll spine + status/latest/stream; progress UI on Start research |
 | **TG + persona knowledge** | Magazine Accordion CRUD + sources list metadata |
-| **Chat modalities** | Share + moodboard strip + inspect HITL + convert; Voice/Tavus hooks |
+| **Chat modalities** | Share + moodboard strip + inspect HITL + convert; **Tavus CVI video**; Voice stub |
 | **Easy Setup** | `/setup` magazine bootstrap — project + TG + persona (`knowledge/easy-setup-2026.md`) |
 | **Settings admin** | `/settings/admin` providers + prompts test + API catalog (`knowledge/settings-admin-2026.md`) |
 | **Queue** | `/queue` document job fixtures (`knowledge/queue-dashboard-2026.md`) |
@@ -58,7 +58,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | ~~Auth~~ | **Done Wave 1** — `/login`, logout, Plexon session (`knowledge/plexon-federation.md`); open when unconfigured |
 | ~~Queue~~ | **Done 2026-07-30** — `/queue` fixture dashboard (`knowledge/queue-dashboard-2026.md`) |
 | ~~Settings admin~~ | **Done 2026-07-30** — hub; prompts + **Prompt Builder workspace** + API tokens **Done 2026-07-31** (`knowledge/prompt-builder-workspace-2026.md`, `knowledge/settings-api-tokens-2026.md`) |
-| Chat modalities | ~~Public share, moodboard drawer, inspect/convert~~ **Done 2026-07-30** (`knowledge/chat-modalities-2026.md`); Voice/Tavus thin hooks |
+| Chat modalities | ~~Public share, moodboard drawer, inspect/convert~~ **Done 2026-07-30**; ~~Tavus CVI~~ **Done 2026-08-17** (`knowledge/tavus-video-chat.md`); Voice stub remains |
 | ~~Easy Setup~~ | **Done 2026-07-30** — `/setup` + `POST /api/projects/bootstrap` (`knowledge/easy-setup-2026.md`) |
 
 ### Open / out of scope (product policy)

@@ -12,7 +12,7 @@ Extend editorial `/chat` with:
 2. **Moodboard strip** — read-only tiles from persona visuals / share moodboard API
 3. **inspect_website HITL** — `tool_proposed` → Approve/Deny → progress → complete
 4. **Convert** — from `tool_complete` → journey via `POST /api/journeys/from-ux-run` (`source: chat_inspect`)
-5. **Voice / Video hooks** — icon toggles left of the composer; Moodboard / Share / History topbar flyouts; stubs + optional live BFF (Tavus **off** on public share)
+5. **Voice / Video** — icon toggles left of the composer; Moodboard / Share / History topbar flyouts; **Tavus CVI iframe** when the persona has `tavusReplicaId` (Tavus **off** on public share / TG / embed)
 
 ## Stream events (NDJSON)
 
@@ -32,8 +32,8 @@ Central in `apps/web/lib/paths.ts`: `chatShare`, `apiChatSharePersona`, `apiChat
 
 ## Auth note
 
-Live Tavus / voice / public persona may 401 until the Auth stream lands. Fixtures work without auth.
+Tavus needs `TAVUS_API_KEY` on the web BFF plus a replica id on the persona. Voice mic UI is still a stub.
 
 ## Deferred
 
-Full Whisper mic UI · polished Tavus iframe · live history list · citations hydrate · optional CHECKION single-page scan after Inspect URL (`specs/domain/checkion-single-scan-trigger.md`)
+Full Whisper mic UI · live history list · citations hydrate · optional CHECKION single-page scan after Inspect URL (`specs/domain/checkion-single-scan-trigger.md`)

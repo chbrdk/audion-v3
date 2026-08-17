@@ -40,7 +40,7 @@ Env: `NEXT_PERSONA_DATA_SOURCE` (`fixtures` \| `auto` \| `api`), `NEXT_PERSONA_B
 | **Target groups** | Suggest TG, generate persona, knowledge/docs/explorer | Magazine list/detail + linked personas + AI stubs | Partial | `shipped` magazine · `stub` AI · `missing` sources/knowledge/explorer |
 | **Journeys** | Generate, phase/element AI, validate, UX-run→journey, tracking/insights | List/detail + phase slider + edit MVP + generate stub | Weak | `shipped` MVP · `stub` generate · `missing` validate/convert/agent |
 | **UX Studies** | API+MCP full (start/sync/evaluate/compare); **no web UI** | `/studies*` full loop + Soft-Q/Report/Compare/F-Fragen→Chat | V3 ahead (UI) | `v3_ahead` UI · `proxy` to V2 · `shipped` fixtures |
-| **Chat** | Stream, history, inspect_website, voice, Tavus, convert, share `/chat` | Editorial chat + history + study/persona prefill + **TG ask-all** | Partial | `shipped` text + TG ask-all · `proxy` optional · `missing` voice/Tavus/share |
+| **Chat** | Stream, history, inspect_website, voice, Tavus, convert, share `/chat` | Editorial chat + history + study/persona prefill + **TG ask-all** + Tavus CVI | Partial | `shipped` text + TG ask-all + Tavus · `missing` voice |
 | **Settings** | Providers, prompts+test, theme, profile, tokens, API docs | Prefs + `/settings/admin` hub | Partial | `shipped` prefs + admin hub + prompts + API tokens · Bearer not yet on all BFF routes |
 | **Auth / Setup** | `/login`, `/register`, `/admin/setup` bootstrap | `/login` + `/setup` Easy Setup | Partial | `shipped` Easy Setup · login Wave 1 · register via Plexon |
 | **Queue / Ops** | `/admin/queue` | `/queue` fixtures | Partial | `shipped` fixture dashboard · no Celery/Redis |
@@ -137,7 +137,8 @@ Migration maps: `persona-migration-map.md` · `target-group-migration-map.md` ·
 | Study/persona/project prefill | `shipped` |
 | Target-group ask-all (side-by-side) | `shipped` ephemeral rounds · `/chat?targetGroupId=` |
 | inspect_website / convert run→journey | `missing` |
-| Voice / Tavus | `missing` |
+| Voice | `stub` |
+| Tavus CVI | `shipped` (persona replica id + iframe; `knowledge/tavus-video-chat.md`) |
 | Public share chat | `missing` |
 | Moodboard drawer | `missing` |
 

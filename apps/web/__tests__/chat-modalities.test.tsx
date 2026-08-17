@@ -54,7 +54,8 @@ describe('chat modality API route import depths', () => {
     const { dirname, resolve } = await import('node:path')
     const root = process.cwd()
     const cases: Array<[string, string]> = [
-      ['app/api/chat/tavus/session/route.ts', '../../../../../lib/persona-api-proxy.ts'],
+      ['app/api/chat/tavus/session/route.ts', '../../../../../lib/tavus/client.ts'],
+      ['app/api/chat/tavus/session/route.ts', '../../../../../lib/fixtures/persona-store.ts'],
       ['app/api/chat/voice/stream/route.ts', '../../../../../lib/runtime-config.ts'],
       [
         'app/api/chat/tool-call/decision/[callId]/route.ts',

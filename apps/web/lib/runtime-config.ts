@@ -129,3 +129,15 @@ export function getCheckionBaseUrl(): string {
 export function isCheckionConfigured(): boolean {
   return Boolean(getCheckionBaseUrl())
 }
+
+export function getTavusApiKey(): string {
+  return process.env[paths.envTavusApiKey]?.trim() || ''
+}
+
+export function getTavusApiBase(): string {
+  return process.env[paths.envTavusApiBase]?.trim() || paths.tavusApiDefaultBase
+}
+
+export function isTavusConfigured(): boolean {
+  return Boolean(getTavusApiKey())
+}

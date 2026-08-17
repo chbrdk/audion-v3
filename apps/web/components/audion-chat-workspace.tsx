@@ -19,6 +19,7 @@ import { AudionTargetGroupChatPanel } from './audion-target-group-chat-panel'
 import { ChatHistoryFlyout } from './chat-history-flyout'
 import { ChatMoodboardStrip } from './chat-moodboard-strip'
 import { ChatShareFlyout } from './chat-share-flyout'
+import { TavusVideoPanel } from './tavus-video-panel'
 import { Select } from '../lib/msqdx-ui-client'
 import { selectTgChatPersonas } from '../lib/chat/tg-ask-all'
 import { paths } from '../lib/paths'
@@ -77,7 +78,10 @@ export function AudionChatWorkspace({
   )
   const [busy, setBusy] = useState(false)
   const [modality, setModality] = useState<ChatModality>('text')
-  const [tavusUrl, setTavusUrl] = useState<string | null>(null)
+  const [tavusSession, setTavusSession] = useState<{
+    conversationUrl: string
+    meetingToken: string | null
+  } | null>(null)
   const [tavusError, setTavusError] = useState<string | null>(null)
   const [tavusBusy, setTavusBusy] = useState(false)
 
@@ -106,7 +110,7 @@ export function AudionChatWorkspace({
 
   useEffect(() => {
     if (modality !== 'video' || shareMode || tgMode) {
-      setTavusUrl(null)
+      setTavusSession(null)
       return
     }
     let cancelled = false
@@ -121,9 +125,18 @@ export function AudionChatWorkspace({
         })
         const data = (await res.json().catch(() => null)) as ChatTavusSessionResponse | null
         if (!res.ok) throw new Error((data as { error?: string })?.error || 'Tavus session failed')
-        if (!cancelled) setTavusUrl(data?.conversationUrl ?? null)
+        if (!data?.conversationUrl) throw new Error('Tavus returned no conversation URL')
+        if (!cancelled) {
+          setTavusSession({
+            conversationUrl: data.conversationUrl,
+            meetingToken: data.meetingToken,
+          })
+        }
       } catch (e) {
-        if (!cancelled) setTavusError(e instanceof Error ? e.message : 'Tavus failed')
+        if (!cancelled) {
+          setTavusSession(null)
+          setTavusError(e instanceof Error ? e.message : 'Tavus failed')
+        }
       } finally {
         if (!cancelled) setTavusBusy(false)
       }
@@ -287,10 +300,8 @@ export function AudionChatWorkspace({
         <div className="audion-chat-tavus" role="status">
           {tavusBusy ? <p className="audion-edit-lede">Starting video session…</p> : null}
           {tavusError ? <p className="audion-edit-error">{tavusError}</p> : null}
-          {tavusUrl ? (
-            <p className="audion-edit-lede">
-              Tavus session (stub/live): <a href={tavusUrl}>{tavusUrl}</a>
-            </p>
+          {tavusSession ? (
+            <TavusVideoPanel session={tavusSession} personaName={persona?.name} />
           ) : null}
         </div>
       ) : null}

@@ -49,6 +49,9 @@ NEXT_PUBLIC_PLEXON_REGISTER_URL=https://plexon-v3.projects-a.plygrnd.tech/regist
 NEXT_PERSONA_DATA_SOURCE=fixtures
 NEXT_AI_RUNTIME=auto
 OPENAI_API_KEY=<secret>
+# Tavus CVI (persona video chat)
+# TAVUS_API_KEY=<secret>
+# TAVUS_API_BASE=https://tavusapi.com
 # UX Journey Agent — prefer Coolify *internal* URL (same network); public only as fallback
 UX_JOURNEY_AGENT_URL=http://audion-v3-ux-journey-agent:8320
 # fallback if internal DNS fails:

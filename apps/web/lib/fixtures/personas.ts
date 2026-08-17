@@ -35,6 +35,8 @@ const EMPTY_PROFILE = {
   journeyBehavior: null as PersonaDetail['journeyBehavior'],
   knowledgeEntries: [] as PersonaDetail['knowledgeEntries'],
   documents: [] as PersonaDetail['documents'],
+  tavusReplicaId: null as string | null,
+  tavusPersonaId: null as string | null,
 }
 
 /** Local demo personas for AUDION v3 when no API is available. */
@@ -232,6 +234,8 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
         updatedAt: '2026-07-27T11:00:00.000Z',
       },
     ],
+    tavusReplicaId: null,
+    tavusPersonaId: null,
   },
   {
     id: 'persona-samira-khan',
@@ -369,6 +373,8 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     profileDe: null,
     knowledgeEntries: [],
     documents: [],
+    tavusReplicaId: null,
+    tavusPersonaId: null,
     headlineDe: 'Besitzt ein eBike und prüft Upgrades für Display/Akku/Bedieneinheit',
     journeyBehavior: {
       dimensionOverrides: {
@@ -443,6 +449,8 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     profileDe: null,
     knowledgeEntries: [],
     documents: [],
+    tavusReplicaId: null,
+    tavusPersonaId: null,
     headlineDe: 'Lab: ungeduldiger Nachrüster — bricht bei Matrix-Verwirrung ab',
     journeyBehavior: {
       dimensionOverrides: {
@@ -520,6 +528,8 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     profileDe: null,
     knowledgeEntries: [],
     documents: [],
+    tavusReplicaId: null,
+    tavusPersonaId: null,
     headlineDe: 'Lab: geduldiger Prüfer — exploriert vor Abbruch',
     journeyBehavior: {
       dimensionOverrides: {
@@ -598,6 +608,8 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     profileDe: null,
     knowledgeEntries: [],
     documents: [],
+    tavusReplicaId: null,
+    tavusPersonaId: null,
     headlineDe: 'Lab: ungeduldiger Nachrüster — bricht bei Matrix-Verwirrung ab',
     journeyBehavior: {
       dimensionOverrides: {
@@ -676,6 +688,8 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     profileDe: null,
     knowledgeEntries: [],
     documents: [],
+    tavusReplicaId: null,
+    tavusPersonaId: null,
     headlineDe: 'Lab: geduldiger Prüfer — exploriert vor Abbruch',
     journeyBehavior: {
       dimensionOverrides: {
@@ -755,6 +769,8 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     profileDe: null,
     knowledgeEntries: [],
     documents: [],
+    tavusReplicaId: null,
+    tavusPersonaId: null,
     headlineDe: 'Plant eBike-Kauf in den nächsten 6 Monaten und prüft Systemkompatibilität',
     journeyBehavior: {
       dimensionOverrides: {
@@ -804,6 +820,8 @@ const DETAIL_ONLY_KEYS = new Set([
   'headlineDe',
   'knowledgeEntries',
   'documents',
+  'tavusReplicaId',
+  'tavusPersonaId',
 ])
 
 export function demoPersonaList(): PersonaList {

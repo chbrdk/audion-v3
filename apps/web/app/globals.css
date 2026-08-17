@@ -3207,6 +3207,47 @@ main { min-height: 100vh; }
   margin: 0 0 var(--space-2);
 }
 
+.audion-tavus-video-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 28rem;
+  height: min(70vh, 40rem);
+  overflow: hidden;
+  border: 1px solid var(--border, var(--color-neutral, #d8d2c8));
+  border-radius: var(--radius-lg, 1rem);
+  background: var(--surface, var(--color-primary-white, #fff));
+}
+
+.audion-tavus-video-panel--empty {
+  min-height: 8rem;
+  height: auto;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4, 1rem);
+}
+
+.audion-tavus-video-caption {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+  border-bottom: 1px solid var(--border, var(--color-neutral, #d8d2c8));
+}
+
+.audion-tavus-video-panel iframe {
+  flex: 1;
+  width: 100%;
+  min-height: 24rem;
+  border: 0;
+}
+
+.audion-persona-tavus-fields {
+  display: grid;
+  gap: var(--space-3, 0.75rem);
+  margin: 0 0 var(--space-3, 0.75rem);
+  max-width: 28rem;
+}
+
 .audion-chat-persona-field {
   max-width: 18rem;
   min-width: 12rem;

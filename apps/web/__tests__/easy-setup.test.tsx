@@ -85,6 +85,8 @@ const bootstrapResponse: ProjectEasySetupResponse = {
     journeyBehavior: null,
     knowledgeEntries: [],
     documents: [],
+    tavusReplicaId: null,
+    tavusPersonaId: null,
   },
 }
 

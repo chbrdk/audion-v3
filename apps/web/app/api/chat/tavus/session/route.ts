@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { ChatTavusSessionResponse } from '@audion-v3/contracts'
-import { fetchPersonaApi, shouldPreferAiLive, shouldRequireAiLive } from '../../../../../lib/persona-api-proxy'
-import { paths } from '../../../../../lib/paths'
+import { storePersonaDetail } from '../../../../../lib/fixtures/persona-store'
+import { createTavusConversation, TavusApiError } from '../../../../../lib/tavus/client'
+import { personaTavusIds } from '../../../../../lib/tavus/ids'
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { personaId?: string } | null
@@ -10,36 +11,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'personaId required' }, { status: 400 })
   }
 
-  if (shouldPreferAiLive()) {
-    const authorization = request.headers.get('authorization')
-    const live = await fetchPersonaApi(paths.routes.upstreamPersonaAdminTavusSession, {
-      method: 'POST',
-      body: { persona_id: personaId },
-      authorization,
-    })
-    if (live.ok) {
-      const json = (live.json ?? {}) as Record<string, unknown>
-      const response: ChatTavusSessionResponse = {
-        stubbed: false,
-        conversationUrl: String(json.conversation_url ?? json.conversationUrl ?? ''),
-        meetingToken: (json.meeting_token as string) ?? (json.meetingToken as string) ?? null,
-        personaId,
-      }
-      return NextResponse.json(response)
-    }
-    if (shouldRequireAiLive()) {
-      return NextResponse.json(
-        { error: live.error, detail: live.detail },
-        { status: live.status },
-      )
-    }
+  const persona = await storePersonaDetail(personaId)
+  if (!persona) {
+    return NextResponse.json({ error: 'Persona not found' }, { status: 404 })
   }
 
-  const stub: ChatTavusSessionResponse = {
-    stubbed: true,
-    conversationUrl: `https://tavus.example/stub/${encodeURIComponent(personaId)}`,
-    meetingToken: null,
-    personaId,
+  const { replicaId, palId } = personaTavusIds(persona)
+  if (!replicaId && !palId) {
+    return NextResponse.json(
+      { error: 'Persona has no Tavus replica ID. Add one on the persona profile.' },
+      { status: 400 },
+    )
   }
-  return NextResponse.json(stub)
+
+  const contextParts = [persona.name, persona.role, persona.bio].filter(
+    (part): part is string => Boolean(part && part.trim()),
+  )
+
+  try {
+    const session = await createTavusConversation({
+      replicaId,
+      palId,
+      conversationName: `AUDION · ${persona.name}`,
+      conversationalContext: contextParts.join(' — '),
+    })
+    const response: ChatTavusSessionResponse = {
+      stubbed: false,
+      conversationUrl: session.conversationUrl,
+      meetingToken: session.meetingToken,
+      conversationId: session.conversationId,
+      personaId,
+    }
+    return NextResponse.json(response)
+  } catch (error) {
+    if (error instanceof TavusApiError) {
+      return NextResponse.json(
+        { error: error.message, detail: error.detail },
+        { status: error.status },
+      )
+    }
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Tavus session failed' },
+      { status: 502 },
+    )
+  }
 }

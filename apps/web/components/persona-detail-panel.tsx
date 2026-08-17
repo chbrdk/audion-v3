@@ -11,6 +11,7 @@ import { PersonaEditableResearchProfile } from './persona-editable-research-prof
 import { PersonaEditableList } from './persona-editable-list'
 import { PersonaEditableNotes } from './persona-editable-notes'
 import { PersonaEditablePortrait } from './persona-editable-portrait'
+import { PersonaEditableTavus } from './persona-editable-tavus'
 import { PersonaEditableTraits } from './persona-editable-traits'
 import { PersonaEditableVisuals } from './persona-editable-visuals'
 import { PersonaLocalizedHeroCopy } from './persona-localized-hero-copy'
@@ -132,6 +133,12 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
             journeyBehavior={persona.journeyBehavior}
           />
         </div>
+
+        <PersonaEditableTavus
+          personaId={persona.id}
+          tavusReplicaId={persona.tavusReplicaId}
+          tavusPersonaId={persona.tavusPersonaId}
+        />
 
         <div className="signal-stage audion-magazine-stage ds-motion-reveal">
           <PersonaEditableList

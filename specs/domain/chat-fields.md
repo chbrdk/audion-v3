@@ -91,10 +91,24 @@ Not persisted conversations — UI round state only.
 
 Send still uses per-persona `ChatSendPayload` (required `personaId`) via fan-out.
 
+## Tavus session (`ChatTavusSessionResponse`)
+
+`POST /api/chat/tavus/session` `{ personaId }` →
+
+| Field | Notes |
+|-------|--------|
+| `stubbed` | always `false` on success (no fake conversation URL) |
+| `conversationUrl` | Tavus CVI embed URL |
+| `meetingToken` | nullable; append `?t=` when present |
+| `conversationId` | nullable Tavus conversation id |
+| `personaId` | Audion persona id |
+
+Missing replica → 400. Missing `TAVUS_API_KEY` → 503.
+
 ## Deferred
 
 - Attachment / document ids on send
 - Moodboard asset refs
 - Share-token conversation persistence
-- Voice / Tavus session ids
+- Voice session ids
 - Persisted TG round history / multi-turn TG sessions

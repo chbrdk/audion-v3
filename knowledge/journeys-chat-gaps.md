@@ -21,7 +21,7 @@
 
 ## Deferred
 
-- Chat: ~~moodboard drawer, share public~~ **Done** (`knowledge/chat-modalities-2026.md`); ~~inspect HITL / convert~~ **Done**; Tavus/voice thin hooks; citations hydrate, live history list
+- Chat: ~~moodboard drawer, share public~~ **Done** (`knowledge/chat-modalities-2026.md`); ~~inspect HITL / convert~~ **Done**; ~~Tavus CVI~~ **Done** (`knowledge/tavus-video-chat.md`); Voice stub; citations hydrate, live history list
 
 ## Shipped (2026-07-30)
 
