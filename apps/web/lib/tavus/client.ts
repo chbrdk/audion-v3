@@ -39,11 +39,11 @@ export function buildTavusConversationPayload(input: {
   const palId = trimTavusId(input.palId)
   const payload: TavusConversationPayload = {}
   if (replicaId) {
-    payload.replica_id = replicaId
+    // Current Tavus API: face_id. replica_id is an alias — sending both 400s.
     payload.face_id = replicaId
   }
   if (palId) {
-    payload.persona_id = palId
+    // Current Tavus API: pal_id. persona_id is an alias — sending both 400s.
     payload.pal_id = palId
   }
   const name = trimTavusId(input.conversationName)
@@ -95,7 +95,13 @@ export async function createTavusConversation(input: {
         : typeof json.error === 'string'
           ? json.error
           : text.slice(0, 240)
-    throw new TavusApiError(`Tavus conversation failed (${response.status})`, response.status, detail)
+    throw new TavusApiError(
+      detail
+        ? `Tavus conversation failed (${response.status}): ${detail.slice(0, 280)}`
+        : `Tavus conversation failed (${response.status})`,
+      response.status,
+      detail,
+    )
   }
   const conversationUrl = String(json.conversation_url ?? json.conversationUrl ?? '')
   if (!conversationUrl) {

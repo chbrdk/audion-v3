@@ -26,9 +26,9 @@ Magazine editor: `apps/web/components/persona-editable-tavus.tsx`. Persistence i
 1. Load persona via `storePersonaDetail` (Postgres, then fixture fallback — staging DB often lacks demo ids such as `persona-alex-morgan`).
 2. 400 `TAVUS_REPLICA_MISSING` if no replica (and no PAL) id — chat links to the persona profile.
 3. Saving a replica on a fixture-only id **upserts** that persona into Postgres so the next session reads it.
-3. 503 if `TAVUS_API_KEY` unset.
-4. `POST {TAVUS_API_BASE}/v2/conversations` with both current (`face_id` / `pal_id`) and legacy (`replica_id` / `persona_id`) keys.
-5. Return `{ stubbed: false, conversationUrl, meetingToken, conversationId, personaId }`.
+4. 503 if `TAVUS_API_KEY` unset.
+5. `POST {TAVUS_API_BASE}/v2/conversations` with `face_id` and optional `pal_id` only. Do not send legacy `replica_id` / `persona_id` in the same body — [Tavus create conversation](https://docs.tavus.io/api-reference/conversations/create-conversation) treats them as aliases and returns 400.
+6. Return `{ stubbed: false, conversationUrl, meetingToken, conversationId, personaId }`.
 
 Client: `apps/web/lib/tavus/client.ts`. Embed: `apps/web/components/tavus-video-panel.tsx`.
 

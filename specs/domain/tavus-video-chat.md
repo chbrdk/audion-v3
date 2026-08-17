@@ -25,7 +25,7 @@ Editable on the persona magazine profile. Empty string clears to `null`.
 1. Load the Audion persona (`storePersonaDetail`).
 2. Require `tavusReplicaId` (or `tavusPersonaId` when a PAL already has a default face) — else **400**.
 3. Require `TAVUS_API_KEY` — else **503**.
-4. `POST {TAVUS_API_BASE}/v2/conversations` with `face_id` + `replica_id` (same value) and optional `pal_id` + `persona_id`.
+4. `POST {TAVUS_API_BASE}/v2/conversations` with `face_id` and optional `pal_id` only (do **not** also send `replica_id` / `persona_id` — Tavus treats them as aliases and 400s).
 5. Return `{ stubbed: false, conversationUrl, meetingToken, conversationId, personaId }`.
 
 Never return a stub conversation URL.

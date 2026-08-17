@@ -28,7 +28,7 @@ function sessionRequest(personaId?: string) {
 }
 
 describe('tavus conversation payload', () => {
-  it('sends face_id and replica_id together, plus optional PAL aliases', () => {
+  it('sends face_id and pal_id without legacy aliases', () => {
     expect(
       buildTavusConversationPayload({
         replicaId: 'r5e781e37a8d',
@@ -36,12 +36,21 @@ describe('tavus conversation payload', () => {
         conversationName: 'AUDION · Alex',
       }),
     ).toEqual({
-      replica_id: 'r5e781e37a8d',
       face_id: 'r5e781e37a8d',
-      persona_id: 'pcb7a34da5fe',
       pal_id: 'pcb7a34da5fe',
       conversation_name: 'AUDION · Alex',
     })
+  })
+
+  it('does not send replica_id/persona_id aliases (Tavus 400s on both)', () => {
+    const payload = buildTavusConversationPayload({
+      replicaId: 'r0a8102ab353',
+      palId: 'pdad1aea8aab',
+    })
+    expect(payload).not.toHaveProperty('replica_id')
+    expect(payload).not.toHaveProperty('persona_id')
+    expect(payload.face_id).toBe('r0a8102ab353')
+    expect(payload.pal_id).toBe('pdad1aea8aab')
   })
 
   it('builds the conversations URL from paths, not a hardcoded host in callers', () => {
@@ -108,7 +117,7 @@ describe('POST /api/chat/tavus/session', () => {
       expect(init?.headers).toMatchObject({ 'x-api-key': 'test-tavus-key' })
       const body = JSON.parse(String(init?.body)) as Record<string, string>
       expect(body.face_id).toBe('r5e781e37a8d')
-      expect(body.replica_id).toBe('r5e781e37a8d')
+      expect(body).not.toHaveProperty('replica_id')
       return new Response(
         JSON.stringify({
           conversation_url: 'https://tavus.daily.co/cvi-live',
