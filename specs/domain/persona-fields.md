@@ -34,7 +34,7 @@
 - `journeyBehavior` — soft journey DSL (see below)
 - `knowledgeEntries[]`, `documents[]`
 - `tavusReplicaId` — Tavus Face / replica id (nullable; e.g. `r5e781e37a8d`). Required to start a video call.
-- `tavusPersonaId` — optional Tavus PAL / persona id (nullable)
+- `tavusPersonaId` — Tavus PAL id (nullable). Auto-upserted from magazine when replica + API key are set (`specs/domain/tavus-video-chat.md`).
 - inherits summary fields
 
 ## Journey behavior (`PersonaJourneyBehavior`)

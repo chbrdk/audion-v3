@@ -20,7 +20,7 @@ AUDION v3 consumes the existing AUDION backend and does not reimplement persona 
 | Method | Path | Store |
 |--------|------|--------|
 | `POST` | `/api/personas` (`paths.routes.apiPersonas`) | `storeCreatePersona` |
-| `PATCH` | `/api/personas/[personaId]` | `storePatchPersona` |
+| `PATCH` | `/api/personas/[personaId]` | `storePatchPersona`; then Tavus PAL upsert when replica + `TAVUS_API_KEY` |
 
 Seed: `apps/web/lib/fixtures/personas.ts` · store: `persona-store.ts`
 

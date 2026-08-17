@@ -341,6 +341,12 @@ export const paths = {
   /** Canonical Tavus API host when TAVUS_API_BASE is unset. */
   tavusApiDefaultBase: 'https://tavusapi.com',
   tavusConversationsPath: '/v2/conversations',
+  tavusPalsPath: '/v2/pals',
+  tavusPalPatchTarget: 'live',
+  tavusPalPipelineMode: 'full' as const,
+  tavusPalSystemPromptMaxChars: 4000,
+  tavusPalPromptPath: 'apps/web/lib/tavus/prompt.ts',
+  tavusPalSyncPath: 'apps/web/lib/tavus/sync.ts',
   tavusConversationEndSuffix: '/end',
   tavusConversationsListLimit: 50,
   tavusConversationNamePrefix: 'AUDION · ',

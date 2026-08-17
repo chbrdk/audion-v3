@@ -8,6 +8,8 @@ import {
   TavusApiError,
 } from '../../../../../lib/tavus/client'
 import { personaTavusIds } from '../../../../../lib/tavus/ids'
+import { tavusSessionConversationalContext } from '../../../../../lib/tavus/prompt'
+import { syncPersonaTavusPal } from '../../../../../lib/tavus/sync'
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { personaId?: string } | null
@@ -24,7 +26,9 @@ export async function POST(request: Request) {
     )
   }
 
-  const { replicaId, palId } = personaTavusIds(persona)
+  const synced = await syncPersonaTavusPal(persona)
+  const working = synced.persona
+  const { replicaId, palId } = personaTavusIds(working)
   if (!replicaId && !palId) {
     return NextResponse.json(
       {
@@ -36,16 +40,12 @@ export async function POST(request: Request) {
     )
   }
 
-  const contextParts = [persona.name, persona.role, persona.bio].filter(
-    (part): part is string => Boolean(part && part.trim()),
-  )
-
   try {
     const session = await createTavusConversation({
       replicaId,
       palId,
-      conversationName: tavusConversationName(persona.name),
-      conversationalContext: contextParts.join(' — '),
+      conversationName: tavusConversationName(working.name),
+      conversationalContext: tavusSessionConversationalContext(working.name),
     })
     const response: ChatTavusSessionResponse = {
       stubbed: false,

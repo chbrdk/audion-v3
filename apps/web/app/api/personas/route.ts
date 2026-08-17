@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { PersonaWritePayload } from '@audion-v3/contracts'
 import { storeCreatePersona } from '../../../lib/fixtures/persona-store'
+import { syncPersonaTavusPal } from '../../../lib/tavus/sync'
 
 export async function POST(request: Request) {
   const body = (await request.json()) as PersonaWritePayload
@@ -11,5 +12,6 @@ export async function POST(request: Request) {
     ...body,
     role: body.role?.trim() || 'Persona',
   })
-  return NextResponse.json(persona, { status: 201 })
+  const synced = await syncPersonaTavusPal(persona)
+  return NextResponse.json(synced.persona, { status: 201 })
 }

@@ -90,6 +90,8 @@ describe('tavus conversation payload', () => {
     )
     expect(tavusConversationsListUrl('active', 1, paths.tavusApiDefaultBase)).toContain('status=active')
     expect(tavusConversationName('Sabine Koller')).toBe(`${paths.tavusConversationNamePrefix}Sabine Koller`)
+    expect(paths.tavusPalsPath).toBe('/v2/pals')
+    expect(paths.tavusPalPatchTarget).toBe('live')
   })
 
   it('selects AUDION-named or same-face active rooms to end', () => {
@@ -172,6 +174,13 @@ describe('POST /api/chat/tavus/session', () => {
       const url = String(input)
       const method = (init?.method || 'GET').toUpperCase()
       expect(init?.headers).toMatchObject({ 'x-api-key': 'test-tavus-key' })
+      if (url.includes(paths.tavusPalsPath)) {
+        expect(method).toBe('POST')
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>
+        expect(body.default_face_id).toBe('r5e781e37a8d')
+        expect(String(body.system_prompt)).toContain('Alex Video')
+        return jsonResponse({ pal_id: 'p-synced' })
+      }
       if (method === 'GET') {
         expect(url).toContain('status=active')
         return jsonResponse({
@@ -190,6 +199,7 @@ describe('POST /api/chat/tavus/session', () => {
       }
       const body = JSON.parse(String(init?.body)) as Record<string, unknown>
       expect(body.face_id).toBe('r5e781e37a8d')
+      expect(body.pal_id).toBe('p-synced')
       expect(body).not.toHaveProperty('replica_id')
       expect(body.properties).toMatchObject({
         participant_absent_timeout: paths.tavusParticipantAbsentTimeoutSec,
@@ -225,6 +235,9 @@ describe('POST /api/chat/tavus/session', () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       const method = (init?.method || 'GET').toUpperCase()
+      if (url.includes(paths.tavusPalsPath)) {
+        return jsonResponse({ pal_id: 'p-sabine' })
+      }
       if (method === 'GET') {
         return jsonResponse({
           data:

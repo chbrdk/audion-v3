@@ -67,7 +67,8 @@ export function PersonaEditableTavus({
       <SectionChrome quiet title="Video (Tavus)" />
       <p className="audion-edit-lede">
         Replica ID from the Tavus dashboard (starts with <code>r</code>, e.g. <code>r5e781e37a8d</code>
-        ). Required to start a video call in chat. PAL ID is optional.
+        ). Required for video. Saving a replica syncs a Tavus PAL from this magazine (name, bio, goals,
+        style). PAL ID is filled in automatically; paste one only to reuse an existing PAL.
       </p>
       <div className="audion-persona-tavus-fields">
         <Field label="Tavus replica ID" htmlFor="persona-tavus-replica" size="md">
@@ -82,7 +83,7 @@ export function PersonaEditableTavus({
             onBlur={() => void persist()}
           />
         </Field>
-        <Field label="Tavus PAL ID (optional)" htmlFor="persona-tavus-pal" size="md">
+        <Field label="Tavus PAL ID (synced)" htmlFor="persona-tavus-pal" size="md">
           <Input
             id="persona-tavus-pal"
             block
