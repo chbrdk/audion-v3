@@ -68,8 +68,24 @@ describe('POST /api/chat/tavus/session', () => {
     const created = await storeCreatePersona({ name: 'No Video', role: 'Tester' })
     const res = await POST(sessionRequest(created.id))
     expect(res.status).toBe(400)
-    const body = (await res.json()) as { error: string }
+    const body = (await res.json()) as { error: string; code?: string }
     expect(body.error).toMatch(/replica/i)
+    expect(body.code).toBe('TAVUS_REPLICA_MISSING')
+  })
+
+  it('finds fixture personas that are missing from Postgres by id', async () => {
+    const res = await POST(sessionRequest('persona-alex-morgan'))
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'TAVUS_REPLICA_MISSING',
+      personaId: 'persona-alex-morgan',
+    })
+  })
+
+  it('returns 404 for unknown personas', async () => {
+    const res = await POST(sessionRequest('persona-does-not-exist'))
+    expect(res.status).toBe(404)
+    await expect(res.json()).resolves.toMatchObject({ code: 'PERSONA_NOT_FOUND' })
   })
 
   it('returns 503 when replica is set but TAVUS_API_KEY is missing', async () => {

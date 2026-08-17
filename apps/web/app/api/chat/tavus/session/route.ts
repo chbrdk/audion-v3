@@ -13,13 +13,20 @@ export async function POST(request: Request) {
 
   const persona = await storePersonaDetail(personaId)
   if (!persona) {
-    return NextResponse.json({ error: 'Persona not found' }, { status: 404 })
+    return NextResponse.json(
+      { error: 'Persona not found', code: 'PERSONA_NOT_FOUND', personaId },
+      { status: 404 },
+    )
   }
 
   const { replicaId, palId } = personaTavusIds(persona)
   if (!replicaId && !palId) {
     return NextResponse.json(
-      { error: 'Persona has no Tavus replica ID. Add one on the persona profile.' },
+      {
+        error: 'Persona has no Tavus replica ID. Add one on the persona profile.',
+        code: 'TAVUS_REPLICA_MISSING',
+        personaId,
+      },
       { status: 400 },
     )
   }

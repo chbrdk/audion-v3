@@ -263,7 +263,8 @@ export async function storePersonaList(): Promise<PersonaList> {
 export async function storePersonaDetail(id: string): Promise<PersonaDetail | null> {
   if (isProjectsDatabaseConfigured()) {
     const db = await dbApi()
-    return db.dbPersonaDetail(id)
+    const row = await db.dbPersonaDetail(id)
+    if (row) return row
   }
   return memoryPersonaDetail(id)
 }
@@ -282,6 +283,12 @@ export async function storePatchPersona(
 ): Promise<PersonaDetail | null> {
   if (isProjectsDatabaseConfigured()) {
     const db = await dbApi()
+    const existing = await db.dbPersonaDetail(id)
+    if (!existing) {
+      const seed = memoryPersonaDetail(id)
+      if (!seed) return null
+      await db.dbInsertPersonaDetail(seed)
+    }
     return db.dbPatchPersona(id, payload)
   }
   return memoryPatchPersona(id, payload)

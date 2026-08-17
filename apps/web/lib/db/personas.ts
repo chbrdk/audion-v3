@@ -313,6 +313,24 @@ export async function dbCreatePersona(payload: PersonaWritePayload): Promise<Per
   return detail
 }
 
+export async function dbInsertPersonaDetail(detail: PersonaDetail): Promise<PersonaDetail> {
+  const now = new Date()
+  const db = getDb()
+  await db.insert(personas).values({
+    id: detail.id,
+    name: detail.name,
+    role: detail.role,
+    projectId: detail.projectId,
+    status: detail.status,
+    archetype: detail.archetype,
+    avatarUrl: detail.avatarUrl,
+    payload: payloadFromDetail(detail),
+    updatedAt: now,
+    createdAt: now,
+  })
+  return { ...detail, updatedAt: now.toISOString() }
+}
+
 export async function dbPatchPersona(
   id: string,
   payload: Partial<PersonaWritePayload>,

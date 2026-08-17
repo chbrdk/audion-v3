@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type {
   ChatConversationDetail,
@@ -83,6 +84,7 @@ export function AudionChatWorkspace({
     meetingToken: string | null
   } | null>(null)
   const [tavusError, setTavusError] = useState<string | null>(null)
+  const [tavusErrorCode, setTavusErrorCode] = useState<string | null>(null)
   const [tavusBusy, setTavusBusy] = useState(false)
 
   const personaOptions = useMemo(
@@ -109,7 +111,7 @@ export function AudionChatWorkspace({
   }, [])
 
   useEffect(() => {
-    if (modality !== 'video' || shareMode || tgMode) {
+    if (modality !== 'video' || shareMode || tgMode || !personaId.trim()) {
       setTavusSession(null)
       return
     }
@@ -117,14 +119,20 @@ export function AudionChatWorkspace({
     async function start() {
       setTavusBusy(true)
       setTavusError(null)
+      setTavusErrorCode(null)
       try {
         const res = await fetch(paths.routes.apiChatTavusSession, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ personaId }),
         })
-        const data = (await res.json().catch(() => null)) as ChatTavusSessionResponse | null
-        if (!res.ok) throw new Error((data as { error?: string })?.error || 'Tavus session failed')
+        const data = (await res.json().catch(() => null)) as
+          | (ChatTavusSessionResponse & { error?: string; code?: string })
+          | null
+        if (!res.ok) {
+          if (!cancelled) setTavusErrorCode(data?.code ?? null)
+          throw new Error(data?.error || 'Tavus session failed')
+        }
         if (!data?.conversationUrl) throw new Error('Tavus returned no conversation URL')
         if (!cancelled) {
           setTavusSession({
@@ -300,6 +308,15 @@ export function AudionChatWorkspace({
         <div className="audion-chat-tavus" role="status">
           {tavusBusy ? <p className="audion-edit-lede">Starting video session…</p> : null}
           {tavusError ? <p className="audion-edit-error">{tavusError}</p> : null}
+          {tavusErrorCode === 'TAVUS_REPLICA_MISSING' && personaId ? (
+            <p className="audion-edit-lede">
+              <Link href={paths.routes.personaDetail(personaId)} className="audion-link">
+                Open persona profile
+              </Link>
+              {' — '}
+              add the Tavus replica ID (starts with r), save, then start video again.
+            </p>
+          ) : null}
           {tavusSession ? (
             <TavusVideoPanel session={tavusSession} personaName={persona?.name} />
           ) : null}
