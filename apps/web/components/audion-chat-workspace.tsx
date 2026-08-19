@@ -39,6 +39,8 @@ type Props = {
   initialMode?: ChatMode
   /** Chrome-stripped iframe presentation. Spec: chat-embed.md */
   presentation?: 'default' | 'embed'
+  /** Guest text-only vs full features (Tavus, inspect). Spec: chat-embed.md */
+  embedCapabilities?: 'guest' | 'full'
   guestBudget?: {
     sessionId: string
     remainingTurns: number
@@ -75,10 +77,12 @@ export function AudionChatWorkspace({
   initialMode,
   presentation = 'default',
   guestBudget = null,
+  embedCapabilities = 'guest',
 }: Props) {
   const router = useRouter()
   const shareMode = Boolean(shareProjectId)
   const embedMode = presentation === 'embed'
+  const embedFullMode = embedMode && embedCapabilities === 'full'
   const [mode, setMode] = useState<ChatMode>(
     initialMode ?? (initialTargetGroup ? 'target_group' : 'persona'),
   )
@@ -123,7 +127,11 @@ export function AudionChatWorkspace({
   }, [])
 
   useEffect(() => {
-    if (modality !== 'video' || shareMode || tgMode || !personaId.trim()) {
+    if (modality !== 'video' || tgMode || !personaId.trim()) {
+      setTavusSession(null)
+      return
+    }
+    if (shareMode && !embedFullMode) {
       setTavusSession(null)
       return
     }
@@ -166,7 +174,7 @@ export function AudionChatWorkspace({
     return () => {
       cancelled = true
     }
-  }, [modality, personaId, shareMode, tgMode])
+  }, [modality, personaId, shareMode, tgMode, embedFullMode])
 
   function onModeChange(next: string) {
     const nextMode = next === 'target_group' ? 'target_group' : 'persona'
@@ -191,7 +199,7 @@ export function AudionChatWorkspace({
   }
 
   const composerLeading =
-    shareMode || tgMode || embedMode ? null : (
+    tgMode || (embedMode && !embedFullMode) || (shareMode && !embedFullMode) ? null : (
     <div className="audion-chat-composer-actions" role="toolbar" aria-label="Chat modality">
       <Button
         type="button"
@@ -223,8 +231,10 @@ export function AudionChatWorkspace({
       <Text role="label" className="audion-chat-share-label">
         {persona?.name || 'Shared persona'}
       </Text>
-      <span className="audion-chat-share-badge">{embedMode ? 'Guest chat' : 'Public share'}</span>
-      {embedMode ? null : (
+      <span className="audion-chat-share-badge">
+        {embedFullMode ? 'Persona chat' : embedMode ? 'Guest chat' : 'Public share'}
+      </span>
+      {embedMode && !embedFullMode ? null : (
         <ChatMoodboardStrip
           personaId={personaId}
           projectId={shareProjectId}
@@ -325,13 +335,15 @@ export function AudionChatWorkspace({
               : 'Chat'}
       </h1>
 
-      {tgMode || embedMode ? null : modality === 'voice' && !shareMode ? (
+      {tgMode || (embedMode && !embedFullMode) ? null : modality === 'voice' &&
+      (!shareMode || embedFullMode) ? (
         <p className="audion-edit-lede audion-chat-modality-note" role="status">
           Voice mode stub — mic UI deferred. Text chat still works below.
         </p>
       ) : null}
 
-      {tgMode || embedMode ? null : modality === 'video' && !shareMode ? (
+      {tgMode || (embedMode && !embedFullMode) ? null : modality === 'video' &&
+      (!shareMode || embedFullMode) ? (
         <div className="audion-chat-tavus" role="status">
           {tavusBusy ? <p className="audion-edit-lede">Starting video session…</p> : null}
           {tavusError ? <p className="audion-edit-error">{tavusError}</p> : null}
@@ -367,7 +379,7 @@ export function AudionChatWorkspace({
           initialConversation={initialConversation}
           initialDraft={initialDraft}
           shareProjectId={shareProjectId}
-          allowConvert={!shareMode && !embedMode}
+          allowConvert={embedFullMode || (!shareMode && !embedMode)}
           composerLeading={composerLeading}
           guestBudget={guestBudget}
         />

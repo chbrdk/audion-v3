@@ -27,6 +27,12 @@ describe('buildChatEmbedHref', () => {
     ).toContain('theme=dark')
   })
 
+  it('uses embed=full for EQC logged-in overlay', () => {
+    expect(buildChatEmbedHref({ personaId: 'p1', projectId: 'proj-1', full: true })).toBe(
+      '/chat/embed?personaId=p1&projectId=proj-1&embed=full',
+    )
+  })
+
   it('is registered on paths.routes.chatEmbed', () => {
     expect(paths.routes.chatEmbedPath).toBe('/chat/embed')
     expect(paths.routes.chatEmbed({ personaId: 'a', projectId: 'b' })).toContain('/chat/embed?')

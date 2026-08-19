@@ -53,7 +53,7 @@ Do **not** create a new PAL on every video click when `tavusPersonaId` already e
 
 ## Chat UI
 
-- Persona `/chat` only. Off on public share, target-group ask-all, and `/chat/embed`.
+- Persona `/chat` and `/chat/embed?embed=full`. Off on public guest embed (`embed=1`), target-group ask-all, and share without full flag.
 - Video toggle embeds an iframe (`allow="camera; microphone; fullscreen; display-capture"`). Turning video off ends the Tavus conversation.
 - Optional `meetingToken` → `conversationUrl?t=TOKEN`.
 - No MUI; product CSS + `@msqdx/ui` chrome.
@@ -72,6 +72,6 @@ Documented in `knowledge/paths.md`. Never hardcode the base in components.
 1. Persona profile can save a replica id such as `r5e781e37a8d`.
 2. Video toggle with replica + API key embeds a live CVI iframe (not a stub link).
 3. Missing replica → 400 with a human-readable error; missing key → 503.
-4. Share / TG / embed do not start Tavus.
+4. Share / TG / guest embed (`embed=1`) do not start Tavus; `embed=full` may.
 5. Tests cover normalize/patch, PAL prompt/upsert, session errors, iframe embed, and `properties.language`.
 6. Persona profile can save Deutsch / English; the next video call sends Tavus `properties.language` `German` / `English`.

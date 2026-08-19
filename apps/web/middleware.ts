@@ -88,7 +88,8 @@ const gated = auth(async (req) => {
     pathname === paths.routes.chatEmbedPath ||
     pathname.startsWith(`${paths.routes.chatEmbedPath}/`) ||
     pathname.startsWith('/api/share/personas') ||
-    pathname === paths.routes.apiChatStream
+    pathname === paths.routes.apiChatStream ||
+    pathname === paths.routes.apiChatTavusSession
 
   if (isPublic) {
     return withEmbedHeaders(req, NextResponse.next())

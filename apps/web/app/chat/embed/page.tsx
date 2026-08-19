@@ -11,6 +11,8 @@ import {
   remainingGuestTurns,
 } from '../../../lib/chat/guest-budget'
 import { fetchSharePersona } from '../../../lib/chat/share-persona'
+import { parseChatEmbedCapabilities } from '../../../lib/chat/embed-capabilities'
+import { storeShareMoodboard } from '../../../lib/fixtures/chat-share'
 import type { PersonaSummary } from '@audion-v3/contracts'
 
 export default async function ChatEmbedPage({
@@ -27,6 +29,8 @@ export default async function ChatEmbedPage({
   const personaId = typeof params.personaId === 'string' ? params.personaId.trim() : ''
   const projectId = typeof params.projectId === 'string' ? params.projectId.trim() : ''
   const theme = typeof params.theme === 'string' ? params.theme.trim() : ''
+  const embedCapabilities = parseChatEmbedCapabilities(params.embed)
+  const embedFull = embedCapabilities === 'full'
 
   if (!personaId || !projectId) {
     return (
@@ -63,11 +67,16 @@ export default async function ChatEmbedPage({
     },
   ]
 
+  const mood = embedFull ? storeShareMoodboard(personaId, projectId) : null
+  const moodboardTiles =
+    mood && !('error' in mood) ? mood.tiles : undefined
+
   return (
     <div
       className="audion-chat-embed"
       data-testid="audion-chat-embed"
       data-theme={theme || undefined}
+      data-embed-capabilities={embedCapabilities}
       data-guest-remaining={remaining}
       data-guest-max={GUEST_CHAT_MAX_USER_TURNS}
     >
@@ -77,6 +86,8 @@ export default async function ChatEmbedPage({
         initialConversation={null}
         shareProjectId={projectId}
         presentation="embed"
+        embedCapabilities={embedCapabilities}
+        moodboardTiles={moodboardTiles}
         guestBudget={{
           sessionId,
           remainingTurns: remaining,

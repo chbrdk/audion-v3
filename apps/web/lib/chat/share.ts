@@ -18,6 +18,8 @@ export type ChatEmbedParams = ChatShareParams & {
   theme?: string | null
   /** Marker for hosts; default true when building embed href. */
   embed?: boolean
+  /** Full persona chat (Tavus video, inspect, moodboard) — EQC logged-in overlay. */
+  full?: boolean
 }
 
 /** Chrome-stripped iframe chat — EQC overlay / public guest. Spec: chat-embed.md */
@@ -26,7 +28,7 @@ export function buildChatEmbedHref(params: ChatEmbedParams): string {
     personaId: params.personaId.trim(),
     projectId: params.projectId.trim(),
   })
-  if (params.embed !== false) qs.set('embed', '1')
+  qs.set('embed', params.full ? 'full' : '1')
   const theme = params.theme?.trim()
   if (theme) qs.set('theme', theme)
   return `/chat/embed?${qs.toString()}`

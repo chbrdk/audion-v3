@@ -16,7 +16,7 @@ Guest `/chat?personaId=&projectId=` deep-links use the same share resolver and a
 | Item | Value |
 |------|--------|
 | Path | `/chat/embed` (`paths.routes.chatEmbed`) |
-| Query | `personaId` (required), `projectId` (required), `theme` (optional), `embed=1` (optional marker) |
+| Query | `personaId` (required), `projectId` (required), `theme` (optional), `embed=1` (guest) or `embed=full` (EQC logged-in overlay) |
 | Auth | Public when Plexon federation auth is on (middleware allowlist) |
 | CSP | `Content-Security-Policy: frame-ancestors …` on embed route only |
 
@@ -35,7 +35,8 @@ Unauthenticated stream requests are guest sessions. Constants live in `apps/web/
 - Session key: cookie `audion_guest_chat` + `personaId` + `projectId`.
 - Gate: `POST /api/chat/stream` — reject over budget with stable `code` (`GUEST_BUDGET_EXHAUSTED` → 429, `GUEST_MESSAGE_TOO_LONG` → 400, `GUEST_SESSION_EXPIRED` → 403).
 - Authenticated full `/chat` is unchanged (no guest budget).
-- Embed UI: remaining-turns hint; disable send at 0; no voice / video / inspect / moodboard / history / TG mode.
+- Embed UI (`embed=1` guest): remaining-turns hint; disable send at 0; no voice / video / inspect / moodboard / history / TG mode.
+- Embed UI (`embed=full`): same guest text budget; **enables** persona `/chat` modalities — Tavus video (`POST /api/chat/tavus/session` public on embed), voice toggle (stub), moodboard strip, website inspect/convert. No history / TG / persona picker. Use from **logged-in EQC overlay** only; public Quick Check share keeps `embed=1`.
 
 ## Out of scope
 
