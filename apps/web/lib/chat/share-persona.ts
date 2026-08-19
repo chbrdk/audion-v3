@@ -1,15 +1,39 @@
 /**
- * Resolve share/embed persona — live persona-api first, fixtures fallback.
+ * Resolve share/embed persona — Audion v3 store first, legacy FastAPI public second.
  * Spec: specs/domain/chat-embed.md · specs/api/chat.md
  */
 
 import type { ChatSharePersona } from '@audion-v3/contracts'
 import { storeSharePersona } from '../fixtures/chat-share'
-import { fetchPersonaDetail } from '../personas'
+import { storePersonaDetail } from '../fixtures/persona-store'
 import { fetchPersonaApi } from '../persona-api-proxy'
 import { allowPersonaFixtureFallback, shouldUsePersonaFixturesOnly } from '../runtime-config'
 
 export type SharePersonaResult = ChatSharePersona | { error: string; status: number }
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function isUuid(value: string): boolean {
+  return UUID_RE.test(value.trim())
+}
+
+function mapPersonaDetailToShare(
+  persona: NonNullable<Awaited<ReturnType<typeof storePersonaDetail>>>,
+  projectId: string | null,
+): SharePersonaResult {
+  if (projectId && persona.projectId && persona.projectId !== projectId) {
+    return { error: 'Share token does not match persona project', status: 403 }
+  }
+  return {
+    id: persona.id,
+    name: persona.name,
+    role: persona.role,
+    projectId: persona.projectId,
+    avatarUrl: persona.avatarUrl,
+    bio: persona.bio ?? null,
+  }
+}
 
 function mapPublicPersonaJson(
   json: Record<string, unknown>,
@@ -41,32 +65,26 @@ function mapPublicPersonaJson(
   }
 }
 
-async function fetchSharePersonaFromApi(
+/** Audion v3 Postgres / in-memory store — EQC native personas live here. */
+async function fetchSharePersonaFromLocalStore(
   personaId: string,
   projectId: string | null,
 ): Promise<SharePersonaResult | null> {
-  const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''
+  const persona = await storePersonaDetail(personaId)
+  if (!persona) return null
+  return mapPersonaDetailToShare(persona, projectId)
+}
+
+/** Legacy FastAPI public share (UUID persona + project only). */
+async function fetchSharePersonaFromLegacyPublicApi(
+  personaId: string,
+  projectId: string | null,
+): Promise<SharePersonaResult | null> {
+  if (!isUuid(personaId) || !projectId || !isUuid(projectId)) return null
+  const qs = `?project_id=${encodeURIComponent(projectId)}`
   const live = await fetchPersonaApi(`/personas/${personaId}/public${qs}`, { method: 'GET' })
-  if (live.ok) {
-    return mapPublicPersonaJson((live.json ?? {}) as Record<string, unknown>, personaId, projectId)
-  }
-
-  const detail = await fetchPersonaDetail(personaId)
-  if (!detail.persona) return null
-
-  const p = detail.persona
-  if (projectId && p.projectId && p.projectId !== projectId) {
-    return { error: 'Share token does not match persona project', status: 403 }
-  }
-
-  return {
-    id: p.id,
-    name: p.name,
-    role: p.role,
-    projectId: p.projectId,
-    avatarUrl: p.avatarUrl,
-    bio: p.bio ?? null,
-  }
+  if (!live.ok) return null
+  return mapPublicPersonaJson((live.json ?? {}) as Record<string, unknown>, personaId, projectId)
 }
 
 /** Server-side share persona load for `/chat`, `/chat/embed`, and share API routes. */
@@ -79,9 +97,14 @@ export async function fetchSharePersona(
   if (!trimmedId) return { error: 'personaId is required', status: 400 }
 
   if (!shouldUsePersonaFixturesOnly()) {
-    const fromApi = await fetchSharePersonaFromApi(trimmedId, trimmedProject)
-    if (fromApi && !('error' in fromApi)) return fromApi
-    if (fromApi && 'error' in fromApi) return fromApi
+    const local = await fetchSharePersonaFromLocalStore(trimmedId, trimmedProject)
+    if (local && !('error' in local)) return local
+    if (local && 'error' in local) return local
+
+    const legacy = await fetchSharePersonaFromLegacyPublicApi(trimmedId, trimmedProject)
+    if (legacy && !('error' in legacy)) return legacy
+    if (legacy && 'error' in legacy) return legacy
+
     if (!allowPersonaFixtureFallback()) {
       return { error: 'Persona not found', status: 404 }
     }

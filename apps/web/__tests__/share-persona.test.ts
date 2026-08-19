@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { storeSharePersona } from '../lib/fixtures/chat-share'
 
-vi.mock('../lib/personas', () => ({
-  fetchPersonaDetail: vi.fn(),
+vi.mock('../lib/fixtures/persona-store', () => ({
+  storePersonaDetail: vi.fn(),
 }))
 
 vi.mock('../lib/persona-api-proxy', () => ({
   fetchPersonaApi: vi.fn(),
 }))
 
-import { fetchPersonaDetail } from '../lib/personas'
+import { storePersonaDetail } from '../lib/fixtures/persona-store'
 import { fetchPersonaApi } from '../lib/persona-api-proxy'
 import { fetchSharePersona } from '../lib/chat/share-persona'
 
@@ -17,8 +17,8 @@ describe('fetchSharePersona', () => {
   const env = process.env
 
   beforeEach(() => {
+    vi.mocked(storePersonaDetail).mockReset()
     vi.mocked(fetchPersonaApi).mockReset()
-    vi.mocked(fetchPersonaDetail).mockReset()
     process.env = { ...env, NEXT_PERSONA_DATA_SOURCE: 'api' }
   })
 
@@ -26,69 +26,62 @@ describe('fetchSharePersona', () => {
     process.env = env
   })
 
-  it('uses live public persona endpoint when available', async () => {
+  it('prefers Audion v3 local store (EQC native personas)', async () => {
+    vi.mocked(storePersonaDetail).mockResolvedValue({
+      id: 'persona-elena-m4abc',
+      name: 'Elena',
+      role: 'Buyer',
+      projectId: 'proj-eqc-1',
+      status: 'ready',
+      archetype: null,
+      updatedAt: null,
+      avatarUrl: null,
+      bio: 'Bio',
+      headline: null,
+      segment: null,
+      confidence: null,
+      traits: {},
+      goals: [],
+      painPoints: [],
+      interests: [],
+      values: [],
+      frustrations: [],
+      motivations: [],
+      journeyBehavior: null,
+      communicationStyle: null,
+      visuals: null,
+      tavusReplicaId: null,
+      notes: [],
+      targetGroupIds: [],
+    } as never)
+
+    const result = await fetchSharePersona('persona-elena-m4abc', 'proj-eqc-1')
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+    expect(result.name).toBe('Elena')
+    expect(fetchPersonaApi).not.toHaveBeenCalled()
+  })
+
+  it('falls back to legacy FastAPI public for UUID personas', async () => {
+    vi.mocked(storePersonaDetail).mockResolvedValue(null)
     vi.mocked(fetchPersonaApi).mockResolvedValue({
       ok: true,
       status: 200,
       json: {
-        id: 'live-persona-1',
-        name: 'Elena',
-        role: 'Buyer',
-        project_id: 'proj-eqc',
-        avatar_url: null,
-        bio: 'Bio',
+        id: '11111111-1111-4111-8111-111111111111',
+        name: 'Legacy',
+        role: 'Role',
+        project_id: '22222222-2222-4222-8222-222222222222',
       },
     })
 
-    const result = await fetchSharePersona('live-persona-1', 'proj-eqc')
+    const result = await fetchSharePersona(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+    )
     expect('error' in result).toBe(false)
     if ('error' in result) return
-    expect(result.name).toBe('Elena')
-    expect(result.projectId).toBe('proj-eqc')
-    expect(fetchPersonaDetail).not.toHaveBeenCalled()
-  })
-
-  it('falls back to persona detail when public endpoint misses', async () => {
-    vi.mocked(fetchPersonaApi).mockResolvedValue({
-      ok: false,
-      status: 404,
-      error: 'Upstream 404',
-    })
-    vi.mocked(fetchPersonaDetail).mockResolvedValue({
-      origin: 'api',
-      persona: {
-        id: 'live-persona-2',
-        name: 'Marc',
-        role: 'Ops',
-        projectId: 'proj-eqc',
-        status: 'ready',
-        archetype: null,
-        updatedAt: null,
-        avatarUrl: null,
-        bio: 'Ops bio',
-        headline: null,
-        segment: null,
-        confidence: null,
-        traits: {},
-        goals: [],
-        painPoints: [],
-        interests: [],
-        values: [],
-        frustrations: [],
-        motivations: [],
-        journeyBehavior: null,
-        communicationStyle: null,
-        visuals: null,
-        tavusReplicaId: null,
-        notes: [],
-        targetGroupIds: [],
-      },
-    })
-
-    const result = await fetchSharePersona('live-persona-2', 'proj-eqc')
-    expect('error' in result).toBe(false)
-    if ('error' in result) return
-    expect(result.name).toBe('Marc')
+    expect(result.name).toBe('Legacy')
   })
 
   it('uses demo fixtures when data source is fixtures', async () => {
@@ -97,18 +90,20 @@ describe('fetchSharePersona', () => {
     expect(result).toEqual(storeSharePersona('persona-alex-morgan', 'proj-audion-core'))
   })
 
-  it('rejects mismatched project on live payload', async () => {
-    vi.mocked(fetchPersonaApi).mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: {
-        id: 'live-persona-1',
-        name: 'Elena',
-        project_id: 'proj-other',
-      },
-    })
+  it('rejects mismatched project on local store persona', async () => {
+    vi.mocked(storePersonaDetail).mockResolvedValue({
+      id: 'persona-elena-m4abc',
+      name: 'Elena',
+      role: 'Buyer',
+      projectId: 'proj-other',
+      status: 'ready',
+      archetype: null,
+      updatedAt: null,
+      avatarUrl: null,
+      bio: null,
+    } as never)
 
-    const result = await fetchSharePersona('live-persona-1', 'proj-eqc')
+    const result = await fetchSharePersona('persona-elena-m4abc', 'proj-eqc-1')
     expect(result).toMatchObject({ error: 'Share token does not match persona project', status: 403 })
   })
 })
