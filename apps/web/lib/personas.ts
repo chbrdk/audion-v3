@@ -296,7 +296,10 @@ export async function fetchPersonaDetail(personaId: string): Promise<PersonaDeta
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
     const response = await fetchJson(`${base}/personas/${personaId}`)
-    if (response.status === 404) return { persona: null, origin: 'api' }
+    if (response.status === 404) {
+      const local = await storePersonaDetail(personaId)
+      return { persona: local, origin: local ? 'fixtures' : 'api' }
+    }
     if (!response.ok) throw new Error(`Persona detail failed: ${response.status}`)
     return { persona: normalizePersonaDetail(await response.json()), origin: 'api' }
   } catch (error) {

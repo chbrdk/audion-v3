@@ -7,6 +7,7 @@ import {
   GUEST_CHAT_COOKIE,
   GUEST_CHAT_TTL_MS,
 } from './lib/chat/guest-budget'
+import { isPublicChatShareRequest } from './lib/chat/share-public-routes'
 import { isPlexonAuthConfigured } from './lib/plexon-auth'
 import { paths } from './lib/paths'
 
@@ -83,6 +84,7 @@ const gated = auth(async (req) => {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/fixtures') ||
     pathname === '/favicon.ico' ||
+    isPublicChatShareRequest(pathname, req.nextUrl.searchParams) ||
     pathname === paths.routes.chatEmbedPath ||
     pathname.startsWith(`${paths.routes.chatEmbedPath}/`) ||
     pathname.startsWith('/api/share/personas') ||

@@ -84,10 +84,35 @@ describe('fetchSharePersona', () => {
     expect(result.name).toBe('Legacy')
   })
 
-  it('uses demo fixtures when data source is fixtures', async () => {
+  it('uses demo fixtures when data source is fixtures and persona is not in store', async () => {
     process.env.NEXT_PERSONA_DATA_SOURCE = 'fixtures'
+    vi.mocked(storePersonaDetail).mockResolvedValue(null)
     const result = await fetchSharePersona('persona-alex-morgan', 'proj-audion-core')
     expect(result).toEqual(storeSharePersona('persona-alex-morgan', 'proj-audion-core'))
+  })
+
+  it('still reads Postgres store when NEXT_PERSONA_DATA_SOURCE=fixtures', async () => {
+    process.env.NEXT_PERSONA_DATA_SOURCE = 'fixtures'
+    vi.mocked(storePersonaDetail).mockResolvedValue({
+      id: 'persona-katrin-weber-mt0a2mqw',
+      name: 'Katrin Weber',
+      role: 'Buyer',
+      projectId: 'proj-viessmann-mt09sb7u',
+      status: 'ready',
+      archetype: null,
+      updatedAt: null,
+      avatarUrl: null,
+      bio: 'Bio',
+    } as never)
+
+    const result = await fetchSharePersona(
+      'persona-katrin-weber-mt0a2mqw',
+      'proj-viessmann-mt09sb7u',
+    )
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+    expect(result.name).toBe('Katrin Weber')
+    expect(fetchPersonaApi).not.toHaveBeenCalled()
   })
 
   it('rejects mismatched project on local store persona', async () => {

@@ -1,6 +1,9 @@
 /**
- * Resolve share/embed persona — Audion v3 store first, legacy FastAPI public second.
+ * Resolve share/embed persona — Audion v3 Postgres store always first.
  * Spec: specs/domain/chat-embed.md · specs/api/chat.md
+ *
+ * `NEXT_PERSONA_DATA_SOURCE=fixtures` only affects legacy FastAPI proxy paths;
+ * EQC-native personas always live in the v3 store when `DATABASE_URL` is set.
  */
 
 import type { ChatSharePersona } from '@audion-v3/contracts'
@@ -96,11 +99,11 @@ export async function fetchSharePersona(
   const trimmedProject = projectId?.trim() || null
   if (!trimmedId) return { error: 'personaId is required', status: 400 }
 
-  if (!shouldUsePersonaFixturesOnly()) {
-    const local = await fetchSharePersonaFromLocalStore(trimmedId, trimmedProject)
-    if (local && !('error' in local)) return local
-    if (local && 'error' in local) return local
+  const local = await fetchSharePersonaFromLocalStore(trimmedId, trimmedProject)
+  if (local && !('error' in local)) return local
+  if (local && 'error' in local) return local
 
+  if (!shouldUsePersonaFixturesOnly()) {
     const legacy = await fetchSharePersonaFromLegacyPublicApi(trimmedId, trimmedProject)
     if (legacy && !('error' in legacy)) return legacy
     if (legacy && 'error' in legacy) return legacy

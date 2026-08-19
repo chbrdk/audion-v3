@@ -7,7 +7,9 @@
 
 ## Purpose
 
-Chrome-stripped Audion persona chat for iframe hosts. Audion remains SoT for prompts, stream, and share persona load (`lib/chat/share-persona.ts` → **Audion v3 Postgres store first**, legacy FastAPI `/public` for UUID personas, then demo fixtures). Hosts only supply chrome + deep-link fallback.
+Chrome-stripped Audion persona chat for iframe hosts. Audion remains SoT for prompts, stream, and share persona load (`lib/chat/share-persona.ts` → **Audion v3 Postgres store first** regardless of `NEXT_PERSONA_DATA_SOURCE`, legacy FastAPI `/public` for UUID personas when not in fixtures-only mode, then demo fixtures). Hosts only supply chrome + deep-link fallback.
+
+Guest `/chat?personaId=&projectId=` deep-links use the same share resolver and are public (no Plexon login) per `lib/chat/share-public-routes.ts`.
 
 ## Route
 
