@@ -10,7 +10,7 @@ import {
   guestBudgetKey,
   remainingGuestTurns,
 } from '../../../lib/chat/guest-budget'
-import { storeSharePersona } from '../../../lib/fixtures/chat-share'
+import { fetchSharePersona } from '../../../lib/chat/share-persona'
 import type { PersonaSummary } from '@audion-v3/contracts'
 
 export default async function ChatEmbedPage({
@@ -36,7 +36,7 @@ export default async function ChatEmbedPage({
     )
   }
 
-  const shared = storeSharePersona(personaId, projectId)
+  const shared = await fetchSharePersona(personaId, projectId)
   if ('error' in shared) {
     return (
       <div className="audion-chat-embed" data-testid="audion-chat-embed" data-theme={theme || undefined}>

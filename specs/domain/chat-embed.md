@@ -7,7 +7,7 @@
 
 ## Purpose
 
-Chrome-stripped Audion persona chat for iframe hosts. Audion remains SoT for prompts, stream, and share persona load. Hosts only supply chrome + deep-link fallback.
+Chrome-stripped Audion persona chat for iframe hosts. Audion remains SoT for prompts, stream, and share persona load (`lib/chat/share-persona.ts` → public persona API, then detail, then fixtures). Hosts only supply chrome + deep-link fallback.
 
 ## Route
 

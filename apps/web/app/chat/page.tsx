@@ -2,8 +2,9 @@ import { Alert } from '@msqdx/ui'
 import { AudionChatWorkspace } from '../../components/audion-chat-workspace'
 import { AppShell } from '../../components/app-shell'
 import { buildChatPrefillDraft } from '../../lib/chat/prefill'
+import { fetchSharePersona } from '../../lib/chat/share-persona'
 import { fetchChatConversationDetail } from '../../lib/chat/conversations'
-import { storeShareMoodboard, storeSharePersona } from '../../lib/fixtures/chat-share'
+import { storeShareMoodboard } from '../../lib/fixtures/chat-share'
 import { fetchPersonaList } from '../../lib/personas'
 import { fetchTargetGroupDetail, fetchTargetGroupList } from '../../lib/target-groups'
 import type { PersonaSummary } from '@audion-v3/contracts'
@@ -40,7 +41,7 @@ export default async function ChatPage({
 
   try {
     if (shareMode && personaId && projectId) {
-      const shared = storeSharePersona(personaId, projectId)
+      const shared = await fetchSharePersona(personaId, projectId)
       if ('error' in shared) {
         return (
           <AppShell title="Shared chat">
