@@ -132,6 +132,18 @@ def _env_truthy(name: str, default: str = "1") -> bool:
     return v not in ("0", "false", "no", "off", "")
 
 
+def _vision_detail_level() -> str:
+    """UX_JOURNEY_VISION_DETAIL → Agent vision_detail_level (default high)."""
+    raw = (os.environ.get("UX_JOURNEY_VISION_DETAIL") or "high").strip().lower()
+    if raw in ("auto", "low", "high"):
+        return raw
+    return "high"
+
+
+def _openai_model_id() -> str:
+    return (os.environ.get("UX_JOURNEY_OPENAI_MODEL") or "gpt-5.6-luna").strip() or "gpt-5.6-luna"
+
+
 # ---------------------------------------------------------------------------
 # Job store (in-memory; replace with Redis/DB for multi-instance)
 # ---------------------------------------------------------------------------
@@ -251,7 +263,7 @@ def _build_openai_llm():
     # (e.g. gpt-5.4-mini / gpt-5.6-luna) if AgentOutput validation gets flaky —
     # GPT-5.4 family has occasionally emitted trailing braces that Pydantic rejects.
     return ChatOpenAI(
-        model=os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.6-luna"),
+        model=_openai_model_id(),
         temperature=0,
     )
 
@@ -335,7 +347,7 @@ def _llm_meta() -> dict[str, Any]:
             "max_tokens": os.environ.get("UX_JOURNEY_CLAUDE_MAX_TOKENS", "16384"),
             "tolerantParsing": tolerant,
             "fallback": (
-                {"provider": "openai", "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.6-luna")}
+                {"provider": "openai", "model": _openai_model_id()}
                 if has_fallback
                 else None
             ),
@@ -343,7 +355,7 @@ def _llm_meta() -> dict[str, Any]:
     if provider == "openai":
         return {
             "provider": "openai",
-            "model": os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.6-luna"),
+            "model": _openai_model_id(),
             "tolerantParsing": tolerant,
             "fallback": (
                 {
@@ -2374,7 +2386,7 @@ async def _llm_scorecard_extras(
             from openai import AsyncOpenAI
 
             client = AsyncOpenAI(api_key=api_key_openai)
-            model = os.environ.get("UX_JOURNEY_OPENAI_MODEL", "gpt-5.6-luna")
+            model = _openai_model_id()
             resp = await client.chat.completions.create(
                 model=model,
                 messages=[
@@ -3880,8 +3892,15 @@ async def run_agent(
         elif "max_actions" in sig.parameters:
             agent_kw["max_actions"] = max_steps
         # Force per-step screenshots so history.screenshots() always has data the live preview can serve.
+        # Vision detail default high (2026-08-20) — mega-menu / nav grounding on complex sites.
         if "use_vision" in sig.parameters:
             agent_kw["use_vision"] = True
+        if _agent_init_accepts_named_arg(sig, "vision_detail_level"):
+            agent_kw["vision_detail_level"] = _vision_detail_level()
+            print(
+                f"ux-journey: job={job_id} vision_detail_level={agent_kw['vision_detail_level']}",
+                flush=True,
+            )
         # AUDION runs do not consume browser-use's `Judge` verdict — and on long
         # journeys the judge call sends the entire history + screenshots to the
         # primary LLM, regularly blowing through the 200k/272k context window
@@ -7167,6 +7186,9 @@ def health() -> dict[str, Any]:
     return {
         "status": "ok",
         "llmProvider": provider,
+        "openaiModel": _openai_model_id() if provider == "openai" else None,
+        "visionDetailLevel": _vision_detail_level(),
+        "useVision": True,
         "openaiKey": bool((os.environ.get("OPENAI_API_KEY") or "").strip()),
         "anthropicKey": bool((os.environ.get("ANTHROPIC_API_KEY") or "").strip()),
         # Deploy probe: Coolify UA fix is live when this is present and has no HeadlessChrome.

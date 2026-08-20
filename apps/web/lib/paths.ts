@@ -161,6 +161,8 @@ export const paths = {
   aiOpenAiModel: 'gpt-5.4-nano',
   /** UX Journey Agent OpenAI — default gpt-5.6-luna; override via UX_JOURNEY_OPENAI_MODEL */
   uxJourneyOpenAiModel: 'gpt-5.6-luna',
+  /** Vision detail for per-step screenshots — override via UX_JOURNEY_VISION_DETAIL */
+  uxJourneyVisionDetail: 'high',
   aiOpenAiImageModel: 'gpt-image-1-mini',
   /** Easy Setup optional website fetch (SSRF-safe) — knowledge/easy-setup-2026.md */
   easySetupUrlFetchTimeoutMs: 20_000,
@@ -369,6 +371,7 @@ export const paths = {
   envOpenAiApiBaseUrl: 'OPENAI_API_BASE_URL',
   envAiOpenAiModel: 'AI_OPENAI_MODEL',
   envUxJourneyOpenAiModel: 'UX_JOURNEY_OPENAI_MODEL',
+  envUxJourneyVisionDetail: 'UX_JOURNEY_VISION_DETAIL',
   envAiOpenAiImageModel: 'AI_OPENAI_IMAGE_MODEL',
   /** Plexon federation — knowledge/plexon-federation.md */
   envPlexonAuthUrl: 'PLEXON_AUTH_URL',

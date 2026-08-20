@@ -1101,6 +1101,8 @@ def test_prompt_forbids_done_without_perception():
     assert "Filter" in block
     assert "Try-then-quit" in block or "try-then-quit" in block.lower()
     assert "BROWSE/FIND" in block or "scrollen" in block.lower()
+    assert "VISION GROUND TRUTH" in block
+    assert "Mega-Menu" in block or "Mega-menu" in block or "Screenshot" in block
 
 
 def test_enrich_at_full_budget_promotes_filter_and_cause():

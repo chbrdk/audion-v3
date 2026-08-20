@@ -95,6 +95,16 @@ For tasks that ask the persona to **find a destination via the UI** (start on ho
 10. **Forbidden while path-finding:** `navigate` / `go_to_url` (or equivalent) whose destination already encodes the target keywords. Initial study start URL load stays allowed. Honest abandon / `done` after try-then-quit remains a valid study outcome.
 11. After a failed coordinate open, prefer a **different** visible control or shifted top-strip click — do not repeat the same coords, then deep-link.
 12. Stop deterministic steering once the target surface is reached (URL matches target keywords) or the exploratory nav budget is spent.
+13. **Vision grounding (2026-08-20):** Per-step screenshots are sent to the LLM with `vision_detail_level` from env `UX_JOURNEY_VISION_DETAIL` (default **`high`**). Screenshot + element bounding boxes are **Ground Truth** for what is visible. Nav labels may only be clicked when they appear in the screenshot and/or `noticed`. Mega-menus: **hover/look first**, then target click — do not thrash the same opener after a failed click when the opener is still only a collapsed nav item in the image.
+
+## Vision (runtime)
+
+| Env | Default | Effect |
+|-----|---------|--------|
+| `UX_JOURNEY_VISION_DETAIL` | `high` | Passed to Agent as `vision_detail_level` (`auto` \| `low` \| `high`) |
+| `use_vision` | always `True` | Screenshots included in every LLM step |
+
+Chat LLM for the agent remains `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-5.6-luna`**). Do not use `gpt-4o` / `gpt-4o-mini` for agent or post-hoc UEQ inference.
 
 ## Step payload
 

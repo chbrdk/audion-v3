@@ -1,0 +1,114 @@
+{
+  "total": 24,
+  "counts": {
+    "click_no_nav": 16,
+    "nav_hover": 1,
+    "goal_ok": 2,
+    "click_blocked": 5
+  },
+  "rates": {
+    "click_blocked": 20.8,
+    "click_no_nav": 66.7,
+    "goal_ok": 8.3,
+    "nav_hover": 4.2
+  },
+  "baseline_note": "UEQ eBike 2026-08-19 goal_ok ≈ 16.7%",
+  "rows": [
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-1/run-A-UC1-ebiker-fahrerlebnis.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-1/run-B-UC1-interessent-orientierung.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-1/run-C-UC2-ebiker-service.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-1/run-D-UC2-interessent-technik.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-1/run-E-UC3-ebiker-ueber-uns.json",
+      "bucket": "nav_hover"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-1/run-F-UC3-interessent-ueber-uns.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-2/run-A-UC1-ebiker-fahrerlebnis.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-2/run-B-UC1-interessent-orientierung.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-2/run-C-UC2-ebiker-service.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-2/run-D-UC2-interessent-technik.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-2/run-E-UC3-ebiker-ueber-uns.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-2/run-F-UC3-interessent-ueber-uns.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-3/run-A-UC1-ebiker-fahrerlebnis.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-3/run-B-UC1-interessent-orientierung.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-3/run-C-UC2-ebiker-service.json",
+      "bucket": "goal_ok"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-3/run-D-UC2-interessent-technik.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-3/run-E-UC3-ebiker-ueber-uns.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-3/run-F-UC3-interessent-ueber-uns.json",
+      "bucket": "click_no_nav"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-4/run-A-UC1-ebiker-fahrerlebnis.json",
+      "bucket": "click_blocked"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-4/run-B-UC1-interessent-orientierung.json",
+      "bucket": "click_blocked"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-4/run-C-UC2-ebiker-service.json",
+      "bucket": "click_blocked"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-4/run-D-UC2-interessent-technik.json",
+      "bucket": "click_blocked"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-4/run-E-UC3-ebiker-ueber-uns.json",
+      "bucket": "goal_ok"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-19/wave-4/run-F-UC3-interessent-ueber-uns.json",
+      "bucket": "click_blocked"
+    }
+  ]
+}

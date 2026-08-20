@@ -130,6 +130,8 @@
 - Persona data source env: `NEXT_PERSONA_DATA_SOURCE` (`auto` | `fixtures` | `api`) — domain only
 - Native AI runtime: `NEXT_AI_RUNTIME` (`stub` | `native` | `auto`) · `OPENAI_API_KEY` · `AI_OPENAI_MODEL` (default **`gpt-5.4-nano`**, SoT `paths.aiOpenAiModel`) — `knowledge/ai-native-2026.md`
 - UX Journey OpenAI: `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-5.6-luna`**, SoT `paths.uxJourneyOpenAiModel`) — agent `main.py` / Dockerfile / local lab serve · A/B: `knowledge/lab-ab-nano-mini-luna-2026-08-03.md`
+- UX Journey vision detail: `UX_JOURNEY_VISION_DETAIL` (default **`high`**, SoT `paths.uxJourneyVisionDetail`) — agent `main.py` / Dockerfile · note `knowledge/ux-agent-luna-vision-2026-08-20.md` · fail buckets `scripts/bucket-ux-journey-fail-reasons.py` · baseline `knowledge/ux-journey-fail-buckets-baseline-2026-08-19.json` · smoke `knowledge/lab-staging-smoke-luna-vision-2026-08-20.md`
+- UEQ / post-hoc infer: `UEQ_INFER_MODEL` → else `UX_JOURNEY_OPENAI_MODEL` → **`gpt-5.6-luna`** (never `gpt-4o-mini`) · `scripts/infer-ueq-ebike-scores.py`
 - Confusion friction floors (L3): `UX_JOURNEY_CONFUSION_FRICTION_FLOOR_1/2` defaults **7/8** · `knowledge/lab-l3-confusion-friction-2026-08-03.md` · floor-7 band fix `knowledge/lab-friction-band-floor7-2026-08-03.md` · smoke `knowledge/lab-staging-smoke-friction-band-2026-08-03.md`
 - Try-then-quit (human-ish abandon): `UX_JOURNEY_TRY_BEFORE_ABANDON` default **4** (Alex ~5–7 steps, “kämpfendes Drittel”) · `knowledge/lab-try-then-quit-2026-08-03.md` · `knowledge/lab-try-budget-4-6-2026-08-04.md`
 - Evidence gate: `apps/web/lib/ux-wave-scorecard.ts` — `knowledge/lab-l5-evidence-gate-2026-08-03.md`
@@ -178,3 +180,5 @@
 - DS forms: `msqdx-ui/specs/domain/msqdx-ui-forms.md`
 - DS field: `msqdx-ui/specs/domain/msqdx-ui-field.md`
 - DS extended: `msqdx-ui/specs/domain/msqdx-ui-extended.md`
+- BSH Hausgeräte UX evaluation (Waschmaschinen, 2026-08-19): batch `scripts/run-bsh-home-batch.sh` · raw runs `knowledge/bsh-home-runs/2026-08-19/` · AI findings `knowledge/bsh-home-concrete-results-2026-08-19.pdf` · human vs AI `knowledge/bsh-human-vs-ai-2026-08-19.pdf` · human reference (Oct 2023, n=8) `/Users/christoph.bordeck/Desktop/RESULT_TESTING.pdf` · interview guide `/Users/christoph.bordeck/Desktop/TESTING_2_human.docx`
+- UEQ+ eBike Website Benchmarking (2026-08-19): **Gesamtbericht** `knowledge/ueq-ebike-gesamtbericht-2026-08-19.pdf` · export `scripts/export-ueq-ebike-gesamtbericht.py` · source docx `/Users/christoph.bordeck/Desktop/Test_Setup_UEQ+Benchmarking_final (1).docx` · human report `/Users/christoph.bordeck/Desktop/Abschlussbericht_UEQ+_eBike_2025 (1).pdf` · plan `knowledge/ueq-ebike-test-plan-2026-08-19.md` · batch `scripts/run-ueq-ebike-batch.sh` · runs `knowledge/ueq-ebike-runs/2026-08-19/` · site `https://www.bosch-ebike.com/de/`
