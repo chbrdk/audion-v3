@@ -16,11 +16,17 @@ Guest `/chat?personaId=&projectId=` deep-links use the same share resolver and a
 | Item | Value |
 |------|--------|
 | Path | `/chat/embed` (`paths.routes.chatEmbed`) |
-| Query | `personaId` (required), `projectId` (required), `theme` (optional), `embed=1` (guest) or `embed=full` (EQC logged-in overlay) |
+| Query | `personaId` (required), `projectId` (required), `theme` (optional, host `data-theme` id), `embed=1` (guest) or `embed=full` (EQC logged-in overlay) |
 | Auth | Public when Plexon federation auth is on (middleware allowlist) |
 | CSP | `Content-Security-Policy: frame-ancestors …` on embed route only |
 
 `frame-ancestors` allowlist: `AUDION_CHAT_EMBED_FRAME_ANCESTORS` (space-separated origins) **or** derive from `NEXT_PUBLIC_PLEXON_URL` / `PLEXON_AUTH_URL` origin. Never hardcode host FQDNs in components.
+
+### Theme sync (host light/dark)
+
+1. Host reads `document.documentElement.getAttribute('data-theme')` and passes `theme` on the embed URL.
+2. While the overlay is open, host posts `assistant:theme` `{ themeId }` (`source: plexon-assistant-host`) — same protocol as Central Assistant embed.
+3. Audion `/chat/embed` applies allowlisted theme ids on **`html[data-theme]`** via `ChatEmbedThemeSync` (`lib/chat/embed-theme.ts`), not only on the embed wrapper div.
 
 ## Guest budget (server-enforced)
 

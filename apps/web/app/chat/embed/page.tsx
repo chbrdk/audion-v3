@@ -13,6 +13,7 @@ import {
 import { fetchSharePersona } from '../../../lib/chat/share-persona'
 import { parseChatEmbedCapabilities } from '../../../lib/chat/embed-capabilities'
 import { storeShareMoodboard } from '../../../lib/fixtures/chat-share'
+import { ChatEmbedThemeSync } from '../../../components/chat-embed-theme-sync'
 import type { PersonaSummary } from '@audion-v3/contracts'
 
 export default async function ChatEmbedPage({
@@ -72,14 +73,15 @@ export default async function ChatEmbedPage({
     mood && !('error' in mood) ? mood.tiles : undefined
 
   return (
-    <div
-      className="audion-chat-embed"
-      data-testid="audion-chat-embed"
-      data-theme={theme || undefined}
-      data-embed-capabilities={embedCapabilities}
-      data-guest-remaining={remaining}
-      data-guest-max={GUEST_CHAT_MAX_USER_TURNS}
-    >
+    <>
+      <ChatEmbedThemeSync initialTheme={theme || null} />
+      <div
+        className="audion-chat-embed"
+        data-testid="audion-chat-embed"
+        data-embed-capabilities={embedCapabilities}
+        data-guest-remaining={remaining}
+        data-guest-max={GUEST_CHAT_MAX_USER_TURNS}
+      >
       <AudionChatWorkspace
         personas={personas}
         initialPersonaId={shared.id}
@@ -95,6 +97,7 @@ export default async function ChatEmbedPage({
           maxChars: GUEST_CHAT_MAX_CHARS,
         }}
       />
-    </div>
+      </div>
+    </>
   )
 }
