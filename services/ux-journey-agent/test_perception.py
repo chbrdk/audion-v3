@@ -1358,6 +1358,74 @@ def test_task_keywords_only_from_task_text():
     assert "modelle" in P._task_nav_open_keywords(PORSCHE_TASK)
 
 
+def test_ueq_keyword_hygiene_no_meta_navigation():
+    task_c = (
+        "Suche Service-Angebote. Öffne „Service & Beratung“ in der Navigation "
+        "(oder Service-Bereich). Bei Navigationsproblemen: sichtbare Hinweise nutzen."
+    )
+    opens = P._task_nav_open_keywords(task_c)
+    assert "navigation" not in opens
+    assert "menü" not in opens and "menu" not in opens
+    assert "service" in opens
+    assert "beratung" in opens
+    targets = P._task_target_keywords(task_c)
+    # Quoted „Service & Beratung“ may be a target label; hub path still prefers /service/
+    assert "navigation" not in targets
+    # Hub must not prefer …/routenplanung-navigation over /service/
+    assert P._href_key_match_score("/de/connected-biking/routenplanung-navigation", opens) < P._href_key_match_score(
+        "/de/service/", opens
+    )
+
+
+def test_ueq_ueber_uns_gate_and_keywords():
+    task_f = (
+        "Öffne „Über uns“: Werte, Innovation, Sicherheit. "
+        "Bei Navigationsproblemen: Startseiten-Inhalte nutzen."
+    )
+    assert P.is_ui_path_finding_task(task_f) is True
+    opens = P._task_nav_open_keywords(task_f)
+    targets = P._task_target_keywords(task_f)
+    assert any("ueber" in k or "unternehmen" in k or "uns" in k for k in opens + targets)
+    assert "navigation" not in opens
+
+
+def test_ueq_technik_open_destination_gate():
+    task_d = (
+        "Informiere dich über Display, Akku, DriveUnit, Technologien. "
+        "Öffne den System-/Produktbereich."
+    )
+    assert P.is_ui_path_finding_task(task_d) is True
+    opens = P._task_nav_open_keywords(task_d)
+    assert "technik" in opens or "system" in opens or "produkte" in opens
+
+
+def test_scope_nav_home_keeps_vision_noticed():
+    perc = {
+        "taskReminder": "Ich will Über uns finden",
+        "noticed": [
+            {"what": "Über uns in der Navigation", "where": "Header", "relevance": "high"},
+            {"what": "Cookie Banner", "where": "unten", "relevance": "med"},
+        ],
+        "think": "Oben sehe ich Über uns.",
+        "clarity": 2,
+        "feel": {"label": "neutral", "valence": 0},
+        "confusion": None,
+        "stance": "proceed",
+        "intent": "Ich klicke auf Über uns.",
+        "why": "Das Label ist sichtbar.",
+    }
+    out = P.scope_nav_home_perception(
+        perc,
+        current_url="https://www.bosch-ebike.com/de/",
+        task='Starte auf der Startseite. Öffne „Über uns“ in der Navigation.',
+        budget=4,
+    )
+    assert out is not None
+    whats = " ".join(str(n.get("what") or "") for n in (out.get("noticed") or []))
+    assert "Über uns" in whats
+    assert out.get("intent") == "Ich klicke auf Über uns."
+
+
 def test_select_nav_dom_action_works_without_bosch_domain():
     summary = {
         "dom_state": {

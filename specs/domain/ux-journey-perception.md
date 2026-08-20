@@ -96,6 +96,7 @@ For tasks that ask the persona to **find a destination via the UI** (start on ho
 11. After a failed coordinate open, prefer a **different** visible control or shifted top-strip click — do not repeat the same coords, then deep-link.
 12. Stop deterministic steering once the target surface is reached (URL matches target keywords) or the exploratory nav budget is spent.
 13. **Vision grounding (2026-08-20):** Per-step screenshots are sent to the LLM with `vision_detail_level` from env `UX_JOURNEY_VISION_DETAIL` (default **`high`**). Screenshot + element bounding boxes are **Ground Truth** for what is visible. Nav labels may only be clicked when they appear in the screenshot and/or `noticed`. Mega-menus: **hover/look first**, then target click — do not thrash the same opener after a failed click when the opener is still only a collapsed nav item in the image.
+14. **Task keyword hygiene (2026-08-20):** Opener/target keywords come from the task, including quoted labels (`„Service & Beratung“`, `„Über uns“`). Meta words (`navigation`, `menü`, `menu`) are **not** openers — they must not select hubs like `/…/routenplanung-navigation`. Path-finding also triggers for „Öffne X in der Navigation“ without requiring `suche`/`finde`. `scope_nav_home_perception` **merges** Vision `noticed` with path cues instead of replacing them. CDP hover coords stored for follow-up clicks stay in **viewport CSS px**.
 
 ## Vision (runtime)
 

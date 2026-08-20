@@ -509,32 +509,136 @@ def _node_text_blob(node: Any) -> str:
     return " ".join(p for p in parts if p).lower()
 
 
+# Meta words that appear in tasks ("in der Navigation") but are NOT nav labels.
+_META_NAV_OPEN_TOKENS = frozenset(
+    {
+        "menu",
+        "menü",
+        "navigation",
+        "nav",
+        "hauptnavigation",
+        "hauptmenü",
+        "hauptmenu",
+    }
+)
+
+
+def _task_quoted_labels(task: str | None) -> list[str]:
+    """Extract „…“ / "…" / '…' labels from the task (nav targets humans name)."""
+    t = str(task or "")
+    labels: list[str] = []
+    for m in re.finditer(r"[„\"']([^„\"']{2,64})[\"'“]", t):
+        lab = m.group(1).strip().lower()
+        lab = re.sub(r"\s+", " ", lab)
+        if lab and lab not in labels and lab not in _META_NAV_OPEN_TOKENS:
+            labels.append(lab)
+    return labels
+
+
+def _normalize_nav_token(tok: str) -> str:
+    t = str(tok or "").strip().lower()
+    t = t.replace("ü", "ue").replace("ä", "ae").replace("ö", "oe").replace("ß", "ss")
+    t = re.sub(r"\s*&amp;\s*", " ", t)
+    t = re.sub(r"\s*&\s*", " ", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
+
+
 def _task_nav_open_keywords(task: str | None) -> list[str]:
-    """Opener keywords that appear in the task (path toward the goal)."""
+    """Opener keywords that appear in the task (path toward the goal).
+
+    Excludes meta words like ``navigation`` / ``menü`` that pollute hub href
+    matching (e.g. ``/routenplanung-navigation``). Prefer quoted labels.
+    """
     t = str(task or "").lower()
     keys: list[str] = []
+
+    def add(tok: str) -> None:
+        tok = _normalize_nav_token(tok)
+        if not tok or tok in _META_NAV_OPEN_TOKENS:
+            return
+        # Split compound labels into useful stems.
+        parts = [p for p in re.split(r"[\s/,|;]+", tok) if len(p) >= 3]
+        candidates = [tok] + parts if len(parts) > 1 else [tok]
+        for c in candidates:
+            c = _normalize_nav_token(c)
+            if (
+                c
+                and c not in _META_NAV_OPEN_TOKENS
+                and c not in keys
+                and len(c) >= 3
+            ):
+                keys.append(c)
+
+    for lab in _task_quoted_labels(task):
+        add(lab)
+
     for tok in (
         "service",
         "beratung",
         "support",
         "hilfe",
-        "menu",
-        "menü",
-        "navigation",
         "produkte",
         "products",
         "modelle",
         "models",
+        "technik",
+        "system",
+        "komponent",
+        "produkt",
+        "produkte",
+        "flow",
+        "unternehmen",
+        "ueber-uns",
+        "über uns",
+        "ueber uns",
+        "marke",
+        "ersatzteil",
+        "wartung",
+        "zubehoer",
+        "zubehör",
+        "display",
+        "akku",
+        "driveunit",
+        "antrieb",
     ):
-        if tok in t and tok not in keys:
-            keys.append(tok)
+        if tok in t:
+            add(tok)
+
+    # German compound cues without quotes.
+    if "über uns" in t or "ueber uns" in t:
+        add("ueber-uns")
+        add("unternehmen")
+    if "service" in t and "beratung" in t:
+        add("service")
+        add("beratung")
     return keys
 
 
 def _task_target_keywords(task: str | None) -> list[str]:
-    """Destination keywords present in the task only — no fixture defaults."""
+    """Destination keywords present in the task only — no fixture defaults.
+
+    Broad opener words (service, produkte, …) stay in ``_task_nav_open_keywords``
+    so hover-first path-finding is not short-circuited by treating every Service
+    link as already-the-destination.
+    """
     t = str(task or "").lower()
     keys: list[str] = []
+
+    def add(tok: str) -> None:
+        tok = _normalize_nav_token(tok)
+        if not tok or tok in _META_NAV_OPEN_TOKENS or tok in keys:
+            return
+        if len(tok) < 3:
+            return
+        keys.append(tok)
+
+    for lab in _task_quoted_labels(task):
+        norm = _normalize_nav_token(lab)
+        add(norm)
+        if " " in norm:
+            add(norm.replace(" ", "-"))
+
     for tok in (
         "produktkombination",
         "kompatibil",
@@ -545,20 +649,34 @@ def _task_target_keywords(task: str | None) -> list[str]:
         "dealer",
         "preislisten",
         "testfahrt",
+        "ueber-uns",
+        "über-uns",
+        "unternehmen",
+        "help-center",
+        "helpcenter",
+        "ersatzteil",
+        "wartung",
+        "flow-app",
+        "flow app",
     ):
-        if tok in t and tok not in keys:
-            keys.append(tok)
+        if tok in t:
+            add(tok)
+
+    if "über uns" in t or "ueber uns" in t:
+        add("ueber-uns")
+        add("unternehmen")
+    if "flow app" in t or "flow-app" in t:
+        add("flow")
+
     for m in re.finditer(r"([a-zäöü0-9][a-zäöü0-9-]{4,})-(?:tool|seite|page)", t):
-        stem = m.group(1)
-        if stem not in keys:
-            keys.append(stem)
+        add(m.group(1))
     return keys
 
 
 def is_ui_path_finding_task(task: str | None) -> bool:
     """
     True when the persona must reach a destination via UI path-finding
-    (home / find-the-way / not opening the tool directly).
+    (home / find-the-way / open X in the navigation / not opening the tool directly).
     """
     if not task:
         return False
@@ -574,12 +692,37 @@ def is_ui_path_finding_task(task: str | None) -> bool:
         "nicht direkt im tool",
         "via navigation",
         "über die navigation",
+        "ueber die navigation",
+        "in der navigation",
+        "in der nav",
+        "öffne „",
+        'öffne "',
+        "öffne '",
+        "oeffne „",
         "from the home",
         "from home",
     )
-    if not any(c in t for c in path_cues):
+    has_path_cue = any(c in t for c in path_cues)
+    has_open_in_nav = bool(
+        re.search(
+            r"(öffne|oeffne|open)\b.{0,80}\b(navigation|men[uü]|nav)\b",
+            t,
+            re.I,
+        )
+        or re.search(
+            r"\b(navigation|men[uü])\b.{0,40}\b(öffne|oeffne|open)\b",
+            t,
+            re.I,
+        )
+    )
+    # "Öffne den System-/Produktbereich" without saying "Navigation"
+    has_open_destination = bool(
+        re.search(r"\b(öffne|oeffne|open)\b.{0,80}(bereich|seite|men[uü])", t, re.I)
+        or re.search(r"\b(öffne|oeffne|open)\b.{0,40}[„\"']", t, re.I)
+    )
+    if not has_path_cue and not has_open_in_nav and not has_open_destination:
         return False
-    if _task_target_keywords(task):
+    if _task_target_keywords(task) or _task_nav_open_keywords(task):
         return True
     return any(c in t for c in ("finde", "find ", "suche", "reach", "lande", "landest"))
 
@@ -595,6 +738,33 @@ def path_target_reached(current_url: str | None, task: str | None) -> bool:
     if keys:
         return _url_contains_any(current_url, keys)
     return "produktkombinationen" in str(current_url or "").lower()
+
+
+def _href_key_match_score(href: str, keys: list[str]) -> int:
+    """Score href↔key match; penalize meta substring hits (…-navigation)."""
+    h = str(href or "").lower()
+    if not h or not keys:
+        return -10**9
+    best = -10**9
+    for k in keys:
+        k = str(k).lower().strip()
+        if not k or k in _META_NAV_OPEN_TOKENS:
+            continue
+        if k not in h:
+            continue
+        score = 40
+        # Prefer path segment equality / prefix ( /service/ , /unternehmen/ueber-uns ).
+        segs = [s for s in h.split("/") if s]
+        if any(s == k or s.startswith(k + "-") or k.startswith(s) for s in segs):
+            score += 50
+        # Penalize key only as trailing substring of a longer segment.
+        for s in segs:
+            if k in s and s != k and not s.startswith(k) and s.endswith(k):
+                score -= 80
+        if len(k) >= 6 and f"/{k}" in h:
+            score += 20
+        best = max(best, score)
+    return best
 
 
 def detect_path_finding_deeplink_cheat(
@@ -898,13 +1068,17 @@ def build_nav_hub_click_evaluate(open_keys: list[str]) -> dict[str, Any] | None:
     Click a non-rootish opener hub link (e.g. ``/…/service/…``) from the live DOM.
     """
     keys = [str(k).strip().lower() for k in (open_keys or []) if str(k).strip()]
+    keys = [k for k in keys if k and k not in _META_NAV_OPEN_TOKENS]
     if not keys:
         return None
     keys_js = json.dumps(keys, ensure_ascii=True)
     code = (
         "(function(){try{"
         f"const keys={keys_js};"
-        "const match=t=>keys.some(k=>t.includes(k));"
+        "const meta=new Set(['navigation','menu','menü','nav']);"
+        "const keysUse=keys.filter(k=>k && !meta.has(k));"
+        "if(!keysUse.length) return 'nav_hub:no_keys';"
+        "const match=t=>keysUse.some(k=>t.includes(k));"
         "function* anchors(root){"
         "for(const a of root.querySelectorAll('a[href]')) yield a;"
         "for(const el of root.querySelectorAll('*')){"
@@ -915,12 +1089,20 @@ def build_nav_hub_click_evaluate(open_keys: list[str]) -> dict[str, Any] | None:
         "for(const el of anchors(document)){"
         "const href=String(el.getAttribute('href')||el.href||'').toLowerCase();"
         "if(!href || href==='/' || /^\\/[a-z]{2}\\/?$/.test(href)) continue;"
-        "if(!keys.some(k=>href.includes(k))) continue;"
+        "const segs=href.split('/').filter(Boolean);"
+        "let keyHit=false; let segBonus=0; let pen=0;"
+        "for(const k of keysUse){"
+        "if(!href.includes(k)) continue;"
+        "keyHit=true;"
+        "if(segs.some(s=>s===k||s.startsWith(k+'-')||k.startsWith(s))) segBonus=50;"
+        "if(segs.some(s=>k!==s && s.endsWith(k) && !s.startsWith(k))) pen=80;"
+        "}"
+        "if(!keyHit) continue;"
         # Prefer compact hub paths (/service/, /service/ebike-beratung) over deep tools.
         "const depth=(href.match(/\\//g)||[]).length;"
         "const t=((el.innerText||el.textContent||'')+' '+"
         "(el.getAttribute('aria-label')||'')).toLowerCase().replace(/\\s+/g,' ').trim();"
-        "let score=40;"
+        "let score=40+segBonus-pen;"
         "if(match(t) && t.length<=48) score+=30;"
         "if(depth<=4) score+=20;"
         "const r=el.getBoundingClientRect();"
@@ -2798,22 +2980,69 @@ def scope_nav_home_perception(
     out = dict(perception)
     blob = perception_text_blob(out)
     open_keys = _task_nav_open_keywords(task)
-    noticed: list[dict[str, Any]] = [
-        {
-            "what": "Startseite geladen",
-            "where": "Home",
-            "relevance": "high",
-        }
-    ]
-    if open_keys and any(tok in blob for tok in open_keys):
-        label = " / ".join(open_keys[:2])
-        noticed.append(
+    # Keep model-noticed nav labels (Vision Ground Truth) — merge, don't replace.
+    prior_noticed: list[dict[str, Any]] = []
+    for n in out.get("noticed") or []:
+        if not isinstance(n, dict):
+            continue
+        what = str(n.get("what") or "").strip()
+        if not what:
+            continue
+        # Drop destination-tool hallucinations while still on home.
+        low = what.lower()
+        if any(
+            tok in low
+            for tok in (
+                "filterursache",
+                "filter/ursache",
+                "filter-ursache",
+                "filter ursache",
+                "unklar warum",
+                "ausgegraut",
+                "kompatibilitätsfilter",
+                "kompatibilitatsfilter",
+                "explanation zur ursache",
+                "erklärung zur ursache",
+            )
+        ):
+            continue
+        # Lab-B tool jargon on home is not a real notice.
+        if "filter" in low and ("ursache" in low or "kompatib" in low):
+            continue
+        prior_noticed.append(
             {
-                "what": f"{label} als möglicher Einstieg",
-                "where": "Navigation",
-                "relevance": "high",
+                "what": what[:120],
+                "where": str(n.get("where") or "")[:40] or None,
+                "relevance": n.get("relevance") or "med",
             }
         )
+
+    noticed: list[dict[str, Any]] = []
+    # Prefer real UI notices first (budget permitting).
+    for n in prior_noticed:
+        if len(noticed) >= max(2, budget) - 1:
+            break
+        noticed.append({k: v for k, v in n.items() if v is not None})
+
+    if not any("startseite" in str(n.get("what") or "").lower() for n in noticed):
+        noticed.insert(
+            0,
+            {
+                "what": "Startseite geladen",
+                "where": "Home",
+                "relevance": "high",
+            },
+        )
+    if open_keys and any(tok in blob for tok in open_keys):
+        label = " / ".join(open_keys[:2])
+        if not any(label.split("/")[0].strip() in str(n.get("what") or "").lower() for n in noticed):
+            noticed.append(
+                {
+                    "what": f"{label} als möglicher Einstieg",
+                    "where": "Navigation",
+                    "relevance": "high",
+                }
+            )
     if target_keys and any(tok in blob for tok in target_keys):
         noticed.append(
             {
@@ -2822,7 +3051,7 @@ def scope_nav_home_perception(
                 "relevance": "high",
             }
         )
-    if len(noticed) == 1:
+    if len(noticed) <= 1:
         noticed.append(
             {
                 "what": "Direkter Ziel-Einstieg noch nicht sichtbar",
@@ -2831,12 +3060,16 @@ def scope_nav_home_perception(
             }
         )
     out["noticed"] = noticed[: max(2, budget)]
-    goal = target_keys[0] if target_keys else "Ziel"
-    out["taskReminder"] = f"Ich suche den Weg zu {goal}."
-    out["intent"] = f"Ich öffne das Menü und suche einen Einstieg zu {goal}."
-    out["why"] = f"Auf der Startseite muss ich erst den Weg zu {goal} finden."
-    out["think"] = "Ich bin auf der Startseite und suche in der Navigation einen passenden Einstieg."
-    out["confusion"] = None
+    goal = target_keys[0] if target_keys else (open_keys[0] if open_keys else "Ziel")
+    # Only rewrite voice channels when the model drifted into research-script / tool-hallucination.
+    if has_grey_filter_signal(out) or str(out.get("confusion") or ""):
+        out["taskReminder"] = f"Ich suche den Weg zu {goal}."
+        out["intent"] = f"Ich öffne das Menü und suche einen Einstieg zu {goal}."
+        out["why"] = f"Auf der Startseite muss ich erst den Weg zu {goal} finden."
+        out["think"] = "Ich bin auf der Startseite und suche in der Navigation einen passenden Einstieg."
+        out["confusion"] = None
+    elif not str(out.get("taskReminder") or "").strip():
+        out["taskReminder"] = f"Ich suche den Weg zu {goal}."
     feel = out.get("feel")
     if isinstance(feel, dict):
         label = str(feel.get("label") or "").lower()

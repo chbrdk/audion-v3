@@ -20,8 +20,9 @@ NAV_HOVER_RE = re.compile(
     re.I,
 )
 CLICK_BLOCKED_RE = re.compile(
-    r"blockiert|not\s+interactable|click\s+fail|element\s+(?:not\s+)?(?:found|visible)|"
-    r"klick\s+scheitert|konnte\s+nicht\s+klicken|pointer-events",
+    r"not\s+interactable|click\s+fail|element\s+(?:not\s+)?(?:found|visible)|"
+    r"klick\s+scheitert|konnte\s+nicht\s+klicken|pointer-events|"
+    r"click\s+blocked|klick\s+blockiert|nav_hub:err",
     re.I,
 )
 EMPTY_ACTIONS_RE = re.compile(
@@ -47,7 +48,16 @@ def _walk_text(obj, budget: int = 80_000) -> str:
             return
         if isinstance(x, dict):
             for k, v in x.items():
-                if k in ("screenshot", "screenshots", "video", "image", "b64", "base64"):
+                if k in (
+                    "screenshot",
+                    "screenshots",
+                    "video",
+                    "image",
+                    "b64",
+                    "base64",
+                    "taskDescription",
+                    "task",
+                ):
                     continue
                 walk(v)
         elif isinstance(x, list):
@@ -167,6 +177,13 @@ def bucket_run(path: Path) -> str:
     return "other"
 
 
+def _rel(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(ROOT.resolve()))
+    except ValueError:
+        return str(path)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
@@ -186,6 +203,7 @@ def main() -> int:
 
     files: list[Path] = []
     for p in args.paths:
+        p = p if p.is_absolute() else (Path.cwd() / p)
         if p.is_dir():
             files.extend(sorted(p.rglob("run-*.json")))
         elif p.is_file() and p.name.startswith("run-") and p.suffix == ".json":
@@ -193,6 +211,7 @@ def main() -> int:
     seen: set[Path] = set()
     uniq: list[Path] = []
     for f in files:
+        f = f.resolve()
         if f in seen or not f.name.startswith("run-") or f.suffix != ".json":
             continue
         seen.add(f)
@@ -203,25 +222,28 @@ def main() -> int:
     for f in uniq:
         try:
             b = bucket_run(f)
+            err = None
         except Exception as exc:
             b = "other"
-            rows.append({"file": str(f.relative_to(ROOT)), "bucket": b, "error": str(exc)})
-            counts[b] += 1
-            continue
+            err = str(exc)
         counts[b] += 1
-        rows.append({"file": str(f.relative_to(ROOT)), "bucket": b})
+        row = {"file": _rel(f), "bucket": b}
+        if err:
+            row["error"] = err
+        rows.append(row)
 
     total = sum(counts.values()) or 1
     summary = {
         "total": sum(counts.values()),
         "counts": dict(counts),
         "rates": {k: round(100.0 * v / total, 1) for k, v in sorted(counts.items())},
-        "baseline_note": "UEQ eBike 2026-08-19 goal_ok ≈ 16.7%",
+        "baseline_note": "UEQ eBike 2026-08-19 URL-grounded goal_ok ≈ 8.3%",
         "rows": rows,
     }
-    args.out.write_text(json.dumps(summary, ensure_ascii=False, indent=2))
+    out = args.out if args.out.is_absolute() else Path.cwd() / args.out
+    out.write_text(json.dumps(summary, ensure_ascii=False, indent=2))
     print(json.dumps({"total": summary["total"], "counts": summary["counts"], "rates": summary["rates"]}, indent=2))
-    print(f"Wrote {args.out}")
+    print(f"Wrote {out}")
     return 0
 
 

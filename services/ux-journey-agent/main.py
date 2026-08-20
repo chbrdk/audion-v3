@@ -4372,10 +4372,32 @@ async def run_agent(
                                 "coordinate_y": params.get("coordinate_y"),
                             }
                         )
+                        # Always store viewport CSS px for later CDP click sweeps.
                         felt_state["menuHoverCoords"] = {
                             "coordinate_x": params.get("coordinate_x"),
                             "coordinate_y": params.get("coordinate_y"),
                         }
+
+                def _record_nav_steer_action(
+                    dom_reason: str,
+                    action: dict[str, Any] | None,
+                    llm_params: dict[str, Any],
+                ) -> None:
+                    """Record steer; for hover prefer viewport coords from ``action``."""
+                    if (
+                        dom_reason == "nav_dom_menu_hover"
+                        and isinstance(action, dict)
+                        and isinstance(action.get("coordinate_x"), (int, float))
+                    ):
+                        _record_nav_steer(
+                            dom_reason,
+                            {
+                                "coordinate_x": action.get("coordinate_x"),
+                                "coordinate_y": action.get("coordinate_y"),
+                            },
+                        )
+                    else:
+                        _record_nav_steer(dom_reason, llm_params)
 
                 async def _force_done_schema(reason: str) -> None:
                     """Last-resort done (stance abandon / empty filter) — still needs PERCEPTION."""
@@ -4824,7 +4846,8 @@ async def run_agent(
                     if dom_filtered:
                         filtered = dom_filtered
                         reason = dom_reason
-                        _record_nav_steer(dom_reason, dom_params)
+                        # menuHoverCoords must stay in viewport CSS px (CDP), not LLM space.
+                        _record_nav_steer_action(dom_reason, dom_action, dom_params)
                 elif dom_reason not in (
                     "cookie_dom_none",
                     "nav_dom_skip_task",
@@ -4913,7 +4936,7 @@ async def run_agent(
                                     if dom_filtered:
                                         filtered = dom_filtered
                                         reason = f"min_steps_done_retry_{dom_reason}"
-                                        _record_nav_steer(dom_reason, dom_params)
+                                        _record_nav_steer_action(dom_reason, dom_action, dom_params)
                                     else:
                                         reason = (
                                             f"min_steps_done_retry_{targeted_reason}"
@@ -4953,7 +4976,7 @@ async def run_agent(
                                     )
                                     reason = f"min_steps_done_blocked_{dom_reason}"
                                     if filtered:
-                                        _record_nav_steer(dom_reason, dom_params)
+                                        _record_nav_steer_action(dom_reason, dom_action, dom_params)
                                 if not filtered:
                                     filtered = _typed_scroll_fallback()
                                     reason = "min_steps_done_blocked_scroll"
@@ -5042,7 +5065,7 @@ async def run_agent(
                                 )
                                 if filtered:
                                     reason = f"min_steps_empty_retry_{dom_reason}"
-                                    _record_nav_steer(dom_reason, dom_params)
+                                    _record_nav_steer_action(dom_reason, dom_action, dom_params)
                                     print(
                                         f"ux-journey: job={job_id} min_steps empty filtered → {dom_reason}",
                                         flush=True,
