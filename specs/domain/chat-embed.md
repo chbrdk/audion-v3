@@ -2,12 +2,12 @@
 
 **Status:** Spec locked 2026-08-11  
 **Owner:** AUDION v3  
-**Consumers:** Plexon EQC magazine + public `/share/quick-check/[token]` via `@msqdx/ui` `ChatOverlay` iframe  
+**Consumers:** Plexon EQC magazine + public `/share/quick-check/[token]` via `@msqdx/ui` `ChatOverlay` — **native host (Wave C6)** with optional iframe fallback for public embed  
 **Companions:** `knowledge/paths.md` · Plexon `knowledge/eqc-persona-chat.md` · `specs/domain/chat-workspace.md`
 
 ## Purpose
 
-Chrome-stripped Audion persona chat for iframe hosts. Audion remains SoT for prompts, stream, and share persona load (`lib/chat/share-persona.ts` → **Audion v3 Postgres store first** regardless of `NEXT_PERSONA_DATA_SOURCE`, legacy FastAPI `/public` for UUID personas when not in fixtures-only mode, then demo fixtures). Hosts only supply chrome + deep-link fallback.
+Chrome-stripped Audion persona chat for iframe hosts **or** API consumption via Plexon BFF. Audion remains SoT for prompts, stream, and share persona load (`lib/chat/share-persona.ts` → **Audion v3 Postgres store first** regardless of `NEXT_PERSONA_DATA_SOURCE`, legacy FastAPI `/public` for UUID personas when not in fixtures-only mode, then demo fixtures). Hosts supply chrome + deep-link fallback; EQC primary host is native Plexon overlay (`plexon-v3/knowledge/eqc-persona-chat.md` Wave C6).
 
 Guest `/chat?personaId=&projectId=` deep-links use the same share resolver and are public (no Plexon login) per `lib/chat/share-public-routes.ts`.
 
