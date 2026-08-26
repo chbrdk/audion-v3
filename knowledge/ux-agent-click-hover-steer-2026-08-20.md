@@ -13,6 +13,7 @@
 | `scope_nav_home_perception` | Merge Vision `noticed`, don't wipe |
 | `menuHoverCoords` | Store viewport CSS px for CDP click sweep |
 | Fail buckets | Don't treat task boilerplate „blockierter Navigation“ as `click_blocked` |
+| Destination quality (2026-08-26) | Penalize newsletter/UTM CTAs in hub/target evaluate; boost help/wartung/ersatzteil; bucket `goal_soft` for soft service landings |
 
 ## Verify
 

@@ -30,6 +30,12 @@ EMPTY_ACTIONS_RE = re.compile(
     re.I,
 )
 MAX_STEPS_RE = re.compile(r"max[_\s-]?steps|step\s+limit|step\s+budget", re.I)
+# Soft goal: left home onto task surface but landed on marketing CTA.
+SOFT_CTA_RE = re.compile(
+    r"newsletter|anmeldung|subscription|[?&]utm_|utm_campaign|utm_medium|utm_source|"
+    r"cta-|signup|sign-up|registr|login|werbung|promo|subscribe",
+    re.I,
+)
 
 
 def _walk_text(obj, budget: int = 80_000) -> str:
@@ -147,9 +153,15 @@ def _url_progress(data: dict, task: str) -> bool:
     return _url_matches_task(_final_url(data), task)
 
 
+def _is_soft_goal_url(url: str) -> bool:
+    return bool(SOFT_CTA_RE.search(url or ""))
+
+
 def bucket_run(path: Path) -> str:
     data = json.loads(path.read_text())
     if _goal_reached(data):
+        if _is_soft_goal_url(_final_url(data)):
+            return "goal_soft"
         return "goal_ok"
     text = _walk_text(data)
     task = _task_text(data)

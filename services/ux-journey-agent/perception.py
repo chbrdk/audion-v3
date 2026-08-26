@@ -764,7 +764,85 @@ def _href_key_match_score(href: str, keys: list[str]) -> int:
         if len(k) >= 6 and f"/{k}" in h:
             score += 20
         best = max(best, score)
-    return best
+    return best + destination_quality_adjust(h, task=None)
+
+
+# Marketing / lead-gen CTAs — avoid treating as primary service destinations.
+_MARKETING_CTA_RE = re.compile(
+    r"newsletter|anmeldung|subscription|[?&]utm_|utm_campaign|utm_medium|utm_source|"
+    r"cta-|signup|sign-up|registr|login|werbung|promo|subscribe",
+    re.I,
+)
+_SERVICE_HELP_RE = re.compile(
+    r"hilfe|help(?:-?center)?|wartung|ersatzteil|support|faq|beratung|"
+    r"pflege|zubeh[oö]r|repair|garantie|warranty",
+    re.I,
+)
+
+
+def is_marketing_cta_url(url: str | None) -> bool:
+    return bool(_MARKETING_CTA_RE.search(str(url or "")))
+
+
+def destination_quality_adjust(
+    href: str,
+    text: str = "",
+    *,
+    task: str | None = None,
+) -> int:
+    """
+    Score adjustment for destination links.
+
+    Penalize newsletter/UTM/lead-gen CTAs. For service-intent tasks, boost
+    help/wartung/ersatzteil/beratung hubs over marketing deep links.
+    """
+    h = str(href or "").lower()
+    blob = f"{h} {text}".lower()
+    adj = 0
+    if _MARKETING_CTA_RE.search(blob):
+        adj -= 120
+    t = str(task or "").lower()
+    service_intent = any(
+        x in t
+        for x in (
+            "service",
+            "beratung",
+            "wartung",
+            "ersatzteil",
+            "hilfe",
+            "help center",
+            "help-center",
+        )
+    )
+    if service_intent:
+        if _SERVICE_HELP_RE.search(blob):
+            adj += 70
+        path = h.split("?")[0].rstrip("/")
+        # Compact /…/service hub beats deep promo under /service/…
+        if path.endswith("/service") or re.search(r"/service$", path):
+            adj += 40
+        elif "/service/" in path and path.count("/") <= 5 and not _MARKETING_CTA_RE.search(path):
+            adj += 25
+    return adj
+
+
+def destination_quality_js_snippet() -> str:
+    """Shared JS fragment for hub/target evaluate scoring (keep in sync with Python)."""
+    return (
+        "const mkt=/newsletter|anmeldung|subscription|[?&]utm_|utm_campaign|cta-|"
+        "signup|sign-up|registr|login|werbung|promo|subscribe/i;"
+        "const help=/hilfe|help(?:-?center)?|wartung|ersatzteil|support|faq|beratung|"
+        "pflege|zubeh|repair|garantie|warranty/i;"
+        "function qualityAdj(href,t){"
+        "let a=0; const blob=(href+' '+t).toLowerCase();"
+        "if(mkt.test(blob)) a-=120;"
+        "if(help.test(blob)) a+=70;"
+        "const path=String(href||'').split('?')[0].replace(/\\/+$/,'');"
+        "if(/\\/service$/.test(path)) a+=40;"
+        "else if(path.includes('/service/') && (path.match(/\\//g)||[]).length<=5 && !mkt.test(path)) a+=25;"
+        "return a;"
+        "}"
+    )
 
 
 def detect_path_finding_deeplink_cheat(
@@ -1025,6 +1103,7 @@ def build_nav_target_click_evaluate(target_keys: list[str]) -> dict[str, Any] | 
 
     Walks light DOM + open shadow roots. This is still UI path-finding (follow a
     real page link) — not ``navigate``/``go_to_url`` deeplink injection.
+    Prefers help/service content over newsletter/UTM marketing CTAs.
     """
     keys = [str(k).strip().lower() for k in (target_keys or []) if str(k).strip()]
     if not keys:
@@ -1033,6 +1112,7 @@ def build_nav_target_click_evaluate(target_keys: list[str]) -> dict[str, Any] | 
     code = (
         "(function(){try{"
         f"const keys={keys_js};"
+        f"{destination_quality_js_snippet()}"
         "const match=t=>keys.some(k=>t.includes(k));"
         "function* anchors(root){"
         "for(const a of root.querySelectorAll('a[href]')) yield a;"
@@ -1053,6 +1133,7 @@ def build_nav_target_click_evaluate(target_keys: list[str]) -> dict[str, Any] | 
         "if(match(t)) score+=40;"
         "const r=el.getBoundingClientRect();"
         "if(r.width>=4 && r.height>=4 && r.top>=0 && r.top<=900) score+=25;"
+        "score+=qualityAdj(href,t);"
         "if(score>bestScore){bestScore=score; best=el;}"
         "}"
         "if(!best) return 'nav_target:no_link';"
@@ -1066,6 +1147,8 @@ def build_nav_target_click_evaluate(target_keys: list[str]) -> dict[str, Any] | 
 def build_nav_hub_click_evaluate(open_keys: list[str]) -> dict[str, Any] | None:
     """
     Click a non-rootish opener hub link (e.g. ``/…/service/…``) from the live DOM.
+
+    Prefers compact service/help hubs; heavily penalizes newsletter/UTM CTAs.
     """
     keys = [str(k).strip().lower() for k in (open_keys or []) if str(k).strip()]
     keys = [k for k in keys if k and k not in _META_NAV_OPEN_TOKENS]
@@ -1075,6 +1158,7 @@ def build_nav_hub_click_evaluate(open_keys: list[str]) -> dict[str, Any] | None:
     code = (
         "(function(){try{"
         f"const keys={keys_js};"
+        f"{destination_quality_js_snippet()}"
         "const meta=new Set(['navigation','menu','menü','nav']);"
         "const keysUse=keys.filter(k=>k && !meta.has(k));"
         "if(!keysUse.length) return 'nav_hub:no_keys';"
@@ -1107,6 +1191,7 @@ def build_nav_hub_click_evaluate(open_keys: list[str]) -> dict[str, Any] | None:
         "if(depth<=4) score+=20;"
         "const r=el.getBoundingClientRect();"
         "if(r.width>=4 && r.height>=4 && r.top>=0 && r.top<=420) score+=25;"
+        "score+=qualityAdj(href,t);"
         "if(score>bestScore){bestScore=score; best=el;}"
         "}"
         "if(!best) return 'nav_hub:no_link';"

@@ -1769,12 +1769,46 @@ def test_scope_nav_home_scrubs_think_and_blocks_filter_promote():
     assert "unklar" not in blob
 
 
+def test_destination_quality_prefers_help_over_newsletter():
+    task = "Öffne „Service & Beratung“ in der Navigation (Service-Bereich)."
+    news = P.destination_quality_adjust(
+        "/de/service/newsletter-anmeldung?utm_campaign=cta",
+        "Newsletter anmelden",
+        task=task,
+    )
+    help_u = P.destination_quality_adjust(
+        "/de/service/hilfe-wartung",
+        "Hilfe & Wartung",
+        task=task,
+    )
+    hub = P.destination_quality_adjust("/de/service/", "Service", task=task)
+    assert news < -100
+    assert help_u > 50
+    assert hub > 30
+    assert help_u > news
+    assert P.is_marketing_cta_url("/de/service/newsletter?utm_source=nav")
+
+
+def test_href_key_match_score_penalizes_newsletter_under_service():
+    keys = ["service", "beratung"]
+    assert P._href_key_match_score(
+        "/de/service/newsletter-anmeldung?utm_campaign=x", keys
+    ) < P._href_key_match_score("/de/service/hilfe-wartung", keys)
+    assert P._href_key_match_score(
+        "/de/service/newsletter-anmeldung", keys
+    ) < P._href_key_match_score("/de/service/", keys)
+
+
 def test_build_nav_target_click_evaluate_embeds_keys():
     action = P.build_nav_target_click_evaluate(["produktkombination"])
     assert action is not None
     assert action["tool"] == "evaluate"
     assert "produktkombination" in action["code"]
     assert "shadowRoot" in action["code"]
+    assert "qualityAdj" in action["code"]
+    hub = P.build_nav_hub_click_evaluate(["service"])
+    assert hub is not None
+    assert "qualityAdj" in hub["code"]
 
 
 def test_select_nav_dom_action_clicks_hidden_target_href():
