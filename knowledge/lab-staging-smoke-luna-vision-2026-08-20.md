@@ -24,6 +24,17 @@
 
 **Lesen:** Keyword-Hygiene + Gate + Viewport-Hover hat den Engpass gelöst (n=4 Smoke, kein volles A/B). C landet im Service-Bereich (Newsletter-CTA) — grob Ziel erreicht, nicht idealer Help-Center-Treffer.
 
+## Destination-quality follow-up (2026-08-26)
+
+Commit `f81cba9` · note `knowledge/ux-agent-destination-quality-2026-08-26.md` · runs `knowledge/ueq-ebike-runs/2026-08-26-quality/` · buckets `knowledge/ux-journey-fail-buckets-quality-smoke-2026-08-26.json`
+
+| Wave | n | goal_ok | goal_soft |
+|------|--:|--------:|----------:|
+| Hover-steer (C soft newsletter) | 4 | 100%* | (1× C newsletter would be soft) |
+| **Quality n=12 CDEF×3** | **12** | **100%** | **0%** |
+
+\*Hover C was URL-`goal_ok` under old buckets; new buckets mark newsletter/UTM as `goal_soft`. Quality smoke C → `/service/zubehoer-nachruestung` ×3.
+
 ## Prior vision-only smoke (reference)
 
 See earlier section in git history / `knowledge/ueq-ebike-runs/2026-08-20-vision-smoke/` — 1/4 goal_ok before hover-steer.

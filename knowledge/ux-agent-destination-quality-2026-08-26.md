@@ -25,5 +25,17 @@ UEQ_DATE=2026-08-26-quality UEQ_REPEATS=3 UEQ_ONLY_RUN='C,D,E,F' \
   UEQ_MAX_STEPS=25 UEQ_MAX_POLLS=180 UEQ_FORCE_RERUN=1 \
   ./scripts/run-ueq-ebike-batch.sh
 python3 scripts/bucket-ux-journey-fail-reasons.py \
-  knowledge/ueq-ebike-runs/2026-08-26-quality
+  knowledge/ueq-ebike-runs/2026-08-26-quality \
+  --out knowledge/ux-journey-fail-buckets-quality-smoke-2026-08-26.json
 ```
+
+### Result (n=12, commit `f81cba9`)
+
+| Bucket | n | rate |
+|--------|--:|-----:|
+| `goal_ok` | 12 | **100%** |
+| `goal_soft` | 0 | 0% |
+
+C (Service) all three waves → `/de/service/zubehoer-nachruestung` (not newsletter). Prior hover-smoke C was `/service/…newsletter…?utm_…` → would now bucket `goal_soft`.
+
+D: `produkte/uebersicht` ×1, `service/produktkombinationen` ×2. E/F: all `/unternehmen/ueber-uns`.
