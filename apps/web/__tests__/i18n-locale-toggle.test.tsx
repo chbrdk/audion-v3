@@ -46,6 +46,14 @@ describe('i18n dictionaries', () => {
     expect([...dk].filter((k) => !ek.has(k))).toEqual([])
   })
 
+  it('translates journey validate chrome', () => {
+    const tEn = createTranslator('en')
+    const tDe = createTranslator('de')
+    expect(tEn('dialogs.validateJourney')).toBe('Validate')
+    expect(tDe('dialogs.validateJourney')).toBe('Validieren')
+    expect(tDe('dialogs.generateMoments')).toBe('Momente generieren')
+  })
+
   it('translates nav and settings chrome', () => {
     const tEn = createTranslator('en')
     const tDe = createTranslator('de')

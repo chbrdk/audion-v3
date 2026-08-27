@@ -31,7 +31,7 @@ Browse personas as a magazine index, read a full-width profile article, and crea
 - Magazine chrome: `briefing-*`, `signal-*`, `geo-places` facets, Goals|Frustrations as **inline-editable lists**, Channels as **icon bubbles** + picker, Notes
 - Goals / Frustrations: `PersonaEditableList` — click row → inline input (Enter/blur save, Esc cancel); section “+” adds; delete icon confirms via `Dialog`; PATCH `{ [field]: nextItems }` to `paths.routes.apiPersonaDetail(id)`
 - Channels: `PersonaChannelBubbles` — monochrome bubbles; click / right-click opens icon-picker context menu (`CHANNEL_PICKER_OPTIONS`); PATCH `{ channels }`
-- Topbar: breadcrumb + **edit icon button** (and template) — profile fields only in the dialog
+- Topbar: breadcrumb (workflow CTAs when present); **edit / template icons** in `.audion-magazine-hero-actions` (hero bottom-right) — profile fields only in the dialog
 - Modes: `edit` · `create` · `template` (copy fields → new draft; template keeps list arrays from source)
 
 ## Edit dialog

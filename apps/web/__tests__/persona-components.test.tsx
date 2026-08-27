@@ -140,7 +140,7 @@ describe('persona workspace components', () => {
     const { container } = renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     expect(screen.getByRole('button', { name: 'Edit persona' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Create from template' })).toBeEnabled()
-    expect(document.querySelector('.audion-magazine-topbar .audion-edit-icon-btn')).toBeTruthy()
+    expect(document.querySelector('.audion-magazine-hero-actions .audion-edit-icon-btn')).toBeTruthy()
     expect(container.querySelector('.briefing-nav')).toBeNull()
   })
 
@@ -335,10 +335,10 @@ describe('target group workspace components', () => {
     expect(container.querySelector('.audion-tg-card-meta')).toHaveTextContent(/Create a segment/)
   })
 
-  it('renders linked personas as app cards and edit icon in topbar', () => {
+  it('renders linked personas as app cards and edit icon in hero', () => {
     const { container } = render(<TargetGroupDetailPanel targetGroup={tgDetail} />)
     expect(screen.getByRole('button', { name: 'Edit target group' })).toBeEnabled()
-    expect(container.querySelector('.audion-magazine-topbar .audion-edit-icon-btn')).toBeTruthy()
+    expect(container.querySelector('.audion-magazine-hero-actions .audion-edit-icon-btn')).toBeTruthy()
     expect(screen.getByRole('link', { name: /Alex Morgan/i })).toHaveAttribute(
       'href',
       paths.routes.personaDetail('p1'),
@@ -409,6 +409,7 @@ describe('journey workspace components', () => {
     expect(screen.getByRole('button', { name: 'Edit journey' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Delete journey' })).toBeEnabled()
     expect(container.querySelector('.audion-magazine-topbar-actions')).toBeTruthy()
+    expect(container.querySelector('.audion-magazine-hero-actions .audion-edit-icon-btn')).toBeTruthy()
     expect(container.querySelector('.audion-magazine-hero--split')).toBeTruthy()
     expect(container.querySelector('.audion-magazine-hero-copy')).toBeTruthy()
     expect(container.querySelector('.audion-magazine-hero--split > .audion-magazine-facets')).toBeTruthy()

@@ -2,7 +2,7 @@
 
 - Index composition: **Personas + Target groups** share `audion-tg-card` / `audion-tg-grid` (large name, airy top, small meta).
 - Linked personas on TG detail use the same app-card grid (`audion-tg-grid--nested`).
-- Magazine detail: edit is an **icon button** top-right (`.audion-magazine-topbar` + `.audion-edit-icon-btn`), not a primary text CTA.
+- Magazine detail: entity edit/delete is an **icon cluster bottom-right inside the hero** (`.audion-magazine-hero-actions` + `.audion-edit-icon-btn`); workflow CTAs stay in the topbar when present.
 - Persona Goals / Frustrations / Channels: **inline** on the magazine (`persona-editable-list.tsx`); dialog is profile-only.
 - Input chrome lives in **`@msqdx/ui`** (`field.css`) — AUDION no longer overrides borders/labels.
 - Fixture writes: in-memory stores + Next `/api/personas` and `/api/target-groups`.

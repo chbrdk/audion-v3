@@ -119,12 +119,12 @@ export function JourneyPhaseEditDialog({
       })
       if (!response.ok) {
         const err = (await response.json().catch(() => null)) as { error?: string } | null
-        throw new Error(err?.error || `Save failed (${response.status})`)
+        throw new Error(err?.error || `${t('dialogs.saveFailed')} (${response.status})`)
       }
       onClose()
       router.refresh()
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Save failed')
+      setSaveError(error instanceof Error ? error.message : t('dialogs.saveFailed'))
     } finally {
       setSaving(false)
     }

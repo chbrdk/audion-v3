@@ -60,10 +60,6 @@ export function ProjectDetailPanel({
 
   return (
     <article className="panel briefing-detail audion-magazine">
-      <div className="audion-magazine-topbar ds-motion-reveal">
-        <ProjectDetailActions project={project} />
-      </div>
-
       <header className="signal-hero briefing-hero audion-magazine-hero audion-magazine-hero--text ds-motion-reveal">
         <div className="audion-magazine-hero-copy">
           <Text role="label" className="briefing-eyebrow">
@@ -99,6 +95,9 @@ export function ProjectDetailPanel({
               kind="team"
             />
           </ul>
+        <div className="audion-magazine-hero-actions">
+          <ProjectDetailActions project={project} />
+        </div>
         </div>
       </header>
 

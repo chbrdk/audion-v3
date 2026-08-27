@@ -8,7 +8,6 @@ import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { IconDelete, IconEdit } from './nav-icons'
-import { ValidateJourneyButton } from './validate-journey-button'
 
 /** Fixture TG options for MVP Select — paths/knowledge/target-group-migration-map.md */
 const TARGET_GROUP_OPTIONS = [
@@ -242,8 +241,7 @@ export function JourneyDetailActions({ journey }: { journey: JourneyDetail }) {
   }
 
   return (
-    <div className="audion-magazine-topbar-actions">
-      <ValidateJourneyButton journey={journey} />
+    <>
       <Button
         type="button"
         variant="ghost"
@@ -307,7 +305,7 @@ export function JourneyDetailActions({ journey }: { journey: JourneyDetail }) {
           ) : null}
         </Dialog>
       ) : null}
-    </div>
+    </>
   )
 }
 

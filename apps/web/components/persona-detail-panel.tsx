@@ -54,10 +54,6 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
 
   return (
     <article className="panel briefing-detail audion-magazine">
-      <div className="audion-magazine-topbar ds-motion-reveal">
-        <PersonaDetailActions persona={persona} />
-      </div>
-
       <header className="signal-hero briefing-hero audion-magazine-hero ds-motion-reveal">
         <PersonaEditablePortrait
           personaId={persona.id}
@@ -106,6 +102,9 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
               kind={persona.status}
             />
           </ul>
+        <div className="audion-magazine-hero-actions">
+          <PersonaDetailActions persona={persona} />
+        </div>
         </div>
       </header>
 

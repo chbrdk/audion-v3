@@ -14,29 +14,27 @@ export function PersonaDetailActions({ persona }: { persona: PersonaDetail }) {
 
   return (
     <>
-      <div className="audion-magazine-topbar-actions">
-        <EnrichPersonaButton personaId={persona.id} personaName={persona.name} />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="audion-edit-icon-btn"
-          aria-label={t('tiles.editPersona')}
-          title={t('tiles.editPersona')}
-          icon={<IconEdit />}
-          onClick={() => setMode('edit')}
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label={t('tiles.fromTemplateAria')}
-          title={t('tiles.fromTemplateAria')}
-          onClick={() => setMode('template')}
-        >
-          {t('tiles.fromTemplate')}
-        </Button>
-      </div>
+      <EnrichPersonaButton personaId={persona.id} personaName={persona.name} />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="audion-edit-icon-btn"
+        aria-label={t('tiles.editPersona')}
+        title={t('tiles.editPersona')}
+        icon={<IconEdit />}
+        onClick={() => setMode('edit')}
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        aria-label={t('tiles.fromTemplateAria')}
+        title={t('tiles.fromTemplateAria')}
+        onClick={() => setMode('template')}
+      >
+        {t('tiles.fromTemplate')}
+      </Button>
       {mode != null ? (
         <PersonaEditDialog
           open

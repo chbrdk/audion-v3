@@ -6,6 +6,7 @@ import type { GenerateJourneyPhaseMomentsResponse, JourneyPhase } from '@audion-
 import { ConfirmDialog } from '../lib/msqdx-ui-client'
 import { targetHint } from '../lib/ai-workflow-targets'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { AiActionButton } from './ai-action-button'
 
 /** Phase slide / edit — generate moments via journey.moments (Wave 2). */
@@ -19,6 +20,7 @@ export function GeneratePhaseMomentsButton({
   /** Optional: sync local editors (e.g. TagInput) after apply */
   onApplied?: (labels: string[]) => void
 }) {
+  const t = useT()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -38,12 +40,14 @@ export function GeneratePhaseMomentsButton({
       const data = (await response.json().catch(() => null)) as
         | (GenerateJourneyPhaseMomentsResponse & { error?: string })
         | null
-      if (!response.ok) throw new Error(data?.error || `Generate failed (${response.status})`)
+      if (!response.ok) {
+        throw new Error(data?.error || `${t('dialogs.generateMomentsFailed')} (${response.status})`)
+      }
       if (data?.moments) onApplied?.(data.moments.map((m) => m.label))
       setConfirmOpen(false)
       router.refresh()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Generate failed')
+      setError(e instanceof Error ? e.message : t('dialogs.generateMomentsFailed'))
     } finally {
       setBusy(false)
     }
@@ -61,7 +65,7 @@ export function GeneratePhaseMomentsButton({
   return (
     <>
       <AiActionButton
-        label="Generate moments"
+        label={t('dialogs.generateMoments')}
         targetHint={hint}
         loading={busy}
         onClick={onClick}
@@ -70,15 +74,12 @@ export function GeneratePhaseMomentsButton({
       {confirmOpen ? (
         <ConfirmDialog
           open
-          title={`Add moments to ${phase.name}?`}
-          confirmLabel="Generate"
+          title={t('dialogs.generateMomentsTitle', { name: phase.name })}
+          confirmLabel={t('common.generate')}
           onClose={() => setConfirmOpen(false)}
           onConfirm={() => void runGenerate()}
         >
-          <p>
-            AI will suggest additional moments for this phase and merge them with the existing
-            list.
-          </p>
+          <p>{t('dialogs.generateMomentsBody')}</p>
           <p className="audion-ai-target-hint" title={hint}>
             Target <code>{hint}</code>
           </p>

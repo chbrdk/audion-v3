@@ -8,6 +8,7 @@ import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { JourneyDetailActions } from './journey-edit-dialog'
 import { JourneyPhaseSlider } from './journey-phase-slider'
+import { ValidateJourneyButton } from './validate-journey-button'
 
 function FacetTile({
   label,
@@ -52,7 +53,9 @@ export function JourneyDetailPanel({ journey }: { journey: JourneyDetail | null 
             {journey.status}
           </span>
         </p>
-        <JourneyDetailActions journey={journey} />
+        <div className="audion-magazine-topbar-actions">
+          <ValidateJourneyButton journey={journey} />
+        </div>
       </div>
 
       <header className="signal-hero briefing-hero audion-magazine-hero audion-magazine-hero--split ds-motion-reveal">
@@ -66,8 +69,11 @@ export function JourneyDetailPanel({ journey }: { journey: JourneyDetail | null 
           <Text role="body" className="audion-magazine-deck">
             {journey.journeyType}
           </Text>
+          <div className="audion-magazine-hero-actions">
+            <JourneyDetailActions journey={journey} />
+          </div>
         </div>
-        <ul className="geo-places audion-magazine-facets" aria-label="Journey attributes">
+        <ul className="geo-places audion-magazine-facets" aria-label={t('detail.journey.attrsAria')}>
           <FacetTile
             label={t('detail.persona.status')}
             value={journey.status}

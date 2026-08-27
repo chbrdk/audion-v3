@@ -67,7 +67,6 @@ export function TargetGroupDetailPanel({
               {t('detail.targetGroup.askAll')}
             </Link>
           ) : null}
-          <TargetGroupDetailActions targetGroup={targetGroup} />
           <GeneratePersonasAiButton
             targetGroupId={targetGroup.id}
             defaultSegment={targetGroup.segment}
@@ -99,6 +98,9 @@ export function TargetGroupDetailPanel({
               kind="personas"
             />
           </ul>
+        <div className="audion-magazine-hero-actions">
+          <TargetGroupDetailActions targetGroup={targetGroup} />
+        </div>
         </div>
       </header>
 

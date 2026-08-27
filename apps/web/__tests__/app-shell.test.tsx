@@ -7,6 +7,7 @@ import { paths } from '../lib/paths'
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/personas',
+  useRouter: () => ({ back: vi.fn(), forward: vi.fn(), push: vi.fn(), replace: vi.fn() }),
 }))
 
 function renderShell(ui: React.ReactElement) {

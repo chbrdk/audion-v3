@@ -238,7 +238,7 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
       setPhaseToDelete(null)
       router.refresh()
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : 'Delete failed')
+      setDeleteError(error instanceof Error ? error.message : t('dialogs.deleteFailed'))
     } finally {
       setDeleting(false)
     }

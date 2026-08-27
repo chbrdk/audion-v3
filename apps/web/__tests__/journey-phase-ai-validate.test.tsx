@@ -199,7 +199,7 @@ describe('journey phase AI + validate UI', () => {
     })
 
     fireEvent.click(screen.getByLabelText(/Previous validation report/i))
-    fireEvent.click(screen.getByRole('option', { name: /automated · fit 61/i }))
+    fireEvent.click(screen.getByRole('option', { name: /Automated \(rule-based\) · fit 61/i }))
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(

@@ -466,10 +466,25 @@ main { min-height: 100vh; }
 }
 
 .audion-magazine-hero-copy {
+  position: relative;
   display: grid;
   gap: 0.1rem;
   align-content: end;
   min-width: 0;
+  padding-right: 2.75rem; /* room for corner edit cluster */
+}
+
+/* Entity edit/delete — bottom-right inside hero copy (not a page footer) */
+.audion-magazine-hero-actions {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  z-index: 1;
 }
 
 .audion-magazine-deck {
@@ -481,7 +496,6 @@ main { min-height: 100vh; }
   font-weight: var(--weight-regular);
 }
 
-/* Reuse ECHON geo-places gradient tiles for persona meta */
 .audion-magazine-facets.geo-places {
   margin: 0.35rem 0 0;
   gap: 0.55rem;
@@ -672,9 +686,13 @@ main { min-height: 100vh; }
   min-width: 0;
 }
 
-/* Match DS editorial Panel: vertical rhythm only, no side “card” pad */
-.audion-magazine-band.ds-panel {
+/* Match DS editorial Panel: vertical rhythm only, no side “card” pad / top hairline */
+.audion-magazine-band.ds-panel,
+.audion-magazine-band.module-panel,
+.audion-magazine .ds-panel.ds-panel--editorial.audion-magazine-band {
   padding: clamp(1rem, 2.5vw, 1.5rem) 0 clamp(1.25rem, 3vw, 1.85rem);
+  border: 0;
+  border-top: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import type {
   JourneyDetail,
   JourneyValidationMode,
@@ -13,25 +13,16 @@ import { Button } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { targetHint } from '../lib/ai-workflow-targets'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { AiActionButton } from './ai-action-button'
 
 type PersonaOption = { id: string; name: string; role?: string | null }
-
-const MODE_OPTIONS: Array<{ value: JourneyValidationMode; label: string }> = [
-  { value: 'automated', label: 'Automated (rule-based)' },
-  { value: 'chat', label: 'Chat mode (persona voice)' },
-  { value: 'both', label: 'Both' },
-]
-
-function formatReportLabel(item: JourneyValidationReportSummary): string {
-  const when = new Date(item.validatedAt).toLocaleString()
-  return `${when} · ${item.mode} · fit ${item.overallFitScore}`
-}
 
 /**
  * Journey topbar — validate against a TG-linked persona; history + chat mode.
  */
 export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [loadingPersonas, setLoadingPersonas] = useState(false)
@@ -45,6 +36,27 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
   const [mode, setMode] = useState<JourneyValidationMode>('automated')
   const hint = targetHint('validateJourney')
 
+  const modeOptions = useMemo(
+    () => [
+      { value: 'automated' as const, label: t('dialogs.validateModeAutomated') },
+      { value: 'chat' as const, label: t('dialogs.validateModeChat') },
+      { value: 'both' as const, label: t('dialogs.validateModeBoth') },
+    ],
+    [t],
+  )
+
+  const modeLabel = (value: JourneyValidationMode) =>
+    modeOptions.find((option) => option.value === value)?.label ?? value
+
+  function formatReportLabel(item: JourneyValidationReportSummary): string {
+    const when = new Date(item.validatedAt).toLocaleString()
+    return t('dialogs.validateReportLabel', {
+      when,
+      mode: modeLabel(item.mode),
+      score: String(item.overallFitScore),
+    })
+  }
+
   async function loadHistory() {
     setLoadingHistory(true)
     try {
@@ -52,11 +64,13 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
       const data = (await response.json().catch(() => null)) as
         | (JourneyValidationReportList & { error?: string })
         | null
-      if (!response.ok) throw new Error(data?.error || `Load history failed (${response.status})`)
+      if (!response.ok) {
+        throw new Error(data?.error || `${t('dialogs.validateHistoryFailed')} (${response.status})`)
+      }
       setHistory(data?.items ?? [])
     } catch (e) {
       setHistory([])
-      setError(e instanceof Error ? e.message : 'Could not load report history')
+      setError(e instanceof Error ? e.message : t('dialogs.validateHistoryFailed'))
     } finally {
       setLoadingHistory(false)
     }
@@ -80,7 +94,9 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
       const data = (await response.json().catch(() => null)) as
         | (TargetGroupDetail & { error?: string })
         | null
-      if (!response.ok) throw new Error(data?.error || `Load personas failed (${response.status})`)
+      if (!response.ok) {
+        throw new Error(data?.error || `${t('dialogs.validatePersonasFailed')} (${response.status})`)
+      }
       const list = (data?.linkedPersonas ?? []).map((p) => ({
         id: p.id,
         name: p.name,
@@ -91,7 +107,7 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
     } catch (e) {
       setPersonas([])
       setPersonaId('')
-      setError(e instanceof Error ? e.message : 'Could not load personas')
+      setError(e instanceof Error ? e.message : t('dialogs.validatePersonasFailed'))
     } finally {
       setLoadingPersonas(false)
     }
@@ -110,12 +126,14 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
       const data = (await response.json().catch(() => null)) as
         | (ValidateJourneyResponse & { error?: string })
         | null
-      if (!response.ok) throw new Error(data?.error || `Load report failed (${response.status})`)
+      if (!response.ok) {
+        throw new Error(data?.error || `${t('dialogs.validateReportFailed')} (${response.status})`)
+      }
       setReport(data)
       if (data?.personaId) setPersonaId(data.personaId)
       if (data?.mode) setMode(data.mode)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not open report')
+      setError(e instanceof Error ? e.message : t('dialogs.validateReportFailed'))
     } finally {
       setBusy(false)
     }
@@ -123,7 +141,7 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
 
   async function runValidate() {
     if (!personaId) {
-      setError('Select a persona to validate against.')
+      setError(t('dialogs.validateSelectPersona'))
       return
     }
     setBusy(true)
@@ -137,12 +155,14 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
       const data = (await response.json().catch(() => null)) as
         | (ValidateJourneyResponse & { error?: string })
         | null
-      if (!response.ok) throw new Error(data?.error || `Validate failed (${response.status})`)
+      if (!response.ok) {
+        throw new Error(data?.error || `${t('dialogs.validateFailed')} (${response.status})`)
+      }
       setReport(data)
       setHistoryId(data?.reportId ?? '')
       await loadHistory()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Validate failed')
+      setError(e instanceof Error ? e.message : t('dialogs.validateFailed'))
     } finally {
       setBusy(false)
     }
@@ -151,7 +171,7 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
   return (
     <>
       <AiActionButton
-        label="Validate"
+        label={t('dialogs.validateJourney')}
         targetHint={hint}
         loading={busy && open}
         onClick={() => void openDialog()}
@@ -163,7 +183,7 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
             if (!busy) setOpen(false)
           }}
           className="audion-edit-dialog"
-          title="Validate journey"
+          title={t('dialogs.validateJourneyTitle')}
           actions={
             <>
               <Button
@@ -173,7 +193,7 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
                 onClick={() => setOpen(false)}
                 disabled={busy}
               >
-                Close
+                {t('common.close')}
               </Button>
               <Button
                 type="button"
@@ -181,25 +201,23 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
                 onClick={() => void runValidate()}
                 disabled={busy || loadingPersonas || !personaId}
               >
-                {busy ? 'Validating…' : 'Run validation'}
+                {busy ? t('dialogs.validateRunning') : t('dialogs.validateRun')}
               </Button>
             </>
           }
         >
-          <p className="audion-edit-lede">
-            Fit this map against a persona — automated rules, chat-mode persona voice, or both.
-          </p>
+          <p className="audion-edit-lede">{t('dialogs.validateJourneyLede')}</p>
           <p className="audion-ai-target-hint" title={hint}>
             Target <code>{hint}</code>
           </p>
 
           {loadingPersonas ? (
-            <p className="audion-edit-lede">Loading personas…</p>
+            <p className="audion-edit-lede">{t('dialogs.validateLoadingPersonas')}</p>
           ) : personas.length ? (
             <label className="audion-editable-visuals-field">
-              <span>Persona</span>
+              <span>{t('dialogs.fieldPersona')}</span>
               <Select
-                aria-label="Persona to validate against"
+                aria-label={t('dialogs.validatePersonaAria')}
                 value={personaId}
                 onChange={setPersonaId}
                 disabled={busy}
@@ -210,34 +228,32 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
               />
             </label>
           ) : (
-            <p className="audion-edit-lede">
-              Link a target group with personas to enable validation.
-            </p>
+            <p className="audion-edit-lede">{t('dialogs.validateNeedTg')}</p>
           )}
 
           <label className="audion-editable-visuals-field">
-            <span>Mode</span>
+            <span>{t('dialogs.validateMode')}</span>
             <Select
-              aria-label="Validation mode"
+              aria-label={t('dialogs.validateModeAria')}
               value={mode}
               onChange={(value) => setMode(value as JourneyValidationMode)}
               disabled={busy}
-              options={MODE_OPTIONS}
+              options={modeOptions}
             />
           </label>
 
           {loadingHistory ? (
-            <p className="audion-edit-lede">Loading report history…</p>
+            <p className="audion-edit-lede">{t('dialogs.validateLoadingHistory')}</p>
           ) : history.length ? (
             <label className="audion-editable-visuals-field">
-              <span>Report history</span>
+              <span>{t('dialogs.validateHistory')}</span>
               <Select
-                aria-label="Previous validation report"
+                aria-label={t('dialogs.validateHistoryAria')}
                 value={historyId}
                 onChange={(value) => void openHistoryReport(value)}
                 disabled={busy}
                 options={[
-                  { value: '', label: 'Select a previous report…' },
+                  { value: '', label: t('dialogs.validateHistorySelect') },
                   ...history.map((item) => ({
                     value: item.id,
                     label: formatReportLabel(item),
@@ -246,7 +262,7 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
               />
             </label>
           ) : (
-            <p className="audion-edit-lede">No saved reports yet — run validation to start history.</p>
+            <p className="audion-edit-lede">{t('dialogs.validateHistoryEmpty')}</p>
           )}
 
           {error ? <p className="audion-project-knowledge-error">{error}</p> : null}
@@ -254,9 +270,11 @@ export function ValidateJourneyButton({ journey }: { journey: JourneyDetail }) {
           {report ? (
             <div className="audion-journey-validation-report" aria-live="polite">
               <p className="audion-edit-lede">
-                Overall fit <strong>{report.overallFitScore}</strong>
-                {` · ${report.mode}`}
-                {report.stubbed ? ' · stub' : ' · live'}
+                {t('dialogs.validateOverallFit')} <strong>{report.overallFitScore}</strong>
+                {` · ${modeLabel(report.mode)}`}
+                {report.stubbed
+                  ? ` · ${t('dialogs.validateStub')}`
+                  : ` · ${t('dialogs.validateLive')}`}
               </p>
               <ul className="audion-journey-validation-phases">
                 {report.phases.map((phase) => (

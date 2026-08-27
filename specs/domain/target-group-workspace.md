@@ -30,7 +30,7 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 
 - Magazine hero **text-only** (`.audion-magazine-hero--text`): full-width eyebrow, title, segment deck, facets — no portrait column (same as projects)
 - Optional description lede under hero
-- Topbar: breadcrumb + **edit icon** + **Generate with AI** (stub → `personas/generate`) + **Ask all personas** → `/chat?targetGroupId=` (when ≥1 linked persona)
+- Topbar: breadcrumb + **Generate with AI** (stub → `personas/generate`) + **Ask all personas** → `/chat?targetGroupId=` (when ≥1 linked persona); **edit icon** in `.audion-magazine-hero-actions` (hero bottom-right)
 - Linked personas band (`TargetGroupLinkedPersonas`): **Cards** (default `audion-tg-card` grid) or **List** (numbered `audion-magazine-list`) via layout switch — preference in `sessionStorage` (`paths.tgLinkedPersonasLayoutKey`)
 - Edit opens `TargetGroupEditDialog`
 
