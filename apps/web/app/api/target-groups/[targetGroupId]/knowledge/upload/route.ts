@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '../../../../../../auth'
-import { extractDocxForKnowledge } from '../../../../../../lib/knowledge/docx-to-knowledge'
+import { extractFileForKnowledge } from '../../../../../../lib/knowledge/docx-to-knowledge'
 import { createKnowledgeEntry } from '../../../../../../lib/knowledge-entries'
 import {
   scheduleKnowledgeEntryRagSync,
@@ -38,7 +38,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: 'file is required' }, { status: 400 })
   }
 
-  const extracted = await extractDocxForKnowledge(file)
+  const extracted = await extractFileForKnowledge(file)
   if (!extracted.ok) {
     return NextResponse.json({ error: extracted.error }, { status: extracted.status })
   }

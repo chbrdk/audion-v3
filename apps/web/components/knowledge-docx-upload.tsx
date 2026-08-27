@@ -2,9 +2,13 @@
 
 import { useRef, useState } from 'react'
 import { Button } from '@msqdx/ui'
+import {
+  KNOWLEDGE_UPLOAD_ACCEPT,
+  isKnowledgeUploadFilename,
+} from '../lib/knowledge/upload-formats'
 import { useT } from '../lib/user-prefs'
 
-/** Shared DOCX picker for knowledge dossiers. */
+/** Shared knowledge file picker (.docx / .pdf / .pptx / .md). */
 export function KnowledgeDocxUploadButton({
   uploadUrl,
   disabled,
@@ -22,7 +26,7 @@ export function KnowledgeDocxUploadButton({
   async function onPick(files: FileList | null) {
     if (!files?.length) return
     const file = files[0]!
-    if (!file.name.toLowerCase().endsWith('.docx')) {
+    if (!isKnowledgeUploadFilename(file.name)) {
       setError(t('knowledge.uploadInvalidType'))
       if (inputRef.current) inputRef.current.value = ''
       return
@@ -53,7 +57,7 @@ export function KnowledgeDocxUploadButton({
       <input
         ref={inputRef}
         type="file"
-        accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        accept={KNOWLEDGE_UPLOAD_ACCEPT}
         className="audion-chat-attach-input"
         aria-hidden
         tabIndex={-1}
@@ -64,10 +68,10 @@ export function KnowledgeDocxUploadButton({
         variant="ghost"
         size="sm"
         disabled={disabled || busy}
-        aria-label={t('knowledge.uploadDocx')}
+        aria-label={t('knowledge.uploadFile')}
         onClick={() => inputRef.current?.click()}
       >
-        {busy ? t('knowledge.uploading') : t('knowledge.uploadDocx')}
+        {busy ? t('knowledge.uploading') : t('knowledge.uploadFile')}
       </Button>
       {error ? <p className="audion-project-knowledge-error">{error}</p> : null}
     </div>

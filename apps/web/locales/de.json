@@ -768,10 +768,11 @@
     "ragReady": "Im Chat",
     "ragPending": "Indexiert…",
     "ragFailed": "Chat-Index fehlgeschlagen",
-    "uploadDocx": "Word (.docx) hochladen",
+    "uploadDocx": "Dokument hochladen",
+    "uploadFile": "Dokument hochladen",
     "uploading": "Wird hochgeladen…",
     "uploadFailed": "Dokument-Upload fehlgeschlagen",
-    "uploadInvalidType": "Nur .docx-Dateien werden unterstützt"
+    "uploadInvalidType": "Unterstützt: .docx, .pdf, .pptx, .md"
   },
   "apiDocs": {
     "hint": "Live-BFF-Routenkatalog. OpenAPI-Iframe kann später folgen.",

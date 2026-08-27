@@ -46,7 +46,7 @@ Chat stream (`POST /api/chat/stream`) calls retrieve **internally** when `projec
 }
 ```
 
-Multipart variant: field `file` (`.docx`) + `projectId` (+ optional `title`). Server extracts via mammoth (same helper as chat DOCX), then chunks.
+Multipart variant: field `file` (`.docx` / `.pdf` / `.pptx` / `.md`) + `projectId` (+ optional `title`). Server extracts text (mammoth / pdf-parse / pptx XML / markdown), then chunks.
 
 **Response:** `{ documentId, status, chunkCount }` (`status`: `pending` | `ready` | `failed`).
 

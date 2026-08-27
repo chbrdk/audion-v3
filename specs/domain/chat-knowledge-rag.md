@@ -60,7 +60,7 @@ flowchart TB
 | Target chars | `knowledgeRagChunkChars` ≈ 1800 | ~450–600 tokens |
 | Overlap chars | `knowledgeRagChunkOverlap` ≈ 200 | Boundary soft-split on `\n\n` then `\n` then space |
 | Max chunks / document | `knowledgeRagMaxChunksPerDoc` = 200 | Cap runaway uploads |
-| Max ingest file | reuse `chatDocumentUploadMaxBytes` (15 MB) for DOCX; HTML/plain from dossier separately capped |
+| Max ingest file | reuse `chatDocumentUploadMaxBytes` (15 MB) for `.docx` / `.pdf` / `.pptx` / `.md`; HTML/plain from dossier separately capped |
 
 Chunk text is plain (strip HTML). Each chunk stores `sourceType`, `sourceId`, `filename`/`title`, `ord`.
 
@@ -139,9 +139,9 @@ OpenRouter headers: `HTTP-Referer` / `X-Title` from staging origin / brand label
 | Persona / TG knowledge entry create/update | Auto-sync when `projectId` set (`sourceType` `entry`) |
 | Chapter / entry delete | Remove matching RAG document by `sourceRef` |
 | Manual `POST /api/knowledge/rag/ingest` | Ops path; **no separate “Index for chat” CTA** |
-| DOCX upload on dossier | `POST …/knowledge/upload` → chapter/entry + auto RAG |
+| File upload on dossier | `POST …/knowledge/upload` → chapter/entry + auto RAG (`.docx`, `.pdf`, `.pptx`, `.md`) |
 
-UI: **Upload Word (.docx)** on project / persona / TG knowledge magazines; status badges on cards.
+UI: **Upload document** on project / persona / TG knowledge magazines; status badges on cards.
 
 Collection Knowledge Pack publish remains a **separate** distill path (`knowledge-pack-publish.md`) — RAG does not write to Plexon.
 
