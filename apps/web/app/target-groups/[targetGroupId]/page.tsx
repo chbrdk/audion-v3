@@ -1,4 +1,4 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../../components/app-shell'
 import { TargetGroupDetailPanel } from '../../../components/target-group-detail-panel'
 import { fetchTargetGroupDetail } from '../../../lib/target-groups'
@@ -12,14 +12,7 @@ export default async function TargetGroupDetailPage({
   try {
     const result = await fetchTargetGroupDetail(targetGroupId)
     return (
-      <AppShell
-        status={
-          <TopStatus
-            level={result.targetGroup ? 'ok' : 'warn'}
-            primary={result.targetGroup?.status ?? 'missing'}
-          />
-        }
-      >
+      <AppShell>
         <TargetGroupDetailPanel targetGroup={result.targetGroup} />
       </AppShell>
     )

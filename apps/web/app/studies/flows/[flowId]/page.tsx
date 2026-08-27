@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Alert, Chip, TopStatus } from '@msqdx/ui'
+import { Alert, Chip } from '@msqdx/ui'
 import { AppShell } from '../../../../components/app-shell'
 import { UxFlowDetailClient } from '../../../../components/ux-flow-canvas'
 import { getUxTestFlow } from '../../../../lib/ux-test-flows'
@@ -35,13 +35,6 @@ export default async function StudiesFlowDetailPage({
   return (
     <AppShell
       description={flow.description}
-      status={
-        <TopStatus
-          level={flow.compileReady ? 'ok' : 'warn'}
-          primary={flow.compileReady ? 'compile-ready' : 'catalog'}
-          secondary={`Szenario ${flow.scenarioIndex}`}
-        />
-      }
     >
       <p className="msqdx-flow-lede">
         <Link href={paths.routes.studiesFlows}>← Flows</Link>

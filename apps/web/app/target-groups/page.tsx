@@ -1,6 +1,5 @@
 import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../components/app-shell'
-import { HubTopStatus } from '../../components/hub-top-status'
 import { TargetGroupListPanel } from '../../components/target-group-list-panel'
 import { fetchTargetGroupList, filterTargetGroupList } from '../../lib/target-groups'
 
@@ -15,9 +14,7 @@ export default async function TargetGroupsPage({
     const result = await fetchTargetGroupList()
     const list = filterTargetGroupList(result, query)
     return (
-      <AppShell
-        status={<HubTopStatus total={list.total} entity="groups" />}
-      >
+      <AppShell>
         <TargetGroupListPanel list={list} query={query} />
       </AppShell>
     )

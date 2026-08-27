@@ -1,6 +1,5 @@
 import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../components/app-shell'
-import { HubTopStatus } from '../../components/hub-top-status'
 import { ProjectListPanel } from '../../components/project-list-panel'
 import { fetchProjectList, filterProjectList } from '../../lib/projects'
 
@@ -15,9 +14,7 @@ export default async function ProjectsPage({
     const result = await fetchProjectList()
     const list = filterProjectList(result, query)
     return (
-      <AppShell
-        status={<HubTopStatus total={list.total} entity="projects" />}
-      >
+      <AppShell>
         <ProjectListPanel list={list} query={query} />
       </AppShell>
     )

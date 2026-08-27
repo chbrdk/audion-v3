@@ -1,4 +1,4 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import Link from 'next/link'
 import { AppShell } from '../../../components/app-shell'
 import { StudyDetailPanel } from '../../../components/study-detail-panel'
@@ -22,14 +22,7 @@ export default async function StudyDetailPage({
       )
     }
     return (
-      <AppShell
-        status={
-          <TopStatus
-            level="ok"
-            primary={`${study.waveCount} waves`}
-          />
-        }
-      >
+      <AppShell>
         <StudyDetailPanel study={study} />
       </AppShell>
     )

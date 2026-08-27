@@ -1,6 +1,5 @@
 import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../components/app-shell'
-import { HubTopStatus } from '../../components/hub-top-status'
 import { StudyListPanel } from '../../components/study-list-panel'
 import { fetchUxStudyList, filterUxStudyList } from '../../lib/ux-studies'
 
@@ -15,9 +14,7 @@ export default async function StudiesPage({
     const result = await fetchUxStudyList()
     const list = filterUxStudyList(result, query)
     return (
-      <AppShell
-        status={<HubTopStatus total={list.total} entity="studies" />}
-      >
+      <AppShell>
         <StudyListPanel list={list} query={query} />
       </AppShell>
     )

@@ -1,4 +1,4 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../../components/app-shell'
 import { PersonaDetailPanel } from '../../../components/persona-detail-panel'
 import { fetchPersonaDetail } from '../../../lib/personas'
@@ -12,14 +12,7 @@ export default async function PersonaDetailPage({
   try {
     const detailResult = await fetchPersonaDetail(personaId)
     return (
-      <AppShell
-        status={
-          <TopStatus
-            level="ok"
-            primary={detailResult.persona?.status ?? 'persona'}
-          />
-        }
-      >
+      <AppShell>
         <PersonaDetailPanel persona={detailResult.persona} />
       </AppShell>
     )

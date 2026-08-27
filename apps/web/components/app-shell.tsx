@@ -32,7 +32,6 @@ export function AppShell({
   descriptionKey,
   leading,
   actions,
-  status,
   presentation = 'default',
 }: {
   children: ReactNode
@@ -43,7 +42,6 @@ export function AppShell({
   /** Chat / special chrome on the left of the optional topbar. */
   leading?: ReactNode
   actions?: ReactNode
-  status?: ReactNode
   /** Embed: no nav rail / brand corner / platform assistant. Spec: chat-embed.md */
   presentation?: 'default' | 'embed'
   /** @deprecated Global AppShell PageTitle removed — ignored (nav + magazine heroes own identity). */
@@ -54,13 +52,15 @@ export function AppShell({
   titleHref?: string
   /** @deprecated Global AppShell PageTitle removed — ignored. */
   titleTone?: 'default' | 'context'
+  /** @deprecated Global AppShell status topbar removed — ignored (status lives in magazine chrome). */
+  status?: ReactNode
 }) {
   const pathname = usePathname()
   const { displayName, t } = useUserPrefs()
   const [railEdge, setRailEdge] = useState<RailDockEdge>(paths.railDockEdge)
   const embed = presentation === 'embed'
   const pageLead = descriptionKey ? t(descriptionKey) : description
-  const showTopbar = Boolean(leading || actions || status)
+  const showTopbar = Boolean(leading || actions)
 
   const frameStyle = useMemo(
     () =>
@@ -154,10 +154,7 @@ export function AppShell({
         showTopbar ? (
           <>
             <div className="topbar-brand">{leading ?? null}</div>
-            <div className="topbar-right">
-              {status}
-              {actions}
-            </div>
+            <div className="topbar-right">{actions}</div>
           </>
         ) : undefined
       }

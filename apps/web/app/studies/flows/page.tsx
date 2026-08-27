@@ -1,4 +1,4 @@
-import { Alert, Panel, Text, TopStatus, Chip } from '@msqdx/ui'
+import { Alert, Panel, Text, Chip } from '@msqdx/ui'
 import { AppShell } from '../../../components/app-shell'
 import { FlowsPageChrome } from '../../../components/flows-page-chrome'
 import { listUxTestFlows } from '../../../lib/ux-test-flows'
@@ -10,9 +10,6 @@ export default function StudiesFlowsPage() {
   return (
     <AppShell
       descriptionKey="pages.flows.lead"
-      status={
-        <TopStatus level="ok" primary={`${items.length} templates`} secondary="product layer" />
-      }
     >
       <FlowsPageChrome empty={!items.length}>
         <ul className="audion-tg-grid msqdx-flow-grid">

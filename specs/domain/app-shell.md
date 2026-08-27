@@ -11,7 +11,7 @@
 - Shared chrome only via `@msqdx/ui` (server barrel `lib/msqdx-ui.ts`, shell barrel `lib/msqdx-ui-shell.ts`).
 - Composition language: `app-frame`, atmospheric background, floating rail, top-right brand corner.
 - **No global `PageTitle` / duplicate hub headline** — page identity lives in the nav rail, magazine heroes, or in-page leads. Legacy `title` / `titleKey` / `titleHref` / `titleTone` props are ignored.
-- Optional topbar only when `leading`, `actions`, or `status` is set (e.g. Chat mode picker, hub counts).
+- Optional topbar only when `leading` or `actions` is set (e.g. Chat mode picker). **No** global `status` / `TopStatus` topbar — counts and publish state live in magazine/list chrome.
 - Without a topbar, `.audion-stage--flush-top` adds content padding/margin so the first viewport breathes.
 - **Product launcher:** `ShellBrandCorner` (`BrandCornerProductMenu`) — click opens federated app list; static staging URLs via `lib/platform-product-switcher.ts`; footer links Plexon `/products` when a Plexon public base is available. Prefer DS BrandCorner radius default (24).
 - Primary nav **enabled:** Home · Projects · Personas · Target groups · Journeys · Chat · Studies

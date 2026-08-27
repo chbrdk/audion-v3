@@ -1,6 +1,5 @@
 import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../components/app-shell'
-import { HubTopStatus } from '../../components/hub-top-status'
 import { JourneyListPanel } from '../../components/journey-list-panel'
 import { fetchJourneyList, filterJourneyList } from '../../lib/journeys'
 
@@ -15,9 +14,7 @@ export default async function JourneysPage({
     const result = await fetchJourneyList()
     const list = filterJourneyList(result, query)
     return (
-      <AppShell
-        status={<HubTopStatus total={list.total} entity="journeys" />}
-      >
+      <AppShell>
         <JourneyListPanel list={list} query={query} />
       </AppShell>
     )

@@ -1,4 +1,4 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../../components/app-shell'
 import { ProjectDetailPanel } from '../../../components/project-detail-panel'
 import { fetchPersonaList } from '../../../lib/personas'
@@ -20,14 +20,7 @@ export default async function ProjectDetailPage({
     const personas = personasResult.items.filter((p) => p.projectId === projectId)
     const targetGroups = groupsResult.items.filter((g) => g.projectId === projectId)
     return (
-      <AppShell
-        status={
-          <TopStatus
-            level={result.project ? 'ok' : 'warn'}
-            primary={result.project?.status ?? 'missing'}
-          />
-        }
-      >
+      <AppShell>
         <ProjectDetailPanel
           project={result.project}
           personas={personas}

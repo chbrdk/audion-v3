@@ -1,4 +1,4 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import Link from 'next/link'
 import { AppShell } from '../../../../../components/app-shell'
 import { WaveDetailPanel } from '../../../../../components/wave-detail-panel'
@@ -28,13 +28,6 @@ export default async function StudyWavePage({
     return (
       <AppShell
         description={study.name}
-        status={
-          <TopStatus
-            level="ok"
-            primary={wave.status}
-            secondary={`${wave.validEvidenceCount}/${wave.runCount} valid`}
-          />
-        }
       >
         <WaveDetailPanel study={study} wave={wave} selfCompare={delta} />
       </AppShell>

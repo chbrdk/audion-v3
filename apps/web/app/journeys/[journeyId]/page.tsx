@@ -1,4 +1,4 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../../components/app-shell'
 import { JourneyDetailPanel } from '../../../components/journey-detail-panel'
 import { fetchJourneyDetail } from '../../../lib/journeys'
@@ -12,14 +12,7 @@ export default async function JourneyDetailPage({
   try {
     const result = await fetchJourneyDetail(journeyId)
     return (
-      <AppShell
-        status={
-          <TopStatus
-            level={result.journey ? 'ok' : 'warn'}
-            primary={result.journey?.status ?? 'missing'}
-          />
-        }
-      >
+      <AppShell>
         <JourneyDetailPanel journey={result.journey} />
       </AppShell>
     )
