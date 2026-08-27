@@ -34,6 +34,14 @@ export function buildChatEmbedHref(params: ChatEmbedParams): string {
   return `/chat/embed?${qs.toString()}`
 }
 
+/** Persona chat deep-link: /chat?personaId= (drops conversationId). */
+export function buildChatPersonaHref(personaId: string): string {
+  const id = personaId.trim()
+  if (!id) return '/chat'
+  const qs = new URLSearchParams({ personaId: id })
+  return `/chat?${qs.toString()}`
+}
+
 export type ChatConversationHrefParams = {
   conversationId: string
   personaId?: string | null

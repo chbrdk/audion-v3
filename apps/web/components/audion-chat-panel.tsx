@@ -292,7 +292,15 @@ export function AudionChatPanel({
     if (cid) params.set('conversationId', cid)
     if (shareProjectId) params.set('projectId', shareProjectId)
     const qs = params.toString()
-    router.replace(qs ? `${paths.routes.chat}?${qs}` : paths.routes.chat)
+    const href = qs ? `${paths.routes.chat}?${qs}` : paths.routes.chat
+    // Keep address bar in sync even when App Router soft-nav is sticky on query-only changes.
+    if (typeof window !== 'undefined') {
+      const current = `${window.location.pathname}${window.location.search}`
+      if (current !== href) {
+        window.history.replaceState(window.history.state, '', href)
+      }
+    }
+    router.replace(href, { scroll: false })
   }
 
   function handleStreamEvent(streamingId: string, event: ChatStreamEvent) {

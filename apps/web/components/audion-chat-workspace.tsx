@@ -192,8 +192,17 @@ export function AudionChatWorkspace({
       }
       return
     }
-    const qs = personaId ? `?personaId=${encodeURIComponent(personaId)}` : ''
-    router.replace(`${paths.routes.chat}${qs}`)
+    router.replace(personaId ? paths.routes.chatPersona(personaId) : paths.routes.chat)
+  }
+
+  function onPersonaChange(id: string) {
+    const next = id.trim()
+    if (!next || next === personaId) return
+    setPersonaId(next)
+    setBusy(false)
+    setModality('text')
+    if (shareMode || embedMode) return
+    router.replace(paths.routes.chatPersona(next))
   }
 
   function onTargetGroupChange(id: string) {
@@ -308,7 +317,7 @@ export function AudionChatWorkspace({
                     id="chat-persona"
                     options={personaOptions}
                     value={personaId}
-                    onChange={setPersonaId}
+                    onChange={onPersonaChange}
                     disabled={busy || !personaOptions.length}
                   />
                 </Field>

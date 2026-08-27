@@ -17,6 +17,7 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 | Route | Role |
 |-------|------|
 | `/chat` | Primary chat (authenticated app shell) — default **persona** mode |
+| `/chat?personaId=` | Persona mode deep-link; topbar Select updates this query (drops `conversationId`) |
 | `/chat?personaId=&projectId=` | Deep-link / share-style entry (MVP may require auth; public share later) |
 | `/chat?prompt=&personaId=&studyId=&waveId=&studyName=&waveKey=` | F-Fragen / study hang: composer prefill + persona select (`lib/chat/prefill.ts`) |
 | `/chat?targetGroupId=` | **Target-group ask-all** mode — one question → N persona answers side by side |

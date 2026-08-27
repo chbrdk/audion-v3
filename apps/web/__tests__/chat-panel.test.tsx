@@ -5,15 +5,18 @@ import { AudionChatPanel } from '../components/audion-chat-panel'
 import { AudionChatWorkspace } from '../components/audion-chat-workspace'
 import { paths } from '../lib/paths'
 
-const postChatStreamMock = vi.fn()
-
-vi.mock('../lib/chat/stream-client', () => ({
-  postChatStream: (...args: unknown[]) => postChatStreamMock(...args),
+const { postChatStreamMock, routerReplaceMock } = vi.hoisted(() => ({
+  postChatStreamMock: vi.fn(),
+  routerReplaceMock: vi.fn(),
 }))
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ replace: routerReplaceMock, push: vi.fn(), refresh: vi.fn() }),
   usePathname: () => '/chat',
+}))
+
+vi.mock('../lib/chat/stream-client', () => ({
+  postChatStream: (...args: unknown[]) => postChatStreamMock(...args),
 }))
 
 vi.mock('../components/app-shell', () => ({
@@ -48,6 +51,7 @@ afterEach(() => {
 
 beforeEach(() => {
   postChatStreamMock.mockReset()
+  routerReplaceMock.mockReset()
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({
@@ -70,6 +74,16 @@ const personas: PersonaSummary[] = [
     projectId: 'proj-audion-core',
     status: 'ready',
     archetype: 'Builder',
+    updatedAt: null,
+    avatarUrl: null,
+  },
+  {
+    id: 'persona-peter-braunschweig',
+    name: 'Peter Braunschweig',
+    role: 'Smart-Home Lead',
+    projectId: 'proj-audion-core',
+    status: 'ready',
+    archetype: 'Optimizer',
     updatedAt: null,
     avatarUrl: null,
   },
@@ -127,6 +141,21 @@ describe('audion chat workspace', () => {
     expect(container.querySelector('.chat-send-icon')).toBeTruthy()
     expect(container.querySelector('.chat-send-icon .ds-btn__label')).toBeNull()
     expect(container.querySelector('.audion-page-lead')).toBeNull()
+  })
+
+  it('updates the chat URL when the topbar persona select changes', () => {
+    render(
+      <AudionChatWorkspace
+        personas={personas}
+        initialPersonaId="persona-alex-morgan"
+        initialConversation={null}
+      />,
+    )
+    fireEvent.click(screen.getByRole('combobox', { name: /Persona/i }))
+    fireEvent.click(screen.getByRole('option', { name: /Peter Braunschweig/i }))
+    expect(routerReplaceMock).toHaveBeenCalledWith(
+      paths.routes.chatPersona('persona-peter-braunschweig'),
+    )
   })
 
   it('toggles voice modality via composer icon', () => {

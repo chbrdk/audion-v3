@@ -5,6 +5,7 @@ import { buildChatTargetGroupHref } from './chat/tg-ask-all'
 import {
   buildChatConversationHref,
   buildChatEmbedHref,
+  buildChatPersonaHref,
   buildChatShareHref,
   type ChatConversationHrefParams,
   type ChatEmbedParams,
@@ -261,6 +262,8 @@ export const paths = {
     chatWithPrompt: (prompt: string) => buildChatHref({ prompt }),
     chat: '/chat',
     chatHistory: '/chat/history',
+    /** Persona mode: /chat?personaId= (clears conversationId). */
+    chatPersona: (personaId: string) => buildChatPersonaHref(personaId),
     /** Target-group ask-all: /chat?targetGroupId= */
     chatTargetGroup: (targetGroupId: string) => buildChatTargetGroupHref(targetGroupId),
     /** Public share: /chat?personaId=&projectId= */
