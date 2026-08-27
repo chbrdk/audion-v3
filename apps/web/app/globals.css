@@ -16,14 +16,15 @@ main { min-height: 100vh; }
   width: 100%;
 }
 
-/* Content stage — extra top air when the global PageTitle topbar is gone */
+/* Content stage — breathing room under rail chrome (no global PageTitle) */
 .audion-stage {
   width: 100%;
   max-width: none;
+  padding-block-start: clamp(1.25rem, 2.5vw, 2rem);
 }
 
 .audion-stage--flush-top {
-  padding-block-start: clamp(1.5rem, 3.5vw, 2.75rem);
+  padding-block-start: clamp(2.25rem, 5vw, 3.75rem);
 }
 
 .audion-page-lead {
