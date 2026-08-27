@@ -91,12 +91,16 @@ function memoryChatBeginUserTurn(
   payload: ChatSendPayload,
   opts?: {
     images?: { id: string; dataUrl: string }[]
+    documents?: { id: string; filename: string; charCount: number }[]
     abCompare?: boolean
   },
 ): { conversationId: string; personaName: string | null } | { error: string } {
   const message = payload.message.trim()
   const images = opts?.images ?? []
-  if (!message && images.length === 0) return { error: 'Message or image is required' }
+  const documents = opts?.documents ?? []
+  if (!message && images.length === 0 && documents.length === 0) {
+    return { error: 'Message or attachment is required' }
+  }
   if (!payload.personaId.trim()) return { error: 'personaId is required' }
 
   let conversation = payload.conversationId
@@ -105,7 +109,9 @@ function memoryChatBeginUserTurn(
 
   const personaName = resolvePersonaNameDemo(payload.personaId)
   const now = new Date().toISOString()
-  const content = message || (images.length ? '(image attachment)' : '')
+  const content =
+    message ||
+    (images.length ? '(image attachment)' : documents.length ? '(document attachment)' : '')
   const userMsg: ChatMessage = {
     id: `m-user-${Date.now().toString(36)}`,
     role: 'user',
@@ -118,6 +124,7 @@ function memoryChatBeginUserTurn(
           abCompare: Boolean(opts?.abCompare),
         }
       : {}),
+    ...(documents.length ? { documents } : {}),
   }
 
   if (!conversation) {
@@ -211,6 +218,7 @@ export async function storeChatBeginUserTurn(
   payload: ChatSendPayload,
   opts?: {
     images?: { id: string; dataUrl: string }[]
+    documents?: { id: string; filename: string; charCount: number }[]
     abCompare?: boolean
   },
 ): Promise<{ conversationId: string; personaName: string | null } | { error: string }> {
@@ -250,15 +258,16 @@ export async function* storeChatFakeStream(
 ): AsyncGenerator<ChatStreamEvent> {
   const message = payload.message.trim()
   const imageIds = (payload.imageIds ?? []).map((id) => id.trim()).filter(Boolean)
-  if (!message && imageIds.length === 0) {
-    yield { type: 'error', message: 'Message or image is required' }
+  const documentIds = (payload.documentIds ?? []).map((id) => id.trim()).filter(Boolean)
+  if (!message && imageIds.length === 0 && documentIds.length === 0) {
+    yield { type: 'error', message: 'Message or attachment is required' }
     return
   }
 
   let images: { id: string; dataUrl: string }[] = []
   if (imageIds.length > 0) {
     const { resolveChatImages } = await import('../chat/image-upload-store')
-    const resolved = resolveChatImages(imageIds)
+    const resolved = await resolveChatImages(imageIds)
     if (!resolved.ok) {
       yield { type: 'error', message: resolved.error }
       return
@@ -266,16 +275,34 @@ export async function* storeChatFakeStream(
     images = resolved.images
   }
 
+  let documents: Array<{ id: string; filename: string; charCount: number }> = []
+  if (documentIds.length > 0) {
+    const { resolveChatDocuments } = await import('../chat/document-upload-store')
+    const resolved = await resolveChatDocuments(documentIds)
+    if (!resolved.ok) {
+      yield { type: 'error', message: resolved.error }
+      return
+    }
+    documents = resolved.documents.map((d) => ({
+      id: d.id,
+      filename: d.filename,
+      charCount: d.charCount,
+    }))
+  }
+
   const { shouldEnableAbCompare } = await import('../chat/ab-compare')
   const abCompare = shouldEnableAbCompare(payload.abCompare, images.length)
   const turnPayload: ChatSendPayload = {
     ...payload,
-    message: message || (images.length ? '(image attachment)' : ''),
+    message:
+      message ||
+      (images.length ? '(image attachment)' : documents.length ? '(document attachment)' : ''),
     imageIds,
+    documentIds,
     abCompare,
   }
 
-  const turn = await storeChatBeginUserTurn(turnPayload, { images, abCompare })
+  const turn = await storeChatBeginUserTurn(turnPayload, { images, documents, abCompare })
   if ('error' in turn) {
     yield { type: 'error', message: turn.error }
     return
@@ -289,7 +316,11 @@ export async function* storeChatFakeStream(
   )
   const reply = abCompare
     ? `## From ${turn.personaName || 'this persona'}\n\n### A summary\nVariant A looks clearer.\n\n### B summary\nVariant B is denser.\n\n### Key differences\nContrast and hierarchy.\n\n### Winner & why\n**A** — clearer scan path for the stated goal.\n\n### Recommendations\nKeep A's hierarchy; borrow B's accent sparingly.`
-    : fixtureReply(message || 'image', turn.personaName, Boolean(proposal))
+    : fixtureReply(
+        message || (documents.length ? 'document' : 'image'),
+        turn.personaName,
+        Boolean(proposal),
+      )
   const chunks = reply.match(/.{1,24}/gs) || [reply]
   for (const chunk of chunks) {
     yield { type: 'delta', text: chunk }

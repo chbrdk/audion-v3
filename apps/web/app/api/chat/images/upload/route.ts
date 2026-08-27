@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'image is required' }, { status: 400 })
   }
 
-  const result = putChatImage(image)
+  const result = await putChatImage(image)
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status })
   }

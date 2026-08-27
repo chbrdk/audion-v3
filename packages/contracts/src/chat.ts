@@ -22,14 +22,22 @@ export type ChatMessageImage = {
   dataUrl: string
 }
 
+export type ChatMessageDocument = {
+  id: string
+  filename: string
+  charCount: number
+}
+
 export type ChatMessage = {
   id: string
   role: ChatMessageRole
   content: string
   createdAt: string | null
   status: ChatMessageStatus
-  /** User-turn attachments (persona chat). */
+  /** User-turn image attachments (persona chat). */
   images?: ChatMessageImage[]
+  /** User-turn DOCX chips (persona chat). */
+  documents?: ChatMessageDocument[]
   /** User requested A/B compare on this turn (exactly two images). */
   abCompare?: boolean
 }
@@ -87,6 +95,8 @@ export type ChatSendPayload = {
   guestSessionId?: string | null
   /** Temp upload IDs from POST /api/chat/images/upload. */
   imageIds?: string[] | null
+  /** Temp upload IDs from POST /api/chat/documents/upload. */
+  documentIds?: string[] | null
   /** When true and exactly two imageIds, inject A/B compare system instruction. */
   abCompare?: boolean | null
 }

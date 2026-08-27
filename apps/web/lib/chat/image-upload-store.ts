@@ -1,22 +1,33 @@
 /**
- * Temporary chat image upload store (persona attachments).
+ * Chat image upload store (persona attachments).
+ * Postgres when DATABASE_URL set; else in-memory map.
  * Spec: specs/domain/chat-image-attachments.md
  */
 
 import { randomUUID } from 'node:crypto'
+import {
+  dbGetChatImage,
+  dbPutChatImage,
+} from '../db/chat-attachments'
+import { isProjectsDatabaseConfigured } from '../db/config'
 import { paths } from '../paths'
 
 type StoredImage = {
   dataUrl: string
+  mimeType: string
   createdAtMs: number
+  expiresAtMs: number
 }
 
 const store = new Map<string, StoredImage>()
 
+function ttlMs(): number {
+  return paths.chatImageUploadTtlSeconds * 1000
+}
+
 function purgeExpired(now = Date.now()): void {
-  const ttlMs = paths.chatImageUploadTtlSeconds * 1000
   for (const [id, entry] of store) {
-    if (now - entry.createdAtMs > ttlMs) store.delete(id)
+    if (entry.expiresAtMs <= now) store.delete(id)
   }
 }
 
@@ -35,11 +46,16 @@ function approxDecodedBytes(dataUrl: string): number {
   return Math.floor((b64.length * 3) / 4)
 }
 
+function mimeFromDataUrl(dataUrl: string): string {
+  const match = /^data:([^;,]+)/i.exec(dataUrl)
+  return match?.[1]?.toLowerCase() || 'image/png'
+}
+
 export type PutChatImageResult =
   | { ok: true; imageId: string }
   | { ok: false; error: string; status: number }
 
-export function putChatImage(dataUrl: string): PutChatImageResult {
+export async function putChatImage(dataUrl: string): Promise<PutChatImageResult> {
   purgeExpired()
   const trimmed = dataUrl.trim()
   if (!trimmed.startsWith('data:image/')) {
@@ -48,12 +64,36 @@ export function putChatImage(dataUrl: string): PutChatImageResult {
   if (approxDecodedBytes(trimmed) > paths.chatImageUploadMaxBytes) {
     return { ok: false, error: 'Image exceeds max upload size', status: 413 }
   }
+
   const imageId = randomUUID()
-  store.set(imageId, { dataUrl: trimmed, createdAtMs: Date.now() })
+  const now = Date.now()
+  const expiresAtMs = now + ttlMs()
+  const mimeType = mimeFromDataUrl(trimmed)
+
+  if (isProjectsDatabaseConfigured()) {
+    await dbPutChatImage({
+      id: imageId,
+      dataUrl: trimmed,
+      mimeType,
+      expiresAt: new Date(expiresAtMs),
+    })
+    return { ok: true, imageId }
+  }
+
+  store.set(imageId, {
+    dataUrl: trimmed,
+    mimeType,
+    createdAtMs: now,
+    expiresAtMs,
+  })
   return { ok: true, imageId }
 }
 
-export function getChatImageDataUrl(imageId: string): string | null {
+export async function getChatImageDataUrl(imageId: string): Promise<string | null> {
+  if (isProjectsDatabaseConfigured()) {
+    const row = await dbGetChatImage(imageId)
+    return row?.dataUrl ?? null
+  }
   purgeExpired()
   return store.get(imageId)?.dataUrl ?? null
 }
@@ -63,11 +103,12 @@ export type ResolveChatImagesResult =
   | { ok: false; error: string }
 
 /** Resolve upload IDs in order; fails if any id is missing/expired. */
-export function resolveChatImages(imageIds: string[]): ResolveChatImagesResult {
-  purgeExpired()
+export async function resolveChatImages(
+  imageIds: string[],
+): Promise<ResolveChatImagesResult> {
   const images: { id: string; dataUrl: string }[] = []
   for (const id of imageIds) {
-    const dataUrl = store.get(id)?.dataUrl
+    const dataUrl = await getChatImageDataUrl(id)
     if (!dataUrl) {
       return { ok: false, error: `Image not found or expired: ${id}` }
     }

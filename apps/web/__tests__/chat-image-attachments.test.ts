@@ -30,24 +30,40 @@ describe('image-upload-store', () => {
     resetChatImageUploadStore()
   })
 
-  it('stores and resolves data URLs', () => {
-    const put = putChatImage(
+  it('stores and resolves data URLs', async () => {
+    const put = await putChatImage(
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
     )
     expect(put.ok).toBe(true)
     if (!put.ok) return
-    expect(getChatImageDataUrl(put.imageId)).toMatch(/^data:image\//)
-    const resolved = resolveChatImages([put.imageId])
+    expect(await getChatImageDataUrl(put.imageId)).toMatch(/^data:image\//)
+    const resolved = await resolveChatImages([put.imageId])
     expect(resolved.ok).toBe(true)
   })
 
-  it('rejects non-image data urls', () => {
-    const put = putChatImage('data:text/plain;base64,YQ==')
+  it('rejects non-image data urls', async () => {
+    const put = await putChatImage('data:text/plain;base64,YQ==')
     expect(put.ok).toBe(false)
   })
 
-  it('fails resolve for unknown ids', () => {
-    const resolved = resolveChatImages(['missing-id'])
+  it('fails resolve for unknown ids', async () => {
+    const resolved = await resolveChatImages(['missing-id'])
     expect(resolved.ok).toBe(false)
+  })
+
+  it('keeps A/B path when resolving exactly two images', async () => {
+    const a = await putChatImage(
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    )
+    const b = await putChatImage(
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    )
+    expect(a.ok && b.ok).toBe(true)
+    if (!a.ok || !b.ok) return
+    const resolved = await resolveChatImages([a.imageId, b.imageId])
+    expect(resolved.ok).toBe(true)
+    if (!resolved.ok) return
+    expect(resolved.images).toHaveLength(2)
+    expect(shouldEnableAbCompare(true, resolved.images.length)).toBe(true)
   })
 })

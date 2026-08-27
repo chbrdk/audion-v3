@@ -162,6 +162,32 @@ export const chatConversations = pgTable('chat_conversations', {
 export type ChatConversationRow = typeof chatConversations.$inferSelect
 export type ChatConversationInsert = typeof chatConversations.$inferInsert
 
+/** Durable chat image uploads (persona attachments). */
+export const chatImages = pgTable('chat_images', {
+  id: text('id').primaryKey(),
+  dataUrl: text('data_url').notNull(),
+  mimeType: text('mime_type').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+})
+
+export type ChatImageRow = typeof chatImages.$inferSelect
+export type ChatImageInsert = typeof chatImages.$inferInsert
+
+/** Durable chat DOCX uploads (extracted text). */
+export const chatDocuments = pgTable('chat_documents', {
+  id: text('id').primaryKey(),
+  filename: text('filename').notNull(),
+  extractedText: text('extracted_text').notNull(),
+  charCount: integer('char_count').notNull(),
+  truncated: integer('truncated').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+})
+
+export type ChatDocumentRow = typeof chatDocuments.$inferSelect
+export type ChatDocumentInsert = typeof chatDocuments.$inferInsert
+
 /** Global assist template overrides (settings admin). */
 export const assistPromptOverrides = pgTable('assist_prompt_overrides', {
   templateId: text('template_id').primaryKey(),

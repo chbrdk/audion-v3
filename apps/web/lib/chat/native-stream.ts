@@ -12,7 +12,9 @@ import {
 } from '../fixtures/chat-store'
 import { maybeProposeInspectWebsite } from '../fixtures/chat-share'
 import { abCompareSystemInstruction, shouldEnableAbCompare } from './ab-compare'
+import { resolveChatDocuments } from './document-upload-store'
 import { resolveChatImages } from './image-upload-store'
+import { mergeUserMessageWithDocuments } from './merge-documents'
 import { extractUrlFromMessage } from './share'
 import { resolvePersonaSystemPrompt } from '../fixtures/persona-prompts-store'
 
@@ -57,13 +59,16 @@ function userContentWithImages(
 async function buildOpenAiMessages(
   personaId: string,
   conversationId: string,
-  currentMessage: string,
+  /** Raw user text (URL / inspect heuristics). */
+  rawMessage: string,
+  /** Model-facing text (may include merged DOCX). */
+  modelMessage: string,
   images: { id: string; dataUrl: string }[],
   abCompare: boolean,
 ): Promise<ChatCompletionMessageParam[]> {
   const system: ChatCompletionMessageParam = {
     role: 'system',
-    content: await systemPromptForPersona(personaId, currentMessage, abCompare),
+    content: await systemPromptForPersona(personaId, rawMessage, abCompare),
   }
   const detail = await storeChatConversationDetail(conversationId)
   const recent = (detail?.messages ?? [])
@@ -78,12 +83,18 @@ async function buildOpenAiMessages(
         }
       : {
           role: 'user' as const,
-          content: m.content || (m.images?.length ? '(image attachment)' : ''),
+          content:
+            m.content ||
+            (m.images?.length
+              ? '(image attachment)'
+              : m.documents?.length
+                ? '(document attachment)'
+                : ''),
         },
   )
   history.push({
     role: 'user',
-    content: userContentWithImages(currentMessage, images),
+    content: userContentWithImages(modelMessage, images),
   })
   return [system, ...history]
 }
@@ -92,14 +103,25 @@ function normalizeImageIds(payload: ChatSendPayload): string[] {
   return (payload.imageIds ?? []).map((id) => id.trim()).filter(Boolean)
 }
 
+function normalizeDocumentIds(payload: ChatSendPayload): string[] {
+  return (payload.documentIds ?? []).map((id) => id.trim()).filter(Boolean)
+}
+
+function placeholderUserContent(images: unknown[], documents: unknown[]): string {
+  if (images.length) return '(image attachment)'
+  if (documents.length) return '(document attachment)'
+  return ''
+}
+
 /** Async generator of NDJSON chat events for native OpenAI streaming. */
 export async function* nativeChatStreamEvents(
   payload: ChatSendPayload,
 ): AsyncGenerator<ChatStreamEvent> {
   const message = payload.message.trim()
   const imageIds = normalizeImageIds(payload)
-  if (!message && imageIds.length === 0) {
-    yield { type: 'error', message: 'Message or image is required' }
+  const documentIds = normalizeDocumentIds(payload)
+  if (!message && imageIds.length === 0 && documentIds.length === 0) {
+    yield { type: 'error', message: 'Message or attachment is required' }
     return
   }
   if (!payload.personaId.trim()) {
@@ -109,7 +131,7 @@ export async function* nativeChatStreamEvents(
 
   let images: { id: string; dataUrl: string }[] = []
   if (imageIds.length > 0) {
-    const resolved = resolveChatImages(imageIds)
+    const resolved = await resolveChatImages(imageIds)
     if (!resolved.ok) {
       yield { type: 'error', message: resolved.error }
       return
@@ -117,15 +139,41 @@ export async function* nativeChatStreamEvents(
     images = resolved.images
   }
 
+  let documents: Array<{
+    id: string
+    filename: string
+    extractedText: string
+    charCount: number
+  }> = []
+  if (documentIds.length > 0) {
+    const resolved = await resolveChatDocuments(documentIds)
+    if (!resolved.ok) {
+      yield { type: 'error', message: resolved.error }
+      return
+    }
+    documents = resolved.documents
+  }
+
   const abCompare = shouldEnableAbCompare(payload.abCompare, images.length)
+  const displayMessage = message || placeholderUserContent(images, documents)
+  const modelMessage = mergeUserMessageWithDocuments(message, documents)
   const turnPayload: ChatSendPayload = {
     ...payload,
-    message: message || (images.length ? '(image attachment)' : ''),
+    message: displayMessage,
     imageIds,
+    documentIds,
     abCompare,
   }
 
-  const turn = await storeChatBeginUserTurn(turnPayload, { images, abCompare })
+  const turn = await storeChatBeginUserTurn(turnPayload, {
+    images,
+    documents: documents.map((d) => ({
+      id: d.id,
+      filename: d.filename,
+      charCount: d.charCount,
+    })),
+    abCompare,
+  })
   if ('error' in turn) {
     yield { type: 'error', message: turn.error }
     return
@@ -140,6 +188,7 @@ export async function* nativeChatStreamEvents(
         payload.personaId,
         turn.conversationId,
         message,
+        modelMessage,
         images,
         abCompare,
       ),

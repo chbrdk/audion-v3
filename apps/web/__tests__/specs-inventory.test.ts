@@ -17,6 +17,7 @@ const requiredSpecs = [
   'specs/domain/chat-workspace.md',
   'specs/domain/chat-fields.md',
   'specs/domain/chat-image-attachments.md',
+  'specs/domain/chat-document-attachments.md',
   'specs/domain/chat-embed.md',
   'specs/domain/tavus-video-chat.md',
   'knowledge/tavus-video-chat.md',
@@ -58,7 +59,11 @@ describe('specs inventory', () => {
     expect(paths.routes.chatEmbedPath).toBe('/chat/embed')
     expect(paths.routes.apiChatStream).toBe('/api/chat/stream')
     expect(paths.routes.apiChatImagesUpload).toBe('/api/chat/images/upload')
+    expect(paths.routes.apiChatDocumentsUpload).toBe('/api/chat/documents/upload')
     expect(paths.chatImageUploadMaxBytes).toBe(10 * 1024 * 1024)
+    expect(paths.chatDocumentUploadMaxBytes).toBe(15 * 1024 * 1024)
+    expect(paths.chatDocumentUploadMaxChars).toBe(200_000)
+    expect(paths.chatDocumentUploadTtlSeconds).toBe(3600)
     expect(paths.envChatApiInternal).toBe('NEXT_CHAT_API_INTERNAL_URL')
     expect(paths.envChatEmbedFrameAncestors).toBe('AUDION_CHAT_EMBED_FRAME_ANCESTORS')
     expect(paths.routes.apiChatTavusSession).toBe('/api/chat/tavus/session')

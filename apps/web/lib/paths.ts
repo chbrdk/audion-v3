@@ -275,6 +275,7 @@ export const paths = {
     chatConversation: (params: ChatConversationHrefParams) => buildChatConversationHref(params),
     apiChatStream: '/api/chat/stream',
     apiChatImagesUpload: '/api/chat/images/upload',
+    apiChatDocumentsUpload: '/api/chat/documents/upload',
     apiChatConversations: '/api/chat/conversations',
     apiChatConversationDetail: (id: string) => `/api/chat/conversations/${id}`,
     apiChatToolDecision: (callId: string) => `/api/chat/tool-call/decision/${callId}`,
@@ -423,6 +424,10 @@ export const paths = {
   chatImageUploadTtlSeconds: 3600,
   chatImageCompressMaxEdgePx: 1024,
   chatImageCompressQuality: 0.7,
+  /** Chat DOCX upload — see specs/domain/chat-document-attachments.md */
+  chatDocumentUploadMaxBytes: 15 * 1024 * 1024,
+  chatDocumentUploadMaxChars: 200_000,
+  chatDocumentUploadTtlSeconds: 3600,
   envAuthSecret: 'AUTH_SECRET',
   /** Local-only NextAuth fallback when AUTH_SECRET unset (never use in prod). */
   authDevFallbackSecret: 'audion-v3-local-dev-auth-secret-min-32chars',

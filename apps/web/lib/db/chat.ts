@@ -72,12 +72,16 @@ export async function dbChatBeginUserTurn(
   payload: ChatSendPayload,
   opts?: {
     images?: { id: string; dataUrl: string }[]
+    documents?: { id: string; filename: string; charCount: number }[]
     abCompare?: boolean
   },
 ): Promise<{ conversationId: string; personaName: string | null } | { error: string }> {
   const message = payload.message.trim()
   const images = opts?.images ?? []
-  if (!message && images.length === 0) return { error: 'Message or image is required' }
+  const documents = opts?.documents ?? []
+  if (!message && images.length === 0 && documents.length === 0) {
+    return { error: 'Message or attachment is required' }
+  }
   if (!payload.personaId.trim()) return { error: 'personaId is required' }
 
   const db = getDb()
@@ -88,7 +92,9 @@ export async function dbChatBeginUserTurn(
   const personaName = await resolvePersonaName(payload.personaId)
   const now = new Date()
   const nowIso = now.toISOString()
-  const content = message || (images.length ? '(image attachment)' : '')
+  const content =
+    message ||
+    (images.length ? '(image attachment)' : documents.length ? '(document attachment)' : '')
   const userMsg: ChatMessage = {
     id: `m-user-${Date.now().toString(36)}`,
     role: 'user',
@@ -101,6 +107,7 @@ export async function dbChatBeginUserTurn(
           abCompare: Boolean(opts?.abCompare),
         }
       : {}),
+    ...(documents.length ? { documents } : {}),
   }
 
   if (!conversation) {

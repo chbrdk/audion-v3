@@ -21,6 +21,7 @@
 | Chat workspace | `specs/domain/chat-workspace.md` |
 | Chat fields | `specs/domain/chat-fields.md` |
 | Chat image attachments | `specs/domain/chat-image-attachments.md` |
+| Chat document attachments | `specs/domain/chat-document-attachments.md` |
 | Tavus video chat | `specs/domain/tavus-video-chat.md` |
 | Project workspace | `specs/domain/project-workspace.md` |
 | Project fields | `specs/domain/project-fields.md` |

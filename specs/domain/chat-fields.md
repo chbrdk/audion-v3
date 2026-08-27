@@ -28,6 +28,7 @@
 | `createdAt` | nullable ISO |
 | `status` | `complete` \| `streaming` \| `error` (client) |
 | `images` | optional `{ id, dataUrl }[]` — compressed attachments for UI history |
+| `documents` | optional `{ id, filename, charCount }[]` — DOCX chips for UI history |
 | `abCompare` | optional bool — user requested A/B compare on this turn |
 
 ## Send payload (`ChatSendPayload`)
@@ -35,15 +36,16 @@
 | Field | Notes |
 |-------|--------|
 | `personaId` | **required** |
-| `message` | string; may be empty when `imageIds.length ≥ 1` |
+| `message` | string; may be empty when `imageIds.length ≥ 1` **or** `documentIds.length ≥ 1` |
 | `conversationId` | optional (create if absent) |
 | `projectId` | optional nullable |
 | `journeyId` | optional — deferred context |
 | `guestSessionId` | optional guest embed cookie fallback |
 | `imageIds` | optional string[] — IDs from `POST /api/chat/images/upload` |
+| `documentIds` | optional string[] — IDs from `POST /api/chat/documents/upload` |
 | `abCompare` | optional bool — effective only when exactly **2** `imageIds` |
 
-See `specs/domain/chat-image-attachments.md`.
+See `specs/domain/chat-image-attachments.md` · `specs/domain/chat-document-attachments.md`.
 
 ## UX journey step (`ChatUxJourneyStep`)
 
@@ -81,10 +83,10 @@ Exact wire format follows chat-api; adapter lives in `apps/web/lib/chat/`.
 
 ## Validation
 
-- Empty `message` **and** no `imageIds` → Field error on composer; do not POST
+- Empty `message` **and** no `imageIds` **and** no `documentIds` → Field error on composer; do not POST
 - Missing `personaId` → block send; prompt persona picker
 - Unknown roles on history load → drop or coerce to `assistant`
-- Guest/TG: reject `imageIds` / `abCompare`
+- Guest/TG: reject `imageIds` / `documentIds` / `abCompare`
 
 ## Target-group ask-all (client shapes)
 
@@ -115,7 +117,6 @@ Missing replica → 400. Missing `TAVUS_API_KEY` → 503. Session create ends le
 
 ## Deferred
 
-- Document ids on send (DOCX)
 - Moodboard asset refs
 - Share-token conversation persistence
 - Voice session ids

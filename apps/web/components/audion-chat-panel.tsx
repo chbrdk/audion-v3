@@ -60,15 +60,18 @@ type Props = {
 function UserTurnBody({
   content,
   images,
+  documents,
   abCompare,
 }: {
   content: string
   images?: ChatMessage['images']
+  documents?: ChatMessage['documents']
   abCompare?: boolean
 }) {
   const t = useT()
   const parsed = parseUxStepFollowUpDisplay(content)
   const showImages = Boolean(images?.length)
+  const showDocs = Boolean(documents?.length)
   const abLayout = Boolean(abCompare && images?.length === 2)
 
   return (
@@ -91,14 +94,27 @@ function UserTurnBody({
           ))}
         </ul>
       ) : null}
+      {showDocs ? (
+        <ul className="audion-chat-doc-chips" aria-label={t('chat.documentAttachmentsAria')}>
+          {documents!.map((doc) => (
+            <li key={doc.id} className="audion-chat-doc-chip">
+              <span className="audion-chat-doc-chip-name">{doc.filename}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {parsed.meta ? (
         <div className="audion-chat-user-step-followup">
           <p className="audion-chat-user-step-meta">{t('chatExtra.about', { meta: parsed.meta })}</p>
-          {parsed.body && parsed.body !== '(image attachment)' ? (
+          {parsed.body &&
+          parsed.body !== '(image attachment)' &&
+          parsed.body !== '(document attachment)' ? (
             <p className="chat-text">{parsed.body}</p>
           ) : null}
         </div>
-      ) : content && content !== '(image attachment)' ? (
+      ) : content &&
+        content !== '(image attachment)' &&
+        content !== '(document attachment)' ? (
         <p className="chat-text">{content}</p>
       ) : null}
     </div>
@@ -129,7 +145,12 @@ function ChatTurnArticle({ turn }: { turn: ChatMessage }) {
           <LoadingText>{t('chat.thinking')}</LoadingText>
         )
       ) : (
-        <UserTurnBody content={turn.content} images={turn.images} abCompare={turn.abCompare} />
+        <UserTurnBody
+          content={turn.content}
+          images={turn.images}
+          documents={turn.documents}
+          abCompare={turn.abCompare}
+        />
       )}
     </article>
   )
@@ -184,15 +205,20 @@ export function AudionChatPanel({
   const [pendingAttachments, setPendingAttachments] = useState<
     { id: string; dataUrl: string }[]
   >([])
+  const [pendingDocuments, setPendingDocuments] = useState<
+    { id: string; filename: string; charCount: number }[]
+  >([])
   const [abCompare, setAbCompare] = useState(false)
   const [attachBusy, setAttachBusy] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const docInputRef = useRef<HTMLInputElement>(null)
   const personaIdRef = useRef(personaId)
   const turnsRef = useRef(turns)
   turnsRef.current = turns
   const allowAttachments = !guestBudget
+  const hasPendingAttach = pendingAttachments.length > 0 || pendingDocuments.length > 0
 
   const persona = useMemo(
     () => personas.find((p) => p.id === personaId) ?? null,
@@ -225,6 +251,7 @@ export function AudionChatPanel({
     setInspectDockAt(null)
     setConvertedJourneyId(null)
     setPendingAttachments([])
+    setPendingDocuments([])
     setAbCompare(false)
     syncUrl({ personaId, conversationId: null })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- syncUrl closes over latest ids
@@ -374,10 +401,54 @@ export function AudionChatPanel({
     }
   }
 
+  async function onPickDocuments(files: FileList | null) {
+    if (!allowAttachments || !files?.length) return
+    setAttachBusy(true)
+    setComposerError(null)
+    try {
+      const picked = Array.from(files)
+      const docx = picked.filter((f) => f.name.toLowerCase().endsWith('.docx'))
+      if (docx.length < picked.length) {
+        setComposerError(t('chat.attachDocInvalidType'))
+      }
+      if (!docx.length) return
+      const uploaded: { id: string; filename: string; charCount: number }[] = []
+      for (const file of docx) {
+        const form = new FormData()
+        form.append('file', file)
+        const res = await fetch(paths.routes.apiChatDocumentsUpload, {
+          method: 'POST',
+          body: form,
+        })
+        const body = (await res.json().catch(() => null)) as {
+          documentId?: string
+          filename?: string
+          charCount?: number
+          error?: string
+        } | null
+        if (!res.ok || !body?.documentId) {
+          throw new Error(body?.error || t('chat.attachDocUploadFailed'))
+        }
+        uploaded.push({
+          id: body.documentId,
+          filename: body.filename || file.name,
+          charCount: body.charCount ?? 0,
+        })
+      }
+      setPendingDocuments((prev) => [...prev, ...uploaded])
+    } catch (e) {
+      setComposerError(e instanceof Error ? e.message : t('chat.attachDocUploadFailed'))
+    } finally {
+      setAttachBusy(false)
+      if (docInputRef.current) docInputRef.current.value = ''
+    }
+  }
+
   async function sendMessage(raw: string) {
     const message = raw.trim()
     const attachments = allowAttachments ? pendingAttachments : []
-    if (!message && attachments.length === 0) {
+    const documents = allowAttachments ? pendingDocuments : []
+    if (!message && attachments.length === 0 && documents.length === 0) {
       setComposerError(t('chat.messageOrImageRequired'))
       return
     }
@@ -408,6 +479,7 @@ export function AudionChatPanel({
     setErr(null)
     setDraft('')
     setPendingAttachments([])
+    setPendingDocuments([])
     setAbCompare(false)
     setBusy(true)
     setPendingTool(null)
@@ -415,7 +487,13 @@ export function AudionChatPanel({
     const userTurn: ChatMessage = {
       id: `local-user-${Date.now()}`,
       role: 'user',
-      content: composed.display || (attachments.length ? '(image attachment)' : ''),
+      content:
+        composed.display ||
+        (attachments.length
+          ? '(image attachment)'
+          : documents.length
+            ? '(document attachment)'
+            : ''),
       createdAt: new Date().toISOString(),
       status: 'complete',
       ...(attachments.length
@@ -424,6 +502,7 @@ export function AudionChatPanel({
             abCompare: useAb,
           }
         : {}),
+      ...(documents.length ? { documents } : {}),
     }
     const streamingId = `local-asst-${Date.now()}`
     setTurns((prev) => {
@@ -455,6 +534,7 @@ export function AudionChatPanel({
           projectId: shareProjectId ?? persona?.projectId ?? null,
           guestSessionId: guestBudget?.sessionId ?? null,
           imageIds: attachments.map((a) => a.id),
+          documentIds: documents.map((d) => d.id),
           abCompare: useAb,
         },
         (event) => handleStreamEvent(streamingId, event),
@@ -694,7 +774,7 @@ export function AudionChatPanel({
       <form
         className={[
           'chat-form',
-          draft.trim() || selectedStepIndex != null || pendingAttachments.length
+          draft.trim() || selectedStepIndex != null || hasPendingAttach
             ? 'is-expanded'
             : undefined,
         ]
@@ -746,6 +826,28 @@ export function AudionChatPanel({
             ))}
           </ul>
         ) : null}
+        {allowAttachments && pendingDocuments.length ? (
+          <ul className="audion-chat-pending-docs" aria-label={t('chat.pendingDocumentsAria')}>
+            {pendingDocuments.map((doc) => (
+              <li key={doc.id} className="audion-chat-pending-doc-item">
+                <span className="audion-chat-doc-chip-name">{doc.filename}</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="audion-chat-pending-attach-remove"
+                  aria-label={t('chat.attachRemove')}
+                  disabled={busy || attachBusy}
+                  onClick={() =>
+                    setPendingDocuments((prev) => prev.filter((p) => p.id !== doc.id))
+                  }
+                >
+                  ×
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {allowAttachments && pendingAttachments.length === 2 ? (
           <label className="audion-chat-ab-compare">
             <input
@@ -780,6 +882,16 @@ export function AudionChatPanel({
                 tabIndex={-1}
                 onChange={(ev) => void onPickImages(ev.target.files)}
               />
+              <input
+                ref={docInputRef}
+                type="file"
+                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                multiple
+                className="audion-chat-attach-input"
+                aria-hidden
+                tabIndex={-1}
+                onChange={(ev) => void onPickDocuments(ev.target.files)}
+              />
               <Button
                 type="button"
                 variant="ghost"
@@ -790,6 +902,17 @@ export function AudionChatPanel({
                 disabled={busy || toolBusy || attachBusy}
                 onClick={() => fileInputRef.current?.click()}
               />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="audion-chat-composer-icon"
+                aria-label={t('chat.attachDoc')}
+                disabled={busy || toolBusy || attachBusy}
+                onClick={() => docInputRef.current?.click()}
+              >
+                DOC
+              </Button>
             </>
           ) : null}
           <Field label={t('chat.message')} error={composerError ?? undefined} htmlFor="chat-composer">
@@ -811,7 +934,9 @@ export function AudionChatPanel({
                   ? t('chat.placeholderStep')
                   : pendingAttachments.length
                     ? t('chat.placeholderWithImages')
-                    : t('chat.placeholder')
+                    : pendingDocuments.length
+                      ? t('chat.placeholderWithDocs')
+                      : t('chat.placeholder')
               }
               disabled={busy || toolBusy || (guestRemaining != null && guestRemaining <= 0)}
               autoComplete="off"
@@ -837,7 +962,7 @@ export function AudionChatPanel({
               className="chat-send chat-send-icon"
               icon={<IconSend />}
               disabled={
-                (draft.trim().length < 1 && pendingAttachments.length < 1) ||
+                (draft.trim().length < 1 && !hasPendingAttach) ||
                 !personaId ||
                 toolBusy ||
                 attachBusy ||

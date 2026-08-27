@@ -105,9 +105,10 @@
 - Chat routes: `/chat`, `/chat/embed`, `/chat/history`, `/chat?targetGroupId=` (ask-all)
 - Chat embed (EQC overlay): `specs/domain/chat-embed.md` · `paths.routes.chatEmbed` / `buildChatEmbedHref` · CSP `frame-ancestors` via `AUDION_CHAT_EMBED_FRAME_ANCESTORS` or `NEXT_PUBLIC_PLEXON_URL` / `PLEXON_AUTH_URL`
 - Guest chat budgets: `apps/web/lib/chat/guest-budget.ts` — `GUEST_CHAT_MAX_USER_TURNS=5`, `GUEST_CHAT_MAX_CHARS=800`, `GUEST_CHAT_TTL_MS=30m` · cookie `audion_guest_chat` · gate unauthenticated `POST /api/chat/stream`
-- Chat API proxies: `/api/chat/stream`, `/api/chat/images/upload`, `/api/chat/conversations`, `/api/chat/conversations/[id]`
+- Chat API proxies: `/api/chat/stream`, `/api/chat/images/upload`, `/api/chat/documents/upload`, `/api/chat/conversations`, `/api/chat/conversations/[id]`
   - Nested under `app/api/chat/*` → import fixtures via `../../../../lib/fixtures/chat-store` (four levels up)
-  - Image attachments: `paths.routes.apiChatImagesUpload` · TTL/size `paths.chatImageUpload*` · Spec `specs/domain/chat-image-attachments.md`
+  - Image attachments: `paths.routes.apiChatImagesUpload` · durable Postgres `chat_images` (memory fallback) · Spec `specs/domain/chat-image-attachments.md`
+  - DOCX attachments: `paths.routes.apiChatDocumentsUpload` · durable `chat_documents` · Spec `specs/domain/chat-document-attachments.md`
 - Chat API internal default: `paths.chatApiInternalUrl` · env `NEXT_CHAT_API_INTERNAL_URL`
 - Chat fixtures/store: `apps/web/lib/fixtures/chat-store.ts`
 - Chat answer port: `apps/web/lib/chat/`

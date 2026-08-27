@@ -1,9 +1,10 @@
 # Chat image attachments + A/B compare
 
-**Status:** Accepted — 2026-08-27  
+**Status:** Accepted — 2026-08-27 · Durable store 2026-08-27  
 **Surfaces:** Persona chat only (`/chat`)  
 **Contracts:** `ChatMessageImage` · `ChatSendPayload.imageIds` · `abCompare`  
 **API:** `POST /api/chat/images/upload` · stream body fields  
+**Companion:** `specs/domain/chat-document-attachments.md`  
 **Legacy:** AUDION-v2 `/chat/images/upload` + `ab_compare` system instruction
 
 ## Purpose
@@ -24,18 +25,19 @@ Users attach screenshots/design variants to a persona turn so the native OpenAI 
 2. Compress (canvas max **1024×1024**, JPEG quality **0.7**) → data URL.
 3. `POST /api/chat/images/upload` `{ image: dataUrl }` → `{ imageId }`.
 4. Pending thumbs + remove; with **exactly 2** pending IDs show A/B checkbox.
-5. Send: `imageIds`, optional `abCompare: true`; `message` may be empty when ≥1 image.
+5. Send: `imageIds`, optional `abCompare: true`; `message` may be empty when ≥1 image **or** ≥1 document.
 
-## Server store
+## Server store (durable)
 
-- In-memory map keyed by UUID `imageId`.
-- TTL **3600 s** (`paths.chatImageUploadTtlSeconds`).
+- Primary: Postgres `chat_images` (`id`, `data_url`, `mime_type`, `created_at`, `expires_at`) when `DATABASE_URL` is set.
+- Fallback: in-memory map (local/fixture).
+- Orphan TTL **3600 s** (`paths.chatImageUploadTtlSeconds`) — cleanup on put; rows remain resolvable across redeploys while not expired.
 - Max decoded payload **10 MB** (`paths.chatImageUploadMaxBytes`).
 - Data URL must start with `data:image/`.
 
 ## Persist
 
-User `ChatMessage` stores `images: { id, dataUrl }[]` (compressed) + optional `abCompare` for history UI. Upload-store IDs are resolved at send time for the LLM turn.
+User `ChatMessage` stores `images: { id, dataUrl }[]` (compressed thumbs for UI) + optional `abCompare`. Stream resolve uses the durable store by `imageId`.
 
 ## Native stream
 
@@ -62,6 +64,5 @@ A/B Compare Mode (2 images):
 
 ## Out of scope
 
-- DOCX / knowledge upload
-- Blob/S3 durable storage
+- Blob/S3 object storage
 - TG / guest attachments
