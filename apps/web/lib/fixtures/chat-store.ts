@@ -292,6 +292,16 @@ export async function* storeChatFakeStream(
 
   const { shouldEnableAbCompare } = await import('../chat/ab-compare')
   const abCompare = shouldEnableAbCompare(payload.abCompare, images.length)
+
+  let ragSources: import('@audion-v3/contracts').KnowledgeRagSource[] = []
+  const projectId = payload.projectId?.trim() || ''
+  const isGuest = Boolean(payload.guestSessionId?.trim())
+  if (!isGuest && projectId && message) {
+    const { retrieveKnowledgeSources } = await import('../knowledge/rag/store')
+    const retrieved = await retrieveKnowledgeSources({ projectId, query: message })
+    ragSources = retrieved.sources
+  }
+
   const turnPayload: ChatSendPayload = {
     ...payload,
     message:
@@ -331,5 +341,10 @@ export async function* storeChatFakeStream(
   }
 
   const done = await storeChatAppendAssistant(turn.conversationId, reply)
-  yield { type: 'done', conversationId: done.conversationId, messageId: done.messageId }
+  yield {
+    type: 'done',
+    conversationId: done.conversationId,
+    messageId: done.messageId,
+    ...(ragSources.length ? { sources: ragSources } : {}),
+  }
 }

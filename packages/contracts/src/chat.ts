@@ -300,10 +300,14 @@ export type ChatToolDecisionPayload = {
 }
 
 export type ChatStreamDeltaEvent = { type: 'delta'; text: string }
+import type { KnowledgeRagSource } from './knowledge-rag'
+
 export type ChatStreamDoneEvent = {
   type: 'done'
   conversationId: string
   messageId?: string
+  /** Project RAG sources used for this turn (optional). */
+  sources?: KnowledgeRagSource[]
 }
 export type ChatStreamErrorEvent = { type: 'error'; message: string }
 export type ChatStreamEvent =

@@ -97,6 +97,10 @@ Persona mode only (off on TG, guest embed, public share guest). Composer attach 
 
 Persona mode only. Composer DOCX pick → `POST /api/chat/documents/upload` → pending `documentIds`; extracted text merges into the user turn for the LLM. Spec: `specs/domain/chat-document-attachments.md`.
 
+## Project knowledge RAG
+
+Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenRouter preferred / OpenAI key fallback (`openai/text-embedding-3-small`). Session DOCX merge stays separate. Spec: `specs/domain/chat-knowledge-rag.md` · API `specs/api/knowledge-rag.md`.
+
 ## Non-goals (MVP)
 
 - Moodboard drawer

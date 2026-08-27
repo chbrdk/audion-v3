@@ -17,6 +17,8 @@ import { resolveChatImages } from './image-upload-store'
 import { mergeUserMessageWithDocuments } from './merge-documents'
 import { extractUrlFromMessage } from './share'
 import { resolvePersonaSystemPrompt } from '../fixtures/persona-prompts-store'
+import { mergeRelevantContext } from '../knowledge/rag/merge-context'
+import { retrieveKnowledgeSources } from '../knowledge/rag/store'
 
 const HISTORY_MESSAGE_LIMIT = 12
 
@@ -156,7 +158,17 @@ export async function* nativeChatStreamEvents(
 
   const abCompare = shouldEnableAbCompare(payload.abCompare, images.length)
   const displayMessage = message || placeholderUserContent(images, documents)
-  const modelMessage = mergeUserMessageWithDocuments(message, documents)
+  let modelMessage = mergeUserMessageWithDocuments(message, documents)
+
+  let ragSources: Awaited<ReturnType<typeof retrieveKnowledgeSources>>['sources'] = []
+  const projectId = payload.projectId?.trim() || ''
+  const isGuest = Boolean(payload.guestSessionId?.trim())
+  if (!isGuest && projectId && message) {
+    const retrieved = await retrieveKnowledgeSources({ projectId, query: message })
+    ragSources = retrieved.sources
+    modelMessage = mergeRelevantContext(modelMessage, ragSources)
+  }
+
   const turnPayload: ChatSendPayload = {
     ...payload,
     message: displayMessage,
@@ -222,6 +234,7 @@ export async function* nativeChatStreamEvents(
       type: 'done',
       conversationId: done.conversationId,
       messageId: done.messageId,
+      ...(ragSources.length ? { sources: ragSources } : {}),
     }
   } catch (error) {
     const err = toAiNativeError(error, 'Chat stream failed')

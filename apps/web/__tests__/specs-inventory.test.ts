@@ -18,6 +18,7 @@ const requiredSpecs = [
   'specs/domain/chat-fields.md',
   'specs/domain/chat-image-attachments.md',
   'specs/domain/chat-document-attachments.md',
+  'specs/domain/chat-knowledge-rag.md',
   'specs/domain/chat-embed.md',
   'specs/domain/tavus-video-chat.md',
   'knowledge/tavus-video-chat.md',
@@ -30,6 +31,7 @@ const requiredSpecs = [
   'specs/api/journeys.md',
   'specs/api/ux-studies.md',
   'specs/api/chat.md',
+  'specs/api/knowledge-rag.md',
   'knowledge/specs-index.md',
   'knowledge/edit-wave.md',
   'knowledge/paths.md',
@@ -60,6 +62,10 @@ describe('specs inventory', () => {
     expect(paths.routes.apiChatStream).toBe('/api/chat/stream')
     expect(paths.routes.apiChatImagesUpload).toBe('/api/chat/images/upload')
     expect(paths.routes.apiChatDocumentsUpload).toBe('/api/chat/documents/upload')
+    expect(paths.routes.apiKnowledgeRagIngest).toBe('/api/knowledge/rag/ingest')
+    expect(paths.routes.apiKnowledgeRagRetrieve).toBe('/api/knowledge/rag/retrieve')
+    expect(paths.knowledgeRagEmbeddingDims).toBe(1536)
+    expect(paths.knowledgeRagEmbeddingModel).toBe('openai/text-embedding-3-small')
     expect(paths.chatImageUploadMaxBytes).toBe(10 * 1024 * 1024)
     expect(paths.chatDocumentUploadMaxBytes).toBe(15 * 1024 * 1024)
     expect(paths.chatDocumentUploadMaxChars).toBe(200_000)

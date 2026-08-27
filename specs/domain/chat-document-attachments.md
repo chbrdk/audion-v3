@@ -49,5 +49,5 @@ User `ChatMessage` stores `documents: { id, filename, charCount }[]` for UI chip
 ## Out of scope
 
 - Legacy `.doc`
-- Knowledge/RAG / Storion ingest
+- Knowledge/RAG / Storion ingest — see planned `specs/domain/chat-knowledge-rag.md` (project corpus; not this session merge path)
 - TG / guest

@@ -46,6 +46,8 @@ Wire names follow existing v2 proxies; confirm against live OpenAPI when impleme
 
 Stream body may include `imageIds`, `documentIds`, `abCompare` — see `specs/domain/chat-image-attachments.md` · `specs/domain/chat-document-attachments.md`.
 
+Project knowledge RAG (planned): internal retrieve on stream when `projectId` set — `specs/domain/chat-knowledge-rag.md` · `specs/api/knowledge-rag.md`.
+
 ## Runtime rules
 
 - Prefer server/proxy for secrets and long timeouts (see v2 `chat-proxy-timeout` notes)

@@ -22,6 +22,7 @@
 | Chat fields | `specs/domain/chat-fields.md` |
 | Chat image attachments | `specs/domain/chat-image-attachments.md` |
 | Chat document attachments | `specs/domain/chat-document-attachments.md` |
+| Chat / project knowledge RAG | `specs/domain/chat-knowledge-rag.md` |
 | Tavus video chat | `specs/domain/tavus-video-chat.md` |
 | Project workspace | `specs/domain/project-workspace.md` |
 | Project fields | `specs/domain/project-fields.md` |
@@ -38,6 +39,7 @@
 | Journeys | `specs/api/journeys.md` |
 | UX Studies | `specs/api/ux-studies.md` |
 | Chat | `specs/api/chat.md` |
+| Knowledge RAG | `specs/api/knowledge-rag.md` |
 | Projects | `specs/api/projects.md` |
 
 ## Shared DS specs (msqdx-ui)

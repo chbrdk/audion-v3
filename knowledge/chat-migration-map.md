@@ -11,7 +11,9 @@
 | Next `/api/chat/*` | `paths.routes.apiChat*` proxies |
 | chat-api streaming | Same upstream; normalize to `delta`/`done`/`error` |
 | TG fan-out (≤10 parallel streams) | Same client fan-out via `postChatStream`; no TG aggregator API |
-| Moodboard / Whisper / docs upload | Deferred (persona mode only; disabled in TG) |
+| Moodboard / Whisper | Deferred (persona mode only; disabled in TG) |
+| Docs upload (session DOCX) | v3: `POST /api/chat/documents/upload` + user-message merge |
+| Knowledge RAG (Qdrant + local BGE) | Planned: OpenRouter embeddings + pgvector — `specs/domain/chat-knowledge-rag.md` (no Qdrant) |
 | Tavus CVI iframe | Persona `/chat` video toggle · replica id on persona · `knowledge/tavus-video-chat.md` |
 | `buildShareChatUrl({ personaId, projectId })` | `paths` helper when share returns |
 
