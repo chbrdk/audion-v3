@@ -20,7 +20,7 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 
 - **Layout switch** (Cards | List) — shared preference `paths.hubIndexLayoutKey`
 - **Cards** (default): grid of `@msqdx/ui` `Panel` app cards (`audion-tg-card`)
-- **List**: numbered magazine rows (name + meta)
+- **List**: numbered magazine rows — name left, meta right-aligned
 - Tall cards: large display **name** bottom-aligned, lots of top air; meta (segment · persona count · status) small underneath
 - **First tile**: create card (`audion-tg-card--create`) — dashed border, soft `--accent` wash, “New target group” (cards); compact button in list mode
 - **Second tile**: Suggest with AI (Wave 1 stub → `suggest-target-groups`)

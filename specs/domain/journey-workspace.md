@@ -21,7 +21,7 @@ Browse customer journey maps as a magazine/card index, read a phase timeline on 
 
 - **Layout switch** (Cards | List) — shared preference `paths.hubIndexLayoutKey`
 - **Cards** (default): display **name**, journey type, status, linked TG name/count of phases
-- **List**: numbered magazine rows (name + meta)
+- **List**: numbered magazine rows — name left, meta right-aligned
 - **Create tile** (`audion-index-card--create` language): “New journey” (cards); compact button in list mode
 - **Generate with AI tile** (Wave 1 stub → `/api/journeys/generate`)
 - Optional filter `q` (name / type) — no header create button

@@ -23,7 +23,7 @@ Magazine-style project workspace: browse projects, read company context, manage 
 
 - **Layout switch** (Cards | List) — shared with personas / TGs / journeys
 - **Cards**: app-card grid + create tile
-- **List**: numbered magazine rows (name · persona/TG counts · status); create as compact button
+- **List**: numbered rows — **name left**, meta **right-aligned** (status · groups · personas); create as compact button
 
 - Magazine hero **text-only** (`.audion-magazine-hero--text`): full-width eyebrow, title, optional DE deck, facets — no portrait/avatar
 - **Intro row** (`.audion-project-intro`): description (~2/3) | larger Team canvas right (~1/3, max 32rem)

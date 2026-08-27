@@ -64,16 +64,23 @@ describe('hub index Cards|List layout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'List' }))
     expect(container.querySelector('.audion-tg-grid')).toBeNull()
     expect(container.querySelector('.audion-hub-index-list')).toBeTruthy()
+    const row = container.querySelector('.audion-hub-index-list-row')
+    expect(row?.querySelector('.audion-hub-index-list-name')?.textContent).toBe('Alex Morgan')
+    expect(row?.querySelector('.audion-hub-index-list-meta')?.textContent).toMatch(/Buyer/)
     expect(screen.getByRole('link', { name: /Alex Morgan/i }).getAttribute('href')).toBe(
       paths.routes.personaDetail('p1'),
     )
     expect(sessionStorage.getItem(paths.hubIndexLayoutKey)).toBe('list')
   })
 
-  it('shares the preference with projects hub', () => {
+  it('shares the preference with projects hub and right-aligns status · groups · personas', () => {
     sessionStorage.setItem(paths.hubIndexLayoutKey, 'list')
     const { container } = wrap(<ProjectListPanel list={projectList} />)
     expect(container.querySelector('.audion-hub-index-list')).toBeTruthy()
+    const meta = container.querySelector('.audion-hub-index-list-meta')?.textContent ?? ''
+    expect(meta.indexOf('published')).toBeGreaterThanOrEqual(0)
+    expect(meta.indexOf('published')).toBeLessThan(meta.search(/group/i))
+    expect(meta.search(/group/i)).toBeLessThan(meta.search(/persona/i))
     expect(screen.getByRole('link', { name: /North/i }).getAttribute('href')).toBe(
       paths.routes.projectDetail('proj-1'),
     )

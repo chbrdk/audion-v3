@@ -20,7 +20,7 @@ Browse personas as a magazine index, read a full-width profile article, and crea
 
 - **Layout switch** (Cards | List) on the index — preference in `sessionStorage` (`paths.hubIndexLayoutKey`); shared with projects / TGs / journeys
 - **Cards** (default): `@msqdx/ui` `Panel` app cards (`audion-tg-card` / `audion-tg-grid`) — large name, airy top, small meta (role · archetype · status)
-- **List**: numbered `audion-magazine-list` rows (name + meta) — same destinations
+- **List**: numbered `audion-magazine-list` rows — name left, meta right-aligned — same destinations
 - **Create tile** (`audion-tg-card--create`): brand-tinted dashed panel + “New persona” (cards); compact button in list mode
 - **Generate with AI tile** (Wave 1 stub → `personas/generate`; pick TG) — `knowledge/ai-workflows.md`
 - Optional filter form (`q`) — no header create button

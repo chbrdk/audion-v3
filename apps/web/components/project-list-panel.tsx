@@ -79,12 +79,7 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
               >
                 <span className="audion-hub-index-list-name">{item.name}</span>
                 <span className="audion-hub-index-list-meta">
-                  {t(
-                    item.personaCount === 1
-                      ? 'lists.projects.personaOne'
-                      : 'lists.projects.personaMany',
-                    { count: item.personaCount },
-                  )}
+                  <span data-status={item.status}>{item.status}</span>
                   <span aria-hidden> · </span>
                   {t(
                     item.targetGroupCount === 1
@@ -93,7 +88,12 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
                     { count: item.targetGroupCount },
                   )}
                   <span aria-hidden> · </span>
-                  <span data-status={item.status}>{item.status}</span>
+                  {t(
+                    item.personaCount === 1
+                      ? 'lists.projects.personaOne'
+                      : 'lists.projects.personaMany',
+                    { count: item.personaCount },
+                  )}
                 </span>
               </Link>
             </li>
