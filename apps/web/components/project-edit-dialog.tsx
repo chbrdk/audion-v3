@@ -6,13 +6,8 @@ import type { ProjectDetail, ProjectStatus, ProjectWritePayload } from '@audion-
 import { Button, Field, Input, Panel, Text, Textarea } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { IconEdit } from './nav-icons'
-
-const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'published', label: 'Published' },
-  { value: 'archived', label: 'Archived' },
-]
 
 function emptyPayload(): ProjectWritePayload {
   return {
@@ -35,11 +30,18 @@ export function ProjectEditDialog({
   mode: 'create' | 'edit'
   project: ProjectDetail | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [form, setForm] = useState<ProjectWritePayload>(emptyPayload())
   const [nameError, setNameError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  const statusOptions = [
+    { value: 'draft', label: t('dialogs.statusDraft') },
+    { value: 'published', label: t('dialogs.statusPublished') },
+    { value: 'archived', label: t('dialogs.statusArchived') },
+  ]
 
   useEffect(() => {
     if (!open) return
@@ -59,7 +61,7 @@ export function ProjectEditDialog({
 
   async function onSave() {
     if (!form.name.trim()) {
-      setNameError('Name is required')
+      setNameError(t('dialogs.nameRequired'))
       return
     }
     setSaving(true)
@@ -90,7 +92,7 @@ export function ProjectEditDialog({
       router.push(paths.routes.projectDetail(saved.id))
       router.refresh()
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Save failed')
+      setSaveError(error instanceof Error ? error.message : t('dialogs.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -103,27 +105,25 @@ export function ProjectEditDialog({
       open={open}
       onClose={onClose}
       className="audion-edit-dialog"
-      title={isCreate ? 'New project' : 'Edit project'}
+      title={isCreate ? t('dialogs.projectNewTitle') : t('dialogs.projectEditTitle')}
       actions={
         <>
           <Button variant="ghost" size="md" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button size="md" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving…' : isCreate ? 'Create' : 'Save'}
+            {saving ? t('common.saving') : isCreate ? t('common.create') : t('common.save')}
           </Button>
         </>
       }
     >
       <div className="audion-edit-form">
         <p className="audion-edit-lede">
-          {isCreate
-            ? 'Name the workspace, then add a short company brief.'
-            : 'Update project context. Audience counts stay linked via personas and target groups.'}
+          {isCreate ? t('dialogs.projectLedeCreate') : t('dialogs.projectLedeEdit')}
         </p>
 
         <Field
-          label="Name"
+          label={t('dialogs.fieldName')}
           size="md"
           error={nameError ?? undefined}
           htmlFor="project-name"
@@ -133,7 +133,7 @@ export function ProjectEditDialog({
             id="project-name"
             size="md"
             block
-            placeholder="e.g. AUDION Core"
+            placeholder={t('dialogs.projectNamePh')}
             value={form.name}
             onChange={(e) => {
               setForm((f) => ({ ...f, name: e.target.value }))
@@ -143,20 +143,30 @@ export function ProjectEditDialog({
         </Field>
 
         <div className="audion-edit-row">
-          <Field label="Name (DE)" size="md" htmlFor="project-name-de" className="audion-edit-field">
+          <Field
+            label={t('dialogs.fieldNameDe')}
+            size="md"
+            htmlFor="project-name-de"
+            className="audion-edit-field"
+          >
             <Input
               id="project-name-de"
               size="md"
               block
-              placeholder="Optional"
+              placeholder={t('common.optional')}
               value={form.nameDe ?? ''}
               onChange={(e) => setForm((f) => ({ ...f, nameDe: e.target.value }))}
             />
           </Field>
-          <Field label="Status" size="md" htmlFor="project-status" className="audion-edit-field">
+          <Field
+            label={t('dialogs.fieldStatus')}
+            size="md"
+            htmlFor="project-status"
+            className="audion-edit-field"
+          >
             <Select
               id="project-status"
-              options={STATUS_OPTIONS}
+              options={statusOptions}
               value={form.status ?? 'draft'}
               onChange={(value) =>
                 setForm((f) => ({ ...f, status: value as ProjectStatus }))
@@ -165,7 +175,12 @@ export function ProjectEditDialog({
           </Field>
         </div>
 
-        <Field label="Description" size="md" htmlFor="project-description" className="audion-edit-field">
+        <Field
+          label={t('dialogs.fieldDescription')}
+          size="md"
+          htmlFor="project-description"
+          className="audion-edit-field"
+        >
           <Textarea
             id="project-description"
             size="md"
@@ -178,7 +193,7 @@ export function ProjectEditDialog({
 
         {isCreate ? (
           <Field
-            label="Initial knowledge brief"
+            label={t('dialogs.projectKnowledgeLabel')}
             size="md"
             htmlFor="project-company-context"
             className="audion-edit-field"
@@ -188,7 +203,7 @@ export function ProjectEditDialog({
               size="md"
               block
               rows={4}
-              placeholder="Optional — becomes the first knowledge chapter"
+              placeholder={t('dialogs.projectKnowledgePh')}
               value={form.companyContext ?? ''}
               onChange={(e) => setForm((f) => ({ ...f, companyContext: e.target.value }))}
             />
@@ -202,6 +217,7 @@ export function ProjectEditDialog({
 }
 
 export function ProjectCreateButton({ variant = 'card' }: { variant?: 'card' | 'button' }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -213,16 +229,16 @@ export function ProjectCreateButton({ variant = 'card' }: { variant?: 'card' | '
         >
           <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
             <Text role="headline" as="span" className="audion-tg-card-title">
-              New project
+              {t('tiles.newProject')}
             </Text>
             <p className="audion-tg-card-meta">
-              <span>Create a workspace</span>
+              <span>{t('tiles.newProjectMeta')}</span>
             </p>
           </Panel>
         </button>
       ) : (
         <Button type="button" size="sm" onClick={() => setOpen(true)}>
-          New project
+          {t('tiles.newProject')}
         </Button>
       )}
       {open ? (
@@ -233,6 +249,7 @@ export function ProjectCreateButton({ variant = 'card' }: { variant?: 'card' | '
 }
 
 export function ProjectDetailActions({ project }: { project: ProjectDetail }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -240,7 +257,7 @@ export function ProjectDetailActions({ project }: { project: ProjectDetail }) {
         variant="ghost"
         size="sm"
         className="audion-edit-icon-btn"
-        aria-label="Edit project"
+        aria-label={t('tiles.editProject')}
         icon={<IconEdit />}
         onClick={() => setOpen(true)}
       />

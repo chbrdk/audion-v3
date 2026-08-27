@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Field, Hint, Input, Text, Textarea } from '@msqdx/ui'
+import { useT } from '../../lib/user-prefs'
 
 type Props = {
   locale: string
@@ -22,24 +23,25 @@ export function VariableContextPanel({
   onPersonaProfileChange,
   useMockData,
 }: Props) {
+  const t = useT()
   return (
     <div className="pb-context audion-stack" data-testid="pb-context-panel">
       <Text role="headline" as="h3">
-        Test context
+        {t('prompts.testContext')}
       </Text>
       <Hint panel>
         {useMockData
           ? 'Mock data fills missing ${vars}. Freeform fields below override mocks.'
           : 'Only the fields below are used for preview/test vars.'}
       </Hint>
-      <Field label="Locale">
+      <Field label={t('prompts.locale')}>
         <Input
           value={locale}
           onChange={(e) => onLocaleChange(e.target.value)}
           data-testid="pb-locale"
         />
       </Field>
-      <Field label="Context">
+      <Field label={t('prompts.context')}>
         <Textarea
           value={context}
           onChange={(e) => onContextChange(e.target.value)}
@@ -47,7 +49,7 @@ export function VariableContextPanel({
           data-testid="pb-context"
         />
       </Field>
-      <Field label="Persona profile">
+      <Field label={t('prompts.personaProfile')}>
         <Textarea
           value={personaProfile}
           onChange={(e) => onPersonaProfileChange(e.target.value)}

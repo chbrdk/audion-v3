@@ -1,8 +1,11 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import type { JourneyList } from '@audion-v3/contracts'
 import { EmptyState, Panel, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { JourneyCreateButton } from './journey-edit-dialog'
 import { GenerateJourneyAiButton } from './ai-workflow-actions'
 
@@ -13,6 +16,7 @@ export function JourneyListPanel({
   list: JourneyList
   query?: string
 }) {
+  const t = useT()
   return (
     <section className="audion-index audion-tg-index">
       <ul className="audion-tg-grid">
@@ -26,11 +30,9 @@ export function JourneyListPanel({
           <Link href={paths.routes.studies} className="audion-tg-card audion-tg-card--draft">
             <Panel as="div" variant="card" className="audion-tg-card-panel">
               <Text role="headline" as="h2" className="audion-tg-card-title">
-                Convert from UX run
+                {t('lists.journeys.convertTitle')}
               </Text>
-              <p className="audion-tg-card-meta">
-                Open Studies → wave run → Convert to journey (UX Journey Agent surface)
-              </p>
+              <p className="audion-tg-card-meta">{t('lists.journeys.convertMeta')}</p>
             </Panel>
           </Link>
         </li>
@@ -48,7 +50,10 @@ export function JourneyListPanel({
                   <span>{item.journeyType}</span>
                   <span aria-hidden>·</span>
                   <span>
-                    {item.phaseCount} phase{item.phaseCount === 1 ? '' : 's'}
+                    {t(
+                      item.phaseCount === 1 ? 'lists.journeys.phaseOne' : 'lists.journeys.phaseMany',
+                      { count: item.phaseCount },
+                    )}
                   </span>
                   {item.targetGroupName ? (
                     <>
@@ -65,7 +70,7 @@ export function JourneyListPanel({
         ))}
       </ul>
 
-      {!list.items.length ? <EmptyState>No journeys yet.</EmptyState> : null}
+      {!list.items.length ? <EmptyState>{t('lists.journeys.empty')}</EmptyState> : null}
     </section>
   )
 }

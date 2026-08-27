@@ -14,6 +14,7 @@ import {
   toPersonaWriteSections,
   type PersonaNoteCard,
 } from '../lib/persona-notes'
+import { useT } from '../lib/user-prefs'
 import { KnowledgeRichEditor } from './knowledge-rich-editor'
 
 /**
@@ -27,6 +28,7 @@ export function PersonaEditableNotes({
   personaId: string
   sections: PersonaSection[]
 }) {
+  const t = useT()
   const router = useRouter()
   const titleRef = useRef<HTMLInputElement>(null)
   const skipBlurSave = useRef(false)
@@ -98,7 +100,7 @@ export function PersonaEditableNotes({
 
   async function commitEdit() {
     if (!editingId) return
-    const title = titleDraft.trim() || 'Untitled'
+    const title = titleDraft.trim() || t('common.untitled')
     const body = isEmptyKnowledgeBody(bodyDraft) ? '' : sanitizeKnowledgeHtml(bodyDraft)
     const previous = notes.find((n) => n.id === editingId)
     if (previous && previous.title === title && previous.body === body) {
@@ -141,7 +143,7 @@ export function PersonaEditableNotes({
   async function addNote() {
     if (saving || editingId) return
     const id = newPersonaNoteId()
-    const note: PersonaNoteCard = { id, title: 'New note', body: '' }
+    const note: PersonaNoteCard = { id, title: t('personaEdit.newNote'), body: '' }
     setNotes((prev) => [...prev, note])
     setOpenId(id)
     setEditingId(id)
@@ -167,7 +169,7 @@ export function PersonaEditableNotes({
     <Panel className="detail-block audion-magazine-band audion-project-knowledge audion-persona-notes ds-motion-reveal">
       <SectionChrome
         quiet
-        title="Notes"
+        title={t('personaEdit.notes')}
         meta={notes.length ? `${notes.length}` : undefined}
         metaTone="accent"
         as="h3"
@@ -178,7 +180,7 @@ export function PersonaEditableNotes({
           type="button"
           className="audion-project-knowledge-empty"
           onClick={() => void addNote()}
-          aria-label="Add note"
+          aria-label={t('personaEdit.addNote')}
         >
           <EmptyState>
             Add Mindset, Context, and working notes — same content cards as project knowledge.
@@ -186,7 +188,7 @@ export function PersonaEditableNotes({
         </button>
       ) : (
         <Accordion
-          aria-label="Persona notes"
+          aria-label={t('personaEdit.notes')}
           value={openId}
           onChange={onAccordionChange}
           footer={
@@ -199,7 +201,7 @@ export function PersonaEditableNotes({
               <span className="audion-magazine-list-num" aria-hidden>
                 +
               </span>
-              <span>Add note</span>
+              <span>{t('personaEdit.addNote')}</span>
             </button>
           }
           items={notes.map((note) => {
@@ -216,7 +218,7 @@ export function PersonaEditableNotes({
                       className="audion-knowledge-title-input"
                       value={titleDraft}
                       disabled={saving}
-                      aria-label="Note title"
+                      aria-label={t('personaEdit.notes')}
                       onChange={(e) => setTitleDraft(e.target.value)}
                       onBlur={onBlurSave}
                     />
@@ -226,8 +228,8 @@ export function PersonaEditableNotes({
                     content={isEditing ? bodyDraft : note.body}
                     editable={isEditing}
                     disabled={saving}
-                    ariaLabel={`Edit ${note.title}`}
-                    placeholder="Write this note…"
+                    ariaLabel={`${t('common.edit')} ${note.title}`}
+                    placeholder={t('personaEdit.notePh')}
                     onChange={setBodyDraft}
                     onBlur={onBlurSave}
                     onRequestEdit={() => beginEdit(note)}
@@ -244,7 +246,7 @@ export function PersonaEditableNotes({
                         onClick={() => beginEdit(note)}
                         disabled={saving}
                       >
-                        Edit
+                        {t('common.edit')}
                       </Button>
                     ) : null}
                     <Button
@@ -253,9 +255,9 @@ export function PersonaEditableNotes({
                       size="sm"
                       onClick={() => void removeNote(note.id)}
                       disabled={saving}
-                      aria-label={`Remove ${note.title}`}
+                      aria-label={`${t('common.remove')} ${note.title}`}
                     >
-                      Remove
+                      {t('common.remove')}
                     </Button>
                   </div>
                 </div>

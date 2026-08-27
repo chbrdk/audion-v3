@@ -1,5 +1,6 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../components/app-shell'
+import { HubTopStatus } from '../../components/hub-top-status'
 import { JourneyListPanel } from '../../components/journey-list-panel'
 import { fetchJourneyList, filterJourneyList } from '../../lib/journeys'
 
@@ -16,22 +17,16 @@ export default async function JourneysPage({
     const demo = result.origin === 'fixtures'
     return (
       <AppShell
-        title="Journeys"
-        description={demo ? 'Demo fixtures — API offline.' : undefined}
-        status={
-          <TopStatus
-            level="ok"
-            primary={demo ? 'demo data' : `${list.total} journeys`}
-            secondary={demo ? `${list.total} fixtures` : 'live'}
-          />
-        }
+        titleKey="pages.journeys.title"
+        descriptionKey={demo ? 'hubs.demoFixturesOffline' : undefined}
+        status={<HubTopStatus demo={demo} total={list.total} entity="journeys" />}
       >
         <JourneyListPanel list={list} query={query} />
       </AppShell>
     )
   } catch (error) {
     return (
-      <AppShell title="Journeys" description="Browse customer journey maps.">
+      <AppShell titleKey="pages.journeys.title" descriptionKey="pages.journeys.lead">
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Journey backend unavailable.'}
         </Alert>

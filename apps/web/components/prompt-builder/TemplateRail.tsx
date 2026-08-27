@@ -6,6 +6,7 @@ import type {
   SettingsPersonaPromptSummary,
 } from '@audion-v3/contracts'
 import { Chip, Field, Input, Text } from '@msqdx/ui'
+import { useT } from '../../lib/user-prefs'
 
 export type CatalogKind = 'assist' | 'persona'
 
@@ -30,13 +31,14 @@ export function TemplateRail({
   onSelectAssist,
   onSelectPersona,
 }: Props) {
+  const t = useT()
   const q = search.trim().toLowerCase()
   const assistFiltered = assist.filter(
-    (t) =>
+    (row) =>
       !q ||
-      t.id.toLowerCase().includes(q) ||
-      t.label.toLowerCase().includes(q) ||
-      t.category.toLowerCase().includes(q),
+      row.id.toLowerCase().includes(q) ||
+      row.label.toLowerCase().includes(q) ||
+      row.category.toLowerCase().includes(q),
   )
   const personaFiltered = personas.filter(
     (p) => !q || p.name.toLowerCase().includes(q) || p.personaId.toLowerCase().includes(q),
@@ -45,40 +47,40 @@ export function TemplateRail({
   return (
     <aside className="pb-rail audion-stack" data-testid="pb-template-rail">
       <Text role="headline" as="h3">
-        Catalog
+        {t('prompts.catalog')}
       </Text>
-      <Field label="Search">
+      <Field label={t('common.search')}>
         <Input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Filter templates…"
+          placeholder={t('prompts.filterPh')}
           data-testid="pb-rail-search"
         />
       </Field>
 
       <div className="pb-rail__section">
         <Text role="meta" as="h4">
-          Assist ({assistFiltered.length})
+          {t('prompts.assistCount', { count: assistFiltered.length })}
         </Text>
         <ul className="pb-rail__list">
-          {assistFiltered.map((t) => {
-            const active = selectedKind === 'assist' && selectedId === t.id
+          {assistFiltered.map((row) => {
+            const active = selectedKind === 'assist' && selectedId === row.id
             return (
-              <li key={t.id}>
+              <li key={row.id}>
                 <button
                   type="button"
                   className={`pb-rail__item ${active ? 'pb-rail__item--active' : ''}`}
-                  onClick={() => onSelectAssist(t.id)}
-                  data-testid={`pb-assist-${t.id}`}
+                  onClick={() => onSelectAssist(row.id)}
+                  data-testid={`pb-assist-${row.id}`}
                 >
-                  <span className="pb-rail__item-title">{t.label}</span>
+                  <span className="pb-rail__item-title">{row.label}</span>
                   <span className="pb-rail__item-meta">
-                    {t.id}
-                    {t.overridden ? (
+                    {row.id}
+                    {row.overridden ? (
                       <>
                         {' '}
                         <Chip static size="sm">
-                          overridden
+                          {t('prompts.overridden')}
                         </Chip>
                       </>
                     ) : null}
@@ -92,7 +94,7 @@ export function TemplateRail({
 
       <div className="pb-rail__section">
         <Text role="meta" as="h4">
-          Persona chat ({personaFiltered.length})
+          {t('prompts.personaChatCount', { count: personaFiltered.length })}
         </Text>
         <ul className="pb-rail__list">
           {personaFiltered.map((p) => {
@@ -112,7 +114,7 @@ export function TemplateRail({
                       <>
                         {' '}
                         <Chip static size="sm">
-                          custom
+                          {t('prompts.custom')}
                         </Chip>
                       </>
                     ) : null}

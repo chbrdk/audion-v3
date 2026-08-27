@@ -11,6 +11,7 @@ import type {
 import { Button, Field, Input, Textarea } from '@msqdx/ui'
 import { Dialog, TagInput } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { GeneratePhaseMomentsButton } from './generate-phase-moments-button'
 
 function newPhaseId(): string {
@@ -57,6 +58,7 @@ export function JourneyPhaseEditDialog({
   journey: JourneyDetail
   phase: JourneyPhase | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [name, setName] = useState('')
   const [summary, setSummary] = useState('')
@@ -82,7 +84,7 @@ export function JourneyPhaseEditDialog({
 
   async function onSave() {
     if (!name.trim()) {
-      setNameError('Name is required')
+      setNameError(t('dialogs.nameRequired'))
       return
     }
     setSaving(true)
@@ -135,27 +137,25 @@ export function JourneyPhaseEditDialog({
       open={open}
       onClose={onClose}
       className="audion-edit-dialog"
-      title={isCreate ? 'New phase' : 'Edit phase'}
+      title={isCreate ? t('phases.newPhase') : t('phases.editPhase')}
       actions={
         <>
           <Button variant="ghost" size="md" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button size="md" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving…' : isCreate ? 'Add phase' : 'Save'}
+            {saving ? t('common.saving') : isCreate ? t('phases.newPhase') : t('common.save')}
           </Button>
         </>
       }
     >
       <div className="audion-edit-form">
         <p className="audion-edit-lede">
-          {isCreate
-            ? 'Name the stage, write the focus, and list the moments that happen here.'
-            : 'Update this phase’s focus and moments.'}
+          {isCreate ? t('phases.ledeCreate') : t('phases.ledeEdit')}
         </p>
 
         <Field
-          label="Name"
+          label={t('phases.name')}
           size="md"
           error={nameError ?? undefined}
           htmlFor="phase-name"
@@ -169,22 +169,22 @@ export function JourneyPhaseEditDialog({
               setName(e.target.value)
               if (nameError) setNameError(null)
             }}
-            placeholder="Phase name"
+            placeholder={t('phases.namePh')}
           />
         </Field>
 
-        <Field label="Focus" size="md" htmlFor="phase-summary" className="audion-edit-field">
+        <Field label={t('phases.focus')} size="md" htmlFor="phase-summary" className="audion-edit-field">
           <Textarea
             id="phase-summary"
             block
             rows={3}
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            placeholder="What should this phase clarify or unlock?"
+            placeholder={t('phases.focusPh')}
           />
         </Field>
 
-        <Field label="Moments" size="md" htmlFor="phase-moments" className="audion-edit-field">
+        <Field label={t('phases.moments')} size="md" htmlFor="phase-moments" className="audion-edit-field">
           <div className="audion-phase-moments-field">
             {mode === 'edit' && phase ? (
               <GeneratePhaseMomentsButton
@@ -198,7 +198,7 @@ export function JourneyPhaseEditDialog({
               size="md"
               value={moments}
               onChange={setMoments}
-              placeholder="Add moment…"
+              placeholder={t('phases.momentsPh')}
             />
           </div>
         </Field>

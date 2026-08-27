@@ -1,8 +1,11 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import type { JourneyDetail } from '@audion-v3/contracts'
 import { EmptyState, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { JourneyDetailActions } from './journey-edit-dialog'
 import { JourneyPhaseSlider } from './journey-phase-slider'
 
@@ -24,19 +27,15 @@ function FacetTile({
 }
 
 export function JourneyDetailPanel({ journey }: { journey: JourneyDetail | null }) {
+  const t = useT()
+
   if (!journey) {
     return (
       <div className="panel briefing-detail audion-magazine audion-magazine--empty">
         <Text role="label" className="briefing-eyebrow">
-          Journey
+          {t('detail.journey.eyebrow')}
         </Text>
-        <EmptyState>
-          <Link href={paths.routes.journeys} className="audion-link">
-            Back to journeys
-          </Link>
-          {' — '}
-          this map could not be loaded.
-        </EmptyState>
+        <EmptyState>{t('detail.journey.missing')}</EmptyState>
       </div>
     )
   }
@@ -45,7 +44,7 @@ export function JourneyDetailPanel({ journey }: { journey: JourneyDetail | null 
     <article className="panel briefing-detail audion-magazine audion-magazine--journey">
       <div className="audion-magazine-topbar ds-motion-reveal">
         <p className="briefing-nav signal-nav">
-          <Link href={paths.routes.journeys}>Journeys</Link>
+          <Link href={paths.routes.journeys}>{t('nav.journeys')}</Link>
           <span className="briefing-nav-sep" aria-hidden>
             ·
           </span>
@@ -59,7 +58,7 @@ export function JourneyDetailPanel({ journey }: { journey: JourneyDetail | null 
       <header className="signal-hero briefing-hero audion-magazine-hero audion-magazine-hero--split ds-motion-reveal">
         <div className="audion-magazine-hero-copy">
           <Text role="label" className="briefing-eyebrow">
-            Journey map
+            {t('detail.journey.eyebrow')}
           </Text>
           <Text role="headline" as="h2" className="signal-title">
             {journey.name}
@@ -69,11 +68,19 @@ export function JourneyDetailPanel({ journey }: { journey: JourneyDetail | null 
           </Text>
         </div>
         <ul className="geo-places audion-magazine-facets" aria-label="Journey attributes">
-          <FacetTile label="Status" value={journey.status} kind={journey.status} />
-          <FacetTile label="Phases" value={String(journey.phaseCount)} kind="phases" />
+          <FacetTile
+            label={t('detail.persona.status')}
+            value={journey.status}
+            kind={journey.status}
+          />
+          <FacetTile
+            label={t('detail.journey.phases')}
+            value={String(journey.phaseCount)}
+            kind="phases"
+          />
           {journey.targetGroupId && journey.targetGroupName ? (
             <FacetTile
-              label="Target group"
+              label={t('detail.journey.targetGroup')}
               value={
                 <Link
                   href={paths.routes.targetGroupDetail(journey.targetGroupId)}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { UxFlowNode, UxFlowNodeKind } from '@audion-v3/contracts'
+import type { UxFlowNode } from '@audion-v3/contracts'
 import { Button, FlowInspectorShell, type FlowInspectorSection } from '@msqdx/ui'
 import type {
   FlowJobRunSummary,
@@ -9,18 +9,7 @@ import type {
   FlowNodeInspectorStep,
   FlowNodeRunState,
 } from '../lib/ux-flow-run-progress'
-
-const KIND_LABEL: Record<UxFlowNodeKind, string> = {
-  start: 'Start',
-  prompt: 'Prompt',
-  observe: 'Observe',
-  action: 'Action',
-  gate: 'Gate',
-  message: 'Message',
-  success: 'Success',
-  abandon: 'Abandon',
-  measure: 'Measure',
-}
+import { useT } from '../lib/user-prefs'
 
 function formatSec(sec?: number | null): string {
   if (sec == null || !Number.isFinite(sec)) return '—'
@@ -100,6 +89,7 @@ function InspectorStepCard({
   isLast: boolean
   defaultOpen: boolean
 }) {
+  const t = useT()
   const [open, setOpen] = useState(defaultOpen)
   const think = thinkAloudText(step.thinkAloud)
   const perception = perceptionRows(step.perception)
@@ -139,38 +129,40 @@ function InspectorStepCard({
             </div>
 
             {step.action ? (
-              <InspectorField label="Action" tone="action">
+              <InspectorField label={t('inspector.action')} tone="action">
                 {step.action}
               </InspectorField>
             ) : null}
 
             {step.target ? (
-              <InspectorField label="Target" tone="target" mono>
+              <InspectorField label={t('inspector.target')} tone="target" mono>
                 {step.target}
               </InspectorField>
             ) : null}
 
             {step.result ? (
-              <InspectorField label="Result" tone="result">
+              <InspectorField label={t('inspector.result')} tone="result">
                 <pre className="msqdx-flow-inspector-pre">{step.result}</pre>
               </InspectorField>
             ) : null}
 
             {step.reasoning ? (
-              <InspectorField label="Reasoning" tone="reasoning">
+              <InspectorField label={t('inspector.reasoning')} tone="reasoning">
                 <pre className="msqdx-flow-inspector-pre">{step.reasoning}</pre>
               </InspectorField>
             ) : null}
 
             {think ? (
-              <InspectorField label="Think aloud" tone="think">
+              <InspectorField label={t('inspector.thinkAloud')} tone="think">
                 <pre className="msqdx-flow-inspector-pre">{think}</pre>
               </InspectorField>
             ) : null}
 
             {perception.length ? (
               <div className="msqdx-flow-inspector-field-group">
-                <span className="msqdx-flow-inspector-field-group-label">Perception</span>
+                <span className="msqdx-flow-inspector-field-group-label">
+                  {t('inspector.perception')}
+                </span>
                 {perception.map((row) => (
                   <InspectorField key={row.key} label={row.key} tone="perception">
                     <pre className="msqdx-flow-inspector-pre">{row.value}</pre>
@@ -180,12 +172,12 @@ function InspectorStepCard({
             ) : null}
 
             {meta?.memory ? (
-              <InspectorField label="Memory" tone="meta">
+              <InspectorField label={t('inspector.memory')} tone="meta">
                 <pre className="msqdx-flow-inspector-pre">{meta.memory}</pre>
               </InspectorField>
             ) : null}
             {meta?.next_goal ? (
-              <InspectorField label="Next goal" tone="meta">
+              <InspectorField label={t('inspector.nextGoal')} tone="meta">
                 <pre className="msqdx-flow-inspector-pre">{meta.next_goal}</pre>
               </InspectorField>
             ) : null}
@@ -237,6 +229,7 @@ export function UxFlowNodeInspector({
   onClose: () => void
   onAppendOutputToNote?: () => void
 }) {
+  const t = useT()
   const steps = inspector?.steps ?? []
   const [expandedLatest, setExpandedLatest] = useState(true)
 
@@ -265,7 +258,7 @@ export function UxFlowNodeInspector({
     if (node.text || node.note) {
       next.push({
         id: 'design',
-        title: 'Design',
+        title: t('inspector.design'),
         defaultOpen: false,
         children: (
           <>
@@ -287,7 +280,7 @@ export function UxFlowNodeInspector({
     if (jobSummary) {
       next.push({
         id: 'run',
-        title: 'Run',
+        title: t('inspector.run'),
         defaultOpen: true,
         meta: (
           <span className="msqdx-flow-inspector-pill">
@@ -333,7 +326,7 @@ export function UxFlowNodeInspector({
     if (steps.length) {
       next.push({
         id: 'execution',
-        title: 'Execution',
+        title: t('inspector.execution'),
         defaultOpen: true,
         meta: (
           <span className="msqdx-flow-inspector-pill">
@@ -370,7 +363,7 @@ export function UxFlowNodeInspector({
     } else {
       next.push({
         id: 'execution',
-        title: 'Execution',
+        title: t('inspector.execution'),
         defaultOpen: true,
         children: (
           <p className="msqdx-flow-inspector-empty">
@@ -383,7 +376,7 @@ export function UxFlowNodeInspector({
     if (node.kind === 'gate' && (inspector?.gateEvaluation || inspector?.replanEvents?.length)) {
       next.push({
         id: 'gate',
-        title: 'Gate',
+        title: t('inspector.gate'),
         defaultOpen: true,
         children: (
           <>
@@ -394,7 +387,7 @@ export function UxFlowNodeInspector({
                 }`}
               >
                 <span className="msqdx-flow-inspector-gate-verdict">
-                  {inspector.gateEvaluation.matched ? 'Match' : 'Kein Match'}
+                  {inspector.gateEvaluation.matched ? t('inspector.match') : 'Kein Match'}
                 </span>
                 {inspector.gateEvaluation.condition ? (
                   <InspectorField label="Condition" tone="meta" mono>
@@ -442,18 +435,19 @@ export function UxFlowNodeInspector({
     nodeElapsed,
     onAppendOutputToNote,
     steps,
+    t,
   ])
 
   return (
     <FlowInspectorShell
       kind={node.kind}
-      kindLabel={KIND_LABEL[node.kind]}
+      kindLabel={t(`inspector.kinds.${node.kind}`)}
       title={node.label || node.id}
       nodeId={node.id}
       runState={runState}
       onClose={onClose}
       sections={sections}
-      aria-label="Node Inspector"
+      aria-label={t('flows.inspector')}
     />
   )
 }

@@ -27,60 +27,31 @@ import { paths } from '../lib/paths'
 import { useUserPrefs } from '../lib/user-prefs'
 import { PlatformAssistantHost } from './platform-assistant-host'
 
-const PRIMARY_NAV = [
-  {
-    id: 'chat',
-    href: paths.routes.chat,
-    label: 'Chat',
-    icon: <NavIconChat />,
-  },
-  { id: 'home', href: paths.routes.home, label: 'Home', icon: <NavIconOverview /> },
-  {
-    id: 'projects',
-    href: paths.routes.projects,
-    label: 'Projects',
-    icon: <NavIconProjects />,
-  },
-  { id: 'personas', href: paths.routes.personas, label: 'Personas', icon: <NavIconPersonas /> },
-  {
-    id: 'target-groups',
-    href: paths.routes.targetGroups,
-    label: 'Target groups',
-    icon: <NavIconTargetGroups />,
-  },
-  {
-    id: 'journeys',
-    href: paths.routes.journeys,
-    label: 'Journeys',
-    icon: <NavIconJourneys />,
-  },
-  {
-    id: 'studies',
-    href: paths.routes.studies,
-    label: 'Studies',
-    icon: <NavIconStudies />,
-  },
-]
-
 export function AppShell({
   children,
   title,
+  titleKey,
   titleHref,
   titleTone = 'default',
   description,
+  descriptionKey,
   leading,
   actions,
   status,
   presentation = 'default',
 }: {
   children: ReactNode
-  /** Page title in the topbar left. Omit when using `leading` instead. */
+  /** Page title in the topbar left. Omit when using `leading` / `titleKey`. */
   title?: string | null
+  /** Prefer over `title` — resolves via locale dictionary. */
+  titleKey?: string
   /** Optional link for context titles (e.g. target group on persona detail). */
   titleHref?: string
   /** `context` = quieter / smaller topbar label (not the magazine hero). */
   titleTone?: 'default' | 'context'
   description?: string
+  /** Prefer over `description` — resolves via locale dictionary. */
+  descriptionKey?: string
   /** Replaces the title slot on the left (e.g. chat persona picker). */
   leading?: ReactNode
   actions?: ReactNode
@@ -89,9 +60,11 @@ export function AppShell({
   presentation?: 'default' | 'embed'
 }) {
   const pathname = usePathname()
-  const { displayName } = useUserPrefs()
+  const { displayName, t } = useUserPrefs()
   const [railEdge, setRailEdge] = useState<RailDockEdge>(paths.railDockEdge)
   const embed = presentation === 'embed'
+  const pageTitle = titleKey ? t(titleKey) : title
+  const pageLead = descriptionKey ? t(descriptionKey) : description
 
   const frameStyle = useMemo(
     () =>
@@ -108,12 +81,55 @@ export function AppShell({
     return href === '/' ? pathname === href : pathname.startsWith(href)
   }
 
+  const primaryNav = useMemo(
+    () => [
+      {
+        id: 'chat',
+        href: paths.routes.chat,
+        label: t('nav.chat'),
+        icon: <NavIconChat />,
+      },
+      { id: 'home', href: paths.routes.home, label: t('nav.home'), icon: <NavIconOverview /> },
+      {
+        id: 'projects',
+        href: paths.routes.projects,
+        label: t('nav.projects'),
+        icon: <NavIconProjects />,
+      },
+      {
+        id: 'personas',
+        href: paths.routes.personas,
+        label: t('nav.personas'),
+        icon: <NavIconPersonas />,
+      },
+      {
+        id: 'target-groups',
+        href: paths.routes.targetGroups,
+        label: t('nav.targetGroups'),
+        icon: <NavIconTargetGroups />,
+      },
+      {
+        id: 'journeys',
+        href: paths.routes.journeys,
+        label: t('nav.journeys'),
+        icon: <NavIconJourneys />,
+      },
+      {
+        id: 'studies',
+        href: paths.routes.studies,
+        label: t('nav.studies'),
+        icon: <NavIconStudies />,
+      },
+    ],
+    [t],
+  )
+
   const titleNode =
-    title != null && title !== '' ? (
+    pageTitle != null && pageTitle !== '' ? (
       titleTone === 'context' ? (
-        <PageTitle className="audion-page-title--context">{title}</PageTitle>
+        <PageTitle className="audion-page-title--context">{pageTitle}</PageTitle>
       ) : (
-        <PageTitle>{title}</PageTitle>
+        <PageTitle>{pageTitle}</PageTitle>
       )
     ) : null
 
@@ -140,23 +156,23 @@ export function AppShell({
             defaultDockEdge={paths.railDockEdge}
             onDockEdgeChange={setRailEdge}
             logo={<MsqdxLogoMark size={26} title="MSQ DX" />}
-            logoLabel="AUDION home"
+            logoLabel={t('nav.homeAria', { brand: paths.brandLabel })}
             linkComponent={Link}
-            items={PRIMARY_NAV.map((item) => ({ ...item, active: isActive(item.href) }))}
+            items={primaryNav.map((item) => ({ ...item, active: isActive(item.href) }))}
             footerItems={[
               {
                 id: 'settings',
-                label: 'Settings',
+                label: t('nav.settings'),
                 href: paths.routes.settings,
                 active: isActive(paths.routes.settings),
-                ariaLabel: 'Settings',
+                ariaLabel: t('nav.settingsAria'),
                 icon: <Avatar name={displayName} size="sm" className="rail-avatar" />,
               },
             ]}
           />
         )
       }
-      brandCorner={embed ? null : <BrandCorner label="AUDION" />}
+      brandCorner={embed ? null : <BrandCorner label={paths.brandLabel} />}
       topbar={
         <>
           <div className="topbar-brand">{brandContent}</div>
@@ -167,7 +183,7 @@ export function AppShell({
         </>
       }
     >
-      {description ? <p className="audion-page-lead">{description}</p> : null}
+      {pageLead ? <p className="audion-page-lead">{pageLead}</p> : null}
       {children}
       {embed ? null : <PlatformAssistantHost />}
     </AppFrame>

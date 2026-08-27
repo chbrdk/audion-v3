@@ -23,6 +23,7 @@ import {
   ToggleGroup,
 } from '@msqdx/ui'
 import { paths } from '../../lib/paths'
+import { useT } from '../../lib/user-prefs'
 import { ExecutionOutputPanel } from './ExecutionOutputPanel'
 import { LivePreviewPanel } from './LivePreviewPanel'
 import { PromptEditor } from './PromptEditor'
@@ -33,6 +34,7 @@ import { VariablePalette } from './VariablePalette'
 import './prompt-builder.css'
 
 export function PromptBuilderWorkspace() {
+  const t = useT()
   const [assist, setAssist] = useState<SettingsAssistTemplateSummary[]>([])
   const [personas, setPersonas] = useState<SettingsPersonaPromptSummary[]>([])
   const [search, setSearch] = useState('')
@@ -55,7 +57,7 @@ export function PromptBuilderWorkspace() {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<SettingsAssistPromptTestResponse | null>(null)
 
-  const selectedAssist = assist.find((t) => t.id === selectedId)
+  const selectedAssist = assist.find((row) => row.id === selectedId)
 
   const loadCatalogs = useCallback(async () => {
     const [aRes, pRes] = await Promise.all([
@@ -71,11 +73,11 @@ export function PromptBuilderWorkspace() {
     return { assist: aJson.templates, personas: pJson.items }
   }, [])
 
-  const applyAssist = useCallback((t: SettingsAssistTemplateSummary) => {
+  const applyAssist = useCallback((row: SettingsAssistTemplateSummary) => {
     setKind('assist')
-    setSelectedId(t.id)
-    setSystem(t.system)
-    setPrompt(t.prompt || t.user)
+    setSelectedId(row.id)
+    setSystem(row.system)
+    setPrompt(row.prompt || row.user)
     setSystemDe('')
     setPersonaMeta(null)
     setDirty(false)
@@ -141,8 +143,8 @@ export function PromptBuilderWorkspace() {
           throw new Error(err?.error || `Save failed (${res.status})`)
         }
         const { assist: next } = await loadCatalogs()
-        const t = next.find((row) => row.id === selectedId)
-        if (t) applyAssist(t)
+        const row = next.find((item) => item.id === selectedId)
+        if (row) applyAssist(row)
       } else {
         const res = await fetch(paths.routes.apiSettingsPersonaPromptDetail(selectedId), {
           method: 'PUT',
@@ -181,8 +183,8 @@ export function PromptBuilderWorkspace() {
           throw new Error(err?.error || `Reset failed (${res.status})`)
         }
         const { assist: next } = await loadCatalogs()
-        const t = next.find((row) => row.id === selectedId)
-        if (t) applyAssist(t)
+        const row = next.find((item) => item.id === selectedId)
+        if (row) applyAssist(row)
       } else {
         const res = await fetch(paths.routes.apiSettingsPersonaPromptDetail(selectedId), {
           method: 'DELETE',
@@ -253,30 +255,27 @@ export function PromptBuilderWorkspace() {
     <div className="pb-workspace" data-testid="prompt-builder-workspace">
       <p>
         <Link href={paths.routes.settingsAdmin} className="audion-link">
-          ← Admin
+          {t('admin.backAdmin')}
         </Link>
       </p>
-      <Hint panel>
-        Full Prompt Builder — Assist templates and persona chat system prompts. Click a variable
-        chip to insert; Save persists from this toolbar.
-      </Hint>
+      <Hint panel>{t('prompts.hint')}</Hint>
 
       <Panel className="pb-workspace__toolbar">
         <div className="pb-workspace__toolbar-meta">
           <Text role="headline" as="h2">
-            {loading ? 'Loading…' : title || 'Select a template'}
+            {loading ? t('common.loading') : title || t('prompts.selectTemplate')}
           </Text>
           <Text role="meta">
             {kind === 'assist' ? selectedId : `persona · ${selectedId}`}
-            {dirty ? ' · unsaved' : ''}{' '}
+            {dirty ? ` · ${t('prompts.unsaved')}` : ''}{' '}
             {kind === 'assist' && selectedAssist?.overridden ? (
               <Chip static size="sm">
-                overridden
+                {t('prompts.overridden')}
               </Chip>
             ) : null}
             {kind === 'persona' && personaMeta?.hasCustom ? (
               <Chip static size="sm">
-                custom
+                {t('prompts.custom')}
               </Chip>
             ) : null}
           </Text>
@@ -289,7 +288,7 @@ export function PromptBuilderWorkspace() {
               onChange={(e) => setUseMockData(e.target.checked)}
               data-testid="pb-mock-toggle"
             />
-            Mock preview data
+            {t('prompts.mockPreview')}
           </label>
           <Button
             type="button"
@@ -297,7 +296,7 @@ export function PromptBuilderWorkspace() {
             disabled={saving || !selectedId || !dirty}
             data-testid="pb-save"
           >
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? t('common.saving') : t('common.save')}
           </Button>
           <Button
             type="button"
@@ -306,7 +305,7 @@ export function PromptBuilderWorkspace() {
             disabled={saving || !selectedId || !canReset}
             data-testid="pb-reset"
           >
-            Reset
+            {t('common.reset')}
           </Button>
           <Button
             type="button"
@@ -314,7 +313,7 @@ export function PromptBuilderWorkspace() {
             disabled={testing || !selectedId}
             data-testid="pb-test"
           >
-            {testing ? 'Testing…' : 'Test'}
+            {testing ? t('common.testing') : t('common.test')}
           </Button>
         </div>
       </Panel>
@@ -332,8 +331,8 @@ export function PromptBuilderWorkspace() {
               selectedKind={kind}
               selectedId={selectedId}
               onSelectAssist={(id) => {
-                const t = assist.find((row) => row.id === id)
-                if (t) applyAssist(t)
+                const row = assist.find((item) => item.id === id)
+                if (row) applyAssist(row)
               }}
               onSelectPersona={(id) => {
                 void applyPersona(id).catch((e) =>
@@ -348,16 +347,16 @@ export function PromptBuilderWorkspace() {
 
             {kind === 'assist' ? (
               <Accordion
-                aria-label="Assist system message"
+                aria-label={t('prompts.systemMessage')}
                 value={accordion}
                 onChange={setAccordion}
                 items={[
                   {
                     id: 'system',
-                    title: 'System message',
-                    preview: system.slice(0, 80) || 'Empty',
+                    title: t('prompts.systemMessage'),
+                    preview: system.slice(0, 80) || t('common.empty'),
                     panel: (
-                      <Field label="System">
+                      <Field label={t('prompts.systemMessage')}>
                         <Textarea
                           value={system}
                           onChange={(e) => {
@@ -374,16 +373,16 @@ export function PromptBuilderWorkspace() {
               />
             ) : (
               <Accordion
-                aria-label="German system prompt"
+                aria-label={t('prompts.systemDeOptional')}
                 value={accordion}
                 onChange={setAccordion}
                 items={[
                   {
                     id: 'de',
-                    title: 'German system prompt (optional)',
-                    preview: systemDe.slice(0, 80) || 'Empty',
+                    title: t('prompts.systemDeOptional'),
+                    preview: systemDe.slice(0, 80) || t('common.empty'),
                     panel: (
-                      <Field label="systemPromptDe">
+                      <Field label={t('prompts.systemDeOptional')}>
                         <Textarea
                           value={systemDe}
                           onChange={(e) => {
@@ -401,12 +400,12 @@ export function PromptBuilderWorkspace() {
             )}
 
             <ToggleGroup
-              aria-label="Editor mode"
+              aria-label={t('prompts.editor')}
               value={centerTab}
               onChange={setCenterTab}
               options={[
-                { value: 'editor', label: 'Editor' },
-                { value: 'preview', label: 'Live preview' },
+                { value: 'editor', label: t('prompts.editor') },
+                { value: 'preview', label: t('prompts.livePreview') },
               ]}
             />
 
@@ -418,7 +417,7 @@ export function PromptBuilderWorkspace() {
                   setDirty(true)
                 }}
                 placeholder={
-                  kind === 'assist' ? 'Assist prompt body…' : 'Persona chat system prompt…'
+                  kind === 'assist' ? t('prompts.assistBodyPh') : t('prompts.personaSystemPh')
                 }
               />
             ) : (

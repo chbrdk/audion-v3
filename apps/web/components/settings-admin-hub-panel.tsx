@@ -1,42 +1,46 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import { Panel, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 
 const ADMIN_CARDS = [
   {
     href: paths.routes.settingsAdminProviders,
-    title: 'Providers',
-    meta: 'AI runtime and key status',
+    titleKey: 'admin.providers',
+    metaKey: 'admin.providersMeta',
   },
   {
     href: paths.routes.settingsAdminPrompts,
-    title: 'Prompts',
-    meta: 'Prompt Builder workspace',
+    titleKey: 'admin.prompts',
+    metaKey: 'admin.promptsMeta',
   },
   {
     href: paths.routes.settingsAdminTokens,
-    title: 'API tokens',
-    meta: 'Personal Bearer tokens',
+    titleKey: 'admin.tokens',
+    metaKey: 'admin.tokensMeta',
   },
   {
     href: paths.routes.settingsAdminApiDocs,
-    title: 'API docs',
-    meta: 'Route catalog and health',
+    titleKey: 'admin.apiDocs',
+    metaKey: 'admin.apiDocsMeta',
   },
   {
     href: paths.routes.queue,
-    title: 'Queue',
-    meta: 'Document job dashboard',
+    titleKey: 'admin.queue',
+    metaKey: 'admin.queueMeta',
   },
 ] as const
 
 export function SettingsAdminHubPanel() {
+  const t = useT()
   return (
     <section className="audion-index audion-tg-index" data-testid="settings-admin-hub">
       <p className="audion-settings-help">
         <Link href={paths.routes.settings} className="audion-link">
-          ← Settings
+          {t('common.backToSettings')}
         </Link>
       </p>
       <ul className="audion-tg-grid">
@@ -45,10 +49,10 @@ export function SettingsAdminHubPanel() {
             <Link href={card.href} className="audion-tg-card audion-tg-card--create">
               <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
                 <Text role="headline" as="span" className="audion-tg-card-title">
-                  {card.title}
+                  {t(card.titleKey)}
                 </Text>
                 <p className="audion-tg-card-meta">
-                  <span>{card.meta}</span>
+                  <span>{t(card.metaKey)}</span>
                 </p>
               </Panel>
             </Link>

@@ -3,7 +3,7 @@ import { SettingsAdminTokensPanel } from '../../../../components/settings-admin-
 
 export default function SettingsAdminTokensPage() {
   return (
-    <AppShell title="API tokens" description="Create and revoke personal Bearer tokens.">
+    <AppShell titleKey="pages.tokens.title" descriptionKey="pages.tokens.lead">
       <SettingsAdminTokensPanel />
     </AppShell>
   )

@@ -8,24 +8,24 @@ import { Avatar, Button, Field, Hint, Input, SectionChrome, Text, ToggleGroup } 
 import { paths } from '../lib/paths'
 import { useUserPrefs, type UiLocaleId, type UiThemeId } from '../lib/user-prefs'
 
-const THEME_LABELS: Record<UiThemeId, string> = {
-  msqdx: 'Light',
-  'msqdx-dark': 'Dark',
-  'msqdx-v2': 'V2 light',
-  'msqdx-v2-dark': 'V2 dark',
-}
-
-const LOCALE_LABELS: Record<UiLocaleId, string> = {
-  en: 'English',
-  de: 'Deutsch',
-}
-
 export function SettingsPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
-  const { displayName, setDisplayName, theme, setTheme, locale, setLocale } = useUserPrefs()
+  const { displayName, setDisplayName, theme, setTheme, locale, setLocale, t } = useUserPrefs()
   const [draft, setDraft] = useState(displayName)
   const [loggingOut, setLoggingOut] = useState(false)
+
+  const themeLabels: Record<UiThemeId, string> = {
+    msqdx: t('settings.themeLight'),
+    'msqdx-dark': t('settings.themeDark'),
+    'msqdx-v2': t('settings.themeV2Light'),
+    'msqdx-v2-dark': t('settings.themeV2Dark'),
+  }
+
+  const localeLabels: Record<UiLocaleId, string> = {
+    en: t('settings.english'),
+    de: t('settings.deutsch'),
+  }
 
   useEffect(() => {
     setDraft(displayName)
@@ -60,47 +60,47 @@ export function SettingsPage() {
 
   return (
     <div className="audion-settings">
-      <Hint panel>Device-local preferences — theme, language, and how you appear in the rail.</Hint>
+      <Hint panel>{t('settings.hint')}</Hint>
 
       {status === 'authenticated' && accountEmail ? (
         <section className="audion-settings-section">
-          <SectionChrome quiet title="Account" as="h2" />
+          <SectionChrome quiet title={t('settings.account')} as="h2" />
           <Text role="body" className="audion-settings-help">
-            Signed in via Plexon. Identity is owned by the platform control plane.
+            {t('settings.accountSignedIn')}
           </Text>
           <dl className="audion-settings-account">
             {accountName ? (
               <>
-                <dt>Name</dt>
+                <dt>{t('settings.name')}</dt>
                 <dd>{accountName}</dd>
               </>
             ) : null}
-            <dt>Email</dt>
+            <dt>{t('settings.email')}</dt>
             <dd>{accountEmail}</dd>
           </dl>
           <Button type="button" variant="subtle" onClick={handleLogout} disabled={loggingOut}>
-            {loggingOut ? 'Signing out…' : 'Sign out'}
+            {loggingOut ? t('common.signingOut') : t('common.signOut')}
           </Button>
         </section>
       ) : status !== 'loading' ? (
         <section className="audion-settings-section">
-          <SectionChrome quiet title="Account" as="h2" />
+          <SectionChrome quiet title={t('settings.account')} as="h2" />
           <Text role="body" className="audion-settings-help">
-            No Plexon session. Fixture mode stays open without login when auth env is unset.
+            {t('settings.accountSignedOut')}
           </Text>
           <p className="audion-settings-account-link">
             <Link href={paths.routes.login} className="audion-link">
-              Sign in
+              {t('common.signIn')}
             </Link>
           </p>
         </section>
       ) : null}
 
       <section className="audion-settings-section">
-        <SectionChrome quiet title="Profile" as="h2" />
+        <SectionChrome quiet title={t('settings.profile')} as="h2" />
         <div className="audion-settings-profile-row">
           <Avatar name={draft.trim() || displayName} size="lg" />
-          <Field label="Display name" size="sm">
+          <Field label={t('settings.displayName')} size="sm">
             <Input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -111,7 +111,7 @@ export function SettingsPage() {
                   commitName()
                 }
               }}
-              aria-label="Display name"
+              aria-label={t('settings.displayName')}
               maxLength={40}
               block
             />
@@ -120,46 +120,46 @@ export function SettingsPage() {
       </section>
 
       <section className="audion-settings-section">
-        <SectionChrome quiet title="Appearance" as="h2" />
+        <SectionChrome quiet title={t('settings.appearance')} as="h2" />
         <Text role="body" className="audion-settings-help">
-          Theme applies across the shell.
+          {t('settings.appearanceHelp')}
         </Text>
         <ToggleGroup
           className="theme-toggle"
-          aria-label="Theme"
+          aria-label={t('settings.theme')}
           value={theme}
           onChange={(next) => setTheme(next as UiThemeId)}
           options={paths.themeChoices.map((id) => ({
             value: id,
-            label: THEME_LABELS[id],
+            label: themeLabels[id],
           }))}
         />
       </section>
 
       <section className="audion-settings-section">
-        <SectionChrome quiet title="Language" as="h2" />
+        <SectionChrome quiet title={t('settings.language')} as="h2" />
         <Text role="body" className="audion-settings-help">
-          Stored for upcoming localization (UI stays English for now).
+          {t('settings.languageHelp')}
         </Text>
         <ToggleGroup
-          aria-label="Language"
+          aria-label={t('settings.language')}
           value={locale}
           onChange={(next) => setLocale(next as UiLocaleId)}
           options={paths.localeChoices.map((id) => ({
             value: id,
-            label: LOCALE_LABELS[id],
+            label: localeLabels[id],
           }))}
         />
       </section>
 
       <section className="audion-settings-section" data-testid="settings-admin-entry">
-        <SectionChrome quiet title="Admin" as="h2" />
+        <SectionChrome quiet title={t('settings.admin')} as="h2" />
         <Text role="body" className="audion-settings-help">
-          Provider status, assist prompt test, and BFF route catalog.
+          {t('settings.adminHelp')}
         </Text>
         <p>
           <Link href={paths.routes.settingsAdmin} className="audion-link">
-            Open settings admin
+            {t('settings.openAdmin')}
           </Link>
         </p>
       </section>

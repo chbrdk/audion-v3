@@ -31,6 +31,7 @@ import {
   parseUxStepFollowUpDisplay,
 } from '../lib/chat/ux-journey-steps'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { ChatInspectResultMeta } from './chat-inspect-result-meta'
 import { IconSend } from './nav-icons'
 import { ScanInCheckionCta } from './scan-in-checkion-cta'
@@ -56,13 +57,14 @@ type Props = {
 }
 
 function UserTurnBody({ content }: { content: string }) {
+  const t = useT()
   const parsed = parseUxStepFollowUpDisplay(content)
   if (!parsed.meta) {
     return <p className="chat-text">{content}</p>
   }
   return (
     <div className="audion-chat-user-step-followup">
-      <p className="audion-chat-user-step-meta">About {parsed.meta}</p>
+      <p className="audion-chat-user-step-meta">{t('chatExtra.about', { meta: parsed.meta })}</p>
       <p className="chat-text">{parsed.body}</p>
     </div>
   )
@@ -77,16 +79,19 @@ function inspectDockSplitIndex(messages: ChatMessage[]): number {
 }
 
 function ChatTurnArticle({ turn }: { turn: ChatMessage }) {
+  const t = useT()
   return (
     <article
       className={turn.role === 'user' ? 'chat-turn chat-turn-user' : 'chat-turn chat-turn-assistant'}
     >
-      <span className="chat-role">{turn.role === 'user' ? 'You' : 'Persona'}</span>
+      <span className="chat-role">
+        {turn.role === 'user' ? t('chat.roleYou') : t('chat.rolePersona')}
+      </span>
       {turn.role === 'assistant' ? (
         turn.content ? (
           <ChatAnswer answer={turn.content} />
         ) : (
-          <LoadingText>Thinking…</LoadingText>
+          <LoadingText>{t('chat.thinking')}</LoadingText>
         )
       ) : (
         <UserTurnBody content={turn.content} />
@@ -106,6 +111,7 @@ export function AudionChatPanel({
   composerLeading = null,
   guestBudget = null,
 }: Props) {
+  const t = useT()
   const router = useRouter()
   const [conversationId, setConversationId] = useState<string | null>(
     initialConversation?.id ?? null,
@@ -290,21 +296,19 @@ export function AudionChatPanel({
   async function sendMessage(raw: string) {
     const message = raw.trim()
     if (!message) {
-      setComposerError('Message is required')
+      setComposerError(t('chat.messageRequired'))
       return
     }
     if (!personaId) {
-      setErr('Pick a persona before chatting.')
+      setErr(t('chatExtra.pickPersona'))
       return
     }
     if (guestBudget && guestRemaining != null && guestRemaining <= 0) {
-      setComposerError(
-        `Guest chat limit reached (${guestBudget.maxTurns} messages). Open in Audion for a full session.`,
-      )
+      setComposerError(t('chatExtra.guestLimitReached'))
       return
     }
     if (guestBudget && message.length > guestBudget.maxChars) {
-      setComposerError(`Message is too long (max ${guestBudget.maxChars} characters).`)
+      setComposerError(t('chatExtra.messageTooLong'))
       return
     }
 
@@ -469,11 +473,11 @@ export function AudionChatPanel({
   const turnsAfterDock = turns.slice(dockSplit)
 
   return (
-    <section className="chat-panel chat-panel-open audion-chat-panel" aria-label="Persona chat">
+    <section className="chat-panel chat-panel-open audion-chat-panel" aria-label={t('chat.panelAria')}>
       <div className="chat-turns" ref={listRef}>
         {!turns.length && !busy ? (
           <EmptyState className="chat-empty">
-            Ask {persona?.name || 'the persona'} something grounded in their magazine brief.
+            {t('chat.empty', { name: persona?.name || t('chat.emptyFallbackName') })}
           </EmptyState>
         ) : null}
         {turnsBeforeDock.map((turn) => (
@@ -481,7 +485,7 @@ export function AudionChatPanel({
         ))}
 
         {pendingTool ? (
-          <div className="audion-chat-tool-card" role="group" aria-label="Tool approval">
+          <div className="audion-chat-tool-card" role="group" aria-label={t('chatExtra.toolApproval')}>
             <p className="audion-chat-tool-title">{pendingTool.title}</p>
             <p className="audion-edit-lede">{pendingTool.detail}</p>
             {pendingTool.url ? (
@@ -496,7 +500,7 @@ export function AudionChatPanel({
                 disabled={toolBusy}
                 onClick={() => void decideTool('approve')}
               >
-                {toolBusy ? 'Working…' : 'Approve'}
+                {toolBusy ? t('common.working') : t('common.approve')}
               </Button>
               <Button
                 type="button"
@@ -505,7 +509,7 @@ export function AudionChatPanel({
                 disabled={toolBusy}
                 onClick={() => void decideTool('deny')}
               >
-                Deny
+                {t('common.deny')}
               </Button>
             </div>
           </div>
@@ -522,7 +526,7 @@ export function AudionChatPanel({
         {inspectJobId && !toolComplete ? <UxJourneyLivePoll jobId={inspectJobId} /> : null}
 
         {showInspectDock ? (
-          <InspectDock aria-label="UX journey inspect">
+          <InspectDock aria-label={t('chatExtra.uxJourneyInspect')}>
             {inspectSteps.length || (inspectJobId && !toolComplete) ? (
               <UxJourneyStepsStrip
                 steps={inspectSteps}
@@ -548,7 +552,7 @@ export function AudionChatPanel({
                         target="_blank"
                         rel="noreferrer"
                       >
-                        Open recording
+                        {t('chatExtra.openRecording')}
                       </a>
                     ) : null}
                     <ScanInCheckionCta
@@ -564,14 +568,14 @@ export function AudionChatPanel({
                         disabled={convertBusy}
                         onClick={() => void convertFromInspect()}
                       >
-                        {convertBusy ? 'Converting…' : 'Convert to journey'}
+                        {convertBusy ? t('common.converting') : t('chatExtra.convertJourney')}
                       </Button>
                     ) : null}
                     {convertedJourneyId ? (
                       <span className="audion-chat-tool-complete-done">
-                        Journey created —{' '}
+                        {t('chatExtra.journeyCreated')}{' '}
                         <Link className="audion-link" href={paths.routes.journeyDetail(convertedJourneyId)}>
-                          Open journey
+                          {t('chatExtra.openJourney')}
                         </Link>
                       </span>
                     ) : null}
@@ -591,7 +595,7 @@ export function AudionChatPanel({
           <ChatTurnArticle key={turn.id} turn={turn} />
         ))}
 
-        {busy ? <LoadingText>Streaming…</LoadingText> : null}
+        {busy ? <LoadingText>{t('chat.streaming')}</LoadingText> : null}
       </div>
 
       {err ? <Alert tone="error">{err}</Alert> : null}
@@ -605,7 +609,7 @@ export function AudionChatPanel({
         {selectedStepIndex != null && inspectSteps[selectedStepIndex] ? (
           <div className="audion-chat-step-context" role="status">
             <span className="audion-chat-step-context-label">
-              Chatting about{' '}
+              {t('chatExtra.chattingAbout')}{' '}
               <strong>{chatUxJourneyStepLabel(inspectSteps[selectedStepIndex]!, selectedStepIndex)}</strong>
             </span>
             <Button
@@ -615,7 +619,7 @@ export function AudionChatPanel({
               className="audion-chat-step-context-clear"
               onClick={() => selectStepForChat(null)}
             >
-              Clear
+              {t('common.clear')}
             </Button>
           </div>
         ) : null}
@@ -623,11 +627,14 @@ export function AudionChatPanel({
         {guestBudget ? (
           <p className="audion-edit-lede" role="status" data-testid="guest-budget-hint">
             {guestRemaining != null && guestRemaining <= 0
-              ? `Guest limit reached (${guestBudget.maxTurns} messages).`
-              : `${guestRemaining ?? guestBudget.remainingTurns} of ${guestBudget.maxTurns} guest messages left`}
+              ? t('chatExtra.guestLimitReached')
+              : t('chatExtra.guestMessagesLeft', {
+                  n: guestRemaining ?? guestBudget.remainingTurns,
+                  m: guestBudget.maxTurns,
+                })}
           </p>
         ) : null}
-        <Field label="Message" error={composerError ?? undefined} htmlFor="chat-composer">
+        <Field label={t('chat.message')} error={composerError ?? undefined} htmlFor="chat-composer">
           <Textarea
             id="chat-composer"
             size="md"
@@ -642,13 +649,11 @@ export function AudionChatPanel({
             }}
             onKeyDown={onComposerKeyDown}
             placeholder={
-              selectedStepIndex != null
-                ? 'Ask the persona about this step…'
-                : 'Ask about goals, channels, or paste a URL to inspect…'
+              selectedStepIndex != null ? t('chat.placeholderStep') : t('chat.placeholder')
             }
             disabled={busy || toolBusy || (guestRemaining != null && guestRemaining <= 0)}
             autoComplete="off"
-            aria-label="Chat message"
+            aria-label={t('chat.messageAria')}
           />
         </Field>
         {busy ? (
@@ -657,10 +662,10 @@ export function AudionChatPanel({
             variant="ghost"
             size="sm"
             className="chat-send"
-            aria-label="Stop"
+            aria-label={t('chat.stop')}
             onClick={onStop}
           >
-            Stop
+            {t('chat.stop')}
           </Button>
         ) : (
           <Button
@@ -675,7 +680,7 @@ export function AudionChatPanel({
               toolBusy ||
               (guestRemaining != null && guestRemaining <= 0)
             }
-            aria-label="Send"
+            aria-label={t('chat.send')}
           />
         )}
       </form>

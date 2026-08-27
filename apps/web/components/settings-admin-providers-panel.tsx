@@ -5,8 +5,10 @@ import Link from 'next/link'
 import type { SettingsProvidersResponse } from '@audion-v3/contracts'
 import { Alert, Hint, Panel, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 
 export function SettingsAdminProvidersPanel() {
+  const t = useT()
   const [data, setData] = useState<SettingsProvidersResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,10 +33,10 @@ export function SettingsAdminProvidersPanel() {
     <div className="audion-stack" data-testid="settings-admin-providers">
       <p>
         <Link href={paths.routes.settingsAdmin} className="audion-link">
-          ← Admin
+          {t('admin.backAdmin')}
         </Link>
       </p>
-      <Hint panel>Read-only status from server env. Keys are never shown.</Hint>
+      <Hint panel>{t('admin.providersHint')}</Hint>
       {error ? <Alert tone="error">{error}</Alert> : null}
       {data ? (
         <>
@@ -52,8 +54,8 @@ export function SettingsAdminProvidersPanel() {
                     {p.label}
                   </Text>
                   <Text role="meta">
-                    {p.model ? `Model: ${p.model} · ` : ''}
-                    {p.configured ? 'Connected' : 'Missing'}
+                    {p.model ? `${t('admin.modelPrefix', { model: p.model })} · ` : ''}
+                    {p.configured ? t('admin.connected') : t('admin.missing')}
                     {data.defaultProvider === p.id ? ' · Default' : ''}
                   </Text>
                   {p.detail ? <Text role="body">{p.detail}</Text> : null}
@@ -63,7 +65,7 @@ export function SettingsAdminProvidersPanel() {
           </ul>
         </>
       ) : !error ? (
-        <Text role="meta">Loading…</Text>
+        <Text role="meta">{t('common.loading')}</Text>
       ) : null}
     </div>
   )

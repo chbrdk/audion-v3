@@ -59,6 +59,7 @@ import {
 import { deriveFlowVerdict, type FlowRunVerdict } from '../lib/ux-flow-verdict'
 import { flattenFlowBlocks, gateChoicesFromReplans, activePathEdgeIds } from '../lib/ux-test-flow-graph'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { CreateStudyFromFlowButton } from './create-study-from-flow-button'
 import {
   IconDelete,
@@ -117,6 +118,7 @@ function FlowCanvasInner({
   initialFlow: UxTestFlow
   onSwitchToList?: () => void
 }) {
+  const t = useT()
   const templateRef = useRef(initialFlow)
   const initial = useMemo(() => flowToRfNodesEdges(initialFlow), [initialFlow])
   const [nodes, setNodes, onNodesChange] = useNodesState(initial.nodes)
@@ -828,8 +830,8 @@ function FlowCanvasInner({
       size="sm"
       variant="subtle"
       className="msqdx-flow-toolbar-btn"
-      aria-label="Liste"
-      title="Liste"
+      aria-label={t('flows.list')}
+      title={t('flows.list')}
       icon={<IconList />}
       onClick={onSwitchToList}
     />
@@ -938,8 +940,8 @@ function FlowCanvasInner({
                 size="sm"
                 variant="primary"
                 className="msqdx-flow-toolbar-btn"
-                aria-label={runBusy ? 'Running' : 'Testen'}
-                title={runBusy ? 'Running…' : 'Testen'}
+                aria-label={runBusy ? t('flows.running') : t('flows.test')}
+                title={runBusy ? t('flows.running') : t('flows.test')}
                 icon={<IconPlay />}
                 onClick={() => void onTest()}
                 disabled={!hasGraph || runBusy}
@@ -949,8 +951,8 @@ function FlowCanvasInner({
                 size="sm"
                 variant="subtle"
                 className="msqdx-flow-toolbar-btn"
-                aria-label="Stop"
-                title="Stop"
+                aria-label={t('flows.stop')}
+                title={t('flows.stop')}
                 icon={<IconStop />}
                 onClick={() => void onStop()}
                 disabled={!runBusy}
@@ -967,8 +969,8 @@ function FlowCanvasInner({
                 size="sm"
                 variant="subtle"
                 className="msqdx-flow-toolbar-btn"
-                aria-label={saveBusy ? 'Saving' : 'Save'}
-                title={saveMsg ?? (saveBusy ? 'Saving…' : 'Save')}
+                aria-label={saveBusy ? t('flows.saving') : t('flows.save')}
+                title={saveMsg ?? (saveBusy ? t('flows.saving') : t('flows.save'))}
                 icon={<IconSave />}
                 onClick={() => void onSave()}
                 disabled={!hasGraph || saveBusy}
@@ -978,8 +980,8 @@ function FlowCanvasInner({
                 size="sm"
                 variant="subtle"
                 className="msqdx-flow-toolbar-btn"
-                aria-label="Undo"
-                title="Undo"
+                aria-label={t('flows.undo')}
+                title={t('flows.undo')}
                 icon={<IconUndo />}
                 onClick={onUndo}
                 disabled={historyLen < 1}
@@ -989,8 +991,8 @@ function FlowCanvasInner({
                 size="sm"
                 variant="subtle"
                 className="msqdx-flow-toolbar-btn"
-                aria-label="Reset to template"
-                title="Reset to template"
+                aria-label={t('flows.resetTemplate')}
+                title={t('flows.resetTemplate')}
                 icon={<IconReset />}
                 onClick={reset}
                 disabled={!dirty && !savedId}
@@ -1000,8 +1002,8 @@ function FlowCanvasInner({
                 size="sm"
                 variant="ghost"
                 className="msqdx-flow-toolbar-btn"
-                aria-label="Delete node"
-                title="Delete node"
+                aria-label={t('flows.deleteNode')}
+                title={t('flows.deleteNode')}
                 icon={<IconDelete />}
                 onClick={deleteSelected}
                 disabled={!selectedId || runBusy}
@@ -1019,12 +1021,12 @@ function FlowCanvasInner({
                 ? 'msqdx-flow-float-panel--palette msqdx-flow-float-panel--palette-open'
                 : 'msqdx-flow-float-panel--palette msqdx-flow-float-panel--palette-collapsed'
             }
-            ariaLabel="Flow Bausteine"
+            ariaLabel={t('flows.blocks')}
           >
             <FlowBoardPalette
               open={paletteOpen}
               onOpenChange={setPaletteOpen}
-              fabLabel="Bausteine"
+              fabLabel={t('flows.blocks')}
             >
               <div className="msqdx-flow-palette-row">
                 {UX_FLOW_NODE_KINDS.map((kind) => (
@@ -1048,10 +1050,10 @@ function FlowCanvasInner({
               storageKey={paths.flowBoardRunDockKey}
               defaultEdge="bottom"
               defaultOffset={0.5}
-              title="Live Run"
+              title={t('flows.liveRun')}
               variant="strip"
               className="msqdx-flow-float-panel--run"
-              ariaLabel="Live Run Status"
+              ariaLabel={t('flows.liveRun')}
             >
               <FlowRunStrip
                 status={
@@ -1070,7 +1072,7 @@ function FlowCanvasInner({
                 links={
                   <>
                     <Link href={paths.routes.studyWaveDetail(runMeta.studyId, runMeta.waveId)}>
-                      Open wave
+                      {t('flows.openWave')}
                     </Link>
                     {runBusy && runMeta.jobId ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -1092,9 +1094,9 @@ function FlowCanvasInner({
               storageKey={paths.flowBoardInspectorDockKey}
               defaultEdge="right"
               defaultOffset={0.22}
-              title="Inspector"
+              title={t('flows.inspector')}
               className="msqdx-flow-float-panel--inspector"
-              ariaLabel="Node Inspector"
+              ariaLabel={t('flows.inspector')}
             >
               <UxFlowNodeInspector
                 key={selectedId!}
@@ -1129,6 +1131,7 @@ export function UxFlowDetailClient({
   flow: UxTestFlow
   initialView?: 'board' | 'list' | 'canvas' | 'protocol'
 }) {
+  const t = useT()
   const hasGraph = Boolean(flow.nodes?.length)
   const resolvedView =
     initialView === 'list'
@@ -1157,7 +1160,7 @@ export function UxFlowDetailClient({
             onClick={() => setView('board')}
             disabled={!hasGraph}
           >
-            Board
+            {t('flows.board')}
           </Button>
           <Button
             type="button"
@@ -1165,7 +1168,7 @@ export function UxFlowDetailClient({
             variant={view === 'list' ? 'primary' : 'subtle'}
             onClick={() => setView('list')}
           >
-            Liste
+            {t('flows.list')}
           </Button>
         </div>
       ) : null}
@@ -1184,7 +1187,7 @@ export function UxFlowDetailClient({
             />
           </div>
           <Text role="headline" as="h2">
-            Blockliste
+            {t('flows.blocks')}
           </Text>
           {!blocks.length ? (
             <Alert tone="info">

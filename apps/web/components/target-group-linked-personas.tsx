@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { TargetGroupLinkedPersona } from '@audion-v3/contracts'
 import { EmptyState, Panel, SectionChrome, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 
 export type LinkedPersonasLayout = 'cards' | 'list'
 
@@ -25,11 +26,12 @@ function LayoutSwitch({
   layout: LinkedPersonasLayout
   onChange: (next: LinkedPersonasLayout) => void
 }) {
+  const t = useT()
   return (
     <div
       className="audion-editable-comm-layout-switch"
       role="group"
-      aria-label="Linked personas layout"
+      aria-label={t('detail.targetGroup.linkedPersonas')}
     >
       <button
         type="button"
@@ -45,7 +47,7 @@ function LayoutSwitch({
         aria-pressed={layout === 'list'}
         onClick={() => onChange('list')}
       >
-        List
+        {t('flows.list')}
       </button>
     </div>
   )
@@ -56,6 +58,7 @@ export function TargetGroupLinkedPersonas({
 }: {
   personas: TargetGroupLinkedPersona[]
 }) {
+  const t = useT()
   const [layout, setLayout] = useState<LinkedPersonasLayout>('cards')
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export function TargetGroupLinkedPersonas({
       <div className="audion-editable-comm-chrome audion-tg-linked-chrome">
         <SectionChrome
           quiet
-          title="Linked personas"
+          title={t('detail.targetGroup.linkedPersonas')}
           meta={`${personas.length}`}
           metaTone="accent"
           as="h3"
@@ -85,7 +88,7 @@ export function TargetGroupLinkedPersonas({
       </div>
 
       {!personas.length ? (
-        <EmptyState>No personas linked yet.</EmptyState>
+        <EmptyState>{t('detail.targetGroup.emptyLinked')}</EmptyState>
       ) : layout === 'cards' ? (
         <ul className="audion-tg-grid audion-tg-grid--nested">
           {personas.map((persona) => (

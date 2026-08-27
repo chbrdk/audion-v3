@@ -10,13 +10,8 @@ import type {
 import { Button, Field, Input, Panel, Text, Textarea } from '@msqdx/ui'
 import { Dialog, Select, TagInput } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { IconEdit } from './nav-icons'
-
-const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' },
-]
 
 function emptyPayload(projectId?: string | null): TargetGroupWritePayload {
   return {
@@ -42,11 +37,18 @@ export function TargetGroupEditDialog({
   targetGroup: TargetGroupDetail | null
   defaultProjectId?: string | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [form, setForm] = useState<TargetGroupWritePayload>(emptyPayload(defaultProjectId))
   const [nameError, setNameError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  const statusOptions = [
+    { value: 'draft', label: t('dialogs.statusDraft') },
+    { value: 'active', label: t('dialogs.statusActive') },
+    { value: 'archived', label: t('dialogs.statusArchived') },
+  ]
 
   useEffect(() => {
     if (!open) return
@@ -68,7 +70,7 @@ export function TargetGroupEditDialog({
 
   async function onSave() {
     if (!form.name.trim()) {
-      setNameError('Name is required')
+      setNameError(t('dialogs.nameRequired'))
       return
     }
     setSaving(true)
@@ -98,7 +100,7 @@ export function TargetGroupEditDialog({
       router.push(paths.routes.targetGroupDetail(saved.id))
       router.refresh()
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Save failed')
+      setSaveError(error instanceof Error ? error.message : t('dialogs.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -111,27 +113,25 @@ export function TargetGroupEditDialog({
       open={open}
       onClose={onClose}
       className="audion-edit-dialog"
-      title={isCreate ? 'New target group' : 'Edit target group'}
+      title={isCreate ? t('dialogs.tgNewTitle') : t('dialogs.tgEditTitle')}
       actions={
         <>
           <Button variant="ghost" size="md" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button size="md" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving…' : isCreate ? 'Create' : 'Save'}
+            {saving ? t('common.saving') : isCreate ? t('common.create') : t('common.save')}
           </Button>
         </>
       }
     >
       <div className="audion-edit-form">
         <p className="audion-edit-lede">
-          {isCreate
-            ? 'Name the segment, then add a short brief — same language as the magazine cards.'
-            : 'Update the segment brief. Linked personas stay optional.'}
+          {isCreate ? t('dialogs.tgLedeCreate') : t('dialogs.tgLedeEdit')}
         </p>
 
         <Field
-          label="Name"
+          label={t('dialogs.fieldName')}
           size="md"
           error={nameError ?? undefined}
           htmlFor="tg-name"
@@ -141,7 +141,7 @@ export function TargetGroupEditDialog({
             id="tg-name"
             size="md"
             block
-            placeholder="e.g. Digital Product Leads"
+            placeholder={t('dialogs.tgNamePh')}
             value={form.name}
             onChange={(e) => {
               setForm((f) => ({ ...f, name: e.target.value }))
@@ -151,42 +151,57 @@ export function TargetGroupEditDialog({
         </Field>
 
         <div className="audion-edit-row">
-          <Field label="Segment" size="md" htmlFor="tg-segment" className="audion-edit-field">
+          <Field
+            label={t('dialogs.fieldSegment')}
+            size="md"
+            htmlFor="tg-segment"
+            className="audion-edit-field"
+          >
             <Input
               id="tg-segment"
               size="md"
               block
-              placeholder="e.g. B2B SaaS · Decision makers"
+              placeholder={t('dialogs.tgSegmentPh')}
               value={form.segment}
               onChange={(e) => setForm((f) => ({ ...f, segment: e.target.value }))}
             />
           </Field>
-          <Field label="Status" size="md" htmlFor="tg-status" className="audion-edit-field">
+          <Field
+            label={t('dialogs.fieldStatus')}
+            size="md"
+            htmlFor="tg-status"
+            className="audion-edit-field"
+          >
             <Select
               id="tg-status"
               size="md"
               value={form.status ?? 'draft'}
               onChange={(value) => setForm((f) => ({ ...f, status: value as TargetGroupStatus }))}
-              options={STATUS_OPTIONS}
+              options={statusOptions}
             />
           </Field>
         </div>
 
-        <Field label="Description" size="md" htmlFor="tg-description" className="audion-edit-field">
+        <Field
+          label={t('dialogs.fieldDescription')}
+          size="md"
+          htmlFor="tg-description"
+          className="audion-edit-field"
+        >
           <Textarea
             id="tg-description"
             size="md"
             block
             rows={5}
-            placeholder="Short segment brief — who they are, what they need…"
+            placeholder={t('dialogs.tgDescPh')}
             value={form.description ?? ''}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
           />
         </Field>
 
         <Field
-          label="Linked personas"
-          hint="Persona ids — press Enter to add"
+          label={t('dialogs.tgLinkedPersonas')}
+          hint={t('dialogs.tgLinkedHint')}
           size="md"
           htmlFor="tg-personas"
           className="audion-edit-field"
@@ -207,6 +222,7 @@ export function TargetGroupEditDialog({
 }
 
 export function TargetGroupDetailActions({ targetGroup }: { targetGroup: TargetGroupDetail }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -215,8 +231,8 @@ export function TargetGroupDetailActions({ targetGroup }: { targetGroup: TargetG
         variant="ghost"
         size="sm"
         className="audion-edit-icon-btn"
-        aria-label="Edit target group"
-        title="Edit target group"
+        aria-label={t('tiles.editTargetGroup')}
+        title={t('tiles.editTargetGroup')}
         icon={<IconEdit />}
         onClick={() => setOpen(true)}
       />
@@ -242,6 +258,7 @@ export function TargetGroupCreateButton({
   /** 1-based index shown on row variant (defaults to 1) */
   nextIndex?: number
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const num = String(Math.max(1, nextIndex ?? 1)).padStart(2, '0')
   return (
@@ -254,10 +271,10 @@ export function TargetGroupCreateButton({
         >
           <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
             <Text role="headline" as="span" className="audion-tg-card-title">
-              New target group
+              {t('tiles.newTargetGroup')}
             </Text>
             <p className="audion-tg-card-meta">
-              <span>Create a segment brief</span>
+              <span>{t('tiles.newTargetGroupMeta')}</span>
             </p>
           </Panel>
         </button>
@@ -265,13 +282,13 @@ export function TargetGroupCreateButton({
         <button
           type="button"
           className="audion-editable-list-add-row"
-          aria-label="Add target group"
+          aria-label={t('tiles.addTargetGroup')}
           onClick={() => setOpen(true)}
         >
           <span className="audion-magazine-list-num" aria-hidden>
             {num}
           </span>
-          <span className="audion-editable-list-add-label">Add target group</span>
+          <span className="audion-editable-list-add-label">{t('tiles.addTargetGroup')}</span>
         </button>
       ) : variant === 'link' ? (
         <button type="button" className="audion-link" onClick={() => setOpen(true)}>
@@ -279,7 +296,7 @@ export function TargetGroupCreateButton({
         </button>
       ) : (
         <Button type="button" size="sm" onClick={() => setOpen(true)}>
-          Create target group
+          {t('tiles.createTargetGroup')}
         </Button>
       )}
       {open ? (

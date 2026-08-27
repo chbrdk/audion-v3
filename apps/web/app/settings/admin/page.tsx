@@ -3,10 +3,7 @@ import { SettingsAdminHubPanel } from '../../../components/settings-admin-hub-pa
 
 export default function SettingsAdminPage() {
   return (
-    <AppShell
-      title="Settings admin"
-      description="Providers, assist prompts, and API route catalog."
-    >
+    <AppShell titleKey="pages.settingsAdmin.title" descriptionKey="pages.settingsAdmin.lead">
       <SettingsAdminHubPanel />
     </AppShell>
   )

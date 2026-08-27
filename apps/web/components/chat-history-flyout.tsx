@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import type { ChatConversationList, ChatConversationSummary } from '@audion-v3/contracts'
 import { EmptyState, Flyout, IconHistory, SectionChrome } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 
 export function ChatHistoryFlyout({
   personaId,
@@ -11,6 +12,7 @@ export function ChatHistoryFlyout({
   /** Prefer listing conversations for the active persona first. */
   personaId?: string | null
 }) {
+  const t = useT()
   const [items, setItems] = useState<ChatConversationSummary[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +36,7 @@ export function ChatHistoryFlyout({
           : all
         setItems(preferred.slice(0, 8))
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load history')
+        if (!cancelled) setError(e instanceof Error ? e.message : t('chat.historyLoadFailed'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -43,11 +45,11 @@ export function ChatHistoryFlyout({
     return () => {
       cancelled = true
     }
-  }, [personaId])
+  }, [personaId, t])
 
   return (
     <Flyout
-      label="History"
+      label={t('chat.history')}
       icon={<IconHistory />}
       resetKey={personaId}
       triggerClassName="audion-chat-topbar-icon"
@@ -55,11 +57,11 @@ export function ChatHistoryFlyout({
     >
       {() => (
         <>
-          <SectionChrome quiet title="History" meta={items.length ? `${items.length}` : undefined} as="h3" />
-          {loading ? <p className="audion-edit-lede">Loading…</p> : null}
+          <SectionChrome quiet title={t('chat.history')} meta={items.length ? `${items.length}` : undefined} as="h3" />
+          {loading ? <p className="audion-edit-lede">{t('common.loading')}</p> : null}
           {error ? <p className="audion-edit-error">{error}</p> : null}
           {!loading && !error && !items.length ? (
-            <EmptyState className="audion-chat-history-empty">No conversations yet.</EmptyState>
+            <EmptyState className="audion-chat-history-empty">{t('chat.historyEmpty')}</EmptyState>
           ) : null}
           {items.length ? (
             <ul className="audion-chat-history-flyout-list">
@@ -73,10 +75,10 @@ export function ChatHistoryFlyout({
                     })}
                   >
                     <span className="audion-chat-history-flyout-title">
-                      {item.title || item.preview || 'Conversation'}
+                      {item.title || item.preview || t('chat.historyConversation')}
                     </span>
                     <span className="audion-chat-history-flyout-meta">
-                      {item.personaName || 'Persona'}
+                      {item.personaName || t('chat.fieldPersona')}
                       {item.updatedAt
                         ? ` · ${new Date(item.updatedAt).toLocaleDateString()}`
                         : ''}
@@ -88,7 +90,7 @@ export function ChatHistoryFlyout({
           ) : null}
           <p className="audion-chat-flyover-footer">
             <a className="audion-link" href={paths.routes.chatHistory}>
-              Open full history
+              {t('chat.historyOpenFull')}
             </a>
           </p>
         </>

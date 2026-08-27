@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { ProjectKnowledgeChapter } from '@audion-v3/contracts'
 import { Accordion, Button, EmptyState, Panel, SectionChrome } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import {
   isEmptyKnowledgeBody,
   joinCompanyContext,
@@ -27,6 +28,7 @@ export function ProjectKnowledgeDossier({
   knowledgeChapters?: ProjectKnowledgeChapter[]
   platformProjectId?: string | null
 }) {
+  const t = useT()
   const router = useRouter()
   const titleRef = useRef<HTMLInputElement>(null)
   const skipBlurSave = useRef(false)
@@ -172,7 +174,7 @@ export function ProjectKnowledgeDossier({
     <Panel className="stage-panel audion-magazine-band audion-project-knowledge ds-motion-reveal">
       <SectionChrome
         quiet
-        title="Project knowledge"
+        title={t('detail.project.knowledge')}
         meta={chapters.length ? `${chapters.length}` : undefined}
         metaTone="accent"
         as="h3"
@@ -209,7 +211,7 @@ export function ProjectKnowledgeDossier({
               <span className="audion-magazine-list-num" aria-hidden>
                 +
               </span>
-              <span>Add chapter</span>
+              <span>{t('detail.project.addChapter')}</span>
             </button>
           }
           items={chapters.map((chapter) => {

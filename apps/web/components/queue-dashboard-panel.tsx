@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type {
   QueueJobDetail,
@@ -12,14 +12,7 @@ import { Alert, Button, EmptyState, Hint, Panel, Text, ToggleGroup } from '@msqd
 import { ConfirmDialog } from '../lib/msqdx-ui-client'
 import { Lede, LedeStrip } from '../lib/msqdx-ui'
 import { paths } from '../lib/paths'
-
-const STATUS_FILTERS: Array<{ value: string; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'processing', label: 'Processing' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'failed', label: 'Failed' },
-]
+import { useT } from '../lib/user-prefs'
 
 function shortId(id: string): string {
   return id.length > 14 ? `${id.slice(0, 12)}…` : id
@@ -38,6 +31,7 @@ export function QueueDashboardPanel({
 }: {
   projectId?: string | null
 }) {
+  const t = useT()
   const [status, setStatus] = useState<string>('all')
   const [stats, setStats] = useState<QueueStatsResponse | null>(null)
   const [list, setList] = useState<QueueJobList | null>(null)
@@ -46,6 +40,17 @@ export function QueueDashboardPanel({
   const [error, setError] = useState<string | null>(null)
   const [retryOpen, setRetryOpen] = useState(false)
   const [retrying, setRetrying] = useState(false)
+
+  const statusFilters = useMemo(
+    () => [
+      { value: 'all', label: t('queue.all') },
+      { value: 'pending', label: t('queue.pending') },
+      { value: 'processing', label: t('queue.processing') },
+      { value: 'completed', label: t('queue.completed') },
+      { value: 'failed', label: t('queue.failed') },
+    ],
+    [t],
+  )
 
   const load = useCallback(async () => {
     setError(null)
@@ -68,9 +73,9 @@ export function QueueDashboardPanel({
       setStats((await statsRes.json()) as QueueStatsResponse)
       setList((await listRes.json()) as QueueJobList)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load queue')
+      setError(e instanceof Error ? e.message : t('queue.loadFailed'))
     }
-  }, [projectId, status])
+  }, [projectId, status, t])
 
   useEffect(() => {
     void load()
@@ -96,13 +101,13 @@ export function QueueDashboardPanel({
         const job = (await res.json()) as QueueJobDetail
         if (!cancelled) setDetail(job)
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load job')
+        if (!cancelled) setError(e instanceof Error ? e.message : t('queue.jobLoadFailed'))
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [selectedId])
+  }, [selectedId, t])
 
   async function onRetry() {
     if (!detail || detail.status !== 'failed') return
@@ -112,14 +117,14 @@ export function QueueDashboardPanel({
       const res = await fetch(paths.routes.apiQueueJobRetry(detail.id), { method: 'POST' })
       if (!res.ok) {
         const err = (await res.json().catch(() => null)) as { error?: string } | null
-        throw new Error(err?.error || `Retry failed (${res.status})`)
+        throw new Error(err?.error || `${t('queue.retryFailed')} (${res.status})`)
       }
       const job = (await res.json()) as QueueJobDetail
       setDetail(job)
       setRetryOpen(false)
       await load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Retry failed')
+      setError(e instanceof Error ? e.message : t('queue.retryFailed'))
     } finally {
       setRetrying(false)
     }
@@ -127,19 +132,17 @@ export function QueueDashboardPanel({
 
   return (
     <div className="audion-stack" data-testid="queue-dashboard">
-      <Hint panel>
-        Fixture document-processing jobs (V2 queue shape). No Redis/Celery — demo store only.
-      </Hint>
+      <Hint panel>{t('queue.hint')}</Hint>
       {error ? <Alert tone="error">{error}</Alert> : null}
 
       {stats ? (
-        <LedeStrip columns={4} aria-label="Queue stats" data-testid="queue-stats">
-          <Lede value={String(stats.pending)} label="Pending" kind="number" />
-          <Lede value={String(stats.processing)} label="Processing" kind="number" />
-          <Lede value={String(stats.completed)} label="Completed" kind="number" tone="pos" />
+        <LedeStrip columns={4} aria-label={t('queue.statsAria')} data-testid="queue-stats">
+          <Lede value={String(stats.pending)} label={t('queue.pending')} kind="number" />
+          <Lede value={String(stats.processing)} label={t('queue.processing')} kind="number" />
+          <Lede value={String(stats.completed)} label={t('queue.completed')} kind="number" tone="pos" />
           <Lede
             value={String(stats.failed)}
-            label="Failed"
+            label={t('queue.failed')}
             kind="number"
             tone={stats.failed > 0 ? 'low' : undefined}
           />
@@ -148,13 +151,13 @@ export function QueueDashboardPanel({
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
         <ToggleGroup
-          aria-label="Job status filter"
+          aria-label={t('queue.filterAria')}
           value={status}
           onChange={setStatus}
-          options={STATUS_FILTERS}
+          options={statusFilters}
         />
         <Button type="button" size="sm" variant="subtle" onClick={() => void load()} data-testid="queue-refresh">
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
@@ -168,10 +171,10 @@ export function QueueDashboardPanel({
       >
         <Panel className="audion-stack" data-testid="queue-job-list">
           <Text role="headline" as="h2">
-            Jobs
+            {t('queue.jobs')}
           </Text>
           {!list?.items.length ? (
-            <EmptyState>No jobs for this filter.</EmptyState>
+            <EmptyState>{t('queue.empty')}</EmptyState>
           ) : (
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} className="audion-stack">
               {list.items.map((job) => {
@@ -217,42 +220,46 @@ export function QueueDashboardPanel({
 
         <Panel className="audion-stack" data-testid="queue-job-detail">
           <Text role="headline" as="h2">
-            Detail
+            {t('queue.detail')}
           </Text>
           {!detail ? (
-            <Text role="body">Select a job to inspect status, progress, and errors.</Text>
+            <Text role="body">{t('queue.selectHint')}</Text>
           ) : (
             <>
               <dl className="audion-settings-account">
-                <dt>Filename</dt>
+                <dt>{t('queue.filename')}</dt>
                 <dd>{detail.filename}</dd>
-                <dt>Status</dt>
+                <dt>{t('queue.status')}</dt>
                 <dd data-status={detail.status}>{detail.status}</dd>
-                <dt>Progress</dt>
+                <dt>{t('queue.progress')}</dt>
                 <dd>{Math.round(detail.progress)}%</dd>
-                <dt>Job id</dt>
+                <dt>{t('queue.jobId')}</dt>
                 <dd>
                   <code>{detail.id}</code>
                 </dd>
-                <dt>Document</dt>
+                <dt>{t('queue.document')}</dt>
                 <dd>
                   <code>{detail.documentId}</code>
                 </dd>
-                <dt>Project</dt>
+                <dt>{t('queue.project')}</dt>
                 <dd>
                   <Link href={paths.routes.projectDetail(detail.projectId)} className="audion-link">
                     {detail.projectId}
                   </Link>
                 </dd>
-                <dt>Size</dt>
-                <dd>{detail.sizeBytes != null ? `${detail.sizeBytes.toLocaleString()} bytes` : '—'}</dd>
-                <dt>Created</dt>
+                <dt>{t('queue.size')}</dt>
+                <dd>
+                  {detail.sizeBytes != null
+                    ? t('queue.bytes', { n: detail.sizeBytes.toLocaleString() })
+                    : '—'}
+                </dd>
+                <dt>{t('queue.created')}</dt>
                 <dd>{formatWhen(detail.createdAt)}</dd>
-                <dt>Updated</dt>
+                <dt>{t('queue.updated')}</dt>
                 <dd>{formatWhen(detail.updatedAt)}</dd>
                 {detail.error ? (
                   <>
-                    <dt>Error</dt>
+                    <dt>{t('queue.error')}</dt>
                     <dd>{detail.error}</dd>
                   </>
                 ) : null}
@@ -264,7 +271,7 @@ export function QueueDashboardPanel({
                   onClick={() => setRetryOpen(true)}
                   data-testid="queue-retry"
                 >
-                  Retry
+                  {t('common.retry')}
                 </Button>
               ) : null}
             </>
@@ -275,15 +282,13 @@ export function QueueDashboardPanel({
       {retryOpen && detail ? (
         <ConfirmDialog
           open
-          title="Retry failed job?"
-          confirmLabel={retrying ? 'Retrying…' : 'Retry'}
+          title={t('queue.retryTitle')}
+          confirmLabel={retrying ? t('queue.retrying') : t('common.retry')}
+          cancelLabel={t('common.cancel')}
           onClose={() => setRetryOpen(false)}
           onConfirm={() => void onRetry()}
         >
-          <p>
-            Reset <strong>{detail.filename}</strong> to pending and clear the error. Fixture store
-            only — no real worker is started.
-          </p>
+          <p>{t('queue.retryBody', { filename: detail.filename })}</p>
         </ConfirmDialog>
       ) : null}
     </div>

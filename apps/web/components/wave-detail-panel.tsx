@@ -32,6 +32,7 @@ import {
 import { ConfirmDialog, Dialog, Select } from '../lib/msqdx-ui-client'
 import { buildWaveReportMarkdown } from '../lib/ux-wave-report'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import {
   confidenceToPercent,
   formatSoftScoreValue,
@@ -99,15 +100,16 @@ function SoftQBoard({
   wave: UxWaveDetail
   onPatchSoft: (key: string, entry: SoftScoreEntry) => Promise<void>
 }) {
+  const t = useT()
   const soft = wave.evaluation?.softScores
   if (!soft) {
     return (
       <Panel
         className="detail-block audion-magazine-band audion-study-section"
-        aria-label="Soft-Q board"
+        aria-label={t('wave.softQBoard')}
       >
-        <SectionChrome quiet role="signals" title="Soft-Q board" as="h3" />
-        <EmptyState>Evaluate the wave to surface soft scores.</EmptyState>
+        <SectionChrome quiet role="signals" title={t('wave.softQBoard')} as="h3" />
+        <EmptyState>{t('wave.softQEmpty')}</EmptyState>
       </Panel>
     )
   }
@@ -115,12 +117,12 @@ function SoftQBoard({
   return (
     <Panel
       className="detail-block audion-magazine-band audion-study-section"
-      aria-label="Soft-Q board"
+      aria-label={t('wave.softQBoard')}
     >
       <SectionChrome
         quiet
         role="signals"
-        title="Soft-Q board"
+        title={t('wave.softQBoard')}
         meta={`${entries.length} scores`}
         metaTone="accent"
         as="h3"
@@ -179,7 +181,7 @@ function SoftQBoard({
                         label={
                           score.kind === 'text'
                             ? `Choice${e.scale ? ` · ${e.scale.replace(/_/g, ' ')}` : ''}`
-                            : `Score${e.scale ? ` · ${e.scale.replace(/_/g, ' ')}` : ''}`
+                            : `${t('wave.score')}${e.scale ? ` · ${e.scale.replace(/_/g, ' ')}` : ''}`
                         }
                         kind={score.kind === 'text' ? 'text' : score.kind === 'empty' ? 'empty' : 'number'}
                         tone={
@@ -193,13 +195,13 @@ function SoftQBoard({
                       <Lede
                         value={(e.confidence * 100).toFixed(0)}
                         unit="%"
-                        label="Confidence"
+                        label={t('wave.confidence')}
                         tone={e.confidence >= 0.5 ? 'pos' : 'low'}
                       />
                     </LedeStrip>
                   </div>
                   <div className="audion-journey-slide-section audion-soft-q-edit-row">
-                    <Field label="Value" size="sm" htmlFor={`soft-value-${key}`}>
+                    <Field label={t('wave.value')} size="sm" htmlFor={`soft-value-${key}`}>
                       {(() => {
                         const scaleOpts = softScoreScaleOptions(e.scale)
                         if (scaleOpts.kind === 'numeric') {
@@ -232,7 +234,7 @@ function SoftQBoard({
                         )
                       })()}
                     </Field>
-                    <Field label="Confidence %" size="sm" htmlFor={`soft-conf-${key}`}>
+                    <Field label={t('wave.confidencePct')} size="sm" htmlFor={`soft-conf-${key}`}>
                       <Input
                         id={`soft-conf-${key}`}
                         block
@@ -251,7 +253,7 @@ function SoftQBoard({
                     </Field>
                   </div>
                   <div className="audion-journey-slide-section">
-                    <Field label="Rationale" size="sm" htmlFor={`soft-${key}`}>
+                    <Field label={t('wave.rationale')} size="sm" htmlFor={`soft-${key}`}>
                       <Textarea
                         id={`soft-${key}`}
                         block
@@ -289,6 +291,7 @@ function ScreenerPrompts({
   study: UxStudyDetail
   wave: UxWaveDetail
 }) {
+  const t = useT()
   const prompts = [
     'F2.1 Was ist der Zweck dieser Seite?',
     'F2.2 Was fällt dir als Erstes auf?',
@@ -320,12 +323,12 @@ function ScreenerPrompts({
   return (
     <Panel
       className="detail-block audion-magazine-band audion-study-section"
-      aria-label="Screener and F-questions"
+      aria-label={t('wave.screener')}
     >
       <SectionChrome
         quiet
         role="research"
-        title="Screener / F-Fragen"
+        title={t('wave.screener')}
         meta={personaId ? 'persona' : 'Chat'}
         as="h3"
       />
@@ -375,7 +378,7 @@ function ScreenerPrompts({
                       href={paths.routes.chatWithContext(chatContext(p))}
                       className="audion-link"
                     >
-                      Open in Chat
+                      {t('wave.openChat')}
                     </Link>
                   </div>
                 </Panel>
@@ -397,6 +400,7 @@ function WaveReportBand({
   wave: UxWaveDetail
   onSaved: (next: UxWaveDetail) => void
 }) {
+  const t = useT()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(wave.reportMarkdown ?? '')
@@ -432,12 +436,12 @@ function WaveReportBand({
   return (
     <Panel
       className="detail-block audion-magazine-band audion-study-section ds-motion-reveal"
-      aria-label="Wave report"
+      aria-label={t('wave.report')}
     >
       <SectionChrome
         quiet
         role="ops"
-        title="Report"
+        title={t('wave.report')}
         meta={wave.reportUpdatedAt ? 'edited' : 'draft'}
         metaTone="accent"
         as="h3"
@@ -454,15 +458,15 @@ function WaveReportBand({
                   setEditing(false)
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="button" size="sm" disabled={saving} onClick={() => void save()}>
-                {saving ? 'Saving…' : 'Save'}
+                {saving ? t('common.saving') : t('common.save')}
               </Button>
             </div>
           ) : (
             <Button type="button" variant="subtle" size="sm" onClick={() => setEditing(true)}>
-              Edit
+              {t('common.edit')}
             </Button>
           )
         }
@@ -482,7 +486,7 @@ function WaveReportBand({
           dangerouslySetInnerHTML={{ __html: wave.reportMarkdown }}
         />
       ) : (
-        <EmptyState>No report draft yet — edit to add narrative.</EmptyState>
+        <EmptyState>{t('wave.reportEmpty')}</EmptyState>
       )}
       {error ? (
         <p className="audion-edit-error" role="alert">
@@ -508,6 +512,7 @@ function RunPanel({
   onPatchFinding: (runKey: string, finding: string) => Promise<void>
   onConverted: (journeyId: string) => void
 }) {
+  const t = useT()
   const [converting, setConverting] = useState(false)
   const [convertError, setConvertError] = useState<string | null>(null)
   const evidence = evidenceLabel(run.validEvidence)
@@ -575,31 +580,31 @@ function RunPanel({
 
       <ul className="audion-wave-run-stats" aria-label="Run metrics">
         <li>
-          <span className="audion-wave-run-stat-label">Friction</span>
+          <span className="audion-wave-run-stat-label">{t('wave.friction')}</span>
           <strong className="audion-wave-run-stat-value ds-text-numeric">
             {run.frictionScore ?? '—'}
           </strong>
         </li>
         <li>
-          <span className="audion-wave-run-stat-label">Persona fit</span>
+          <span className="audion-wave-run-stat-label">{t('wave.personaFit')}</span>
           <strong className="audion-wave-run-stat-value ds-text-numeric">
             {run.personaFitScore ?? '—'}
           </strong>
         </li>
         <li>
-          <span className="audion-wave-run-stat-label">Steps</span>
+          <span className="audion-wave-run-stat-label">{t('wave.steps')}</span>
           <strong className="audion-wave-run-stat-value ds-text-numeric">
             {run.steps ?? '—'}
           </strong>
         </li>
         <li>
-          <span className="audion-wave-run-stat-label">Goal</span>
+          <span className="audion-wave-run-stat-label">{t('wave.goal')}</span>
           <strong className="audion-wave-run-stat-value">
             {run.goalReached === true ? 'reached' : run.goalReached === false ? 'missed' : '—'}
           </strong>
         </li>
         <li>
-          <span className="audion-wave-run-stat-label">Task</span>
+          <span className="audion-wave-run-stat-label">{t('wave.task')}</span>
           <strong className="audion-wave-run-stat-value">
             {run.taskCompleted === true
               ? 'done'
@@ -680,7 +685,7 @@ function RunPanel({
             href={paths.routes.journeyDetail(run.derivedJourneyId)}
             className="audion-wave-run-convert-link"
           >
-            Open journey
+            {t('chatExtra.openJourney')}
           </Link>
         ) : (
           <Button
@@ -690,7 +695,7 @@ function RunPanel({
             disabled={converting}
             onClick={() => void onConvert()}
           >
-            {converting ? 'Converting…' : 'Convert to journey'}
+            {converting ? t('wave.converting') : t('wave.convertJourney')}
           </Button>
         )}
         {convertError ? (
@@ -712,6 +717,7 @@ export function WaveDetailPanel({
   wave: UxWaveDetail
   selfCompare: UxWaveCompareDelta | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [liveWave, setLiveWave] = useState(wave)
   const [compare, setCompare] = useState(selfCompare)
@@ -901,11 +907,11 @@ export function WaveDetailPanel({
           >
             {liveWave.status === 'complete' ||
             liveWave.runs.every((r) => r.agentStatus === 'complete')
-              ? 'Restart agent'
-              : 'Start agent'}
+              ? t('wave.restartAgent')
+              : t('wave.startAgent')}
           </Button>
           <Button type="button" variant="primary" size="sm" onClick={onEvaluate} disabled={busy}>
-            Evaluate
+            {t('wave.evaluate')}
           </Button>
           <Button
             type="button"
@@ -914,10 +920,10 @@ export function WaveDetailPanel({
             onClick={() => setCompareOpen(true)}
             disabled={busy}
           >
-            Compare
+            {t('wave.compare')}
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={onExport} disabled={busy}>
-            Export report
+            {t('wave.exportReport')}
           </Button>
         </div>
       </div>
@@ -926,7 +932,7 @@ export function WaveDetailPanel({
       {liveWave.status === 'running' ? (
         <StatusMeterPanel
           className="ds-motion-reveal"
-          title="UX Journey Agent"
+          title={t('wave.uxJourneyAgent')}
           meta="Studies Start/Sync · official agent surface"
           level="warn"
           banner={`${runningCount} running · ${completeCount}/${liveWave.runs.length} complete`}
@@ -1012,12 +1018,12 @@ export function WaveDetailPanel({
 
         <Panel
           className="detail-block audion-magazine-band audion-study-section ds-motion-reveal"
-          aria-label="Run matrix"
+          aria-label={t('wave.runMatrix')}
         >
           <SectionChrome
             quiet
             role="pipeline"
-            title="Run matrix"
+            title={t('wave.runMatrix')}
             meta={`${segments.length} segment${segments.length === 1 ? '' : 's'}`}
             metaTone="accent"
             as="h3"
@@ -1074,12 +1080,12 @@ export function WaveDetailPanel({
         {liveWave.evaluation?.hypotheses?.length ? (
           <Panel
             className="detail-block audion-magazine-band audion-study-section ds-motion-reveal"
-            aria-label="Hypotheses"
+            aria-label={t('wave.hypotheses')}
           >
             <SectionChrome
               quiet
               role="signals"
-              title="Hypotheses"
+              title={t('wave.hypotheses')}
               meta={`${liveWave.evaluation.hypotheses.length}`}
               metaTone="accent"
               as="h3"
@@ -1119,7 +1125,7 @@ export function WaveDetailPanel({
                         }}
                       />
                     </Field>
-                    <Field label="Rationale" size="sm" htmlFor={`hyp-rat-${h.id}`}>
+                    <Field label={t('wave.rationale')} size="sm" htmlFor={`hyp-rat-${h.id}`}>
                       <Textarea
                         id={`hyp-rat-${h.id}`}
                         block
@@ -1137,13 +1143,13 @@ export function WaveDetailPanel({
                     </Field>
                     <ul className="audion-wave-run-stats" aria-label="Hypothesis metrics">
                       <li>
-                        <span className="audion-wave-run-stat-label">Confidence</span>
+                        <span className="audion-wave-run-stat-label">{t('wave.confidence')}</span>
                         <strong className="audion-wave-run-stat-value ds-text-numeric">
                           {(h.confidence * 100).toFixed(0)}%
                         </strong>
                       </li>
                       <li>
-                        <span className="audion-wave-run-stat-label">Score</span>
+                        <span className="audion-wave-run-stat-label">{t('wave.score')}</span>
                         <strong className="audion-wave-run-stat-value ds-text-numeric">
                           {h.score ?? '—'}
                         </strong>
@@ -1180,7 +1186,7 @@ export function WaveDetailPanel({
             className="detail-block audion-magazine-band audion-study-section ds-motion-reveal"
             aria-label="Wave compare"
           >
-            <SectionChrome quiet role="ops" title="Compare" meta="delta" metaTone="accent" as="h3" />
+            <SectionChrome quiet role="ops" title={t('wave.compare')} meta="delta" metaTone="accent" as="h3" />
             <Hint panel>{compare.summary}</Hint>
             <LedeStrip
               columns={3}
@@ -1240,7 +1246,7 @@ export function WaveDetailPanel({
             className="detail-block audion-magazine-band audion-study-section ds-motion-reveal"
             aria-label="Exported markdown preview"
           >
-            <SectionChrome quiet title="Export preview" as="h3" />
+            <SectionChrome quiet title={t('wave.exportPreview')} as="h3" />
             <pre className="audion-wave-export-preview">{exportMd}</pre>
           </Panel>
         ) : null}
@@ -1287,14 +1293,14 @@ export function WaveDetailPanel({
           open
           onClose={() => setCompareOpen(false)}
           className="audion-edit-dialog"
-          title="Compare waves"
+          title={t('wave.compareWaves')}
           actions={
             <>
               <Button variant="ghost" size="md" onClick={() => setCompareOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button size="md" onClick={() => void onComparePick()} disabled={busy}>
-                Compare
+                {t('wave.compare')}
               </Button>
             </>
           }

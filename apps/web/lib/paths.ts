@@ -170,6 +170,7 @@ export const paths = {
   easySetupUrlMaxTextChars: 16_000,
   easySetupUrlUserAgent:
     'Mozilla/5.0 (compatible; AudionEasySetup/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+  brandLabel: 'AUDION',
   defaultDisplayName: 'AUDION',
   displayNameStorageKey: 'audion.v3.displayName',
   themeStorageKey: 'audion.v3.theme',
@@ -178,6 +179,9 @@ export const paths = {
   defaultLocale: 'en' as const,
   themeChoices: ['msqdx', 'msqdx-dark', 'msqdx-v2', 'msqdx-v2-dark'] as const,
   localeChoices: ['en', 'de'] as const,
+  i18nLibPath: 'apps/web/lib/i18n.ts',
+  localesDir: 'apps/web/locales',
+  i18nKnowledgePath: 'knowledge/i18n.md',
   routes: {
     home: '/',
     login: '/login',

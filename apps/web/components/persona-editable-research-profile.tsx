@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { PersonaMotivation } from '@audion-v3/contracts'
 import { Button, EmptyState, Field, Input, Meter, MeterList, Panel, SectionChrome, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { DerivePersonaAgentButton } from './derive-persona-agent-button'
 import { IconDelete } from './nav-icons'
 
@@ -27,6 +28,7 @@ export function PersonaEditableResearchProfile({
   motivations,
   className,
 }: Props) {
+  const t = useT()
   const router = useRouter()
   const [literacy, setLiteracy] = useState(techLiteracy ?? 0.5)
   const [baseline, setBaseline] = useState(emotionalBaseline ?? '')
@@ -77,7 +79,7 @@ export function PersonaEditableResearchProfile({
     >
       <SectionChrome
         quiet
-        title="Research profile"
+        title={t('personaEdit.researchProfile')}
         meta="UX agent"
         metaTone="accent"
         as="h3"
@@ -95,9 +97,9 @@ export function PersonaEditableResearchProfile({
         knowledge and feel channels.
       </Text>
 
-      <MeterList aria-label="Research dimensions">
+      <MeterList aria-label={t('personaEdit.researchProfile')}>
         <Meter
-          label="Tech literacy"
+          label={t('personaEdit.techLiteracy')}
           valueLabel={`${literacyPct}%`}
           value={literacyPct}
           disabled={saving}
@@ -106,7 +108,7 @@ export function PersonaEditableResearchProfile({
         />
       </MeterList>
 
-      <Field label="Emotional baseline">
+      <Field label={t('personaEdit.emotionalBaseline')}>
         <Input
           block
           value={baseline}
@@ -120,7 +122,7 @@ export function PersonaEditableResearchProfile({
       <div className="audion-persona-agent-lists">
         <div>
           <Text role="label" as="h4" className="audion-persona-agent-list-title">
-            Motivations
+            {t('personaEdit.motivations')}
           </Text>
           {mots.length ? (
             <ul>
@@ -134,7 +136,7 @@ export function PersonaEditableResearchProfile({
                     type="button"
                     size="sm"
                     variant="ghost"
-                    aria-label={`Remove motivation ${index + 1}`}
+                    aria-label={`${t('common.remove')} ${index + 1}`}
                     disabled={saving}
                     onClick={() => {
                       const next = mots.filter((_, i) => i !== index)
@@ -148,9 +150,9 @@ export function PersonaEditableResearchProfile({
               ))}
             </ul>
           ) : (
-            <EmptyState>No motivations yet.</EmptyState>
+            <EmptyState>{t('personaEdit.emptyMotivations')}</EmptyState>
           )}
-          <Field label="Add motivation">
+          <Field label={t('personaEdit.addMotivation')}>
             <Input
               block
               value={newMot}
@@ -172,7 +174,7 @@ export function PersonaEditableResearchProfile({
 
         <div>
           <Text role="label" as="h4" className="audion-persona-agent-list-title">
-            Stress triggers
+            {t('personaEdit.stressTriggers')}
           </Text>
           {triggers.length ? (
             <ul>
@@ -183,7 +185,7 @@ export function PersonaEditableResearchProfile({
                     type="button"
                     size="sm"
                     variant="ghost"
-                    aria-label={`Remove trigger ${index + 1}`}
+                    aria-label={`${t('common.remove')} ${index + 1}`}
                     disabled={saving}
                     onClick={() => {
                       const next = triggers.filter((_, i) => i !== index)
@@ -197,9 +199,9 @@ export function PersonaEditableResearchProfile({
               ))}
             </ul>
           ) : (
-            <EmptyState>No stress triggers yet.</EmptyState>
+            <EmptyState>{t('personaEdit.emptyStress')}</EmptyState>
           )}
-          <Field label="Add stress trigger">
+          <Field label={t('personaEdit.addStressTrigger')}>
             <Input
               block
               value={newTrigger}
@@ -227,7 +229,7 @@ export function PersonaEditableResearchProfile({
       ) : null}
       {saving ? (
         <Text role="meta" as="p">
-          Saving…
+          {t('common.saving')}
         </Text>
       ) : null}
     </Panel>

@@ -6,12 +6,7 @@ import type { PersonaDetail, PersonaStatus, PersonaWritePayload } from '@audion-
 import { Button, Field, Input, Textarea } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
-
-const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'ready', label: 'Ready' },
-  { value: 'archived', label: 'Archived' },
-]
+import { useT } from '../lib/user-prefs'
 
 export type PersonaEditMode = 'edit' | 'create' | 'template'
 
@@ -61,11 +56,18 @@ export function PersonaEditDialog({
   persona: PersonaDetail | null
   defaultProjectId?: string | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [form, setForm] = useState<PersonaWritePayload>(emptyPayload(defaultProjectId))
   const [nameError, setNameError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  const statusOptions = [
+    { value: 'draft', label: t('dialogs.statusDraft') },
+    { value: 'ready', label: 'Ready' },
+    { value: 'archived', label: t('dialogs.statusArchived') },
+  ]
 
   useEffect(() => {
     if (!open) return
@@ -76,11 +78,15 @@ export function PersonaEditDialog({
   }, [open, mode, persona, defaultProjectId])
 
   const title =
-    mode === 'edit' ? 'Edit persona' : mode === 'template' ? 'Create from template' : 'Create persona'
+    mode === 'edit'
+      ? t('tiles.editPersona')
+      : mode === 'template'
+        ? t('tiles.fromTemplateAria')
+        : t('tiles.createPersona')
 
   async function onSave() {
     if (!form.name.trim()) {
-      setNameError('Name is required')
+      setNameError(t('dialogs.nameRequired'))
       return
     }
     setSaving(true)
@@ -113,7 +119,7 @@ export function PersonaEditDialog({
       router.push(paths.routes.personaDetail(saved.id))
       router.refresh()
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Save failed')
+      setSaveError(error instanceof Error ? error.message : t('dialogs.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -128,17 +134,17 @@ export function PersonaEditDialog({
       actions={
         <>
           <Button variant="ghost" size="md" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button size="md" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? t('common.saving') : t('common.save')}
           </Button>
         </>
       }
     >
       <div className="audion-edit-form">
         <Field
-          label="Name"
+          label={t('dialogs.fieldName')}
           size="md"
           error={nameError ?? undefined}
           htmlFor="persona-name"
@@ -165,13 +171,13 @@ export function PersonaEditDialog({
               onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
             />
           </Field>
-          <Field label="Status" size="md" htmlFor="persona-status" className="audion-edit-field">
+          <Field label={t('dialogs.fieldStatus')} size="md" htmlFor="persona-status" className="audion-edit-field">
             <Select
               id="persona-status"
               size="md"
               value={form.status ?? 'draft'}
               onChange={(value) => setForm((f) => ({ ...f, status: value as PersonaStatus }))}
-              options={STATUS_OPTIONS}
+              options={statusOptions}
             />
           </Field>
         </div>

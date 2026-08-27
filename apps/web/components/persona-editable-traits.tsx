@@ -6,6 +6,7 @@ import { Button, EmptyState, MeterList, Panel, SectionChrome, Slider } from '@ms
 import { Dialog } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { mergeTraitSuggestions } from '../lib/persona-field-suggest'
+import { useT } from '../lib/user-prefs'
 import { IconDelete } from './nav-icons'
 import { SuggestPersonaFieldButton } from './suggest-persona-field-button'
 
@@ -44,6 +45,7 @@ function scoreToPct(score: number): number {
 }
 
 export function PersonaEditableTraits({ personaId, traits, className }: Props) {
+  const t = useT()
   const router = useRouter()
   const baseId = useId()
   const [rows, setRows] = useState(() => rowsFromTraits(traits))
@@ -147,7 +149,7 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
       (r, i) => i !== editingIndex && r.label.trim().toLowerCase() === trimmed.toLowerCase(),
     )
     if (duplicate) {
-      setError('Trait names must be unique')
+      setError(t('personaEdit.traitUnique'))
       return
     }
 
@@ -216,7 +218,7 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
     >
       <SectionChrome
         quiet
-        title="Traits"
+        title={t('personaEdit.traits')}
         meta={`${filledCount}`}
         as="h3"
         action={
@@ -232,7 +234,7 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
       />
 
       {rows.length ? (
-        <MeterList className="audion-editable-traits-list" aria-label="Persona traits">
+        <MeterList className="audion-editable-traits-list" aria-label={t('personaEdit.traits')}>
           {rows.map((row, index) => {
             const pct = scoreToPct(row.score)
             const editingLabel = editingIndex === index
@@ -284,8 +286,8 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
                       variant="ghost"
                       size="sm"
                       className="audion-edit-icon-btn audion-delete-icon-btn audion-editable-traits-delete"
-                      aria-label={`Delete trait ${row.label || index + 1}`}
-                      title="Delete"
+                      aria-label={`${t('common.delete')} ${row.label || index + 1}`}
+                      title={t('common.delete')}
                       icon={<IconDelete />}
                       disabled={saving}
                       onClick={() => setDeleteIndex(index)}
@@ -318,14 +320,14 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
             <button
               type="button"
               className="audion-editable-list-add-row"
-              aria-label="Add trait"
+              aria-label={t('personaEdit.addTrait')}
               disabled={saving || editingIndex != null}
               onClick={onAdd}
             >
               <span className="audion-magazine-list-num" aria-hidden>
                 {String(rows.length + 1).padStart(2, '0')}
               </span>
-              <span className="audion-editable-list-add-label">Add item</span>
+              <span className="audion-editable-list-add-label">{t('personaEdit.addTrait')}</span>
             </button>
           </div>
         </div>
@@ -344,14 +346,14 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
             if (!saving) setDeleteIndex(null)
           }}
           className="audion-edit-dialog"
-          title="Delete trait?"
+          title={t('personaEdit.deleteTraitConfirm')}
           actions={
             <>
               <Button variant="ghost" size="md" onClick={() => setDeleteIndex(null)} disabled={saving}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button size="md" onClick={() => void onConfirmDelete()} disabled={saving}>
-                {saving ? 'Deleting…' : 'Delete'}
+                {saving ? t('common.deleting') : t('common.delete')}
               </Button>
             </>
           }

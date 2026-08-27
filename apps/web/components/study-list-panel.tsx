@@ -1,8 +1,11 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import type { UxStudyList } from '@audion-v3/contracts'
 import { EmptyState, Panel, Text, Button } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { StudyCreateButton } from './study-edit-dialog'
 
 export function StudyListPanel({
@@ -12,12 +15,13 @@ export function StudyListPanel({
   list: UxStudyList
   query?: string
 }) {
+  const t = useT()
   return (
     <section className="audion-index audion-tg-index">
       <div className="msqdx-flow-studies-actions">
         <Link href={paths.routes.studiesFlows}>
           <Button type="button" size="sm" variant="subtle">
-            UX Test Flows
+            {t('lists.studies.flowsCta')}
           </Button>
         </Link>
       </div>
@@ -37,7 +41,10 @@ export function StudyListPanel({
                 </Text>
                 <p className="audion-tg-card-meta">
                   <span>
-                    {item.waveCount} wave{item.waveCount === 1 ? '' : 's'}
+                    {t(
+                      item.waveCount === 1 ? 'lists.studies.waveOne' : 'lists.studies.waveMany',
+                      { count: item.waveCount },
+                    )}
                   </span>
                   {item.targetUrlKey ? (
                     <>
@@ -53,7 +60,7 @@ export function StudyListPanel({
           </li>
         ))}
       </ul>
-      {!list.items.length ? <EmptyState>No UX studies yet — create one above.</EmptyState> : null}
+      {!list.items.length ? <EmptyState>{t('lists.studies.empty')}</EmptyState> : null}
     </section>
   )
 }

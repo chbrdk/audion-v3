@@ -1,5 +1,6 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../components/app-shell'
+import { HubTopStatus } from '../../components/hub-top-status'
 import { StudyListPanel } from '../../components/study-list-panel'
 import { fetchUxStudyList, filterUxStudyList } from '../../lib/ux-studies'
 
@@ -16,22 +17,16 @@ export default async function StudiesPage({
     const demo = result.origin === 'fixtures'
     return (
       <AppShell
-        title="UX Studies"
-        description={demo ? 'Demo fixtures — Study → Wave → Evaluate → Compare.' : undefined}
-        status={
-          <TopStatus
-            level="ok"
-            primary={demo ? 'demo data' : `${list.total} studies`}
-            secondary={demo ? `${list.total} fixtures` : 'live'}
-          />
-        }
+        titleKey="pages.studies.title"
+        descriptionKey={demo ? 'pages.studies.leadDemo' : undefined}
+        status={<HubTopStatus demo={demo} total={list.total} entity="studies" />}
       >
         <StudyListPanel list={list} query={query} />
       </AppShell>
     )
   } catch (error) {
     return (
-      <AppShell title="UX Studies" description="Browse UX study waves.">
+      <AppShell titleKey="pages.studies.title" descriptionKey="pages.studies.lead">
         <Alert tone="error">
           {error instanceof Error ? error.message : 'UX studies backend unavailable.'}
         </Alert>

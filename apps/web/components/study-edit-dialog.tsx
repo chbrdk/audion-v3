@@ -6,19 +6,9 @@ import type { UxStudyDetail, UxStudyStatus, UxStudyWritePayload } from '@audion-
 import { Button, Field, Input, Panel, Text, Textarea, LedeStrip } from '@msqdx/ui'
 import { Dialog, Select, TagInput } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { EBM_HYPOTHESES } from '../lib/fixtures/ux-studies'
 import type { UxScenarioPackSummary, UxStudyFromPackResult } from '@audion-v3/contracts'
-
-const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' },
-]
-
-const STEPS = [
-  { id: 'basics', label: 'Basics' },
-  { id: 'hypotheses', label: 'Hypotheses' },
-]
 
 const BLANK_PACK = '__blank__'
 
@@ -59,6 +49,7 @@ export function StudyEditDialog({
   mode: 'create' | 'edit'
   study: UxStudyDetail | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<UxStudyWritePayload>(emptyPayload())
@@ -68,6 +59,17 @@ export function StudyEditDialog({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [packs, setPacks] = useState<UxScenarioPackSummary[]>([])
   const [packId, setPackId] = useState(BLANK_PACK)
+
+  const statusOptions = [
+    { value: 'draft', label: t('dialogs.statusDraft') },
+    { value: 'active', label: t('dialogs.statusActive') },
+    { value: 'archived', label: t('dialogs.statusArchived') },
+  ]
+
+  const steps = [
+    { id: 'basics', label: t('dialogs.studyStepBasics') },
+    { id: 'hypotheses', label: t('dialogs.studyStepHypotheses') },
+  ]
 
   useEffect(() => {
     if (!open) return
@@ -102,7 +104,7 @@ export function StudyEditDialog({
 
   async function onSave() {
     if (!form.name.trim() && packId === BLANK_PACK) {
-      setNameError('Name is required')
+      setNameError(t('dialogs.nameRequired'))
       setStep(0)
       return
     }
@@ -155,7 +157,7 @@ export function StudyEditDialog({
       router.push(paths.routes.studyDetail(saved.id))
       router.refresh()
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Save failed')
+      setSaveError(error instanceof Error ? error.message : t('dialogs.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -168,48 +170,46 @@ export function StudyEditDialog({
       open={open}
       onClose={onClose}
       className="audion-edit-dialog"
-      title={isCreate ? 'New study' : 'Edit study'}
+      title={isCreate ? t('dialogs.studyNewTitle') : t('dialogs.studyEditTitle')}
       actions={
         <>
           <Button variant="ghost" size="md" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           {step > 0 ? (
             <Button variant="subtle" size="md" onClick={() => setStep((s) => s - 1)} disabled={saving}>
-              Back
+              {t('common.back')}
             </Button>
           ) : null}
-          {step < STEPS.length - 1 && packId === BLANK_PACK ? (
+          {step < steps.length - 1 && packId === BLANK_PACK ? (
             <Button size="md" onClick={() => setStep((s) => s + 1)} disabled={saving}>
-              Next
+              {t('common.next')}
             </Button>
           ) : (
             <Button size="md" onClick={() => void onSave()} disabled={saving}>
               {saving
-                ? 'Saving…'
+                ? t('common.saving')
                 : isCreate && packId !== BLANK_PACK
-                  ? 'Create from pack'
+                  ? t('dialogs.createFromPack')
                   : isCreate
-                    ? 'Create'
-                    : 'Save'}
+                    ? t('common.create')
+                    : t('common.save')}
             </Button>
           )}
         </>
       }
     >
       <div className="audion-edit-form">
-        <LedeStrip variant="steps" steps={STEPS} activeIndex={step} onStepSelect={setStep} />
+        <LedeStrip variant="steps" steps={steps} activeIndex={step} onStepSelect={setStep} />
         <p className="audion-edit-lede">
-          {isCreate
-            ? 'Blank study or seed from a ScenarioPack (EBM Leitfaden → runs + Soft-Q shell).'
-            : 'Update study brief and hypothesis templates.'}
+          {isCreate ? t('dialogs.studyLedeCreate') : t('dialogs.studyLedeEdit')}
         </p>
 
         {step === 0 ? (
           <>
             {isCreate && packs.length ? (
               <Field
-                label="Scenario pack"
+                label={t('dialogs.studyScenarioPack')}
                 size="md"
                 htmlFor="study-pack"
                 className="audion-edit-field"
@@ -217,10 +217,10 @@ export function StudyEditDialog({
                 <Select
                   id="study-pack"
                   options={[
-                    { value: BLANK_PACK, label: 'Blank study' },
+                    { value: BLANK_PACK, label: t('dialogs.studyBlank') },
                     ...packs.map((p) => ({
                       value: p.id,
-                      label: `${p.name} (${p.runCount} runs)`,
+                      label: t('dialogs.studyPackRuns', { name: p.name, count: p.runCount }),
                     })),
                   ]}
                   value={packId}
@@ -240,7 +240,7 @@ export function StudyEditDialog({
               </Field>
             ) : null}
             <Field
-              label="Name"
+              label={t('dialogs.fieldName')}
               size="md"
               error={nameError ?? undefined}
               htmlFor="study-name"
@@ -254,13 +254,22 @@ export function StudyEditDialog({
                   setForm((prev) => ({ ...prev, name: e.target.value }))
                   if (nameError) setNameError(null)
                 }}
-                placeholder={packId !== BLANK_PACK ? 'Optional override (pack name default)' : 'Study name'}
+                placeholder={
+                  packId !== BLANK_PACK
+                    ? t('dialogs.studyNameOverridePh')
+                    : t('dialogs.studyNamePh')
+                }
               />
             </Field>
-            <Field label="Status" size="md" htmlFor="study-status" className="audion-edit-field">
+            <Field
+              label={t('dialogs.fieldStatus')}
+              size="md"
+              htmlFor="study-status"
+              className="audion-edit-field"
+            >
               <Select
                 id="study-status"
-                options={STATUS_OPTIONS}
+                options={statusOptions}
                 value={form.status ?? 'draft'}
                 onChange={(value) =>
                   setForm((prev) => ({ ...prev, status: value as UxStudyStatus }))
@@ -268,7 +277,7 @@ export function StudyEditDialog({
               />
             </Field>
             <Field
-              label="Target URL key"
+              label={t('dialogs.studyTargetUrlKey')}
               size="md"
               htmlFor="study-url-key"
               className="audion-edit-field"
@@ -282,7 +291,7 @@ export function StudyEditDialog({
               />
             </Field>
             <Field
-              label="Source guide"
+              label={t('dialogs.studySourceGuide')}
               size="md"
               htmlFor="study-guide"
               className="audion-edit-field"
@@ -292,11 +301,11 @@ export function StudyEditDialog({
                 block
                 value={form.sourceGuide ?? ''}
                 onChange={(e) => setForm((prev) => ({ ...prev, sourceGuide: e.target.value }))}
-                placeholder="Leitfaden reference"
+                placeholder={t('dialogs.studyGuidePh')}
               />
             </Field>
             <Field
-              label="Description"
+              label={t('dialogs.fieldDescription')}
               size="md"
               htmlFor="study-description"
               className="audion-edit-field"
@@ -307,13 +316,13 @@ export function StudyEditDialog({
                 rows={3}
                 value={form.description ?? ''}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="Short study brief"
+                placeholder={t('dialogs.studyDescPh')}
               />
             </Field>
           </>
         ) : (
           <Field
-            label="Hypothesis templates (H1–H5)"
+            label={t('dialogs.studyHypLabel')}
             size="md"
             htmlFor="study-hyps"
             className="audion-edit-field"
@@ -323,7 +332,7 @@ export function StudyEditDialog({
               size="md"
               value={hypTags}
               onChange={setHypTags}
-              placeholder="H1: Statement…"
+              placeholder={t('dialogs.studyHypPh')}
             />
           </Field>
         )}
@@ -343,6 +352,7 @@ export function StudyCreateButton({
 }: {
   variant?: 'button' | 'card'
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -354,16 +364,16 @@ export function StudyCreateButton({
         >
           <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
             <Text role="headline" as="span" className="audion-tg-card-title">
-              New study
+              {t('tiles.newStudy')}
             </Text>
             <p className="audion-tg-card-meta">
-              <span>Study → Wave → Evaluate</span>
+              <span>{t('tiles.newStudyMeta')}</span>
             </p>
           </Panel>
         </button>
       ) : (
         <Button type="button" size="sm" onClick={() => setOpen(true)}>
-          New study
+          {t('tiles.newStudy')}
         </Button>
       )}
       {open ? (

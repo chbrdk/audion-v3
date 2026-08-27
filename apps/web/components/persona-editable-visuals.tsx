@@ -17,6 +17,7 @@ import {
   resolvePersonaVisuals,
   toPersonaWriteVisuals,
 } from '../lib/persona-visuals'
+import { useT } from '../lib/user-prefs'
 import { AiActionButton } from './ai-action-button'
 
 type KeywordMode = { type: 'edit'; index: number } | { type: 'add' } | null
@@ -31,6 +32,7 @@ export function PersonaEditableVisuals({
   personaId: string
   visuals: PersonaVisuals | null
 }) {
+  const t = useT()
   const router = useRouter()
   const baseId = useId()
   const keywordRef = useRef<HTMLInputElement>(null)
@@ -254,25 +256,25 @@ export function PersonaEditableVisuals({
   return (
     <section
       className="detail-block audion-magazine-visuals audion-editable-visuals ds-motion-reveal"
-      aria-label="Visuals"
+      aria-label={t('personaEdit.visuals')}
     >
       <div className="audion-editable-visuals-chrome">
-        <SectionChrome quiet title="Visuals" meta={meta} metaTone="accent" as="h3" />
+        <SectionChrome quiet title={t('personaEdit.visuals')} meta={meta} metaTone="accent" as="h3" />
         <div className="audion-editable-visuals-chrome-actions">
           <AiActionButton
-            label="Generate moodboard"
+            label={t('personaEdit.generateMoodboard')}
             targetHint={moodboardHint}
             loading={generating}
             disabled={saving || keywordMode != null || editingTileId != null}
             onClick={() => void generateMoodboard()}
           />
           {hasLockedTiles ? (
-            <p className="audion-editable-visuals-lock-hint">Keeps locked tiles</p>
+            <p className="audion-editable-visuals-lock-hint">{t('personaEdit.keepsLocked')}</p>
           ) : null}
         </div>
       </div>
 
-      <div className="audion-editable-visuals-keywords" aria-label="Style keywords">
+      <div className="audion-editable-visuals-keywords" aria-label={t('personaEdit.styleKeywords')}>
         {local.styleKeywords.map((keyword, index) => {
           const isEditing = keywordMode?.type === 'edit' && keywordMode.index === index
           if (isEditing) {
@@ -386,18 +388,18 @@ export function PersonaEditableVisuals({
                   <span className="audion-magazine-visual-caption">{tile.caption}</span>
                 ) : null}
                 {isLocked ? (
-                  <span className="audion-editable-visuals-tile-locked-label">Locked</span>
+                  <span className="audion-editable-visuals-tile-locked-label">{t('common.locked')}</span>
                 ) : null}
 
                 {isEditing ? (
                   <div className="audion-editable-visuals-tile-editor" onClick={(e) => e.stopPropagation()}>
                     <label className="audion-editable-visuals-field">
-                      <span>Category</span>
+                      <span>{t('personaEdit.category')}</span>
                       <select
                         id={`${baseId}-cat-${tile.id}`}
                         value={tileDraft.category}
                         disabled={saving}
-                        aria-label="Tile category"
+                        aria-label={t('personaEdit.tileCategory')}
                         onChange={(e) => setTileDraft({ ...tileDraft, category: e.target.value })}
                       >
                         {categoryOptions(tileDraft.category).map((cat) => (
@@ -408,20 +410,20 @@ export function PersonaEditableVisuals({
                       </select>
                     </label>
                     <label className="audion-editable-visuals-field">
-                      <span>Caption</span>
+                      <span>{t('personaEdit.caption')}</span>
                       <input
                         value={tileDraft.caption ?? ''}
                         disabled={saving}
-                        aria-label="Tile caption"
+                        aria-label={t('personaEdit.tileCaption')}
                         onChange={(e) => setTileDraft({ ...tileDraft, caption: e.target.value })}
                       />
                     </label>
                     <label className="audion-editable-visuals-field">
-                      <span>Image URL</span>
+                      <span>{t('personaEdit.imageUrl')}</span>
                       <input
                         value={tileDraft.imageUrl}
                         disabled={saving}
-                        aria-label="Tile image URL"
+                        aria-label={t('personaEdit.tileImageUrl')}
                         onChange={(e) => setTileDraft({ ...tileDraft, imageUrl: e.target.value })}
                       />
                     </label>
@@ -433,10 +435,10 @@ export function PersonaEditableVisuals({
                         onClick={() => void commitTileEdit()}
                         disabled={saving}
                       >
-                        Save
+                        {t('common.save')}
                       </Button>
                       <Button type="button" variant="ghost" size="sm" onClick={cancelTileEdit} disabled={saving}>
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                       <Button
                         type="button"
@@ -446,11 +448,11 @@ export function PersonaEditableVisuals({
                         disabled={saving}
                         aria-label={
                           tileDraft.locked
-                            ? `Unlock ${tile.caption || tile.category}`
-                            : `Lock ${tile.caption || tile.category}`
+                            ? `${t('common.unlock')} ${tile.caption || tile.category}`
+                            : `${t('common.lock')} ${tile.caption || tile.category}`
                         }
                       >
-                        {tileDraft.locked ? 'Unlock' : 'Lock'}
+                        {tileDraft.locked ? t('common.unlock') : t('common.lock')}
                       </Button>
                       <Button
                         type="button"
@@ -458,9 +460,9 @@ export function PersonaEditableVisuals({
                         size="sm"
                         onClick={() => setDeleteTileId(tile.id)}
                         disabled={saving || Boolean(tileDraft.locked)}
-                        aria-label={`Remove ${tile.caption || tile.category}`}
+                        aria-label={`${t('common.remove')} ${tile.caption || tile.category}`}
                       >
-                        Remove
+                        {t('common.remove')}
                       </Button>
                     </div>
                   </div>
@@ -471,7 +473,7 @@ export function PersonaEditableVisuals({
                       className="audion-editable-visuals-tile-hit"
                       onClick={() => beginTileEdit(tile)}
                       disabled={saving || keywordMode != null}
-                      aria-label={`Edit ${tile.caption || tile.category} tile`}
+                      aria-label={t('personaEdit.editTile', { name: tile.caption || tile.category })}
                     />
                     <button
                       type="button"
@@ -483,12 +485,12 @@ export function PersonaEditableVisuals({
                       disabled={saving || generating || keywordMode != null || editingTileId != null}
                       aria-label={
                         isLocked
-                          ? `Unlock ${tile.caption || tile.category}`
-                          : `Lock ${tile.caption || tile.category}`
+                          ? `${t('common.unlock')} ${tile.caption || tile.category}`
+                          : `${t('common.lock')} ${tile.caption || tile.category}`
                       }
                       aria-pressed={isLocked}
                     >
-                      {isLocked ? 'Unlock' : 'Lock'}
+                      {isLocked ? t('common.unlock') : t('common.lock')}
                     </button>
                   </>
                 )}
@@ -503,7 +505,7 @@ export function PersonaEditableVisuals({
               disabled={saving || keywordMode != null || editingTileId != null}
             >
               <span aria-hidden>+</span>
-              <span>Add tile</span>
+              <span>{t('personaEdit.addTile')}</span>
             </button>
           </li>
         </ul>
@@ -514,14 +516,14 @@ export function PersonaEditableVisuals({
       <Dialog
         open={deleteTileId != null}
         onClose={() => setDeleteTileId(null)}
-        title="Remove visual tile?"
+        title={t('personaEdit.removeTileConfirm')}
         actions={
           <div className="audion-editable-list-dialog-actions">
             <Button type="button" variant="ghost" onClick={() => setDeleteTileId(null)} disabled={saving}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="button" onClick={() => void onConfirmDeleteTile()} disabled={saving}>
-              Remove
+              {t('common.remove')}
             </Button>
           </div>
         }

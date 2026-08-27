@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useRef, useState } from 'react'
+import { useT } from '../../lib/user-prefs'
 import { VARIABLE_MIME } from './VariablePalette'
 
 type Props = {
@@ -14,12 +15,14 @@ type Props = {
 export function PromptEditor({
   value,
   onChange,
-  placeholder = 'Enter prompt…',
+  placeholder,
   rows = 18,
   testId = 'pb-editor',
 }: Props) {
+  const t = useT()
   const ref = useRef<HTMLTextAreaElement | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const resolvedPlaceholder = placeholder ?? t('prompts.enterPrompt')
 
   function insertAtCursor(syntax: string) {
     const el = ref.current
@@ -58,7 +61,7 @@ export function PromptEditor({
         className="ds-textarea ds-input ds-textarea--sm ds-input--sm pb-editor__textarea"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         rows={rows}
         data-testid={testId}
       />

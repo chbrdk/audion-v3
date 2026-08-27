@@ -1,5 +1,6 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../components/app-shell'
+import { HubTopStatus } from '../../components/hub-top-status'
 import { PersonaListPanel } from '../../components/persona-list-panel'
 import { fetchPersonaList, filterPersonaList } from '../../lib/personas'
 
@@ -16,22 +17,16 @@ export default async function PersonasPage({
     const demo = result.origin === 'fixtures'
     return (
       <AppShell
-        title="Personas"
-        description={demo ? 'Demo fixtures — API offline.' : undefined}
-        status={
-          <TopStatus
-            level="ok"
-            primary={demo ? 'demo data' : `${list.total} personas`}
-            secondary={demo ? `${list.total} fixtures` : 'live'}
-          />
-        }
+        titleKey="pages.personas.title"
+        descriptionKey={demo ? 'hubs.demoFixturesOffline' : undefined}
+        status={<HubTopStatus demo={demo} total={list.total} entity="personas" />}
       >
         <PersonaListPanel list={list} query={query} />
       </AppShell>
     )
   } catch (error) {
     return (
-      <AppShell title="Personas" description="Browse personas against the existing backend.">
+      <AppShell titleKey="pages.personas.title" descriptionKey="pages.personas.lead">
         <Alert tone="error">{error instanceof Error ? error.message : 'Persona backend unavailable.'}</Alert>
       </AppShell>
     )

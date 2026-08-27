@@ -14,6 +14,7 @@ import {
 } from '../lib/channel-icons'
 import { Dialog } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { IconDelete } from './nav-icons'
 
 type MenuState =
@@ -42,6 +43,7 @@ function menuPosition(anchor: DOMRect): { top: number; left: number } {
 const PICKER_GROUPS: ChannelPickerGroup[] = ['social', 'messaging', 'work']
 
 export function PersonaChannelBubbles({ personaId, channels, className }: Props) {
+  const t = useT()
   const router = useRouter()
   const menuId = useId()
   const menuRef = useRef<HTMLDivElement | null>(null)
@@ -157,11 +159,11 @@ export function PersonaChannelBubbles({ personaId, channels, className }: Props)
             id={menuId}
             className="audion-channel-picker"
             role="menu"
-            aria-label={menu.mode === 'add' ? 'Add channel' : 'Change channel'}
+            aria-label={menu.mode === 'add' ? t('personaEdit.addChannel') : t('personaEdit.changeChannel')}
             style={{ top: coords.top, left: coords.left }}
           >
             <p className="audion-channel-picker-title">
-              {menu.mode === 'add' ? 'Add channel' : 'Change channel'}
+              {menu.mode === 'add' ? t('personaEdit.addChannel') : t('personaEdit.changeChannel')}
             </p>
             <div className="audion-channel-picker-body">
               {PICKER_GROUPS.map((group) => {
@@ -218,7 +220,7 @@ export function PersonaChannelBubbles({ personaId, channels, className }: Props)
                 }}
               >
                 <IconDelete />
-                Remove channel
+                {t('common.remove')}
               </button>
             ) : null}
           </div>,
@@ -240,7 +242,7 @@ export function PersonaChannelBubbles({ personaId, channels, className }: Props)
     >
       <SectionChrome
         quiet
-        title="Channels"
+        title={t('personaEdit.channels')}
         meta={`${localChannels.length}`}
         as="h3"
         action={
@@ -249,8 +251,8 @@ export function PersonaChannelBubbles({ personaId, channels, className }: Props)
             variant="ghost"
             size="sm"
             className="audion-channel-add-btn"
-            aria-label="Add channel"
-            title="Add channel"
+            aria-label={t('personaEdit.addChannel')}
+            title={t('personaEdit.addChannel')}
             disabled={saving}
             onClick={(e) => openAddMenu(e.currentTarget)}
           >
@@ -260,7 +262,7 @@ export function PersonaChannelBubbles({ personaId, channels, className }: Props)
       />
 
       {localChannels.length ? (
-        <ul className="audion-channel-bubbles" aria-label="Channels">
+        <ul className="audion-channel-bubbles" aria-label={t('personaEdit.channels')}>
           {localChannels.map((channel, index) => (
             <li key={`${channel}-${index}`}>
               <button
@@ -292,8 +294,8 @@ export function PersonaChannelBubbles({ personaId, channels, className }: Props)
               type="button"
               data-channel-bubble
               className="audion-channel-bubble audion-channel-bubble--add"
-              aria-label="Add channel"
-              title="Add channel"
+              aria-label={t('personaEdit.addChannel')}
+              title={t('personaEdit.addChannel')}
               disabled={saving}
               onClick={(e) => {
                 e.preventDefault()
@@ -312,14 +314,14 @@ export function PersonaChannelBubbles({ personaId, channels, className }: Props)
         </ul>
       ) : (
         <EmptyState>
-          No channels available yet.{' '}
+          {t('personaEdit.noChannels')}{' '}
           <button
             type="button"
             className="audion-link"
             disabled={saving}
             onClick={(e) => openAddMenu(e.currentTarget)}
           >
-            Add one
+            {t('personaEdit.addChannel')}
           </button>
         </EmptyState>
       )}
@@ -339,21 +341,19 @@ export function PersonaChannelBubbles({ personaId, channels, className }: Props)
             if (!saving) setDeleteIndex(null)
           }}
           className="audion-edit-dialog"
-          title="Delete channel?"
+          title={t('personaEdit.deleteChannelConfirm')}
           actions={
             <>
               <Button variant="ghost" size="md" onClick={() => setDeleteIndex(null)} disabled={saving}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button size="md" onClick={() => void onConfirmDelete()} disabled={saving}>
-                {saving ? 'Deleting…' : 'Delete'}
+                {saving ? t('common.deleting') : t('common.delete')}
               </Button>
             </>
           }
         >
-          <p>
-            Remove <strong>{deleteLabel}</strong> from channels?
-          </p>
+          <p>{t('personaEdit.removeChannelConfirm', { name: deleteLabel })}</p>
         </Dialog>
       ) : null}
     </Panel>

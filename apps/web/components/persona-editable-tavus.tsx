@@ -10,6 +10,7 @@ import {
   type TavusLanguageCode,
   type TavusLanguageSource,
 } from '../lib/tavus/language'
+import { useT } from '../lib/user-prefs'
 
 type Props = {
   personaId: string
@@ -23,11 +24,6 @@ type Props = {
   className?: string
 }
 
-const LANGUAGE_OPTIONS = paths.tavusLanguageChoices.map((value) => ({
-  value,
-  label: value === 'de' ? 'Deutsch' : 'English',
-}))
-
 export function PersonaEditableTavus({
   personaId,
   tavusReplicaId,
@@ -39,6 +35,7 @@ export function PersonaEditableTavus({
   profileDe,
   className,
 }: Props) {
+  const t = useT()
   const router = useRouter()
   const inferred = resolveTavusLanguage({ tavusLanguage, bio, location, headlineDe, profileDe })
   const [replicaId, setReplicaId] = useState(tavusReplicaId ?? '')
@@ -46,6 +43,11 @@ export function PersonaEditableTavus({
   const [language, setLanguage] = useState<TavusLanguageCode>(inferred)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const languageOptions = paths.tavusLanguageChoices.map((value) => ({
+    value,
+    label: value === 'de' ? t('settings.deutsch') : t('settings.english'),
+  }))
 
   useEffect(() => {
     setReplicaId(tavusReplicaId ?? '')
@@ -97,17 +99,17 @@ export function PersonaEditableTavus({
       as="section"
       className={['stage-panel', 'audion-magazine-band', className].filter(Boolean).join(' ')}
     >
-      <SectionChrome quiet title="Video (Tavus)" />
+      <SectionChrome quiet title={t('personaEdit.videoTavus')} />
       <p className="audion-edit-lede">
         Replica ID from the Tavus dashboard (starts with <code>r</code>, e.g. <code>r5e781e37a8d</code>
         ). Required for video. Saving a replica syncs a Tavus PAL from this magazine (name, bio, goals,
         style). PAL ID is filled in automatically; paste one only to reuse an existing PAL.
       </p>
       <div className="audion-persona-tavus-fields">
-        <Field label="Spoken language" size="md">
+        <Field label={t('personaEdit.spokenLanguage')} size="md">
           <ToggleGroup
-            aria-label="Spoken language"
-            options={LANGUAGE_OPTIONS}
+            aria-label={t('personaEdit.spokenLanguage')}
+            options={languageOptions}
             value={language}
             onChange={(value) => {
               const next = parseTavusLanguage(value) ?? language
@@ -116,7 +118,7 @@ export function PersonaEditableTavus({
             }}
           />
         </Field>
-        <Field label="Tavus replica ID" htmlFor="persona-tavus-replica" size="md">
+        <Field label={t('personaEdit.replicaId')} htmlFor="persona-tavus-replica" size="md">
           <Input
             id="persona-tavus-replica"
             block
@@ -128,7 +130,7 @@ export function PersonaEditableTavus({
             onBlur={() => void persist()}
           />
         </Field>
-        <Field label="Tavus PAL ID (synced)" htmlFor="persona-tavus-pal" size="md">
+        <Field label={t('personaEdit.palId')} htmlFor="persona-tavus-pal" size="md">
           <Input
             id="persona-tavus-pal"
             block
@@ -149,7 +151,7 @@ export function PersonaEditableTavus({
         disabled={saving}
         onClick={() => void persist()}
       >
-        {saving ? 'Saving…' : 'Save Tavus IDs'}
+        {saving ? t('common.saving') : t('personaEdit.saveTavusIds')}
       </Button>
     </Panel>
   )

@@ -7,6 +7,7 @@ import {
   type PersonaPolicySnapshot,
 } from '../lib/chat/persona-agent-context'
 import { parseScorecardMeta } from '../lib/chat/ux-journey-steps'
+import { useT } from '../lib/user-prefs'
 
 function scoreTone(kind: 'friction' | 'fit', value: number): 'good' | 'mid' | 'bad' {
   if (kind === 'friction') {
@@ -61,6 +62,7 @@ export function ChatInspectResultMeta({
   scorecard?: Record<string, unknown> | null
   personaPolicy?: PersonaPolicySnapshot | null
 }) {
+  const t = useT()
   const scores = parseScorecardMeta(scorecard)
   const policy = parsePersonaPolicyMeta(personaPolicy)
   if (!scores && !policy) return null
@@ -68,18 +70,18 @@ export function ChatInspectResultMeta({
   return (
     <div className="audion-chat-inspect-meta">
       {scores && (scores.friction != null || scores.fit != null) ? (
-        <div className="audion-chat-inspect-scores" aria-label="Inspection scorecard">
+        <div className="audion-chat-inspect-scores" aria-label={t('chatExtra.scorecard')}>
           {scores.friction != null ? (
-            <ScoreBar label="Friction" value={scores.friction} kind="friction" />
+            <ScoreBar label={t('chatExtra.friction')} value={scores.friction} kind="friction" />
           ) : null}
           {scores.fit != null ? (
-            <ScoreBar label="Persona fit" value={scores.fit} kind="fit" />
+            <ScoreBar label={t('chatExtra.personaFit')} value={scores.fit} kind="fit" />
           ) : null}
         </div>
       ) : null}
 
       {scores && (scores.strength || scores.weakness) ? (
-        <ul className="audion-chat-inspect-highlights" aria-label="Top findings">
+        <ul className="audion-chat-inspect-highlights" aria-label={t('chatExtra.topFindings')}>
           {scores.strength ? (
             <li>
               <Chip static size="sm" className="audion-chat-inspect-chip is-pos">
@@ -98,7 +100,10 @@ export function ChatInspectResultMeta({
       ) : null}
 
       {policy ? (
-        <div className="audion-chat-inspect-policy audion-chat-persona-policy" aria-label="Persona policy">
+        <div
+          className="audion-chat-inspect-policy audion-chat-persona-policy"
+          aria-label={t('chatExtra.personaPolicy')}
+        >
           <span className="audion-chat-inspect-policy-kicker">Policy</span>
           <ul className="audion-chat-inspect-policy-chips">
             {policy.dims.map((dim) => (

@@ -1,8 +1,11 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import type { TargetGroupDetail } from '@audion-v3/contracts'
 import { EmptyState, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { TargetGroupDetailActions } from './target-group-edit-dialog'
 import { GeneratePersonasAiButton } from './ai-workflow-actions'
 import { ResourceKnowledgeDossier } from './resource-knowledge-dossier'
@@ -30,19 +33,15 @@ export function TargetGroupDetailPanel({
 }: {
   targetGroup: TargetGroupDetail | null
 }) {
+  const t = useT()
+
   if (!targetGroup) {
     return (
       <div className="panel briefing-detail audion-magazine audion-magazine--empty">
         <Text role="label" className="briefing-eyebrow">
-          Target group
+          {t('detail.targetGroup.eyebrow')}
         </Text>
-        <EmptyState>
-          <Link href={paths.routes.targetGroups} className="audion-link">
-            Back to target groups
-          </Link>
-          {' — '}
-          this segment could not be loaded.
-        </EmptyState>
+        <EmptyState>{t('detail.targetGroup.missing')}</EmptyState>
       </div>
     )
   }
@@ -51,7 +50,7 @@ export function TargetGroupDetailPanel({
     <article className="panel briefing-detail audion-magazine">
       <div className="audion-magazine-topbar ds-motion-reveal">
         <p className="briefing-nav signal-nav">
-          <Link href={paths.routes.targetGroups}>Target groups</Link>
+          <Link href={paths.routes.targetGroups}>{t('nav.targetGroups')}</Link>
           <span className="briefing-nav-sep" aria-hidden>
             ·
           </span>
@@ -65,7 +64,7 @@ export function TargetGroupDetailPanel({
               href={paths.routes.chatTargetGroup(targetGroup.id)}
               className="audion-link audion-magazine-ask-all"
             >
-              Ask all personas
+              {t('detail.targetGroup.askAll')}
             </Link>
           ) : null}
           <TargetGroupDetailActions targetGroup={targetGroup} />
@@ -80,7 +79,7 @@ export function TargetGroupDetailPanel({
       <header className="signal-hero briefing-hero audion-magazine-hero audion-magazine-hero--text ds-motion-reveal">
         <div className="audion-magazine-hero-copy">
           <Text role="label" className="briefing-eyebrow">
-            Target group
+            {t('detail.targetGroup.eyebrow')}
           </Text>
           <Text role="headline" as="h2" className="signal-title">
             {targetGroup.name}
@@ -89,9 +88,13 @@ export function TargetGroupDetailPanel({
             {targetGroup.segment}
           </Text>
           <ul className="geo-places audion-magazine-facets" aria-label="Segment attributes">
-            <FacetTile label="Status" value={targetGroup.status} kind={targetGroup.status} />
             <FacetTile
-              label="Personas"
+              label={t('detail.persona.status')}
+              value={targetGroup.status}
+              kind={targetGroup.status}
+            />
+            <FacetTile
+              label={t('detail.project.personas')}
               value={String(targetGroup.personaCount)}
               kind="personas"
             />
@@ -106,7 +109,7 @@ export function TargetGroupDetailPanel({
       <div className="audion-magazine-body">
         <TargetGroupLinkedPersonas personas={targetGroup.linkedPersonas} />
         <ResourceKnowledgeDossier
-          title="Knowledge"
+          title={t('detail.targetGroup.knowledge')}
           entries={targetGroup.knowledgeEntries}
           documents={targetGroup.documents}
           listUrl={paths.routes.apiTargetGroupKnowledge(targetGroup.id)}

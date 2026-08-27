@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import type { ChatShareMoodboard } from '@audion-v3/contracts'
 import { Flyout, IconMoodboard, SectionChrome } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 
 export function ChatMoodboardStrip({
   personaId,
@@ -17,6 +18,7 @@ export function ChatMoodboardStrip({
   tiles?: ChatShareMoodboard['tiles']
   triggerClassName?: string
 }) {
+  const t = useT()
   const [board, setBoard] = useState<ChatShareMoodboard | null>(
     tiles?.length
       ? { personaId, projectId: projectId ?? null, styleKeywords: [], tiles }
@@ -48,9 +50,11 @@ export function ChatMoodboardStrip({
 
   if (!board?.tiles.length) return null
 
+  const moodboardLabel = t('chat.moodboard')
+
   return (
     <Flyout
-      label="Moodboard"
+      label={moodboardLabel}
       icon={<IconMoodboard />}
       resetKey={personaId}
       triggerClassName={triggerClassName}
@@ -58,12 +62,15 @@ export function ChatMoodboardStrip({
     >
       {() => (
         <>
-          <SectionChrome quiet title="Moodboard" meta={`${board.tiles.length}`} as="h3" />
+          <SectionChrome quiet title={moodboardLabel} meta={`${board.tiles.length}`} as="h3" />
           <ul className="audion-chat-moodboard-tiles">
             {board.tiles.map((tile) => (
               <li key={tile.id}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={tile.imageUrl} alt={tile.caption || tile.category || 'Moodboard tile'} />
+                <img
+                  src={tile.imageUrl}
+                  alt={tile.caption || tile.category || moodboardLabel}
+                />
                 {tile.caption ? <span>{tile.caption}</span> : null}
               </li>
             ))}

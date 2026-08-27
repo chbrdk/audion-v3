@@ -1,8 +1,11 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import type { PersonaList } from '@audion-v3/contracts'
 import { Button, EmptyState, Field, Input, SectionChrome, Panel, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { PersonaCreateButton } from './persona-actions'
 import { GeneratePersonasAiButton } from './ai-workflow-actions'
 
@@ -13,21 +16,22 @@ export function PersonaListPanel({
   list: PersonaList
   query: string
 }) {
+  const t = useT()
   return (
     <section className="audion-index audion-tg-index">
       <header className="audion-index-head">
-        <SectionChrome quiet title="Personas" meta={`${list.total}`} />
+        <SectionChrome quiet title={t('lists.personas.title')} meta={`${list.total}`} />
         <form action={paths.routes.personas} className="audion-search">
-          <Field label="Filter" className="audion-search__field">
+          <Field label={t('common.filter')} className="audion-search__field">
             <Input
               defaultValue={query}
               name="q"
-              aria-label="Search personas"
-              placeholder="Name, role, archetype…"
+              aria-label={t('lists.personas.searchAria')}
+              placeholder={t('lists.personas.searchPh')}
             />
           </Field>
           <Button type="submit" size="sm" variant="ghost">
-            Apply
+            {t('common.apply')}
           </Button>
         </form>
       </header>
@@ -66,7 +70,7 @@ export function PersonaListPanel({
         ))}
       </ul>
 
-      {!list.items.length ? <EmptyState>No personas match the current query.</EmptyState> : null}
+      {!list.items.length ? <EmptyState>{t('lists.personas.empty')}</EmptyState> : null}
     </section>
   )
 }

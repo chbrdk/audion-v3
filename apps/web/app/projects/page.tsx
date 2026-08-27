@@ -1,5 +1,6 @@
-import { Alert, TopStatus } from '@msqdx/ui'
+import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../components/app-shell'
+import { HubTopStatus } from '../../components/hub-top-status'
 import { ProjectListPanel } from '../../components/project-list-panel'
 import { fetchProjectList, filterProjectList } from '../../lib/projects'
 
@@ -16,26 +17,16 @@ export default async function ProjectsPage({
     const demo = result.origin === 'fixtures'
     return (
       <AppShell
-        title="Projects"
-        description={
-          demo
-            ? 'Local fixtures (no DATABASE_URL). Staging uses Postgres — Plexon-synced projects survive redeploy.'
-            : undefined
-        }
-        status={
-          <TopStatus
-            level="ok"
-            primary={demo ? 'demo data' : `${list.total} projects`}
-            secondary={demo ? `${list.total} fixtures` : 'live'}
-          />
-        }
+        titleKey="pages.projects.title"
+        descriptionKey={demo ? 'pages.projects.leadDemo' : undefined}
+        status={<HubTopStatus demo={demo} total={list.total} entity="projects" />}
       >
         <ProjectListPanel list={list} query={query} />
       </AppShell>
     )
   } catch (error) {
     return (
-      <AppShell title="Projects" description="Browse workspaces.">
+      <AppShell titleKey="pages.projects.title" descriptionKey="pages.projects.lead">
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Project backend unavailable.'}
         </Alert>

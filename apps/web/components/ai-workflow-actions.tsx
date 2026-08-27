@@ -14,6 +14,7 @@ import { Button, Field, Input, Textarea } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { AI_WORKFLOW_TARGETS, targetHint } from '../lib/ai-workflow-targets'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { AiActionButton } from './ai-action-button'
 
 type AiOptions = {
@@ -67,6 +68,7 @@ function SuggestionList({
   onAccept: (item: AiSuggestionItem) => void
   accepting: string | null
 }) {
+  const t = useT()
   return (
     <ul className="audion-ai-suggestions">
       {items.map((item) => (
@@ -85,7 +87,7 @@ function SuggestionList({
             disabled={accepting === item.id}
             onClick={() => onAccept(item)}
           >
-            {accepting === item.id ? 'Creating…' : 'Create'}
+            {accepting === item.id ? t('common.creating') : t('common.create')}
           </Button>
         </li>
       ))}
@@ -106,6 +108,7 @@ export function GeneratePersonasAiButton({
   defaultDescription?: string | null
   variant?: 'button' | 'card'
 }) {
+  const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [options, setOptions] = useState<AiOptions | null>(null)
@@ -168,29 +171,33 @@ export function GeneratePersonasAiButton({
           onClick={() => setOpen(true)}
         >
           <span className="audion-tg-card-panel audion-tg-card-panel--create">
-            <span className="audion-tg-card-title">Generate with AI</span>
+            <span className="audion-tg-card-title">{t('tiles.aiGenerate')}</span>
             <p className="audion-tg-card-meta">
-              <span>Stub → personas/generate</span>
+              <span>{t('tiles.aiGeneratePersonasMeta')}</span>
             </p>
           </span>
         </button>
       ) : (
-        <AiActionButton label="Generate with AI" targetHint={hint} onClick={() => setOpen(true)} />
+        <AiActionButton
+          label={t('tiles.aiGenerate')}
+          targetHint={hint}
+          onClick={() => setOpen(true)}
+        />
       )}
       {open ? (
         <Dialog
           open
           onClose={() => setOpen(false)}
           className="audion-edit-dialog"
-          title="Generate personas"
+          title={t('dialogs.aiGeneratePersonasTitle')}
           actions={
             <>
               <Button type="button" variant="ghost" size="md" onClick={() => setOpen(false)}>
-                {result ? 'Close' : 'Cancel'}
+                {result ? t('common.close') : t('common.cancel')}
               </Button>
               {!result ? (
                 <Button type="button" size="md" disabled={busy} onClick={() => void run()}>
-                  {busy ? 'Generating…' : 'Generate'}
+                  {busy ? t('common.generating') : t('common.generate')}
                 </Button>
               ) : null}
             </>
@@ -203,13 +210,13 @@ export function GeneratePersonasAiButton({
               stubbed={result?.stubbed}
             />
             {!targetGroupId ? (
-              <Field label="Target group" size="md" className="audion-edit-field">
+              <Field label={t('dialogs.fieldTargetGroup')} size="md" className="audion-edit-field">
                 <Select
                   size="md"
                   value={tgId}
                   onChange={setTgId}
                   options={[
-                    { value: '', label: 'Select…' },
+                    { value: '', label: t('common.select') },
                     ...(options?.targetGroups.map((g) => ({
                       value: g.id,
                       label: `${g.name} · ${g.segment}`,
@@ -218,7 +225,7 @@ export function GeneratePersonasAiButton({
                 />
               </Field>
             ) : null}
-            <Field label="Segment" size="md" className="audion-edit-field">
+            <Field label={t('dialogs.fieldSegment')} size="md" className="audion-edit-field">
               <Input size="md" block value={segment} onChange={(e) => setSegment(e.target.value)} />
             </Field>
             <Field label="Brief (optional)" size="md" className="audion-edit-field">
@@ -258,6 +265,7 @@ export function SuggestTargetGroupsAiButton({
   projectId?: string
   variant?: 'button' | 'card'
 }) {
+  const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [options, setOptions] = useState<AiOptions | null>(null)
@@ -342,29 +350,33 @@ export function SuggestTargetGroupsAiButton({
           onClick={() => setOpen(true)}
         >
           <span className="audion-tg-card-panel audion-tg-card-panel--create">
-            <span className="audion-tg-card-title">Suggest with AI</span>
+            <span className="audion-tg-card-title">{t('tiles.aiSuggest')}</span>
             <p className="audion-tg-card-meta">
-              <span>Stub → suggest-target-groups</span>
+              <span>{t('tiles.aiSuggestTgMeta')}</span>
             </p>
           </span>
         </button>
       ) : (
-        <AiActionButton label="Suggest with AI" targetHint={hint} onClick={() => setOpen(true)} />
+        <AiActionButton
+          label={t('tiles.aiSuggest')}
+          targetHint={hint}
+          onClick={() => setOpen(true)}
+        />
       )}
       {open ? (
         <Dialog
           open
           onClose={() => setOpen(false)}
           className="audion-edit-dialog"
-          title="Suggest target groups"
+          title={t('dialogs.aiSuggestTgTitle')}
           actions={
             <>
               <Button type="button" variant="ghost" size="md" onClick={() => setOpen(false)}>
-                Close
+                {t('common.close')}
               </Button>
               {!suggestions ? (
                 <Button type="button" size="md" disabled={busy} onClick={() => void run()}>
-                  {busy ? 'Suggesting…' : 'Suggest'}
+                  {busy ? t('common.suggesting') : t('common.suggest')}
                 </Button>
               ) : null}
             </>
@@ -377,13 +389,13 @@ export function SuggestTargetGroupsAiButton({
               stubbed={stubbed}
             />
             {!projectId ? (
-              <Field label="Project" size="md" className="audion-edit-field">
+              <Field label={t('dialogs.fieldProject')} size="md" className="audion-edit-field">
                 <Select
                   size="md"
                   value={pid}
                   onChange={setPid}
                   options={[
-                    { value: '', label: 'Select…' },
+                    { value: '', label: t('common.select') },
                     ...(options?.projects.map((p) => ({ value: p.id, label: p.name })) ?? []),
                   ]}
                 />
@@ -413,6 +425,7 @@ export function SuggestPersonasAiButton({
   projectId: string
   targetGroups: Array<{ id: string; name: string; segment: string }>
 }) {
+  const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [tgId, setTgId] = useState(targetGroups[0]?.id ?? '')
@@ -499,21 +512,25 @@ export function SuggestPersonasAiButton({
 
   return (
     <>
-      <AiActionButton label="Suggest personas" targetHint={hint} onClick={() => setOpen(true)} />
+      <AiActionButton
+        label={t('tiles.aiSuggestPersonas')}
+        targetHint={hint}
+        onClick={() => setOpen(true)}
+      />
       {open ? (
         <Dialog
           open
           onClose={() => setOpen(false)}
           className="audion-edit-dialog"
-          title="Suggest personas"
+          title={t('dialogs.aiSuggestPersonasTitle')}
           actions={
             <>
               <Button type="button" variant="ghost" size="md" onClick={() => setOpen(false)}>
-                Close
+                {t('common.close')}
               </Button>
               {!suggestions ? (
                 <Button type="button" size="md" disabled={busy || !tgId} onClick={() => void run()}>
-                  {busy ? 'Suggesting…' : 'Suggest'}
+                  {busy ? t('common.suggesting') : t('common.suggest')}
                 </Button>
               ) : null}
             </>
@@ -525,13 +542,13 @@ export function SuggestPersonasAiButton({
               hint={targetPath}
               stubbed={stubbed}
             />
-            <Field label="Target group" size="md" className="audion-edit-field">
+            <Field label={t('dialogs.fieldTargetGroup')} size="md" className="audion-edit-field">
               <Select
                 size="md"
                 value={tgId}
                 onChange={setTgId}
                 options={[
-                  { value: '', label: targetGroups.length ? 'Select…' : 'No target groups yet' },
+                  { value: '', label: targetGroups.length ? t('common.select') : 'No target groups yet' },
                   ...targetGroups.map((g) => ({
                     value: g.id,
                     label: `${g.name} · ${g.segment}`,
@@ -557,6 +574,7 @@ export function SuggestPersonasAiButton({
 /* ─── Research start ─── */
 
 export function ResearchStartAiButton({ projectId }: { projectId: string }) {
+  const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [seedUrl, setSeedUrl] = useState('')
@@ -673,17 +691,21 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
 
   return (
     <>
-      <AiActionButton label="Start research" targetHint={hint} onClick={() => setOpen(true)} />
+      <AiActionButton
+        label={t('tiles.aiStartResearch')}
+        targetHint={hint}
+        onClick={() => setOpen(true)}
+      />
       {open ? (
         <Dialog
           open
           onClose={() => setOpen(false)}
           className="audion-edit-dialog"
-          title="Start research"
+          title={t('dialogs.aiStartResearchTitle')}
           actions={
             <>
               <Button type="button" variant="ghost" size="md" onClick={() => setOpen(false)}>
-                Close
+                {t('common.close')}
               </Button>
               {latestSummary ? (
                 <Button
@@ -692,12 +714,12 @@ export function ResearchStartAiButton({ projectId }: { projectId: string }) {
                   disabled={applying}
                   onClick={() => void applyToKnowledge()}
                 >
-                  {applying ? 'Adding…' : 'Add to project knowledge'}
+                  {applying ? t('dialogs.aiAdding') : t('dialogs.aiAddToKnowledge')}
                 </Button>
               ) : null}
               {!job ? (
                 <Button type="button" size="md" disabled={busy} onClick={() => void run()}>
-                  {busy ? 'Starting…' : 'Start'}
+                  {busy ? t('common.starting') : t('common.start')}
                 </Button>
               ) : null}
             </>
@@ -769,6 +791,7 @@ export function GenerateJourneyAiButton({
   defaultTargetGroupId?: string | null
   variant?: 'button' | 'card'
 }) {
+  const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [options, setOptions] = useState<AiOptions | null>(null)
@@ -824,28 +847,32 @@ export function GenerateJourneyAiButton({
           onClick={() => setOpen(true)}
         >
           <span className="audion-tg-card-panel audion-tg-card-panel--create">
-            <span className="audion-tg-card-title">Generate with AI</span>
+            <span className="audion-tg-card-title">{t('tiles.aiGenerate')}</span>
             <p className="audion-tg-card-meta">
-              <span>Stub → journeys/generate</span>
+              <span>{t('tiles.aiGenerateJourneyMeta')}</span>
             </p>
           </span>
         </button>
       ) : (
-        <AiActionButton label="Generate journey" targetHint={hint} onClick={() => setOpen(true)} />
+        <AiActionButton
+          label={t('tiles.aiGenerateJourney')}
+          targetHint={hint}
+          onClick={() => setOpen(true)}
+        />
       )}
       {open ? (
         <Dialog
           open
           onClose={() => setOpen(false)}
           className="audion-edit-dialog"
-          title="Generate journey"
+          title={t('dialogs.aiGenerateJourneyTitle')}
           actions={
             <>
               <Button type="button" variant="ghost" size="md" onClick={() => setOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="button" size="md" disabled={busy} onClick={() => void run()}>
-                {busy ? 'Generating…' : 'Generate'}
+                {busy ? t('common.generating') : t('common.generate')}
               </Button>
             </>
           }
@@ -865,7 +892,7 @@ export function GenerateJourneyAiButton({
                 value={tgId}
                 onChange={setTgId}
                 options={[
-                  { value: '', label: 'None' },
+                  { value: '', label: t('common.none') },
                   ...(options?.targetGroups
                     .filter((g) => !projectId || g.projectId === projectId || !g.projectId)
                     .map((g) => ({ value: g.id, label: `${g.name} · ${g.segment}` })) ?? []),
@@ -901,8 +928,9 @@ export function ProjectAiActions({
   projectId: string
   targetGroups: Array<{ id: string; name: string; segment: string }>
 }) {
+  const t = useT()
   return (
-    <div className="audion-ai-actions" aria-label="AI actions">
+    <div className="audion-ai-actions" aria-label={t('tiles.aiActionsAria')}>
       <SuggestTargetGroupsAiButton projectId={projectId} />
       <SuggestPersonasAiButton projectId={projectId} targetGroups={targetGroups} />
       <ResearchStartAiButton projectId={projectId} />

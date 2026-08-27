@@ -5,6 +5,7 @@ import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import type { UxFlowGateCondition, UxFlowNode, UxFlowNodeKind } from '@audion-v3/contracts'
 import { Button, FlowNodeCard, Input, Textarea } from '@msqdx/ui'
 import { UX_FLOW_GATE_OPTIONS, type UxFlowRfNodeData } from '../lib/ux-flow-canvas'
+import { useT } from '../lib/user-prefs'
 
 type UxFlowNodeType = Node<UxFlowRfNodeData, 'uxFlow'>
 
@@ -25,6 +26,7 @@ function stopDrag(e: MouseEvent) {
 }
 
 function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
+  const t = useT()
   const flowNode = data.flowNode
   const onUpdate = data.onUpdate
   const runState = data.runState ?? 'idle'
@@ -163,7 +165,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
             className="msqdx-flow-rf-ds-input"
             value={flowNode.label}
             onChange={onLabel}
-            placeholder="Node name"
+            placeholder={t('inspector.nodeName')}
           />
         </label>
 
@@ -259,7 +261,7 @@ function UxFlowRfNodeInner({ id, data, selected }: NodeProps<UxFlowNodeType>) {
               rows={kind === 'observe' ? 2 : 3}
               value={flowNode.text ?? ''}
               onChange={onText}
-              placeholder="Instruction / question…"
+              placeholder={t('inspector.instructionPh')}
             />
           </label>
         ) : null}

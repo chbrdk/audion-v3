@@ -7,6 +7,7 @@ import { Button, EmptyState, Panel, SectionChrome, Slider } from '@msqdx/ui'
 import { Dialog } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { mergeStringSuggestions } from '../lib/persona-field-suggest'
+import { useT } from '../lib/user-prefs'
 import { SuggestPersonaFieldButton } from './suggest-persona-field-button'
 
 export type CommLayout = 'quote' | 'tone'
@@ -41,6 +42,7 @@ function readLayout(): CommLayout {
 }
 
 export function PersonaEditableCommunication({ personaId, communicationStyle, className }: Props) {
+  const t = useT()
   const router = useRouter()
   const baseId = useId()
   const [layout, setLayout] = useState<CommLayout>('quote')
@@ -277,7 +279,7 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
         disabled={saving}
       >
         {local.sentenceStructure || (
-          <span className="audion-editable-list-placeholder">Describe how this persona speaks…</span>
+          <span className="audion-editable-list-placeholder">{t('personaEdit.speakPh')}</span>
         )}
       </button>
     )
@@ -287,14 +289,14 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
     return (
       <div className="audion-editable-comm-dial">
         <div className="audion-editable-comm-dial-labels" aria-hidden>
-          <span>Open</span>
-          <span>Skeptical</span>
+          <span>{t('personaEdit.open')}</span>
+          <span>{t('personaEdit.skeptical')}</span>
         </div>
         <Slider
           className="audion-editable-comm-dial-slider"
           value={skepticismPct}
           disabled={saving}
-          aria-label="Skepticism level"
+          aria-label={t('personaEdit.skepticism')}
           onChange={onSliderInput}
           onCommit={(n) => void onSliderCommit(n)}
         />
@@ -308,7 +310,7 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
   function renderChips() {
     return (
       <div className="audion-editable-comm-chips">
-        <span className="audion-editable-comm-kicker">Vocabulary</span>
+        <span className="audion-editable-comm-kicker">{t('personaEdit.vocabulary')}</span>
         <ul className="audion-editable-comm-chip-row">
           {local.vocabulary.map((word, index) => {
             const isEditing = editingVocabIndex === index
@@ -404,7 +406,7 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
       <div className="audion-editable-comm-chrome">
         <SectionChrome
           quiet
-          title="Communication"
+          title={t('personaEdit.communication')}
           meta={`${vocabCount}`}
           as="h3"
           action={
@@ -412,7 +414,7 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
               <SuggestPersonaFieldButton
                 personaId={personaId}
                 field="vocabulary"
-                label="Suggest vocab"
+                label={t('personaEdit.suggestVocab')}
                 disabled={saving || editingVocabIndex != null || editingStructure}
                 onAccept={async (item) => {
                   const current = localRef.current
@@ -424,7 +426,7 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
               <SuggestPersonaFieldButton
                 personaId={personaId}
                 field="sentenceStructure"
-                label="Suggest structure"
+                label={t('personaEdit.suggestStructure')}
                 disabled={saving || editingVocabIndex != null || editingStructure}
                 onAccept={async (item) => {
                   const current = localRef.current
@@ -438,14 +440,14 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
             </div>
           }
         />
-        <div className="audion-editable-comm-layout-switch" role="group" aria-label="Communication layout">
+        <div className="audion-editable-comm-layout-switch" role="group" aria-label={t('personaEdit.commLayout')}>
           <button
             type="button"
             className={layout === 'quote' ? 'is-active' : undefined}
             aria-pressed={layout === 'quote'}
             onClick={() => chooseLayout('quote')}
           >
-            Quote
+            {t('personaEdit.quote')}
           </button>
           <button
             type="button"
@@ -453,7 +455,7 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
             aria-pressed={layout === 'tone'}
             onClick={() => chooseLayout('tone')}
           >
-            Tone
+            {t('personaEdit.tone')}
           </button>
         </div>
       </div>
@@ -461,7 +463,7 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
       {layout === 'quote' ? (
         <div className="audion-editable-comm-layout audion-editable-comm-layout--quote">
           <figure className="audion-editable-comm-quote-block">
-            <span className="audion-editable-comm-kicker">How they speak</span>
+            <span className="audion-editable-comm-kicker">{t('personaEdit.howTheySpeak')}</span>
             {renderStructure('quote')}
           </figure>
           {renderChips()}
@@ -470,7 +472,7 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
         <div className="audion-editable-comm-layout audion-editable-comm-layout--tone">
           {renderStructure('caption')}
           <div className="audion-editable-comm-tone-block">
-            <span className="audion-editable-comm-kicker">Tone dial</span>
+            <span className="audion-editable-comm-kicker">{t('personaEdit.toneDial')}</span>
             {renderToneDial()}
           </div>
           {renderChips()}
@@ -490,14 +492,14 @@ export function PersonaEditableCommunication({ personaId, communicationStyle, cl
             if (!saving) setDeleteVocabIndex(null)
           }}
           className="audion-edit-dialog"
-          title="Delete vocabulary item?"
+          title={t('personaEdit.deleteVocabConfirm')}
           actions={
             <>
               <Button variant="ghost" size="md" onClick={() => setDeleteVocabIndex(null)} disabled={saving}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button size="md" onClick={() => void onConfirmDeleteVocab()} disabled={saving}>
-                {saving ? 'Deleting…' : 'Delete'}
+                {saving ? t('common.deleting') : t('common.delete')}
               </Button>
             </>
           }

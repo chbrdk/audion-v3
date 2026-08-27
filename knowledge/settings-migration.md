@@ -47,11 +47,11 @@ Nav: `msqdx-glass-admin-layout.tsx` — separate Profile + Settings items.
 
 - Route: `/settings` · `apps/web/app/settings/page.tsx` · `components/settings-page.tsx`
 - Admin hub: `/settings/admin*` · `knowledge/settings-admin-2026.md`
-- Prefs: `apps/web/lib/user-prefs.tsx` · keys in `paths` (`displayNameStorageKey`, `themeStorageKey`, `localeStorageKey`)
+- Prefs: `apps/web/lib/user-prefs.tsx` · keys in `paths` (`displayNameStorageKey`, `themeStorageKey`, `localeStorageKey`) · **SET-L1** `t` via `lib/i18n.ts` + `locales/{en,de}.json` (`knowledge/i18n.md`)
 - Account: NextAuth session → name/email from Plexon; Sign out → `/login` · see `knowledge/plexon-federation.md`
 - Shell: rail avatar enabled → `paths.routes.settings`
-- Spec: `specs/domain/settings.md`
-- Tests: `__tests__/projects-settings.test.tsx` · `settings-admin.test.*` · `app-shell.test.tsx` · `login-page.test.tsx`
+- Spec: `specs/domain/settings.md` (SET-L1 locale chrome)
+- Tests: `__tests__/projects-settings.test.tsx` · `settings-admin.test.*` · `app-shell.test.tsx` · `login-page.test.tsx` · `i18n-locale-toggle.test.tsx`
 
 ## Recommended MVP composition
 

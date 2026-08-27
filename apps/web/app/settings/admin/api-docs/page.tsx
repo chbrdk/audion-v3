@@ -3,7 +3,7 @@ import { SettingsAdminApiDocsPanel } from '../../../../components/settings-admin
 
 export default function SettingsAdminApiDocsPage() {
   return (
-    <AppShell title="API docs" description="Route catalog and live health JSON.">
+    <AppShell titleKey="pages.apiDocs.title" descriptionKey="pages.apiDocs.lead">
       <SettingsAdminApiDocsPanel />
     </AppShell>
   )

@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react'
 import { Button, Flyout, IconShare, SectionChrome } from '@msqdx/ui'
 import { buildChatShareHref } from '../lib/chat/share'
+import { useT } from '../lib/user-prefs'
 
 export function ChatShareFlyout({
   personaId,
@@ -13,6 +14,7 @@ export function ChatShareFlyout({
   personaName?: string | null
   projectId: string
 }) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
   const href = useMemo(
     () => buildChatShareHref({ personaId, projectId }),
@@ -33,7 +35,7 @@ export function ChatShareFlyout({
 
   return (
     <Flyout
-      label="Share"
+      label={t('chat.share')}
       icon={<IconShare />}
       resetKey={personaId}
       triggerClassName="audion-chat-topbar-icon"
@@ -42,21 +44,22 @@ export function ChatShareFlyout({
     >
       {() => (
         <>
-          <SectionChrome quiet title="Share chat" as="h3" />
+          <SectionChrome quiet title={t('chat.shareTitle')} as="h3" />
           <p className="audion-edit-lede audion-chat-flyover-lede">
-            Share this link so others can open a chat with{' '}
-            <strong>{personaName || 'this persona'}</strong>.
+            {t('chat.shareLede', {
+              name: personaName || t('chat.shareLedeFallback'),
+            })}
           </p>
           <input
             className="audion-chat-share-url"
             readOnly
             value={absolute}
-            aria-label="Share link"
+            aria-label={t('chat.shareLinkAria')}
             onFocus={(e) => e.currentTarget.select()}
           />
           <div className="audion-chat-flyover-actions">
             <Button type="button" size="sm" onClick={() => void copyLink()}>
-              {copied ? 'Copied' : 'Copy link'}
+              {copied ? t('common.copied') : t('chat.copyLink')}
             </Button>
           </div>
         </>

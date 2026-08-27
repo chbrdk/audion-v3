@@ -3,7 +3,7 @@ import { SettingsPage } from '../../components/settings-page'
 
 export default function SettingsRoutePage() {
   return (
-    <AppShell title="Settings" description="Profile, appearance, and language.">
+    <AppShell titleKey="pages.settings.title" descriptionKey="pages.settings.lead">
       <SettingsPage />
     </AppShell>
   )

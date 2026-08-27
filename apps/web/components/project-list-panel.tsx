@@ -1,11 +1,15 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import type { ProjectList } from '@audion-v3/contracts'
 import { EmptyState, Panel, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { ProjectCreateButton } from './project-edit-dialog'
 
 export function ProjectListPanel({ list, query = '' }: { list: ProjectList; query?: string }) {
+  const t = useT()
   return (
     <section className="audion-index audion-tg-index">
       <ul className="audion-tg-grid">
@@ -16,10 +20,10 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
           <Link href={paths.routes.setup} className="audion-tg-card audion-tg-card--create">
             <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
               <Text role="headline" as="span" className="audion-tg-card-title">
-                Easy setup
+                {t('lists.projects.easySetup')}
               </Text>
               <p className="audion-tg-card-meta">
-                <span>Project + group + persona</span>
+                <span>{t('lists.projects.easySetupMeta')}</span>
               </p>
             </Panel>
           </Link>
@@ -36,11 +40,17 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
                 </Text>
                 <p className="audion-tg-card-meta">
                   <span>
-                    {item.personaCount} persona{item.personaCount === 1 ? '' : 's'}
+                    {t(
+                      item.personaCount === 1 ? 'lists.projects.personaOne' : 'lists.projects.personaMany',
+                      { count: item.personaCount },
+                    )}
                   </span>
                   <span aria-hidden>·</span>
                   <span>
-                    {item.targetGroupCount} group{item.targetGroupCount === 1 ? '' : 's'}
+                    {t(
+                      item.targetGroupCount === 1 ? 'lists.projects.groupOne' : 'lists.projects.groupMany',
+                      { count: item.targetGroupCount },
+                    )}
                   </span>
                   <span aria-hidden>·</span>
                   <span data-status={item.status}>{item.status}</span>
@@ -51,7 +61,7 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
         ))}
       </ul>
 
-      {!list.items.length ? <EmptyState>No projects yet.</EmptyState> : null}
+      {!list.items.length ? <EmptyState>{t('lists.projects.empty')}</EmptyState> : null}
     </section>
   )
 }

@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react'
 import { Text } from '@msqdx/ui'
 import { substituteVars } from '../../lib/ai/prompts/render'
+import { useT } from '../../lib/user-prefs'
 import { generateMockContext } from './mockData'
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 }
 
 export function LivePreviewPanel({ prompt, context, useMockData }: Props) {
+  const t = useT()
   const rendered = useMemo(() => {
     const vars = useMockData ? { ...generateMockContext(), ...context } : context
     return substituteVars(prompt, vars)
@@ -19,7 +21,7 @@ export function LivePreviewPanel({ prompt, context, useMockData }: Props) {
 
   return (
     <div className="pb-preview" data-testid="pb-live-preview">
-      <Text role="meta">Resolved prompt (client-side dollar-brace vars only)</Text>
+      <Text role="meta">{t('prompts.resolvedPrompt')}</Text>
       <pre className="pb-preview__pre">{rendered || '—'}</pre>
     </div>
   )

@@ -11,6 +11,7 @@ import {
   mergeGoalSuggestions,
   mergeStringSuggestions,
 } from '../lib/persona-field-suggest'
+import { useT } from '../lib/user-prefs'
 import { IconDelete } from './nav-icons'
 import { SuggestPersonaFieldButton } from './suggest-persona-field-button'
 
@@ -63,6 +64,7 @@ export function PersonaEditableList({
   empty,
   className,
 }: Props) {
+  const t = useT()
   const router = useRouter()
   const baseId = useId()
   const [localItems, setLocalItems] = useState(items)
@@ -284,8 +286,8 @@ export function PersonaEditableList({
                     variant="ghost"
                     size="sm"
                     className="audion-edit-icon-btn audion-delete-icon-btn audion-editable-list-delete"
-                    aria-label={`Delete ${title.toLowerCase()} item ${index + 1}`}
-                    title="Delete"
+                    aria-label={`${t('common.delete')} ${title.toLowerCase()} item ${index + 1}`}
+                    title={t('common.delete')}
                     icon={<IconDelete />}
                     disabled={saving}
                     onClick={() => setDeleteIndex(index)}
@@ -317,7 +319,7 @@ export function PersonaEditableList({
               <span className="audion-magazine-list-num" aria-hidden>
                 {nextNum}
               </span>
-              <span className="audion-editable-list-add-label">Add item</span>
+              <span className="audion-editable-list-add-label">{t('personaEdit.addItem')}</span>
             </button>
           </div>
         </div>
@@ -336,14 +338,14 @@ export function PersonaEditableList({
             if (!saving) setDeleteIndex(null)
           }}
           className="audion-edit-dialog"
-          title={`Delete ${singular}?`}
+          title={t('personaEdit.deleteSingularConfirm', { singular })}
           actions={
             <>
               <Button variant="ghost" size="md" onClick={() => setDeleteIndex(null)} disabled={saving}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button size="md" onClick={() => void onConfirmDelete()} disabled={saving}>
-                {saving ? 'Deleting…' : 'Delete'}
+                {saving ? t('common.deleting') : t('common.delete')}
               </Button>
             </>
           }

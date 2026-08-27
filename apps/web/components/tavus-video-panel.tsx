@@ -4,6 +4,7 @@ import React, { useEffect } from 'react'
 import { Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { tavusEmbedUrl } from '../lib/tavus/ids'
+import { useT } from '../lib/user-prefs'
 
 export type TavusSessionConfig = {
   conversationUrl?: string | null
@@ -17,6 +18,7 @@ type Props = {
 }
 
 export function TavusVideoPanel({ session, personaName }: Props) {
+  const t = useT()
   const url = session.conversationUrl?.trim()
   const conversationId = session.conversationId?.trim() || null
 
@@ -35,18 +37,20 @@ export function TavusVideoPanel({ session, personaName }: Props) {
   if (!url) {
     return (
       <div className="audion-tavus-video-panel audion-tavus-video-panel--empty" role="status">
-        <Text role="body">No conversation URL from Tavus.</Text>
+        <Text role="body">{t('tavus.noUrl')}</Text>
       </div>
     )
   }
 
   const embedUrl = tavusEmbedUrl(url, session.meetingToken)
-  const title = personaName ? `Tavus video: ${personaName}` : 'Tavus video call'
+  const title = personaName
+    ? t('tavus.callWith', { name: personaName })
+    : t('tavus.iframeTitle')
 
   return (
     <div className="audion-tavus-video-panel">
       {personaName ? (
-        <p className="audion-tavus-video-caption">Video call with {personaName}</p>
+        <p className="audion-tavus-video-caption">{t('tavus.callWith', { name: personaName })}</p>
       ) : null}
       <iframe
         src={embedUrl}

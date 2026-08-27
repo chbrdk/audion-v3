@@ -6,12 +6,8 @@ import type { UxWaveDetail, UxWaveWritePayload } from '@audion-v3/contracts'
 import { Button, Field, Input, Textarea, LedeStrip } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { TOOL_URL, HOME_URL } from '../lib/fixtures/ux-studies'
-
-const STEPS = [
-  { id: 'wave', label: 'Wave' },
-  { id: 'seed', label: 'Seed run' },
-]
 
 const URL_OPTIONS = [
   { value: 'tool', label: 'Produktkombinationen tool' },
@@ -45,6 +41,7 @@ export function WaveEditDialog({
   studyId: string
   defaultTargetUrlKey?: string | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [waveKey, setWaveKey] = useState('')
@@ -57,6 +54,11 @@ export function WaveEditDialog({
   const [keyError, setKeyError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  const steps = [
+    { id: 'wave', label: t('dialogs.waveStepWave') },
+    { id: 'seed', label: t('dialogs.waveStepSeed') },
+  ]
 
   useEffect(() => {
     if (!open) return
@@ -72,7 +74,7 @@ export function WaveEditDialog({
 
   async function onSave() {
     if (!waveKey.trim()) {
-      setKeyError('Wave key is required')
+      setKeyError(t('dialogs.waveKeyRequired'))
       setStep(0)
       return
     }
@@ -110,7 +112,7 @@ export function WaveEditDialog({
       router.push(paths.routes.studyWaveDetail(studyId, saved.id))
       router.refresh()
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Save failed')
+      setSaveError(error instanceof Error ? error.message : t('dialogs.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -121,38 +123,36 @@ export function WaveEditDialog({
       open={open}
       onClose={onClose}
       className="audion-edit-dialog"
-      title="New wave"
+      title={t('dialogs.waveNewTitle')}
       actions={
         <>
           <Button variant="ghost" size="md" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           {step > 0 ? (
             <Button variant="subtle" size="md" onClick={() => setStep((s) => s - 1)} disabled={saving}>
-              Back
+              {t('common.back')}
             </Button>
           ) : null}
-          {step < STEPS.length - 1 ? (
+          {step < steps.length - 1 ? (
             <Button size="md" onClick={() => setStep((s) => s + 1)} disabled={saving}>
-              Next
+              {t('common.next')}
             </Button>
           ) : (
             <Button size="md" onClick={() => void onSave()} disabled={saving}>
-              {saving ? 'Creating…' : 'Create wave'}
+              {saving ? t('common.creating') : t('dialogs.createWave')}
             </Button>
           )}
         </>
       }
     >
       <div className="audion-edit-form">
-        <LedeStrip variant="steps" steps={STEPS} activeIndex={step} onStepSelect={setStep} />
-        <p className="audion-edit-lede">
-          Seed one run plan (URL, persona, segment, task). Start orchestration from the wave page.
-        </p>
+        <LedeStrip variant="steps" steps={steps} activeIndex={step} onStepSelect={setStep} />
+        <p className="audion-edit-lede">{t('dialogs.waveLede')}</p>
 
         {step === 0 ? (
           <Field
-            label="Wave key"
+            label={t('dialogs.waveKey')}
             size="md"
             error={keyError ?? undefined}
             htmlFor="wave-key"
@@ -166,12 +166,12 @@ export function WaveEditDialog({
                 setWaveKey(e.target.value)
                 if (keyError) setKeyError(null)
               }}
-              placeholder="e.g. 2026-08-nav-retest"
+              placeholder={t('dialogs.waveKeyPh')}
             />
           </Field>
         ) : (
           <>
-            <Field label="URL" size="md" htmlFor="wave-url" className="audion-edit-field">
+            <Field label={t('dialogs.fieldUrl')} size="md" htmlFor="wave-url" className="audion-edit-field">
               <Select
                 id="wave-url"
                 options={URL_OPTIONS}
@@ -179,7 +179,12 @@ export function WaveEditDialog({
                 onChange={setUrlKey}
               />
             </Field>
-            <Field label="Persona" size="md" htmlFor="wave-persona" className="audion-edit-field">
+            <Field
+              label={t('dialogs.fieldPersona')}
+              size="md"
+              htmlFor="wave-persona"
+              className="audion-edit-field"
+            >
               <Select
                 id="wave-persona"
                 options={PERSONA_OPTIONS}
@@ -187,7 +192,12 @@ export function WaveEditDialog({
                 onChange={setPersonaId}
               />
             </Field>
-            <Field label="Segment" size="md" htmlFor="wave-segment" className="audion-edit-field">
+            <Field
+              label={t('dialogs.fieldSegment')}
+              size="md"
+              htmlFor="wave-segment"
+              className="audion-edit-field"
+            >
               <Select
                 id="wave-segment"
                 options={SEGMENT_OPTIONS}
@@ -195,7 +205,7 @@ export function WaveEditDialog({
                 onChange={setSegment}
               />
             </Field>
-            <Field label="Task" size="md" htmlFor="wave-task" className="audion-edit-field">
+            <Field label={t('dialogs.fieldTask')} size="md" htmlFor="wave-task" className="audion-edit-field">
               <Textarea
                 id="wave-task"
                 block
@@ -224,11 +234,12 @@ export function WaveCreateButton({
   studyId: string
   defaultTargetUrlKey?: string | null
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
       <Button type="button" size="sm" onClick={() => setOpen(true)}>
-        New wave
+        {t('tiles.newWave')}
       </Button>
       {open ? (
         <WaveEditDialog

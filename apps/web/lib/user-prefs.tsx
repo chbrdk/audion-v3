@@ -9,6 +9,7 @@ import React, {
   useState,
   type ReactNode,
 } from 'react'
+import { createTranslator, type Translator } from './i18n'
 import { paths } from './paths'
 
 export type UiThemeId = (typeof paths.themeChoices)[number]
@@ -21,6 +22,7 @@ type UserPrefsContextValue = {
   setTheme: (next: UiThemeId) => void
   locale: UiLocaleId
   setLocale: (next: UiLocaleId) => void
+  t: Translator
 }
 
 const UserPrefsContext = createContext<UserPrefsContextValue | null>(null)
@@ -108,9 +110,11 @@ export function UserPrefsProvider({ children }: { children: ReactNode }) {
     applyLocale(next)
   }, [])
 
+  const t = useMemo(() => createTranslator(locale), [locale])
+
   const value = useMemo(
-    () => ({ displayName, setDisplayName, theme, setTheme, locale, setLocale }),
-    [displayName, setDisplayName, theme, setTheme, locale, setLocale],
+    () => ({ displayName, setDisplayName, theme, setTheme, locale, setLocale, t }),
+    [displayName, setDisplayName, theme, setTheme, locale, setLocale, t],
   )
 
   return (
@@ -127,4 +131,10 @@ export function useUserPrefs(): UserPrefsContextValue {
     throw new Error('useUserPrefs requires UserPrefsProvider')
   }
   return ctx
+}
+
+/** Translator — falls back to default locale when outside UserPrefsProvider (tests). */
+export function useT(): Translator {
+  const ctx = useContext(UserPrefsContext)
+  return useMemo(() => ctx?.t ?? createTranslator(paths.defaultLocale), [ctx?.t])
 }

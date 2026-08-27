@@ -99,6 +99,7 @@
 - Settings Admin hub: `/settings/admin*` · `paths.routes.settingsAdmin*` · `apiSettingsProviders` / `apiSettingsPrompts` / `apiSettingsPromptDetail` / `apiSettingsPromptTest` / `apiSettingsPersonaPrompts*` / `apiSettingsTokens*` · `knowledge/settings-admin-2026.md` · `knowledge/settings-api-tokens-2026.md` · `knowledge/prompt-builder-workspace-2026.md` · prompt templating `knowledge/v2-prompt-templating-parity-2026-07-31.md` · `specs/domain/prompt-templating.md` · `specs/domain/prompt-builder-workspace.md` · `specs/domain/settings-api-tokens.md`
 - Queue dashboard: `/queue` · `paths.routes.queue` · `apiQueueStats` / `apiQueueJobs` / `apiQueueJobDetail` / `apiQueueJobRetry` · store `paths.queueStorePath` · `knowledge/queue-dashboard-2026.md`
 - User prefs keys: `audion.v3.displayName` · `audion.v3.theme` · `audion.v3.locale`
+- UI i18n (SET-L1): `knowledge/i18n.md` · `paths.i18nLibPath` (`apps/web/lib/i18n.ts`) · `paths.localesDir` (`apps/web/locales/{en,de}.json`) · `useUserPrefs().t` / `useT()`
 - Workspace slice clone pattern: `knowledge/workspace-slice-pattern.md`
 - Chat routes: `/chat`, `/chat/embed`, `/chat/history`, `/chat?targetGroupId=` (ask-all)
 - Chat embed (EQC overlay): `specs/domain/chat-embed.md` · `paths.routes.chatEmbed` / `buildChatEmbedHref` · CSP `frame-ancestors` via `AUDION_CHAT_EMBED_FRAME_ANCESTORS` or `NEXT_PUBLIC_PLEXON_URL` / `PLEXON_AUTH_URL`

@@ -6,6 +6,7 @@ import type { UxStudyFromFlowResult, UxTestFlow } from '@audion-v3/contracts'
 import { Button } from '@msqdx/ui'
 import { NavIconStudies } from './nav-icons'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 
 export function CreateStudyFromFlowButton({
   flowId,
@@ -22,6 +23,7 @@ export function CreateStudyFromFlowButton({
   /** Icon-only toolbar control. */
   compact?: boolean
 }) {
+  const t = useT()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -63,8 +65,8 @@ export function CreateStudyFromFlowButton({
           size="sm"
           variant="subtle"
           className="msqdx-flow-toolbar-btn"
-          aria-label="Study aus Flow erstellen"
-          title="Study aus Flow erstellen"
+          aria-label={t('flows.createStudy')}
+          title={t('flows.createStudy')}
           icon={<NavIconStudies />}
           onClick={() => void onCreate()}
           disabled={disabled || busy}
@@ -77,7 +79,7 @@ export function CreateStudyFromFlowButton({
   return (
     <div className="msqdx-flow-create">
       <Button size="md" onClick={() => void onCreate()} disabled={disabled || busy}>
-        {busy ? 'Creating…' : 'Create study from flow'}
+        {busy ? t('flows.creatingStudy') : t('flows.createStudy')}
       </Button>
       {disabled ? (
         <p className="msqdx-flow-create-hint">Catalog only — full graph / compile comes later.</p>

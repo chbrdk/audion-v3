@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { UxStudyDetail } from '@audion-v3/contracts'
 import { EmptyState, Hint, Panel, RankedList, RankedRow, SectionChrome, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { WaveCreateButton } from './wave-edit-dialog'
 
 function FacetTile({
@@ -25,11 +26,13 @@ function FacetTile({
 }
 
 export function StudyDetailPanel({ study }: { study: UxStudyDetail | null }) {
+  const t = useT()
+
   if (!study) {
     return (
       <div className="panel briefing-detail audion-magazine audion-magazine--empty">
         <Text role="label" className="briefing-eyebrow">
-          UX Study
+          {t('detail.study.eyebrow')}
         </Text>
         <EmptyState>
           <Link href={paths.routes.studies} className="audion-link">
@@ -46,7 +49,7 @@ export function StudyDetailPanel({ study }: { study: UxStudyDetail | null }) {
     <article className="panel briefing-detail audion-magazine audion-magazine--study">
       <div className="audion-magazine-topbar ds-motion-reveal">
         <p className="briefing-nav signal-nav">
-          <Link href={paths.routes.studies}>UX Studies</Link>
+          <Link href={paths.routes.studies}>{t('nav.studies')}</Link>
           <span className="briefing-nav-sep" aria-hidden>
             ·
           </span>
@@ -62,20 +65,27 @@ export function StudyDetailPanel({ study }: { study: UxStudyDetail | null }) {
       <header className="signal-hero briefing-hero audion-magazine-hero audion-magazine-hero--split ds-motion-reveal">
         <div className="audion-magazine-hero-copy">
           <Text role="label" className="briefing-eyebrow">
-            UX Study
+            {t('detail.study.eyebrow')}
           </Text>
           <Text role="headline" as="h2" className="signal-title">
             {study.name}
           </Text>
           <Text role="body" className="audion-magazine-deck">
-            {study.sourceGuide || 'Study → Wave → Evaluate → Compare'}
+            {study.sourceGuide || t('detail.study.deckFallback')}
           </Text>
         </div>
-        <ul className="geo-places audion-magazine-facets" aria-label="Study attributes">
-          <FacetTile label="Status" value={study.status} kind={study.status} />
-          <FacetTile label="Waves" value={String(study.waveCount)} kind="waves" />
+        <ul
+          className="geo-places audion-magazine-facets"
+          aria-label={t('detail.study.attrsAria')}
+        >
+          <FacetTile label={t('detail.study.status')} value={study.status} kind={study.status} />
+          <FacetTile
+            label={t('detail.study.waves')}
+            value={String(study.waveCount)}
+            kind="waves"
+          />
           {study.targetUrlKey ? (
-            <FacetTile label="URL key" value={study.targetUrlKey} kind="url" />
+            <FacetTile label={t('detail.study.urlKey')} value={study.targetUrlKey} kind="url" />
           ) : null}
         </ul>
       </header>
@@ -87,12 +97,12 @@ export function StudyDetailPanel({ study }: { study: UxStudyDetail | null }) {
       <div className="audion-magazine-body audion-study-body">
         <Panel
           className="detail-block audion-magazine-band audion-study-section ds-motion-reveal"
-          aria-label="Hypotheses"
+          aria-label={t('detail.study.hypotheses')}
         >
           <SectionChrome
             quiet
             role="signals"
-            title="Hypotheses"
+            title={t('detail.study.hypotheses')}
             meta={`${study.hypothesisTemplates.length} templates`}
             metaTone="accent"
             as="h3"
@@ -115,18 +125,18 @@ export function StudyDetailPanel({ study }: { study: UxStudyDetail | null }) {
               ))}
             </RankedList>
           ) : (
-            <EmptyState>No hypothesis templates yet.</EmptyState>
+            <EmptyState>{t('detail.study.emptyHypotheses')}</EmptyState>
           )}
         </Panel>
 
         <Panel
           className="detail-block audion-magazine-band audion-study-section ds-motion-reveal"
-          aria-label="Waves"
+          aria-label={t('detail.study.waves')}
         >
           <SectionChrome
             quiet
             role="waves"
-            title="Waves"
+            title={t('detail.study.waves')}
             meta={`${study.waves.length} total`}
             metaTone="accent"
             as="h3"
@@ -159,7 +169,7 @@ export function StudyDetailPanel({ study }: { study: UxStudyDetail | null }) {
               ))}
             </ul>
           ) : (
-            <EmptyState>No waves yet — create one to seed a run plan.</EmptyState>
+            <EmptyState>{t('detail.study.emptyWaves')}</EmptyState>
           )}
         </Panel>
       </div>

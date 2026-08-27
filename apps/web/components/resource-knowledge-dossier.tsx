@@ -9,6 +9,7 @@ import {
   knowledgePreviewLine,
   sanitizeKnowledgeHtml,
 } from '../lib/project-knowledge'
+import { useT } from '../lib/user-prefs'
 import { KnowledgeRichEditor } from './knowledge-rich-editor'
 
 function newEntryId(): string {
@@ -20,7 +21,7 @@ function newEntryId(): string {
  * Persists via listUrl GET/POST/PUT/DELETE or PATCH of parent with knowledgeEntries.
  */
 export function ResourceKnowledgeDossier({
-  title = 'Knowledge',
+  title,
   entries = [],
   documents = [],
   listUrl,
@@ -31,6 +32,8 @@ export function ResourceKnowledgeDossier({
   /** GET list · POST create; PUT/DELETE use `${listUrl}/${entryId}` */
   listUrl: string
 }) {
+  const t = useT()
+  const resolvedTitle = title ?? t('knowledge.title')
   const entryUrl = (entryId: string) => `${listUrl}/${entryId}`
   const router = useRouter()
   const titleRef = useRef<HTMLInputElement>(null)
@@ -138,7 +141,7 @@ export function ResourceKnowledgeDossier({
 
   async function commitEdit() {
     if (!editingId) return
-    const titleText = titleDraft.trim() || 'Untitled'
+    const titleText = titleDraft.trim() || t('common.untitled')
     const body = isEmptyKnowledgeBody(bodyDraft) ? '' : sanitizeKnowledgeHtml(bodyDraft)
     const previous = items.find((c) => c.id === editingId)
     if (previous && previous.title === titleText && previous.content === body) {
@@ -173,7 +176,7 @@ export function ResourceKnowledgeDossier({
     if (saving || editingId) return
     const entry: KnowledgeEntry = {
       id: newEntryId(),
-      title: 'New entry',
+      title: t('knowledge.newEntry'),
       content: '',
       updatedAt: null,
     }
@@ -208,7 +211,7 @@ export function ResourceKnowledgeDossier({
     <Panel className="stage-panel audion-magazine-band audion-resource-knowledge ds-motion-reveal">
       <SectionChrome
         quiet
-        title={title}
+        title={resolvedTitle}
         meta={items.length ? `${items.length}` : undefined}
         metaTone="accent"
         as="h3"
@@ -219,13 +222,13 @@ export function ResourceKnowledgeDossier({
           type="button"
           className="audion-project-knowledge-empty"
           onClick={() => void addEntry()}
-          aria-label={`Add ${title.toLowerCase()} entry`}
+          aria-label={t('knowledge.addEntry')}
         >
-          <EmptyState>Add knowledge cards for RAG / briefing context.</EmptyState>
+          <EmptyState>{t('knowledge.addCards')}</EmptyState>
         </button>
       ) : (
         <Accordion
-          aria-label={title}
+          aria-label={resolvedTitle}
           value={openId}
           onChange={onAccordionChange}
           footer={
@@ -238,14 +241,14 @@ export function ResourceKnowledgeDossier({
               <span className="audion-magazine-list-num" aria-hidden>
                 +
               </span>
-              <span>Add entry</span>
+              <span>{t('knowledge.addEntry')}</span>
             </button>
           }
           items={items.map((entry) => {
             const isEditing = editingId === entry.id
             return {
               id: entry.id,
-              title: entry.title || 'Untitled',
+              title: entry.title || t('common.untitled'),
               preview: knowledgePreviewLine(entry.content),
               panel: (
                 <div className="audion-knowledge-panel-inner" onKeyDown={onKeyDown}>
@@ -255,7 +258,7 @@ export function ResourceKnowledgeDossier({
                       className="audion-knowledge-title-input"
                       value={titleDraft}
                       disabled={saving}
-                      aria-label="Knowledge title"
+                      aria-label={t('knowledge.title')}
                       onChange={(e) => setTitleDraft(e.target.value)}
                       onBlur={onBlurSave}
                     />
@@ -265,7 +268,7 @@ export function ResourceKnowledgeDossier({
                     content={isEditing ? bodyDraft : entry.content}
                     editable={isEditing}
                     disabled={saving}
-                    ariaLabel={`Edit ${entry.title || 'entry'}`}
+                    ariaLabel={`${t('common.edit')} ${entry.title || t('knowledge.newEntry')}`}
                     onChange={setBodyDraft}
                     onBlur={onBlurSave}
                     onRequestEdit={() => beginEdit(entry)}
@@ -282,7 +285,7 @@ export function ResourceKnowledgeDossier({
                         onClick={() => beginEdit(entry)}
                         disabled={saving}
                       >
-                        Edit
+                        {t('common.edit')}
                       </Button>
                     ) : null}
                     <Button
@@ -291,9 +294,9 @@ export function ResourceKnowledgeDossier({
                       size="sm"
                       onClick={() => void removeEntry(entry.id)}
                       disabled={saving}
-                      aria-label={`Remove ${entry.title || 'entry'}`}
+                      aria-label={`${t('common.remove')} ${entry.title || t('knowledge.newEntry')}`}
                     >
-                      Remove
+                      {t('common.remove')}
                     </Button>
                   </div>
                 </div>
@@ -304,8 +307,8 @@ export function ResourceKnowledgeDossier({
       )}
 
       {documents.length ? (
-        <div className="audion-resource-documents" aria-label="Sources">
-          <SectionChrome quiet title="Sources" meta={`${documents.length}`} as="h3" />
+        <div className="audion-resource-documents" aria-label={t('knowledge.sources')}>
+          <SectionChrome quiet title={t('knowledge.sources')} meta={`${documents.length}`} as="h3" />
           <ul className="audion-research-events">
             {documents.map((doc) => (
               <li key={doc.id}>

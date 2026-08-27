@@ -3,11 +3,13 @@
 import React, { useState } from 'react'
 import type { PersonaDetail } from '@audion-v3/contracts'
 import { Button, Panel, Text } from '@msqdx/ui'
+import { useT } from '../lib/user-prefs'
 import { EnrichPersonaButton } from './enrich-persona-button'
 import { IconEdit } from './nav-icons'
 import { PersonaEditDialog, type PersonaEditMode } from './persona-edit-dialog'
 
 export function PersonaDetailActions({ persona }: { persona: PersonaDetail }) {
+  const t = useT()
   const [mode, setMode] = useState<PersonaEditMode | null>(null)
 
   return (
@@ -19,8 +21,8 @@ export function PersonaDetailActions({ persona }: { persona: PersonaDetail }) {
           variant="ghost"
           size="sm"
           className="audion-edit-icon-btn"
-          aria-label="Edit persona"
-          title="Edit persona"
+          aria-label={t('tiles.editPersona')}
+          title={t('tiles.editPersona')}
           icon={<IconEdit />}
           onClick={() => setMode('edit')}
         />
@@ -28,11 +30,11 @@ export function PersonaDetailActions({ persona }: { persona: PersonaDetail }) {
           type="button"
           variant="ghost"
           size="sm"
-          aria-label="Create from template"
-          title="Create from template"
+          aria-label={t('tiles.fromTemplateAria')}
+          title={t('tiles.fromTemplateAria')}
           onClick={() => setMode('template')}
         >
-          From template
+          {t('tiles.fromTemplate')}
         </Button>
       </div>
       {mode != null ? (
@@ -57,6 +59,7 @@ export function PersonaCreateButton({
   /** 1-based index shown on row variant (defaults to 1) */
   nextIndex?: number
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const num = String(Math.max(1, nextIndex ?? 1)).padStart(2, '0')
   return (
@@ -69,10 +72,10 @@ export function PersonaCreateButton({
         >
           <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
             <Text role="headline" as="span" className="audion-tg-card-title">
-              New persona
+              {t('tiles.newPersona')}
             </Text>
             <p className="audion-tg-card-meta">
-              <span>Start a profile brief</span>
+              <span>{t('tiles.newPersonaMeta')}</span>
             </p>
           </Panel>
         </button>
@@ -80,13 +83,13 @@ export function PersonaCreateButton({
         <button
           type="button"
           className="audion-editable-list-add-row"
-          aria-label="Add persona"
+          aria-label={t('tiles.addPersona')}
           onClick={() => setOpen(true)}
         >
           <span className="audion-magazine-list-num" aria-hidden>
             {num}
           </span>
-          <span className="audion-editable-list-add-label">Add persona</span>
+          <span className="audion-editable-list-add-label">{t('tiles.addPersona')}</span>
         </button>
       ) : variant === 'link' ? (
         <button type="button" className="audion-link" onClick={() => setOpen(true)}>
@@ -94,7 +97,7 @@ export function PersonaCreateButton({
         </button>
       ) : (
         <Button type="button" size="sm" onClick={() => setOpen(true)}>
-          Create persona
+          {t('tiles.createPersona')}
         </Button>
       )}
       {open ? (

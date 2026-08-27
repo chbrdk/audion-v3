@@ -11,6 +11,7 @@ import type {
 import { Button, EmptyState, Panel, SectionChrome } from '@msqdx/ui'
 import { Dialog } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { IconDelete } from './nav-icons'
 import { PersonaCreateButton } from './persona-actions'
 import { TargetGroupCreateButton } from './target-group-edit-dialog'
@@ -359,12 +360,13 @@ export function ProjectPersonaList({
   projectId: string
   personas: PersonaSummary[]
 }) {
+  const t = useT()
   const router = useRouter()
   const rows = toPersonaRows(personas)
 
   return (
     <CompactEditableList
-      title="Personas"
+      title={t('detail.project.personas')}
       singular="persona"
       rows={rows}
       empty={
@@ -395,12 +397,13 @@ export function ProjectTargetGroupList({
   projectId: string
   targetGroups: TargetGroupSummary[]
 }) {
+  const t = useT()
   const router = useRouter()
   const rows = toGroupRows(targetGroups)
 
   return (
     <CompactEditableList
-      title="Target groups"
+      title={t('detail.project.targetGroups')}
       singular="target group"
       rows={rows}
       empty={
@@ -435,6 +438,7 @@ export function ProjectTeamList({
   projectId: string
   members: ProjectMember[]
 }) {
+  const t = useT()
   const router = useRouter()
   const active = members.filter((m) => m.status !== 'removed')
 
@@ -454,7 +458,7 @@ export function ProjectTeamList({
 
   return (
     <CompactEditableList
-      title="Team"
+      title={t('detail.project.team')}
       singular="member"
       rows={toMemberRows(active)}
       empty="No members yet."

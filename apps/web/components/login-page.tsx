@@ -7,6 +7,7 @@ import { signIn } from 'next-auth/react'
 import { Button, Field, Hint, Input, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { getPlexonForgotPasswordUrl, getPlexonRegisterPageUrl } from '../lib/plexon-links'
+import { useT } from '../lib/user-prefs'
 
 function LoginForm({ plexonConfigured }: { plexonConfigured: boolean }) {
   const router = useRouter()
@@ -14,6 +15,7 @@ function LoginForm({ plexonConfigured }: { plexonConfigured: boolean }) {
   const redirectTo = searchParams.get('redirect') || paths.routes.home
   const registerUrl = getPlexonRegisterPageUrl()
   const forgotUrl = getPlexonForgotPasswordUrl()
+  const t = useT()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,15 +34,15 @@ function LoginForm({ plexonConfigured }: { plexonConfigured: boolean }) {
         redirect: false,
         callbackUrl: redirectTo,
       })
-      if (result?.error) throw new Error('Invalid email or password')
+      if (result?.error) throw new Error(t('login.invalidCredentials'))
       if (result?.ok) {
         router.replace(redirectTo)
         router.refresh()
         return
       }
-      throw new Error('Sign in failed')
+      throw new Error(t('login.failed'))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign in failed')
+      setError(err instanceof Error ? err.message : t('login.failed'))
     } finally {
       setLoading(false)
     }
@@ -50,15 +52,12 @@ function LoginForm({ plexonConfigured }: { plexonConfigured: boolean }) {
     return (
       <div className="audion-login-panel">
         <Text role="headline" as="h1">
-          Sign in
+          {t('login.title')}
         </Text>
-        <Hint panel>
-          Plexon auth is not configured. Set `PLEXON_AUTH_URL` and `PLEXON_SERVICE_SECRET` to enable
-          login. Fixture mode stays open without authentication.
-        </Hint>
+        <Hint panel>{t('login.unconfigured')}</Hint>
         <p className="audion-login-links">
           <Link href={paths.routes.home} className="audion-link">
-            Continue to app
+            {t('login.continueToApp')}
           </Link>
         </p>
       </div>
@@ -68,17 +67,17 @@ function LoginForm({ plexonConfigured }: { plexonConfigured: boolean }) {
   return (
     <form className="audion-login-panel" onSubmit={handleSubmit}>
       <Text role="headline" as="h1">
-        Sign in
+        {t('login.title')}
       </Text>
       <Text role="body" className="audion-login-lede">
-        Use your Plexon account. Identity lives on the platform control plane.
+        {t('login.lead')}
       </Text>
       {error ? (
         <p className="audion-login-error" role="alert">
           {error}
         </p>
       ) : null}
-      <Field label="Email" size="md">
+      <Field label={t('login.email')} size="md">
         <Input
           type="email"
           autoComplete="email"
@@ -86,10 +85,10 @@ function LoginForm({ plexonConfigured }: { plexonConfigured: boolean }) {
           onChange={(e) => setEmail(e.target.value)}
           required
           block
-          aria-label="Email"
+          aria-label={t('login.email')}
         />
       </Field>
-      <Field label="Password" size="md">
+      <Field label={t('login.password')} size="md">
         <Input
           type="password"
           autoComplete="current-password"
@@ -97,22 +96,22 @@ function LoginForm({ plexonConfigured }: { plexonConfigured: boolean }) {
           onChange={(e) => setPassword(e.target.value)}
           required
           block
-          aria-label="Password"
+          aria-label={t('login.password')}
         />
       </Field>
       <Button type="submit" variant="primary" disabled={loading}>
-        {loading ? 'Signing in…' : 'Sign in'}
+        {loading ? t('common.signingIn') : t('common.signIn')}
       </Button>
       <p className="audion-login-links">
         {registerUrl ? (
           <a href={registerUrl} className="audion-link">
-            Create account
+            {t('login.createAccount')}
           </a>
         ) : null}
         {registerUrl && forgotUrl ? <span aria-hidden> · </span> : null}
         {forgotUrl ? (
           <a href={forgotUrl} className="audion-link">
-            Forgot password
+            {t('login.forgotPassword')}
           </a>
         ) : null}
       </p>
@@ -121,12 +120,13 @@ function LoginForm({ plexonConfigured }: { plexonConfigured: boolean }) {
 }
 
 export function LoginPageClient({ plexonConfigured }: { plexonConfigured: boolean }) {
+  const t = useT()
   return (
     <Suspense
       fallback={
         <div className="audion-login-panel">
           <Text role="headline" as="h1">
-            Sign in
+            {t('login.title')}
           </Text>
         </div>
       }

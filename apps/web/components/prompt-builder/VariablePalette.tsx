@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react'
 import { Chip, Field, Input, Text } from '@msqdx/ui'
+import { useT } from '../../lib/user-prefs'
 import {
   EXTENDED_VARIABLES,
   STANDARD_VARIABLES,
@@ -17,7 +18,16 @@ type Props = {
 
 const CATEGORIES: VariableCategory[] = ['journey', 'phase', 'persona', 'control']
 
+const GROUP_KEYS: Record<VariableCategory, string> = {
+  journey: 'prompts.groupJourney',
+  phase: 'prompts.groupPhase',
+  persona: 'prompts.groupPersona',
+  control: 'prompts.groupControl',
+  extended: 'prompts.groupExtended',
+}
+
 export function VariablePalette({ onInsert }: Props) {
+  const t = useT()
   const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
@@ -33,12 +43,12 @@ export function VariablePalette({ onInsert }: Props) {
     }
   }, [query])
 
-  function renderGroup(title: string, items: VariableDefinition[]) {
+  function renderGroup(category: VariableCategory, items: VariableDefinition[]) {
     if (!items.length) return null
     return (
-      <div className="pb-palette__group" key={title}>
+      <div className="pb-palette__group" key={category}>
         <Text role="meta" as="h4" className="pb-palette__heading">
-          {title}
+          {t(GROUP_KEYS[category])}
         </Text>
         <div className="pb-palette__chips">
           {items.map((v) => (
@@ -65,9 +75,9 @@ export function VariablePalette({ onInsert }: Props) {
   return (
     <div className="pb-palette audion-stack" data-testid="pb-variable-palette">
       <Text role="headline" as="h3">
-        Variables
+        {t('prompts.variables')}
       </Text>
-      <Field label="Search">
+      <Field label={t('common.search')}>
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}

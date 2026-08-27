@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { ProjectEasySetupResponse } from '@audion-v3/contracts'
 import { Alert, Button, Field, Input, Panel, Text, Textarea } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 
 type FormState = {
   customerName: string
@@ -21,6 +22,7 @@ const emptyForm = (): FormState => ({
 })
 
 export function EasySetupPanel() {
+  const t = useT()
   const [form, setForm] = useState<FormState>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +34,7 @@ export function EasySetupPanel() {
     const customer = form.customerName.trim()
     const about = form.about.trim()
     if (!customer || !about) {
-      setFieldError('Customer name and about are required.')
+      setFieldError(t('setup.requiredFields'))
       return
     }
     setFieldError(null)
@@ -54,12 +56,12 @@ export function EasySetupPanel() {
       })
       if (!response.ok) {
         const err = (await response.json().catch(() => null)) as { error?: string } | null
-        throw new Error(err?.error || `Setup failed (${response.status})`)
+        throw new Error(err?.error || `${t('setup.setupFailed')} (${response.status})`)
       }
       const data = (await response.json()) as ProjectEasySetupResponse
       setResult(data)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Setup failed')
+      setError(e instanceof Error ? e.message : t('setup.setupFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -69,15 +71,13 @@ export function EasySetupPanel() {
     return (
       <Panel className="audion-stack" data-testid="easy-setup-success">
         <Text role="headline" as="h2">
-          Workspace ready
+          {t('setup.readyTitle')}
         </Text>
         <Text role="body">
-          {result.stubbed
-            ? 'Created with demo seeds (AI stub). Open any link below to continue.'
-            : 'Created with native AI suggestions. Open any link below to continue.'}
+          {result.stubbed ? t('setup.readyStub') : t('setup.readyLive')}
         </Text>
         {result.websiteExcerptIncluded ? (
-          <Text role="meta">Website text was merged into project knowledge.</Text>
+          <Text role="meta">{t('setup.websiteMerged')}</Text>
         ) : null}
         <ul className="audion-stack" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           <li>
@@ -86,7 +86,7 @@ export function EasySetupPanel() {
               className="audion-link"
               data-testid="easy-setup-link-project"
             >
-              Project: {result.project.name}
+              {t('setup.linkProject', { name: result.project.name })}
             </Link>
           </li>
           <li>
@@ -95,7 +95,7 @@ export function EasySetupPanel() {
               className="audion-link"
               data-testid="easy-setup-link-tg"
             >
-              Target group: {result.targetGroup.name}
+              {t('setup.linkTg', { name: result.targetGroup.name })}
             </Link>
           </li>
           <li>
@@ -104,7 +104,7 @@ export function EasySetupPanel() {
               className="audion-link"
               data-testid="easy-setup-link-persona"
             >
-              Persona: {result.persona.name}
+              {t('setup.linkPersona', { name: result.persona.name })}
             </Link>
           </li>
         </ul>
@@ -116,7 +116,7 @@ export function EasySetupPanel() {
             setForm(emptyForm())
           }}
         >
-          Run again
+          {t('setup.runAgain')}
         </Button>
       </Panel>
     )
@@ -125,51 +125,49 @@ export function EasySetupPanel() {
   return (
     <Panel className="audion-stack" data-testid="easy-setup-form">
       <Text role="headline" as="h2">
-        Easy setup
+        {t('setup.title')}
       </Text>
-      <Text role="body">
-        One brief creates a project, first target group, and first persona.
-      </Text>
+      <Text role="body">{t('setup.body')}</Text>
       <form className="audion-stack" onSubmit={onSubmit}>
-        <Field label="Customer / brand">
+        <Field label={t('setup.customer')}>
           <Input
             value={form.customerName}
             onChange={(e) => setForm((f) => ({ ...f, customerName: e.target.value }))}
-            placeholder="Acme Mobility"
+            placeholder={t('setup.customerPh')}
             data-testid="easy-setup-customer"
             aria-required="true"
           />
         </Field>
-        <Field label="About">
+        <Field label={t('setup.about')}>
           <Textarea
             value={form.about}
             onChange={(e) => setForm((f) => ({ ...f, about: e.target.value }))}
-            placeholder="What the brand does, who they serve, and what you want to learn…"
+            placeholder={t('setup.aboutPh')}
             rows={5}
             data-testid="easy-setup-about"
             aria-required="true"
           />
         </Field>
-        <Field label="Website URL (optional)">
+        <Field label={t('setup.website')}>
           <Input
             value={form.websiteUrl}
             onChange={(e) => setForm((f) => ({ ...f, websiteUrl: e.target.value }))}
-            placeholder="https://example.com"
+            placeholder={t('setup.websitePh')}
             data-testid="easy-setup-website"
           />
         </Field>
-        <Field label="Project name (optional)">
+        <Field label={t('setup.projectName')}>
           <Input
             value={form.projectName}
             onChange={(e) => setForm((f) => ({ ...f, projectName: e.target.value }))}
-            placeholder="Defaults to customer name"
+            placeholder={t('setup.projectNamePh')}
             data-testid="easy-setup-project-name"
           />
         </Field>
         {fieldError ? <Alert tone="error">{fieldError}</Alert> : null}
         {error ? <Alert tone="error">{error}</Alert> : null}
         <Button type="submit" disabled={submitting} data-testid="easy-setup-submit">
-          {submitting ? 'Creating…' : 'Create workspace'}
+          {submitting ? t('setup.submitting') : t('setup.submit')}
         </Button>
       </form>
     </Panel>

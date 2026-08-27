@@ -1,8 +1,11 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import type { TargetGroupList } from '@audion-v3/contracts'
 import { EmptyState, Panel, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { TargetGroupCreateButton } from './target-group-edit-dialog'
 import { SuggestTargetGroupsAiButton } from './ai-workflow-actions'
 
@@ -13,6 +16,7 @@ export function TargetGroupListPanel({
   list: TargetGroupList
   query?: string
 }) {
+  const t = useT()
   return (
     <section className="audion-index audion-tg-index">
       <ul className="audion-tg-grid">
@@ -36,7 +40,12 @@ export function TargetGroupListPanel({
                   <span>{item.segment}</span>
                   <span aria-hidden>·</span>
                   <span>
-                    {item.personaCount} persona{item.personaCount === 1 ? '' : 's'}
+                    {t(
+                      item.personaCount === 1
+                        ? 'lists.targetGroups.personaOne'
+                        : 'lists.targetGroups.personaMany',
+                      { count: item.personaCount },
+                    )}
                   </span>
                   <span aria-hidden>·</span>
                   <span data-status={item.status}>{item.status}</span>
@@ -47,7 +56,7 @@ export function TargetGroupListPanel({
         ))}
       </ul>
 
-      {!list.items.length ? <EmptyState>No target groups yet.</EmptyState> : null}
+      {!list.items.length ? <EmptyState>{t('lists.targetGroups.empty')}</EmptyState> : null}
     </section>
   )
 }

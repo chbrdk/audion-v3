@@ -6,6 +6,7 @@ import type { JourneyDetail, JourneyPhase } from '@audion-v3/contracts'
 import { Button, Panel, SectionChrome, Text } from '@msqdx/ui'
 import { Dialog } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { IconDelete, IconEdit } from './nav-icons'
 import { GeneratePhaseMomentsButton } from './generate-phase-moments-button'
 import { JourneyPhaseEditDialog } from './journey-phase-edit-dialog'
@@ -45,12 +46,13 @@ function PhaseSlideCard({
   onEdit: () => void
   onDelete: () => void
 }) {
+  const t = useT()
   return (
     <article
       className={`audion-journey-slide${active ? ' audion-journey-slide--active' : ''}`}
       data-phase-index={index}
       aria-current={active ? 'step' : undefined}
-      aria-label={`Phase ${index + 1}: ${phase.name}`}
+      aria-label={`${t('phases.title')} ${index + 1}: ${phase.name}`}
     >
       <Panel as="div" className="audion-journey-slide-panel">
         <header className="audion-journey-slide-head">
@@ -72,8 +74,8 @@ function PhaseSlideCard({
               variant="ghost"
               size="sm"
               className="audion-edit-icon-btn"
-              aria-label={`Edit phase ${phase.name}`}
-              title="Edit phase"
+              aria-label={`${t('phases.editPhase')} ${phase.name}`}
+              title={t('phases.editPhase')}
               icon={<IconEdit />}
               onClick={onEdit}
             />
@@ -82,8 +84,8 @@ function PhaseSlideCard({
               variant="ghost"
               size="sm"
               className="audion-edit-icon-btn audion-delete-icon-btn"
-              aria-label={`Delete phase ${phase.name}`}
-              title="Delete phase"
+              aria-label={t('phases.deletePhaseAria', { name: phase.name })}
+              title={t('common.delete')}
               icon={<IconDelete />}
               onClick={onDelete}
             />
@@ -92,16 +94,16 @@ function PhaseSlideCard({
 
         <div className="audion-journey-slide-section">
           <Text role="label" className="audion-journey-slide-section-label">
-            Focus
+            {t('phases.focus')}
           </Text>
           <p className="audion-journey-slide-summary">
-            {phase.summary || 'No focus written for this phase yet.'}
+            {phase.summary || t('phases.noFocus')}
           </p>
         </div>
 
         <div className="audion-journey-slide-section">
           <Text role="label" className="audion-journey-slide-section-label">
-            Moments
+            {t('phases.moments')}
           </Text>
           {phase.elements.length ? (
             <ul className="audion-journey-slide-moments">
@@ -113,7 +115,7 @@ function PhaseSlideCard({
               ))}
             </ul>
           ) : (
-            <p className="audion-journey-slide-empty-moments">No moments yet.</p>
+            <p className="audion-journey-slide-empty-moments">{t('phases.noMoments')}</p>
           )}
         </div>
       </Panel>
@@ -130,16 +132,17 @@ function CreatePhaseSlide({
   active: boolean
   onCreate: () => void
 }) {
+  const t = useT()
   return (
     <article
       className={`audion-journey-slide audion-journey-slide--create${active ? ' audion-journey-slide--active' : ''}`}
       data-phase-index={index}
-      aria-label="Add new phase"
+      aria-label={t('phases.addNewPhase')}
     >
       <button
         type="button"
         className="audion-journey-slide-create-btn"
-        aria-label="Add new phase"
+        aria-label={t('phases.addNewPhase')}
         onClick={onCreate}
       >
         <Panel as="div" className="audion-journey-slide-panel audion-journey-slide-panel--create">
@@ -147,9 +150,9 @@ function CreatePhaseSlide({
             +
           </span>
           <Text role="headline" as="span" className="audion-journey-slide-title">
-            New phase
+            {t('phases.addNewPhase')}
           </Text>
-          <p className="audion-journey-slide-summary">Add the next stage to this map.</p>
+          <p className="audion-journey-slide-summary">{t('phases.addNext')}</p>
         </Panel>
       </button>
     </article>
@@ -162,6 +165,7 @@ type PhaseDialogState =
   | null
 
 export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
+  const t = useT()
   const router = useRouter()
   const phases = journey.phases
   const createIndex = phases.length
@@ -242,21 +246,21 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
 
   const onCreateSlide = activeIndex === createIndex
   const countLabel = onCreateSlide
-    ? 'New'
+    ? t('common.new')
     : phases.length
       ? `${activeIndex + 1} / ${phases.length}`
-      : 'New'
+      : t('common.new')
 
   return (
-    <section className="audion-journey-timeline ds-motion-reveal" aria-label="Journey phases">
+    <section className="audion-journey-timeline ds-motion-reveal" aria-label={t('phases.title')}>
       <div className="audion-journey-timeline-toolbar">
-        <SectionChrome quiet title="Phases" meta={`${phases.length}`} as="h3" />
-        <div className="audion-journey-timeline-nav" role="group" aria-label="Phase navigation">
+        <SectionChrome quiet title={t('phases.title')} meta={`${phases.length}`} as="h3" />
+        <div className="audion-journey-timeline-nav" role="group" aria-label={t('phases.navAria')}>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            aria-label="Previous phase"
+            aria-label={t('phases.prevPhase')}
             disabled={activeIndex === 0}
             onClick={() => scrollToIndex(activeIndex - 1)}
           >
@@ -269,7 +273,7 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
             type="button"
             variant="ghost"
             size="sm"
-            aria-label="Next phase"
+            aria-label={t('phases.nextPhase')}
             disabled={activeIndex >= slideCount - 1}
             onClick={() => scrollToIndex(activeIndex + 1)}
           >
@@ -278,7 +282,7 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
         </div>
       </div>
 
-      <div className="audion-journey-timeline-steps" role="tablist" aria-label="Jump to phase">
+      <div className="audion-journey-timeline-steps" role="tablist" aria-label={t('phases.navAria')}>
         {phases.map((phase, index) => (
           <button
             key={phase.id}
@@ -298,7 +302,7 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
           type="button"
           role="tab"
           aria-selected={onCreateSlide}
-          aria-label="Add phase"
+          aria-label={t('phases.addPhase')}
           className={`audion-journey-timeline-step audion-journey-timeline-step--add${onCreateSlide ? ' audion-journey-timeline-step--active' : ''}`}
           onClick={() => {
             scrollToIndex(createIndex)
@@ -306,7 +310,7 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
           }}
         >
           <span className="audion-journey-timeline-step-index">+</span>
-          <span className="audion-journey-timeline-step-label">Phase</span>
+          <span className="audion-journey-timeline-step-label">{t('phases.addPhase')}</span>
         </button>
       </div>
 
@@ -316,7 +320,7 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
         tabIndex={0}
         onScroll={handleScroll}
         onKeyDown={onKeyDown}
-        aria-label="Journey phases slider"
+        aria-label={t('phases.title')}
       >
         {phases.map((phase, index) => (
           <PhaseSlideCard
@@ -356,7 +360,7 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
             if (!deleting) setPhaseToDelete(null)
           }}
           className="audion-edit-dialog"
-          title="Delete phase?"
+          title={t('phases.deleteTitle')}
           actions={
             <>
               <Button
@@ -365,18 +369,15 @@ export function JourneyPhaseSlider({ journey }: { journey: JourneyDetail }) {
                 onClick={() => setPhaseToDelete(null)}
                 disabled={deleting}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button size="md" onClick={() => void onConfirmDeletePhase()} disabled={deleting}>
-                {deleting ? 'Deleting…' : 'Delete'}
+                {deleting ? t('common.deleting') : t('common.delete')}
               </Button>
             </>
           }
         >
-          <p>
-            Delete phase <strong>{phaseToDelete.name}</strong>? Moments in this phase will be
-            removed.
-          </p>
+          <p>{t('phases.deleteBody', { name: phaseToDelete.name })}</p>
           {deleteError ? (
             <p className="audion-edit-error" role="alert">
               {deleteError}

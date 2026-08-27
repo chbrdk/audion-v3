@@ -6,6 +6,7 @@ import type { GeneratePersonaAvatarResponse } from '@audion-v3/contracts'
 import { Avatar, Button } from '@msqdx/ui'
 import { targetHint } from '../lib/ai-workflow-targets'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { AiActionButton } from './ai-action-button'
 
 /**
@@ -20,6 +21,7 @@ export function PersonaEditablePortrait({
   name: string
   avatarUrl: string | null
 }) {
+  const t = useT()
   const router = useRouter()
   const fieldId = useId()
   const [localUrl, setLocalUrl] = useState(avatarUrl)
@@ -130,12 +132,12 @@ export function PersonaEditablePortrait({
       {editing ? (
         <div className="audion-editable-portrait-editor">
           <label className="audion-editable-portrait-field" htmlFor={fieldId}>
-            <span>Image URL</span>
+            <span>{t('personaEdit.portraitUrl')}</span>
             <input
               id={fieldId}
               value={draft}
               disabled={saving || generating}
-              aria-label="Portrait image URL"
+              aria-label={t('personaEdit.portraitUrl')}
               placeholder={paths.personaAvatarBasePath}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
@@ -152,7 +154,7 @@ export function PersonaEditablePortrait({
           </label>
           <div className="audion-editable-portrait-actions">
             <AiActionButton
-              label="Generate"
+              label={t('personaEdit.generate')}
               targetHint={hint}
               loading={generating}
               disabled={saving}
@@ -165,10 +167,10 @@ export function PersonaEditablePortrait({
               onClick={() => void commitEdit()}
               disabled={saving || generating}
             >
-              Save
+              {t('common.save')}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={cancelEdit} disabled={saving || generating}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="button"
@@ -177,7 +179,7 @@ export function PersonaEditablePortrait({
               onClick={() => void clearPortrait()}
               disabled={saving || generating || !localUrl}
             >
-              Clear
+              {t('common.clear')}
             </Button>
           </div>
           <p className="audion-ai-target-hint" title={`Later: ${hint}`}>
@@ -192,11 +194,11 @@ export function PersonaEditablePortrait({
             className="audion-editable-portrait-hit"
             onClick={beginEdit}
             disabled={saving || generating}
-            aria-label={`Edit ${name} portrait`}
+            aria-label={t('personaEdit.editPortrait', { name })}
           />
           <div className="audion-editable-portrait-toolbar">
             <AiActionButton
-              label="Generate"
+              label={t('personaEdit.generate')}
               targetHint={hint}
               loading={generating}
               disabled={saving}

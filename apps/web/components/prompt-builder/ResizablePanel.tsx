@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useRef, useState, type ReactNode } from 'react'
+import { useT } from '../../lib/user-prefs'
 
 type ResizablePanelProps = {
   children: ReactNode
@@ -19,6 +20,7 @@ export function ResizablePanel({
   side = 'left',
   className,
 }: ResizablePanelProps) {
+  const t = useT()
   const [width, setWidth] = useState(initialWidth)
   const [collapsed, setCollapsed] = useState(false)
   const startX = useRef(0)
@@ -55,7 +57,7 @@ export function ResizablePanel({
       <button
         type="button"
         className="pb-resizable__handle"
-        aria-label={collapsed ? 'Expand panel' : 'Collapse panel'}
+        aria-label={collapsed ? t('common.expand') : t('common.collapse')}
         onMouseDown={onMouseDown}
         onDoubleClick={() => setCollapsed((c) => !c)}
       />

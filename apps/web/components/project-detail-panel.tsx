@@ -1,12 +1,13 @@
+'use client'
+
 import React from 'react'
-import Link from 'next/link'
 import type {
   ProjectDetail,
   PersonaSummary,
   TargetGroupSummary,
 } from '@audion-v3/contracts'
 import { EmptyState, Text } from '@msqdx/ui'
-import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import {
   ProjectPersonaList,
   ProjectTargetGroupList,
@@ -42,19 +43,15 @@ export function ProjectDetailPanel({
   personas?: PersonaSummary[]
   targetGroups?: TargetGroupSummary[]
 }) {
+  const t = useT()
+
   if (!project) {
     return (
       <div className="panel briefing-detail audion-magazine audion-magazine--empty">
         <Text role="label" className="briefing-eyebrow">
-          Project
+          {t('detail.project.eyebrow')}
         </Text>
-        <EmptyState>
-          <Link href={paths.routes.projects} className="audion-link">
-            Back to projects
-          </Link>
-          {' — '}
-          this project could not be loaded.
-        </EmptyState>
+        <EmptyState>{t('detail.project.missing')}</EmptyState>
       </div>
     )
   }
@@ -70,7 +67,7 @@ export function ProjectDetailPanel({
       <header className="signal-hero briefing-hero audion-magazine-hero audion-magazine-hero--text ds-motion-reveal">
         <div className="audion-magazine-hero-copy">
           <Text role="label" className="briefing-eyebrow">
-            Project
+            {t('detail.project.eyebrow')}
           </Text>
           <Text role="headline" as="h2" className="signal-title">
             {project.name}
@@ -81,10 +78,26 @@ export function ProjectDetailPanel({
             </Text>
           ) : null}
           <ul className="geo-places audion-magazine-facets" aria-label="Project attributes">
-            <FacetTile label="Status" value={project.status} kind={project.status} />
-            <FacetTile label="Personas" value={String(personas.length)} kind="personas" />
-            <FacetTile label="Target groups" value={String(targetGroups.length)} kind="groups" />
-            <FacetTile label="Team" value={String(project.memberCount)} kind="team" />
+            <FacetTile
+              label={t('detail.persona.status')}
+              value={project.status}
+              kind={project.status}
+            />
+            <FacetTile
+              label={t('detail.project.personas')}
+              value={String(personas.length)}
+              kind="personas"
+            />
+            <FacetTile
+              label={t('detail.project.targetGroups')}
+              value={String(targetGroups.length)}
+              kind="groups"
+            />
+            <FacetTile
+              label={t('detail.project.team')}
+              value={String(project.memberCount)}
+              kind="team"
+            />
           </ul>
         </div>
       </header>
@@ -94,7 +107,7 @@ export function ProjectDetailPanel({
           {project.description ? (
             <p className="audion-magazine-lede audion-project-intro-lede">{project.description}</p>
           ) : (
-            <EmptyState>No project description yet.</EmptyState>
+            <EmptyState>{t('detail.project.emptyDesc')}</EmptyState>
           )}
         </div>
         <aside className="audion-project-intro-team">

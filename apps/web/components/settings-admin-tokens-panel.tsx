@@ -9,8 +9,10 @@ import type {
 } from '@audion-v3/contracts'
 import { Alert, Button, Field, Hint, Input, Panel, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 
 export function SettingsAdminTokensPanel() {
+  const t = useT()
   const [items, setItems] = useState<SettingsApiTokenSummary[]>([])
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
@@ -68,7 +70,7 @@ export function SettingsAdminTokensPanel() {
   }
 
   async function onRevoke(id: string) {
-    if (!window.confirm('Revoke this API token? Scripts using it will stop working.')) return
+    if (!window.confirm(t('admin.revokeConfirm'))) return
     setError(null)
     try {
       const res = await fetch(paths.routes.apiSettingsTokenDetail(id), { method: 'DELETE' })
@@ -97,20 +99,17 @@ export function SettingsAdminTokensPanel() {
     <div className="audion-stack" data-testid="settings-admin-tokens">
       <p>
         <Link href={paths.routes.settingsAdmin} className="audion-link">
-          ← Admin
+          {t('admin.backAdmin')}
         </Link>
       </p>
-      <Hint panel>
-        Personal Bearer tokens for MCP and integrations. The secret is shown once after create —
-        store it safely. Fixture-backed until product Postgres.
-      </Hint>
+      <Hint panel>{t('admin.tokensHint')}</Hint>
       {error ? <Alert tone="error">{error}</Alert> : null}
       {newToken ? (
         <Panel className="audion-stack" data-testid="settings-admin-token-new">
           <Text role="headline" as="h3">
-            New token
+            {t('admin.newToken')}
           </Text>
-          <Text role="meta">Copy now — it will not be shown again.</Text>
+          <Text role="meta">{t('admin.copyNow')}</Text>
           <code
             data-testid="settings-admin-token-secret"
             style={{
@@ -126,7 +125,7 @@ export function SettingsAdminTokensPanel() {
           </code>
           <div className="audion-row" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
             <Button type="button" onClick={onCopy} data-testid="settings-admin-token-copy">
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? t('common.copied') : t('common.copy')}
             </Button>
             <Button
               type="button"
@@ -134,17 +133,17 @@ export function SettingsAdminTokensPanel() {
               onClick={() => setNewToken(null)}
               data-testid="settings-admin-token-dismiss"
             >
-              Dismiss
+              {t('common.dismiss')}
             </Button>
           </div>
         </Panel>
       ) : (
         <Panel className="audion-stack">
-          <Field label="Label (optional)">
+          <Field label={t('admin.labelOptional')}>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="MCP local"
+              placeholder={t('admin.labelPh')}
               data-testid="settings-admin-token-name"
             />
           </Field>
@@ -154,23 +153,23 @@ export function SettingsAdminTokensPanel() {
             disabled={creating}
             data-testid="settings-admin-token-create"
           >
-            {creating ? 'Creating…' : 'Create token'}
+            {creating ? t('common.creating') : t('admin.createToken')}
           </Button>
         </Panel>
       )}
       <Panel className="audion-stack" data-testid="settings-admin-token-list">
         <Text role="headline" as="h3">
-          Tokens
+          {t('admin.tokensList')}
         </Text>
-        {loading ? <Text role="meta">Loading…</Text> : null}
+        {loading ? <Text role="meta">{t('common.loading')}</Text> : null}
         {!loading && items.length === 0 ? (
-          <Text role="meta">No tokens yet.</Text>
+          <Text role="meta">{t('admin.noTokens')}</Text>
         ) : null}
         <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-          {items.map((t) => (
+          {items.map((token) => (
             <li
-              key={t.id}
-              data-testid={`settings-admin-token-row-${t.id}`}
+              key={token.id}
+              data-testid={`settings-admin-token-row-${token.id}`}
               style={{
                 display: 'flex',
                 gap: '0.75rem',
@@ -181,19 +180,19 @@ export function SettingsAdminTokensPanel() {
               }}
             >
               <div>
-                <Text as="span">{t.name || 'Untitled token'}</Text>
+                <Text as="span">{token.name || t('admin.untitledToken')}</Text>
                 <Text role="meta" as="div">
-                  {t.createdAt}
+                  {token.createdAt}
                 </Text>
               </div>
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
-                onClick={() => void onRevoke(t.id)}
-                data-testid={`settings-admin-token-revoke-${t.id}`}
+                onClick={() => void onRevoke(token.id)}
+                data-testid={`settings-admin-token-revoke-${token.id}`}
               >
-                Revoke
+                {t('admin.revoke')}
               </Button>
             </li>
           ))}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { PersonaJourneyBehavior, PersonaJourneyDimensions } from '@audion-v3/contracts'
 import { Button, EmptyState, Field, Input, Meter, MeterList, Panel, SectionChrome, Text, Textarea } from '@msqdx/ui'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { DerivePersonaAgentButton } from './derive-persona-agent-button'
 import { IconDelete } from './nav-icons'
 
@@ -66,6 +67,7 @@ export function PersonaEditableJourneyBehavior({
   journeyBehavior,
   className,
 }: Props) {
+  const t = useT()
   const router = useRouter()
   const baseId = useId()
   const [draft, setDraft] = useState(() => normalize(journeyBehavior))
@@ -156,7 +158,7 @@ export function PersonaEditableJourneyBehavior({
     >
       <SectionChrome
         quiet
-        title="Journey behaviour"
+        title={t('personaEdit.journeyBehaviour')}
         meta="UX agent"
         metaTone="accent"
         as="h3"
@@ -174,15 +176,17 @@ export function PersonaEditableJourneyBehavior({
         navigation without hard click filters.
       </Text>
 
-      <MeterList aria-label="Journey dimensions">
+      <MeterList aria-label={t('personaEdit.journeyBehaviour')}>
         {DIMENSIONS.map((dim) => {
           const value = draft.dimensionOverrides?.[dim.key] ?? 0.5
           const pct = Math.round(value * 100)
+          const label =
+            dim.key === 'riskAversion' ? t('personaEdit.riskAversion') : dim.label
           return (
             <Meter
               key={dim.key}
               id={`${baseId}-${dim.key}`}
-              label={dim.label}
+              label={label}
               hint={` · ${dim.hint}`}
               valueLabel={`${pct}%`}
               value={pct}
@@ -220,7 +224,7 @@ export function PersonaEditableJourneyBehavior({
           ) : (
             <EmptyState>No dos yet.</EmptyState>
           )}
-          <Field label="Add do">
+          <Field label={t('personaEdit.addDo')}>
             <Input
               block
               value={newDo}
@@ -261,7 +265,7 @@ export function PersonaEditableJourneyBehavior({
           ) : (
             <EmptyState>No donts yet.</EmptyState>
           )}
-          <Field label="Add dont">
+          <Field label={t('personaEdit.addDont')}>
             <Input
               block
               value={newDont}
@@ -302,7 +306,7 @@ export function PersonaEditableJourneyBehavior({
           ) : (
             <EmptyState>No authored heuristics yet.</EmptyState>
           )}
-          <Field label="Add heuristic">
+          <Field label={t('personaEdit.addHeuristic')}>
             <Input
               block
               value={newHeuristic}
@@ -319,7 +323,7 @@ export function PersonaEditableJourneyBehavior({
         </div>
       </div>
 
-      <Field label="Extra instructions">
+      <Field label={t('personaEdit.extraInstructions')}>
         <Textarea
           value={draft.extraInstructions ?? ''}
           rows={3}
@@ -342,7 +346,7 @@ export function PersonaEditableJourneyBehavior({
       ) : null}
       {saving ? (
         <Text role="meta" as="p">
-          Saving…
+          {t('common.saving')}
         </Text>
       ) : null}
     </Panel>

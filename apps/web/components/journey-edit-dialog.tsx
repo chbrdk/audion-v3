@@ -6,21 +6,9 @@ import type { JourneyDetail, JourneyStatus, JourneyWritePayload } from '@audion-
 import { Button, Field, Input, Panel, Text, Textarea } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 import { IconDelete, IconEdit } from './nav-icons'
 import { ValidateJourneyButton } from './validate-journey-button'
-
-const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' },
-]
-
-const TYPE_OPTIONS = [
-  { value: 'awareness', label: 'Awareness' },
-  { value: 'purchase', label: 'Purchase' },
-  { value: 'ux_audit', label: 'UX audit' },
-  { value: 'journey', label: 'Journey' },
-]
 
 /** Fixture TG options for MVP Select — paths/knowledge/target-group-migration-map.md */
 const TARGET_GROUP_OPTIONS = [
@@ -51,11 +39,30 @@ export function JourneyEditDialog({
   mode: 'create' | 'edit'
   journey: JourneyDetail | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [form, setForm] = useState<JourneyWritePayload>(emptyPayload())
   const [nameError, setNameError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  const statusOptions = [
+    { value: 'draft', label: t('dialogs.statusDraft') },
+    { value: 'active', label: t('dialogs.statusActive') },
+    { value: 'archived', label: t('dialogs.statusArchived') },
+  ]
+
+  const typeOptions = [
+    { value: 'awareness', label: t('dialogs.journeyTypeAwareness') },
+    { value: 'purchase', label: t('dialogs.journeyTypePurchase') },
+    { value: 'ux_audit', label: t('dialogs.journeyTypeUxAudit') },
+    { value: 'journey', label: t('dialogs.journeyTypeJourney') },
+  ]
+
+  const targetGroupOptions = [
+    { value: '', label: t('common.none') },
+    ...TARGET_GROUP_OPTIONS.filter((o) => o.value !== ''),
+  ]
 
   useEffect(() => {
     if (!open) return
@@ -78,7 +85,7 @@ export function JourneyEditDialog({
 
   async function onSave() {
     if (!form.name.trim()) {
-      setNameError('Name is required')
+      setNameError(t('dialogs.nameRequired'))
       return
     }
     setSaving(true)
@@ -107,7 +114,7 @@ export function JourneyEditDialog({
       router.push(paths.routes.journeyDetail(saved.id))
       router.refresh()
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Save failed')
+      setSaveError(error instanceof Error ? error.message : t('dialogs.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -120,27 +127,25 @@ export function JourneyEditDialog({
       open={open}
       onClose={onClose}
       className="audion-edit-dialog"
-      title={isCreate ? 'New journey' : 'Edit journey'}
+      title={isCreate ? t('dialogs.journeyNewTitle') : t('dialogs.journeyEditTitle')}
       actions={
         <>
           <Button variant="ghost" size="md" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button size="md" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving…' : isCreate ? 'Create' : 'Save'}
+            {saving ? t('common.saving') : isCreate ? t('common.create') : t('common.save')}
           </Button>
         </>
       }
     >
       <div className="audion-edit-form">
         <p className="audion-edit-lede">
-          {isCreate
-            ? 'Name the map and link a target group — phases can grow on the detail page later.'
-            : 'Update the journey brief. Edit phases on the timeline below.'}
+          {isCreate ? t('dialogs.journeyLedeCreate') : t('dialogs.journeyLedeEdit')}
         </p>
 
         <Field
-          label="Name"
+          label={t('dialogs.fieldName')}
           size="md"
           error={nameError ?? undefined}
           htmlFor="journey-name"
@@ -154,23 +159,23 @@ export function JourneyEditDialog({
               setForm((prev) => ({ ...prev, name: e.target.value }))
               if (nameError) setNameError(null)
             }}
-            placeholder="Journey name"
+            placeholder={t('dialogs.journeyNamePh')}
           />
         </Field>
 
         <div className="audion-edit-row">
-          <Field label="Type" size="md" htmlFor="journey-type">
+          <Field label={t('dialogs.fieldType')} size="md" htmlFor="journey-type">
             <Select
               id="journey-type"
-              options={TYPE_OPTIONS}
+              options={typeOptions}
               value={form.journeyType}
               onChange={(value) => setForm((prev) => ({ ...prev, journeyType: value }))}
             />
           </Field>
-          <Field label="Status" size="md" htmlFor="journey-status">
+          <Field label={t('dialogs.fieldStatus')} size="md" htmlFor="journey-status">
             <Select
               id="journey-status"
-              options={STATUS_OPTIONS}
+              options={statusOptions}
               value={form.status ?? 'draft'}
               onChange={(value) =>
                 setForm((prev) => ({ ...prev, status: value as JourneyStatus }))
@@ -179,10 +184,10 @@ export function JourneyEditDialog({
           </Field>
         </div>
 
-        <Field label="Target group" size="md" htmlFor="journey-tg">
+        <Field label={t('dialogs.fieldTargetGroup')} size="md" htmlFor="journey-tg">
           <Select
             id="journey-tg"
-            options={TARGET_GROUP_OPTIONS}
+            options={targetGroupOptions}
             value={form.targetGroupId ?? ''}
             onChange={(value) =>
               setForm((prev) => ({ ...prev, targetGroupId: value || null }))
@@ -190,14 +195,14 @@ export function JourneyEditDialog({
           />
         </Field>
 
-        <Field label="Description" size="md" htmlFor="journey-description">
+        <Field label={t('dialogs.fieldDescription')} size="md" htmlFor="journey-description">
           <Textarea
             id="journey-description"
             block
             rows={4}
             value={form.description ?? ''}
             onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-            placeholder="What decision or path does this map clarify?"
+            placeholder={t('dialogs.journeyDescPh')}
           />
         </Field>
 
@@ -208,6 +213,7 @@ export function JourneyEditDialog({
 }
 
 export function JourneyDetailActions({ journey }: { journey: JourneyDetail }) {
+  const t = useT()
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -229,7 +235,7 @@ export function JourneyDetailActions({ journey }: { journey: JourneyDetail }) {
       router.push(paths.routes.journeys)
       router.refresh()
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : 'Delete failed')
+      setDeleteError(error instanceof Error ? error.message : t('dialogs.deleteFailed'))
     } finally {
       setDeleting(false)
     }
@@ -243,8 +249,8 @@ export function JourneyDetailActions({ journey }: { journey: JourneyDetail }) {
         variant="ghost"
         size="sm"
         className="audion-edit-icon-btn"
-        aria-label="Edit journey"
-        title="Edit journey"
+        aria-label={t('tiles.editJourney')}
+        title={t('tiles.editJourney')}
         icon={<IconEdit />}
         onClick={() => setEditOpen(true)}
       />
@@ -253,8 +259,8 @@ export function JourneyDetailActions({ journey }: { journey: JourneyDetail }) {
         variant="ghost"
         size="sm"
         className="audion-edit-icon-btn audion-delete-icon-btn"
-        aria-label="Delete journey"
-        title="Delete journey"
+        aria-label={t('tiles.deleteJourney')}
+        title={t('tiles.deleteJourney')}
         icon={<IconDelete />}
         onClick={() => {
           setDeleteError(null)
@@ -276,7 +282,7 @@ export function JourneyDetailActions({ journey }: { journey: JourneyDetail }) {
             if (!deleting) setDeleteOpen(false)
           }}
           className="audion-edit-dialog"
-          title="Delete journey?"
+          title={t('dialogs.deleteJourneyTitle')}
           actions={
             <>
               <Button
@@ -285,17 +291,15 @@ export function JourneyDetailActions({ journey }: { journey: JourneyDetail }) {
                 onClick={() => setDeleteOpen(false)}
                 disabled={deleting}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button size="md" onClick={() => void onDelete()} disabled={deleting}>
-                {deleting ? 'Deleting…' : 'Delete'}
+                {deleting ? t('common.deleting') : t('common.delete')}
               </Button>
             </>
           }
         >
-          <p>
-            Delete <strong>{journey.name}</strong> and all of its phases? This cannot be undone.
-          </p>
+          <p>{t('dialogs.deleteJourneyBody', { name: journey.name })}</p>
           {deleteError ? (
             <p className="audion-edit-error" role="alert">
               {deleteError}
@@ -312,6 +316,7 @@ export function JourneyCreateButton({
 }: {
   variant?: 'button' | 'card'
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -323,16 +328,16 @@ export function JourneyCreateButton({
         >
           <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
             <Text role="headline" as="span" className="audion-tg-card-title">
-              New journey
+              {t('tiles.newJourney')}
             </Text>
             <p className="audion-tg-card-meta">
-              <span>Map a customer path</span>
+              <span>{t('tiles.newJourneyMeta')}</span>
             </p>
           </Panel>
         </button>
       ) : (
         <Button type="button" size="sm" onClick={() => setOpen(true)}>
-          Create journey
+          {t('tiles.createJourney')}
         </Button>
       )}
       {open ? (

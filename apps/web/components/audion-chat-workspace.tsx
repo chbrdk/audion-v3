@@ -24,6 +24,7 @@ import { TavusVideoPanel } from './tavus-video-panel'
 import { Select } from '../lib/msqdx-ui-client'
 import { selectTgChatPersonas } from '../lib/chat/tg-ask-all'
 import { paths } from '../lib/paths'
+import { useT } from '../lib/user-prefs'
 
 type Props = {
   personas: PersonaSummary[]
@@ -60,11 +61,6 @@ function iconBtnClass(active?: boolean): string {
     .join(' ')
 }
 
-const MODE_OPTIONS = [
-  { value: 'persona', label: 'Persona' },
-  { value: 'target_group', label: 'Zielgruppe' },
-]
-
 export function AudionChatWorkspace({
   personas,
   initialPersonaId,
@@ -79,8 +75,16 @@ export function AudionChatWorkspace({
   guestBudget = null,
   embedCapabilities = 'guest',
 }: Props) {
+  const t = useT()
   const router = useRouter()
   const shareMode = Boolean(shareProjectId)
+  const modeOptions = useMemo(
+    () => [
+      { value: 'persona', label: t('chat.modePersona') },
+      { value: 'target_group', label: t('chat.modeTargetGroup') },
+    ],
+    [t],
+  )
   const embedMode = presentation === 'embed'
   const embedFullMode = embedMode && embedCapabilities === 'full'
   const [mode, setMode] = useState<ChatMode>(
@@ -200,14 +204,14 @@ export function AudionChatWorkspace({
 
   const composerLeading =
     tgMode || (embedMode && !embedFullMode) || (shareMode && !embedFullMode) ? null : (
-    <div className="audion-chat-composer-actions" role="toolbar" aria-label="Chat modality">
+    <div className="audion-chat-composer-actions" role="toolbar" aria-label={t('chat.modalityAria')}>
       <Button
         type="button"
         variant="ghost"
         size="sm"
         className={iconBtnClass(modality === 'voice')}
         icon={<IconMic />}
-        aria-label="Voice"
+        aria-label={t('chat.voice')}
         aria-pressed={modality === 'voice'}
         disabled={busy}
         onClick={() => toggleModality('voice')}
@@ -218,7 +222,7 @@ export function AudionChatWorkspace({
         size="sm"
         className={iconBtnClass(modality === 'video')}
         icon={<IconVideo />}
-        aria-label={tavusBusy ? 'Starting video…' : 'Video'}
+        aria-label={tavusBusy ? t('chat.startingVideo') : t('chat.video')}
         aria-pressed={modality === 'video'}
         disabled={busy || tavusBusy}
         onClick={() => toggleModality('video')}
@@ -229,10 +233,14 @@ export function AudionChatWorkspace({
   const shareLeading = (
     <div className="audion-chat-topbar-leading">
       <Text role="label" className="audion-chat-share-label">
-        {persona?.name || 'Shared persona'}
+        {persona?.name || t('chat.sharedPersona')}
       </Text>
       <span className="audion-chat-share-badge">
-        {embedFullMode ? 'Persona chat' : embedMode ? 'Guest chat' : 'Public share'}
+        {embedFullMode
+          ? t('chat.badgePersonaChat')
+          : embedMode
+            ? t('chat.badgeGuestChat')
+            : t('chat.badgePublicShare')}
       </span>
       {embedMode && !embedFullMode ? null : (
         <ChatMoodboardStrip
@@ -253,14 +261,14 @@ export function AudionChatWorkspace({
         ) : (
           <div className="audion-chat-topbar-leading">
             <Field
-              label="Mode"
+              label={t('chat.mode')}
               size="md"
               htmlFor="chat-mode"
               className="audion-chat-mode-field"
             >
               <Select
                 id="chat-mode"
-                options={MODE_OPTIONS}
+                options={modeOptions}
                 value={mode}
                 onChange={onModeChange}
                 disabled={busy}
@@ -269,7 +277,7 @@ export function AudionChatWorkspace({
             {tgMode ? (
               <>
                 <Field
-                  label="Zielgruppe"
+                  label={t('chat.fieldTargetGroup')}
                   size="md"
                   htmlFor="chat-target-group"
                   className="audion-chat-persona-field"
@@ -291,7 +299,7 @@ export function AudionChatWorkspace({
             ) : (
               <>
                 <Field
-                  label="Persona"
+                  label={t('chat.fieldPersona')}
                   size="md"
                   htmlFor="chat-persona"
                   className="audion-chat-persona-field"
@@ -304,7 +312,7 @@ export function AudionChatWorkspace({
                     disabled={busy || !personaOptions.length}
                   />
                 </Field>
-                <div className="audion-chat-topbar-actions" role="group" aria-label="Chat links">
+                <div className="audion-chat-topbar-actions" role="group" aria-label={t('chat.linksAria')}>
                   <ChatMoodboardStrip
                     personaId={personaId}
                     projectId={shareProjectId}
@@ -327,33 +335,33 @@ export function AudionChatWorkspace({
     >
       <h1 className="visually-hidden">
         {embedMode
-          ? 'Embedded chat'
+          ? t('chat.titleEmbeddedChat')
           : shareMode
-            ? 'Shared chat'
+            ? t('chat.titleSharedChat')
             : tgMode
-              ? 'Target group chat'
-              : 'Chat'}
+              ? t('chat.titleTgChat')
+              : t('chat.titleChat')}
       </h1>
 
       {tgMode || (embedMode && !embedFullMode) ? null : modality === 'voice' &&
       (!shareMode || embedFullMode) ? (
         <p className="audion-edit-lede audion-chat-modality-note" role="status">
-          Voice mode stub — mic UI deferred. Text chat still works below.
+          {t('chatExtra.voiceStub')}
         </p>
       ) : null}
 
       {tgMode || (embedMode && !embedFullMode) ? null : modality === 'video' &&
       (!shareMode || embedFullMode) ? (
         <div className="audion-chat-tavus" role="status">
-          {tavusBusy ? <p className="audion-edit-lede">Starting video session…</p> : null}
+          {tavusBusy ? <p className="audion-edit-lede">{t('chat.startingVideo')}</p> : null}
           {tavusError ? <p className="audion-edit-error">{tavusError}</p> : null}
           {tavusErrorCode === 'TAVUS_REPLICA_MISSING' && personaId ? (
             <p className="audion-edit-lede">
               <Link href={paths.routes.personaDetail(personaId)} className="audion-link">
-                Open persona profile
+                {t('chatExtra.openPersonaProfile')}
               </Link>
               {' — '}
-              add the Tavus replica ID (starts with r), save, then start video again.
+              {t('chatExtra.tavusReplicaHint')}
             </p>
           ) : null}
           {tavusSession ? (
