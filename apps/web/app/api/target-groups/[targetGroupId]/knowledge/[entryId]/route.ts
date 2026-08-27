@@ -24,6 +24,15 @@ export async function PUT(request: Request, { params }: Params) {
     segment: tg.segment,
     knowledgeEntries: tg.knowledgeEntries.map((e) => (e.id === entryId ? entry : e)),
   })
+  const { scheduleKnowledgeEntryRagSync, tgEntrySourceRef } = await import(
+    '../../../../../../lib/knowledge/rag/sync'
+  )
+  scheduleKnowledgeEntryRagSync({
+    projectId: tg.projectId,
+    sourceRef: tgEntrySourceRef(targetGroupId, entry.id),
+    title: entry.title,
+    text: entry.content,
+  })
   return NextResponse.json(entry)
 }
 
@@ -38,6 +47,13 @@ export async function DELETE(_request: Request, { params }: Params) {
     name: tg.name,
     segment: tg.segment,
     knowledgeEntries: tg.knowledgeEntries.filter((e) => e.id !== entryId),
+  })
+  const { scheduleKnowledgeEntryRagDelete, tgEntrySourceRef } = await import(
+    '../../../../../../lib/knowledge/rag/sync'
+  )
+  scheduleKnowledgeEntryRagDelete({
+    projectId: tg.projectId,
+    sourceRef: tgEntrySourceRef(targetGroupId, entryId),
   })
   return NextResponse.json({ ok: true })
 }

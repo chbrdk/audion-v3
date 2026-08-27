@@ -37,7 +37,7 @@ Re-index is required if the model ID or dimension ever changes.
 - Storion as embedding provider (optional later as **file SSOT** only)
 - Replacing Collection Knowledge Pack publish
 - Hybrid lexical+ANN (phase 2; cosine-only first)
-- Auto-ingest every TipTap keystroke (explicit ingest / post-research job)
+- Auto-ingest every TipTap keystroke (debounce via save commit only)
 
 ## Architecture
 
@@ -135,10 +135,12 @@ OpenRouter headers: `HTTP-Referer` / `X-Title` from staging origin / brand label
 
 | Trigger | Behaviour |
 |---------|-----------|
-| Explicit “Index for chat” on a knowledge doc / DOCX | Sync job: chunk → embed → upsert |
-| After research run success | Optional autosync distill chapters into chunks (flag) |
-| Re-index document | Delete old chunks for `document_id`, rewrite |
-| Delete document | Cascade chunks |
+| Project knowledge chapter save (`PATCH` / research apply) | Auto-sync chapters → RAG (`sourceType` `chapter` / `research`) |
+| Persona / TG knowledge entry create/update | Auto-sync when `projectId` set (`sourceType` `entry`) |
+| Chapter / entry delete | Remove matching RAG document by `sourceRef` |
+| Manual `POST /api/knowledge/rag/ingest` | Still available for ops / DOCX; **no separate “Index for chat” CTA** |
+
+UI shows status badges (`In chat` / `Indexing…` / failed) on dossier cards — no extra index button.
 
 Collection Knowledge Pack publish remains a **separate** distill path (`knowledge-pack-publish.md`) — RAG does not write to Plexon.
 

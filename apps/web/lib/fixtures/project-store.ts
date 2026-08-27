@@ -351,9 +351,17 @@ export async function storePatchProject(
   id: string,
   payload: Partial<ProjectWritePayload>,
 ): Promise<ProjectDetail | null> {
-  if (isProjectsDatabaseConfigured()) {
-    const db = await dbApi()
-    return db.dbPatchProject(id, payload)
+  const patched = isProjectsDatabaseConfigured()
+    ? await (async () => {
+        const db = await dbApi()
+        return db.dbPatchProject(id, payload)
+      })()
+    : await memoryPatchProject(id, payload)
+
+  if (patched && payload.knowledgeChapters !== undefined) {
+    const { scheduleProjectChaptersRagSync } = await import('../knowledge/rag/sync')
+    scheduleProjectChaptersRagSync(id, patched.knowledgeChapters ?? [])
   }
-  return memoryPatchProject(id, payload)
+
+  return patched
 }

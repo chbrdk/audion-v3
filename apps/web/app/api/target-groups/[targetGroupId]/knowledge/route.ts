@@ -30,5 +30,14 @@ export async function POST(request: Request, { params }: Params) {
     knowledgeEntries: [...tg.knowledgeEntries, entry],
   })
   if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const { scheduleKnowledgeEntryRagSync, tgEntrySourceRef } = await import(
+    '../../../../../lib/knowledge/rag/sync'
+  )
+  scheduleKnowledgeEntryRagSync({
+    projectId: tg.projectId,
+    sourceRef: tgEntrySourceRef(targetGroupId, entry.id),
+    title: entry.title,
+    text: entry.content,
+  })
   return NextResponse.json(entry, { status: 201 })
 }

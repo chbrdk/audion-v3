@@ -3546,8 +3546,36 @@ main { min-height: 100vh; }
 
 .audion-knowledge-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
+  align-items: center;
   justify-content: flex-end;
+}
+
+.audion-knowledge-rag-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted, #666);
+  line-height: 1.4;
+}
+
+.audion-knowledge-rag-badge {
+  margin-right: auto;
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+  color: var(--muted, #666);
+}
+
+.audion-knowledge-rag-badge.is-ready {
+  color: color-mix(in srgb, var(--msqdx-ink, #111) 72%, transparent);
+}
+
+.audion-knowledge-rag-badge.is-pending {
+  color: var(--muted, #666);
+}
+
+.audion-knowledge-rag-badge.is-failed {
+  color: color-mix(in srgb, #b42318 85%, transparent);
 }
 
 .audion-knowledge-add {

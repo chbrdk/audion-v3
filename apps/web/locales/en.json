@@ -763,7 +763,11 @@
     "addEntry": "Add entry",
     "newEntry": "New entry",
     "sources": "Sources",
-    "empty": "No knowledge entries yet."
+    "empty": "No knowledge entries yet.",
+    "ragHint": "Saved knowledge is available to persona chat automatically.",
+    "ragReady": "In chat",
+    "ragPending": "Indexing…",
+    "ragFailed": "Chat index failed"
   },
   "apiDocs": {
     "hint": "Live BFF route catalog. OpenAPI iframe may follow later.",

@@ -113,6 +113,8 @@ export function TargetGroupDetailPanel({
           entries={targetGroup.knowledgeEntries}
           documents={targetGroup.documents}
           listUrl={paths.routes.apiTargetGroupKnowledge(targetGroup.id)}
+          projectId={targetGroup.projectId}
+          entrySourceRef={(entryId) => `tg:${targetGroup.id}:${entryId}`}
         />
       </div>
     </article>

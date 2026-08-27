@@ -21,6 +21,15 @@ export async function PUT(request: Request, { params }: Params) {
     role: persona.role,
     knowledgeEntries: persona.knowledgeEntries.map((e) => (e.id === entryId ? entry : e)),
   })
+  const { personaEntrySourceRef, scheduleKnowledgeEntryRagSync } = await import(
+    '../../../../../../lib/knowledge/rag/sync'
+  )
+  scheduleKnowledgeEntryRagSync({
+    projectId: persona.projectId,
+    sourceRef: personaEntrySourceRef(personaId, entry.id),
+    title: entry.title,
+    text: entry.content,
+  })
   return NextResponse.json(entry)
 }
 
@@ -35,6 +44,13 @@ export async function DELETE(_request: Request, { params }: Params) {
     name: persona.name,
     role: persona.role,
     knowledgeEntries: persona.knowledgeEntries.filter((e) => e.id !== entryId),
+  })
+  const { personaEntrySourceRef, scheduleKnowledgeEntryRagDelete } = await import(
+    '../../../../../../lib/knowledge/rag/sync'
+  )
+  scheduleKnowledgeEntryRagDelete({
+    projectId: persona.projectId,
+    sourceRef: personaEntrySourceRef(personaId, entryId),
   })
   return NextResponse.json({ ok: true })
 }

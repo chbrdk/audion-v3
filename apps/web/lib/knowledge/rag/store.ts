@@ -77,6 +77,11 @@ export async function ensureKnowledgeRagSchema(): Promise<boolean> {
       CREATE INDEX IF NOT EXISTS knowledge_documents_project_idx
       ON knowledge_documents (project_id)
     `)
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS knowledge_documents_project_source_ref_uidx
+      ON knowledge_documents (project_id, source_ref)
+      WHERE source_ref IS NOT NULL
+    `)
     ensured = true
     schemaOk = true
     return true
@@ -297,6 +302,25 @@ export async function retrieveKnowledgeSources(input: {
   } catch {
     return empty
   }
+}
+
+export async function findKnowledgeRagDocumentIdBySourceRef(
+  projectId: string,
+  sourceRef: string,
+): Promise<string | null> {
+  if (!projectId.trim() || !sourceRef.trim()) return null
+  if (!isProjectsDatabaseConfigured()) return null
+  if (!(await ensureKnowledgeRagSchema())) return null
+  const db = getDb()
+  const result = await db.execute(sql`
+    SELECT id
+    FROM knowledge_documents
+    WHERE project_id = ${projectId.trim()}
+      AND source_ref = ${sourceRef.trim()}
+    LIMIT 1
+  `)
+  const row = result.rows[0] as { id?: string } | undefined
+  return row?.id ? String(row.id) : null
 }
 
 export async function listKnowledgeRagDocuments(

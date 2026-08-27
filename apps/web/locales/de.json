@@ -763,7 +763,11 @@
     "addEntry": "Eintrag hinzufügen",
     "newEntry": "Neuer Eintrag",
     "sources": "Quellen",
-    "empty": "Noch keine Knowledge-Einträge."
+    "empty": "Noch keine Knowledge-Einträge.",
+    "ragHint": "Gespeichertes Knowledge steht Persona-Chat automatisch zur Verfügung.",
+    "ragReady": "Im Chat",
+    "ragPending": "Indexiert…",
+    "ragFailed": "Chat-Index fehlgeschlagen"
   },
   "apiDocs": {
     "hint": "Live-BFF-Routenkatalog. OpenAPI-Iframe kann später folgen.",

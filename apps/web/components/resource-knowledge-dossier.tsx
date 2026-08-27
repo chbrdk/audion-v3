@@ -11,6 +11,7 @@ import {
 } from '../lib/project-knowledge'
 import { useT } from '../lib/user-prefs'
 import { KnowledgeRichEditor } from './knowledge-rich-editor'
+import { KnowledgeRagStatusBadge, useKnowledgeRagStatus } from './knowledge-rag-status'
 
 function newEntryId(): string {
   return `know-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
@@ -25,12 +26,18 @@ export function ResourceKnowledgeDossier({
   entries = [],
   documents = [],
   listUrl,
+  projectId = null,
+  entrySourceRef,
 }: {
   title?: string
   entries?: KnowledgeEntry[]
   documents?: DocumentSource[]
   /** GET list · POST create; PUT/DELETE use `${listUrl}/${entryId}` */
   listUrl: string
+  /** When set, shows chat-index status for this project's RAG docs. */
+  projectId?: string | null
+  /** Map entry id → RAG sourceRef (persona:/tg: prefixes). */
+  entrySourceRef?: (entryId: string) => string
 }) {
   const t = useT()
   const resolvedTitle = title ?? t('knowledge.title')
@@ -45,6 +52,7 @@ export function ResourceKnowledgeDossier({
   const [bodyDraft, setBodyDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { bySourceRef: ragByRef, refresh: refreshRag } = useKnowledgeRagStatus(projectId)
 
   useEffect(() => {
     if (editingId) return
@@ -165,6 +173,7 @@ export function ResourceKnowledgeDossier({
       }
       setEditingId(null)
       router.refresh()
+      window.setTimeout(() => void refreshRag(), 800)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed')
     } finally {
@@ -200,11 +209,17 @@ export function ResourceKnowledgeDossier({
       if (openId === id) setOpenId(null)
       if (editingId === id) setEditingId(null)
       router.refresh()
+      window.setTimeout(() => void refreshRag(), 400)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed')
     } finally {
       setSaving(false)
     }
+  }
+
+  function ragStatusFor(entryId: string) {
+    const ref = entrySourceRef?.(entryId) ?? entryId
+    return ragByRef[ref]?.status
   }
 
   return (
@@ -216,6 +231,7 @@ export function ResourceKnowledgeDossier({
         metaTone="accent"
         as="h3"
       />
+      {projectId ? <p className="audion-knowledge-rag-hint">{t('knowledge.ragHint')}</p> : null}
 
       {items.length === 0 ? (
         <button
@@ -277,6 +293,7 @@ export function ResourceKnowledgeDossier({
                   />
 
                   <div className="audion-knowledge-actions">
+                    <KnowledgeRagStatusBadge status={ragStatusFor(entry.id)} />
                     {!isEditing ? (
                       <Button
                         type="button"

@@ -15,6 +15,7 @@ import {
   sanitizeKnowledgeHtml,
 } from '../lib/project-knowledge'
 import { KnowledgeRichEditor } from './knowledge-rich-editor'
+import { KnowledgeRagStatusBadge, useKnowledgeRagStatus } from './knowledge-rag-status'
 import { PublishKnowledgePackCta } from './publish-knowledge-pack-cta'
 
 export function ProjectKnowledgeDossier({
@@ -41,6 +42,7 @@ export function ProjectKnowledgeDossier({
   const [bodyDraft, setBodyDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { bySourceRef: ragByRef, refresh: refreshRag } = useKnowledgeRagStatus(projectId)
 
   useEffect(() => {
     if (editingId) return
@@ -65,6 +67,7 @@ export function ProjectKnowledgeDossier({
       }
       setChapters(next)
       router.refresh()
+      window.setTimeout(() => void refreshRag(), 800)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed')
       throw e
@@ -183,6 +186,7 @@ export function ProjectKnowledgeDossier({
         projectId={projectId}
         platformProjectId={platformProjectId}
       />
+      <p className="audion-knowledge-rag-hint">{t('knowledge.ragHint')}</p>
 
       {chapters.length === 0 ? (
         <button
@@ -216,6 +220,7 @@ export function ProjectKnowledgeDossier({
           }
           items={chapters.map((chapter) => {
             const isEditing = editingId === chapter.id
+            const rag = ragByRef[chapter.id]
             return {
               id: chapter.id,
               title: chapter.title,
@@ -247,6 +252,7 @@ export function ProjectKnowledgeDossier({
                   />
 
                   <div className="audion-knowledge-actions">
+                    <KnowledgeRagStatusBadge status={rag?.status} />
                     {!isEditing ? (
                       <Button
                         type="button"

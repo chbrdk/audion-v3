@@ -29,5 +29,14 @@ export async function POST(request: Request, { params }: Params) {
     role: persona.role,
     knowledgeEntries: [...persona.knowledgeEntries, entry],
   })
+  const { personaEntrySourceRef, scheduleKnowledgeEntryRagSync } = await import(
+    '../../../../../lib/knowledge/rag/sync'
+  )
+  scheduleKnowledgeEntryRagSync({
+    projectId: persona.projectId,
+    sourceRef: personaEntrySourceRef(personaId, entry.id),
+    title: entry.title,
+    text: entry.content,
+  })
   return NextResponse.json(entry, { status: 201 })
 }

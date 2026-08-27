@@ -58,3 +58,15 @@ describe('cosineSimilarity', () => {
     expect(cosineSimilarity([1, 0], [0, 1])).toBeCloseTo(0)
   })
 })
+
+describe('knowledge rag sync refs', () => {
+  it('maps research chapter ids', async () => {
+    const { chapterRagSourceType, personaEntrySourceRef, tgEntrySourceRef } = await import(
+      '../lib/knowledge/rag/sync'
+    )
+    expect(chapterRagSourceType('ch-research-market')).toBe('research')
+    expect(chapterRagSourceType('ch-company')).toBe('chapter')
+    expect(personaEntrySourceRef('p1', 'e1')).toBe('persona:p1:e1')
+    expect(tgEntrySourceRef('tg1', 'e1')).toBe('tg:tg1:e1')
+  })
+})
