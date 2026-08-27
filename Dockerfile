@@ -26,8 +26,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Bump MSQDX_UI_REF whenever audion barrels need a newer primitive from chbrdk/msqdx-ui.
 FROM base AS ds
 ARG MSQDX_UI_REPO=https://github.com/chbrdk/msqdx-ui.git
-# Same pin as brandion-v3 / checkion-v3 (ChatOverlay + ReactNode return type).
-ARG MSQDX_UI_REF=5323011442f3665dc72da00ec77ebfb6559e1d3e
+# msqdx-ui origin/main @ 2026-08-27 (BrandCorner launcher, AppShell 24px, MarkdownProse, …)
+ARG MSQDX_UI_REF=b5f4dfa6014a6304e7d73907a5eb7f76f085f68f
 RUN git init /workspace/msqdx-ui \
     && cd /workspace/msqdx-ui \
     && git remote add origin "${MSQDX_UI_REPO}" \
