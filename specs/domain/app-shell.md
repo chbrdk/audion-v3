@@ -2,14 +2,14 @@
 
 **Status:** Accepted — 2026-07-30; Central Assistant host — 2026-08-10; no global PageTitle — 2026-08-27  
 **Implements:** `apps/web/components/app-shell.tsx` · `components/platform-assistant-host.tsx` · `lib/paths.ts`  
-**DS:** `AppFrame`, `NavRail`, `BrandCorner`, `ChatOverlay` from `@msqdx/ui` (optional slim topbar for `leading` / `actions` / `status` only)  
+**DS:** `AppFrame`, `NavRail`, `BrandCorner`, `ShellBackButton`, `ChatOverlay` from `@msqdx/ui` (optional slim topbar for `leading` / `actions` / `status` only)  
 **Platform:** `plexon-v3/specs/domain/central-assistant-flyout.md`  
 **Parity:** Checkion `specs/domain/app-shell.md` — no duplicate PageTitle chrome
 
 ## Rules
 
 - Shared chrome only via `@msqdx/ui` (server barrel `lib/msqdx-ui.ts`, shell barrel `lib/msqdx-ui-shell.ts`).
-- Composition language: `app-frame`, atmospheric background, floating rail, top-right brand corner.
+- Composition language: `app-frame`, atmospheric background, floating rail, top-left `ShellBackButton` (`router.back()`), top-right brand corner.
 - **No global `PageTitle` / duplicate hub headline** — page identity lives in the nav rail, magazine heroes, or in-page leads. Legacy `title` / `titleKey` / `titleHref` / `titleTone` props are ignored.
 - Optional topbar only when `leading` or `actions` is set (e.g. Chat mode picker). **No** global `status` / `TopStatus` topbar — counts and publish state live in magazine/list chrome.
 - Without a topbar, `.audion-stage--flush-top` adds content padding/margin so the first viewport breathes.

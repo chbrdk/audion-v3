@@ -70,7 +70,8 @@
     "studies": "Studien",
     "settings": "Einstellungen",
     "settingsAria": "Einstellungen",
-    "homeAria": "{brand} Startseite"
+    "homeAria": "{brand} Startseite",
+    "back": "Zurück"
   },
   "pages": {
     "home": {

@@ -70,7 +70,8 @@
     "studies": "Studies",
     "settings": "Settings",
     "settingsAria": "Settings",
-    "homeAria": "{brand} home"
+    "homeAria": "{brand} home",
+    "back": "Back"
   },
   "pages": {
     "home": {
