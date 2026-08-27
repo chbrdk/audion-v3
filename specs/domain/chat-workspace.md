@@ -109,7 +109,7 @@ Each native chat turn resolves a **deterministic adaptive system prompt** from t
 | Chat rules | Short turns (~80–120 words, 1–3 paragraphs); sparse markdown |
 | Tooling | URL / inspect hints appended in `native-stream` |
 
-Assembly: `apps/web/lib/chat/adaptive-persona-chat-prompt.ts` · resolve: `resolvePersonaSystemPrompt` · stream: `native-stream.ts` with `max_tokens` (`paths.chatCompletionMaxTokens`, default 500).
+Assembly: `apps/web/lib/chat/adaptive-persona-chat-prompt.ts` · resolve: `resolvePersonaSystemPrompt` · stream: `native-stream.ts` with `max_completion_tokens` (`paths.chatCompletionMaxTokens`, default 500).
 
 Custom voice is edited under Settings → Prompts (persona band). Preview of what the model sees is `resolvedSystemPrompt` on the detail API.
 
@@ -144,4 +144,4 @@ Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenR
 10. Persona video toggle with `tavusReplicaId` embeds a Tavus CVI iframe (not a stub URL).
 11. Persona chat can attach images, stream with vision, and A/B-compare exactly two images.
 12. Persona chat can attach `.docx`; text merges into the user turn; attachments survive redeploy when Postgres is configured.
-13. Adaptive system prompt includes traits/style/goals/pains; custom voice overlays without dropping the profile; chat completions pass `max_tokens`.
+13. Adaptive system prompt includes traits/style/goals/pains; custom voice overlays without dropping the profile; chat completions pass `max_completion_tokens`.

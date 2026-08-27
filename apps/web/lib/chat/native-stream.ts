@@ -205,7 +205,7 @@ export async function* nativeChatStreamEvents(
         abCompare,
       ),
       temperature: 0.7,
-      max_tokens: getChatCompletionMaxTokens(),
+      max_completion_tokens: getChatCompletionMaxTokens(),
     })
 
     let full = ''

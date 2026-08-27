@@ -54,7 +54,7 @@ Project knowledge RAG (planned): internal retrieve on stream when `projectId` se
 - Client uses `paths.routes.chat` + query `personaId` / `projectId` / `conversationId`
 - Fixture mode: deterministic transcript + incremental fake deltas for tests
 - Errors surface as `Alert`; toasts optional for non-stream failures (`Toast` from DS)
-- Native stream builds an **adaptive persona system prompt** every turn (`adaptive-persona-chat-prompt.ts`); optional custom voice overlays it. Completions use `max_tokens` from `paths.chatCompletionMaxTokens` (override `AI_CHAT_MAX_TOKENS`).
+- Native stream builds an **adaptive persona system prompt** every turn (`adaptive-persona-chat-prompt.ts`); optional custom voice overlays it. Completions use `max_completion_tokens` from `paths.chatCompletionMaxTokens` (override `AI_CHAT_MAX_TOKENS`).
 
 ## Adaptive prompt
 

@@ -15,7 +15,7 @@ Thin `persona.chat_system_default` (name/role/bio/values only) made chat too gen
 4. Short-turn chat rules  
 5. URL tooling append in `native-stream`
 
-`max_tokens`: `paths.chatCompletionMaxTokens` (default **500**), env `AI_CHAT_MAX_TOKENS`.
+`max_completion_tokens`: `paths.chatCompletionMaxTokens` (default **500**), env `AI_CHAT_MAX_TOKENS` (newer OpenAI models reject legacy `max_tokens`).
 
 ## Custom voice
 
