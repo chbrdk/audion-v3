@@ -2600,7 +2600,7 @@ main { min-height: 100vh; }
 }
 
 .audion-chat-panel.chat-panel-open {
-  /* Fill remaining stage height (flex); avoid fixed 100dvh − N which pushes the composer below the fold after shell/topbar padding. */
+  /* Fill leftover stage height; scroll only inside .chat-turns (not the document). */
   --chat-panel-open-min-height: 0;
   width: 100%;
   max-width: none;
@@ -2615,11 +2615,25 @@ main { min-height: 100vh; }
   gap: 0.55rem;
 }
 
-/* Chat route: stage + panel consume leftover viewport under the topbar */
+/*
+ * Chat route: lock shell to the viewport so .chat-turns gets a bounded height
+ * and overflow-y:auto works. min-height alone lets the column grow forever,
+ * then panel overflow:hidden clips messages with no scrollport.
+ */
+.app-frame:has(.audion-chat-panel) {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .app-main:has(.audion-chat-panel) {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
   padding-bottom: 0.75rem;
   box-sizing: border-box;
 }
@@ -2630,6 +2644,7 @@ main { min-height: 100vh; }
   display: flex;
   flex-direction: column;
   gap: 0;
+  overflow: hidden;
 }
 
 .app-main:has(.audion-chat-panel) .audion-stage {
@@ -2639,6 +2654,7 @@ main { min-height: 100vh; }
   flex-direction: column;
   padding-block-start: clamp(0.65rem, 1.4vw, 1.15rem);
   padding-block-end: 0;
+  overflow: hidden;
 }
 
 .app-main:has(.audion-chat-panel) .audion-stage > .visually-hidden {
@@ -2659,6 +2675,7 @@ main { min-height: 100vh; }
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Keep message bubbles readable; tool chrome can use the stage */

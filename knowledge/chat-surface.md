@@ -21,7 +21,7 @@ Conversation sits on the page — **no Panel / card chrome**. Typography carries
 
 - `.audion-chat-persona-field` / `.audion-chat-topbar-leading` / `.audion-chat-composer-actions` / `.audion-chat-composer-icon`
 - Product flyout content: `.audion-chat-*-flyover` width variants / lede / actions / footer (shell = DS `.ds-flyout`)
-- `--chat-panel-open-min-height` / flex-fill: chat stage fills leftover viewport under topbar so the composer stays above the fold (not a fixed `100dvh − N`)
+- Chat shell locks to `100dvh`; message list scrolls in `.chat-turns` (composer stays pinned)
 - `.audion-chat-history` list page width
 - `.visually-hidden` for a11y title
 
