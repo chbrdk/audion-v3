@@ -34,8 +34,9 @@ async function dbApi() {
   return import('../db/ux-studies')
 }
 
-let studies: UxStudyDetail[] = DEMO_UX_STUDIES.map((s) => structuredClone(s))
-let waves: UxWaveDetail[] = DEMO_UX_WAVES.map((w) => structuredClone(w))
+/** Empty until create or `resetUxStudyStore()` (tests). No DEMO product seed. */
+let studies: UxStudyDetail[] = []
+let waves: UxWaveDetail[] = []
 
 export function resetUxStudyStore(): void {
   studies = DEMO_UX_STUDIES.map((s) => structuredClone(s))

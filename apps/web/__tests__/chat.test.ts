@@ -42,6 +42,6 @@ describe('chat fixture stream', () => {
     })) {
       events.push(event)
     }
-    expect(events[0]).toEqual({ type: 'error', message: 'Message is required' })
+    expect(events[0]).toEqual({ type: 'error', message: 'Message or attachment is required' })
   })
 })

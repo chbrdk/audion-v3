@@ -11,16 +11,13 @@ export default async function JourneyDetailPage({
   const { journeyId } = await params
   try {
     const result = await fetchJourneyDetail(journeyId)
-    const demo = result.origin === 'fixtures'
     return (
       <AppShell
         title={result.journey?.name ?? 'Journey'}
-        description={demo ? 'Demo fixtures — API offline.' : undefined}
         status={
           <TopStatus
             level={result.journey ? 'ok' : 'warn'}
-            primary={result.journey ? (demo ? 'demo data' : 'live') : 'missing'}
-            secondary={result.journey?.status ?? 'not found'}
+            primary={result.journey?.status ?? 'missing'}
           />
         }
       >

@@ -11,16 +11,13 @@ export default async function TargetGroupDetailPage({
   const { targetGroupId } = await params
   try {
     const result = await fetchTargetGroupDetail(targetGroupId)
-    const demo = result.origin === 'fixtures'
     return (
       <AppShell
         title={result.targetGroup?.name ?? 'Target group'}
-        description={demo ? 'Demo fixtures — API offline.' : undefined}
         status={
           <TopStatus
             level={result.targetGroup ? 'ok' : 'warn'}
-            primary={result.targetGroup ? (demo ? 'demo data' : 'live') : 'missing'}
-            secondary={result.targetGroup?.status ?? 'not found'}
+            primary={result.targetGroup?.status ?? 'missing'}
           />
         }
       >

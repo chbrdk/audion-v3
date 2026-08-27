@@ -4,12 +4,12 @@
 Accepted (Phase 1) — editorial magazine on `/`
 
 ## Goal
-Replace the thin Panel / Easy-setup stub home with one magazine composition: brand cover, topic entry tiles, three recent entity columns (Personas · Projects · Target groups), and a short Journeys strip — Checkion home parity without scan jargon.
+Replace the thin Panel stub home with one magazine composition: brand cover, topic entry tiles, three recent entity columns (Personas · Projects · Target groups), and a short Journeys strip — Checkion home parity without scan jargon.
 
 ## Composition (`HomeMagazine` / `audion-magazine--home`)
 Full stage width (no narrow Panel cap). Spine — not stacked dashboard panels:
 
-1. **Cover** — AUDION as hero · short product lede · primary CTA **Chat** · ghost **Easy setup** (optional Projects ghost)
+1. **Cover** — AUDION as hero · short product lede · primary CTA **Chat** · ghost **Projects**
 2. **01 · Topics** — five capability tiles: **Personas** · **Projects** · **Target groups** · **Journeys** · **Chat** → hub routes
 3. **02 · Recent** — three equal columns (`audion-home-recent-columns`), each a numbered `audion-magazine-list`:
    - **Personas** — recent summaries (~6–8); link `/personas/:id`
@@ -30,6 +30,7 @@ App composition for magazine chrome (`audion-home-*`, topic tiles, recent lists,
 
 ## Drop / reshape
 - `HomeWorkspacePanel` Panel spine and topbar Easy-setup / Queue / first-slice links as the home story
+- Easy Setup Cover CTA and `/setup` product surface (dropped — `knowledge/easy-setup-2026.md`)
 - Duplicate `AppShell` `titleKey` / `descriptionKey` on `/` — cover is the hero identity
 
 ## Out of scope (Phase 1)

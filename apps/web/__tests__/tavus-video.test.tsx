@@ -347,7 +347,7 @@ describe('TavusVideoPanel', () => {
         personaName="Alex Morgan"
       />,
     )
-    const frame = screen.getByTitle('Tavus video: Alex Morgan')
+    const frame = screen.getByTitle('Video call with Alex Morgan')
     expect(frame.tagName).toBe('IFRAME')
     expect(frame.getAttribute('src')).toBe('https://tavus.daily.co/cvi-live?t=mtok')
     expect(frame.getAttribute('allow')).toContain('camera')

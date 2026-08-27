@@ -1,4 +1,4 @@
-import { describe, expect, it, afterEach, vi } from 'vitest'
+import { describe, expect, it, afterEach, beforeEach, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { StudyDetailPanel } from '../components/study-detail-panel'
 import { StudyListPanel } from '../components/study-list-panel'
@@ -25,6 +25,10 @@ vi.mock('../components/knowledge-rich-editor', () => ({
     />
   ),
 }))
+
+beforeEach(() => {
+  resetUxStudyStore()
+})
 
 afterEach(() => {
   cleanup()

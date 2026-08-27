@@ -1,9 +1,11 @@
 import React from 'react'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GeneratePhaseMomentsButton } from '../components/generate-phase-moments-button'
 import { ValidateJourneyButton } from '../components/validate-journey-button'
-import { storeJourneyDetail } from '../lib/fixtures/journey-store'
+import { resetJourneyStore, storeJourneyDetail } from '../lib/fixtures/journey-store'
+import { resetTargetGroupStore } from '../lib/fixtures/target-group-store'
+import { resetPersonaStore } from '../lib/fixtures/persona-store'
 import { resetJourneyValidationStore } from '../lib/fixtures/journey-validation-store'
 import { paths } from '../lib/paths'
 
@@ -11,9 +13,19 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }))
 
+beforeEach(() => {
+  resetJourneyStore()
+  resetTargetGroupStore()
+  resetPersonaStore()
+  resetJourneyValidationStore()
+})
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  resetJourneyStore()
+  resetTargetGroupStore()
+  resetPersonaStore()
   resetJourneyValidationStore()
 })
 

@@ -1968,6 +1968,78 @@ main { min-height: 100vh; }
   text-transform: lowercase;
 }
 
+/* Hub index Cards | List (personas / projects / TGs / journeys) */
+.audion-hub-index-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+.audion-hub-index-head--bare {
+  justify-content: flex-end;
+  margin-bottom: var(--space-2, 0.5rem);
+}
+
+.audion-hub-index-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3, 0.75rem);
+}
+
+.audion-hub-index-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+.audion-hub-index-list {
+  margin-top: 0;
+}
+
+.audion-hub-index-list > li {
+  align-items: center;
+}
+
+.audion-hub-index-list-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.audion-hub-index-list-row:hover .audion-hub-index-list-name,
+.audion-hub-index-list-row:focus-visible .audion-hub-index-list-name {
+  color: var(--accent);
+}
+
+.audion-hub-index-list-name {
+  font-family: var(--font-display);
+  font-size: var(--type-md, 1rem);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--track-display, 0.02em);
+  color: var(--ink);
+  transition: color 0.15s ease;
+}
+
+.audion-hub-index-list-meta {
+  font-family: var(--font-body);
+  font-size: var(--type-sm, 0.875rem);
+  color: var(--muted);
+}
+
+.audion-hub-index-list-meta [data-status] {
+  text-transform: lowercase;
+}
+
 .audion-magazine-topbar {
   display: flex;
   align-items: flex-start;

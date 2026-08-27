@@ -11,7 +11,7 @@ export default async function ChatHistoryPage() {
   return (
     <AppShell
       titleKey="pages.chatHistory.title"
-      status={<HubTopStatus demo total={list.total} entity="conversations" />}
+      status={<HubTopStatus total={list.total} entity="conversations" />}
     >
       <ChatHistoryPanel items={list.items} />
     </AppShell>

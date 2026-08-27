@@ -13,8 +13,6 @@
     "signOut": "Sign out",
     "signingOut": "Signing out…",
     "signingIn": "Signing in…",
-    "live": "live",
-    "fixtures": "fixtures",
     "backToSettings": "← Settings",
     "apply": "Apply",
     "filter": "Filter",
@@ -81,8 +79,7 @@
     },
     "projects": {
       "title": "Projects",
-      "lead": "Browse workspaces.",
-      "leadDemo": "Local fixtures (no DATABASE_URL). Staging uses Postgres — Plexon-synced projects survive redeploy."
+      "lead": "Browse workspaces."
     },
     "personas": {
       "title": "Personas",
@@ -98,8 +95,7 @@
     },
     "studies": {
       "title": "UX Studies",
-      "lead": "Browse UX study waves.",
-      "leadDemo": "Demo fixtures — Study → Wave → Evaluate → Compare."
+      "lead": "Browse UX study waves."
     },
     "chat": {
       "title": "Chat",
@@ -114,10 +110,6 @@
     "queue": {
       "title": "Queue",
       "lead": "Document-processing jobs — fixture dashboard (V2 queue shape)."
-    },
-    "setup": {
-      "title": "Easy setup",
-      "lead": "Bootstrap a project, target group, and persona from one brief."
     },
     "settings": {
       "title": "Settings",
@@ -149,13 +141,8 @@
       "backStudies": "← Studies"
     }
   },
-  "hubs": {
-    "demoFixturesOffline": "Demo fixtures — API offline."
-  },
+  "hubs": {},
   "status": {
-    "demoData": "demo data",
-    "live": "live",
-    "fixturesCount": "{count} fixtures",
     "personasCount": "{count} personas",
     "projectsCount": "{count} projects",
     "groupsCount": "{count} groups",
@@ -167,7 +154,7 @@
     "hint": "Device-local preferences — theme, language, and how you appear in the rail.",
     "account": "Account",
     "accountSignedIn": "Signed in via Plexon. Identity is owned by the platform control plane.",
-    "accountSignedOut": "No Plexon session. Fixture mode stays open without login when auth env is unset.",
+    "accountSignedOut": "No Plexon session.",
     "name": "Name",
     "email": "Email",
     "profile": "Profile",
@@ -204,7 +191,6 @@
     "title": "Persona workspace",
     "lede": "Projects, personas, and audiences in one editorial home — chat when you are ready.",
     "chatCta": "Open chat",
-    "easySetup": "Easy setup",
     "topicsEyebrow": "01 · Topics",
     "topicsTitle": "Where to start",
     "topicsDeck": "Jump into personas, projects, audiences, journeys, or chat.",
@@ -280,6 +266,9 @@
     "backAdmin": "← Admin"
   },
   "lists": {
+    "layoutAria": "Index layout",
+    "layoutCards": "Cards",
+    "layoutList": "List",
     "personas": {
       "title": "Personas",
       "searchAria": "Search personas",
@@ -287,8 +276,6 @@
       "empty": "No personas match the current query."
     },
     "projects": {
-      "easySetup": "Easy setup",
-      "easySetupMeta": "Project + group + persona",
       "personaOne": "{count} persona",
       "personaMany": "{count} personas",
       "groupOne": "{count} group",
@@ -489,30 +476,6 @@
     "historyOpenFull": "Open full history",
     "historyLoadFailed": "Could not load history",
     "moodboard": "Moodboard"
-  },
-  "setup": {
-    "title": "Easy setup",
-    "body": "One brief creates a project, first target group, and first persona.",
-    "customer": "Customer / brand",
-    "customerPh": "Acme Mobility",
-    "about": "About",
-    "aboutPh": "What the brand does, who they serve, and what you want to learn…",
-    "website": "Website URL (optional)",
-    "websitePh": "https://example.com",
-    "projectName": "Project name (optional)",
-    "projectNamePh": "Defaults to customer name",
-    "requiredFields": "Customer name and about are required.",
-    "submit": "Create workspace",
-    "submitting": "Creating…",
-    "setupFailed": "Setup failed",
-    "readyTitle": "Workspace ready",
-    "readyStub": "Created with demo seeds (AI stub). Open any link below to continue.",
-    "readyLive": "Created with native AI suggestions. Open any link below to continue.",
-    "websiteMerged": "Website text was merged into project knowledge.",
-    "linkProject": "Project: {name}",
-    "linkTg": "Target group: {name}",
-    "linkPersona": "Persona: {name}",
-    "runAgain": "Run again"
   },
   "queue": {
     "hint": "Fixture document-processing jobs (V2 queue shape). No Redis/Celery — demo store only.",

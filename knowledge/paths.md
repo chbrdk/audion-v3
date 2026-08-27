@@ -24,6 +24,7 @@
 - Rail dock storage key: `audion.v3.railDock`
 - Comm layout storage key: `audion.v3.commLayout` (`paths.commLayoutStorageKey`)
 - TG linked personas layout key: `audion.v3.tgLinkedPersonasLayout` (`paths.tgLinkedPersonasLayoutKey`) — `cards` | `list`
+- Hub index layout key: `audion.v3.hubIndexLayout` (`paths.hubIndexLayoutKey`) — `cards` | `list` for personas / projects / TGs / journeys
 - Runtime config helper: `apps/web/lib/runtime-config.ts`
 - Persona fixtures: `apps/web/lib/fixtures/personas.ts`
 - Persona fixture store: `apps/web/lib/fixtures/persona-store.ts`
@@ -82,8 +83,7 @@
 - Local agent lab: `knowledge/local-ux-journey-lab-2026-08-03.md` · `scripts/local-lab-agent-setup.sh` · `local-lab-agent-serve.sh` · `local-lab-run.sh`
 - Project routes: `/projects`, `/projects/[projectId]`
 - Project API: `/api/projects`, `/api/projects/[projectId]`
-- Easy Setup: `/setup` · `POST /api/projects/bootstrap` (`paths.routes.setup` · `apiProjectsBootstrap`) · `knowledge/easy-setup-2026.md`
-- Easy Setup lib: `apps/web/lib/easy-setup.ts` · `easy-setup-url.ts` · panel `components/easy-setup-panel.tsx`
+- Easy Setup: **dropped** — see `knowledge/easy-setup-2026.md` (no `/setup`, no bootstrap API)
 - Project fixtures/store: `apps/web/lib/fixtures/projects.ts` · `project-store.ts`
 - Project lib: `apps/web/lib/projects.ts`
 - Project knowledge helpers: `apps/web/lib/project-knowledge.ts`
@@ -139,7 +139,7 @@
 - Persona avatar helper: `personaAvatarPath(id)` in `apps/web/lib/paths.ts`
 - Channel logo public base: `/fixtures/channels` (`paths.channelLogoBasePath`)
 - Channel icon registry: `apps/web/lib/channel-icons.tsx` (`knowledge/persona-channel-icons.md`)
-- Persona data source env: `NEXT_PERSONA_DATA_SOURCE` (`auto` | `fixtures` | `api`) — domain only
+- Persona data source env: `NEXT_PERSONA_DATA_SOURCE` (`auto` | `fixtures` | `api`) — domain only; **no DEMO_* product fallback** (`allowPersonaFixtureFallback` always false; store empty until create / `reset*Store` in tests)
 - Native AI runtime: `NEXT_AI_RUNTIME` (`stub` | `native` | `auto`) · `OPENAI_API_KEY` · `AI_OPENAI_MODEL` (default **`gpt-5.4-nano`**, SoT `paths.aiOpenAiModel`) — `knowledge/ai-native-2026.md`
 - UX Journey OpenAI: `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-5.6-luna`**, SoT `paths.uxJourneyOpenAiModel`) — agent `main.py` / Dockerfile / local lab serve · A/B: `knowledge/lab-ab-nano-mini-luna-2026-08-03.md`
 - UX Journey click/hover steer: `knowledge/ux-agent-click-hover-steer-2026-08-20.md` · keyword hygiene + viewport hover coords · follows `knowledge/ux-agent-luna-vision-2026-08-20.md` · hover-smoke `knowledge/ueq-ebike-runs/2026-08-20-hover-smoke/` · buckets `knowledge/ux-journey-fail-buckets-hover-smoke-2026-08-20.json` · note `knowledge/lab-staging-smoke-luna-vision-2026-08-20.md`

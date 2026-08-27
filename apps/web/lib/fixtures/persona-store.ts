@@ -18,7 +18,8 @@ async function dbApi() {
   return import('../db/personas')
 }
 
-let personas: PersonaDetail[] = DEMO_PERSONAS.map((p) => structuredClone(p))
+/** Empty until create or `resetPersonaStore()` (tests). No DEMO product seed. */
+let personas: PersonaDetail[] = []
 
 const DETAIL_ONLY_KEYS = [
   'age',
@@ -273,8 +274,7 @@ export async function storePersonaList(): Promise<PersonaList> {
 export async function storePersonaDetail(id: string): Promise<PersonaDetail | null> {
   if (isProjectsDatabaseConfigured()) {
     const db = await dbApi()
-    const row = await db.dbPersonaDetail(id)
-    if (row) return row
+    return db.dbPersonaDetail(id)
   }
   return memoryPersonaDetail(id)
 }
@@ -294,11 +294,7 @@ export async function storePatchPersona(
   if (isProjectsDatabaseConfigured()) {
     const db = await dbApi()
     const existing = await db.dbPersonaDetail(id)
-    if (!existing) {
-      const seed = memoryPersonaDetail(id)
-      if (!seed) return null
-      await db.dbInsertPersonaDetail(seed)
-    }
+    if (!existing) return null
     return db.dbPatchPersona(id, payload)
   }
   return memoryPatchPersona(id, payload)

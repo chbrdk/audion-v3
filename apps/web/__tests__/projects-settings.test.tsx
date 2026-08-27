@@ -325,10 +325,14 @@ describe('project workspace components', () => {
     fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true })
 
     await vi.waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled()
+      expect(
+        fetchMock.mock.calls.some((call) => call[0] === paths.routes.apiProjectDetail(detail.id)),
+      ).toBe(true)
     })
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(paths.routes.apiProjectDetail(detail.id))
-    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string) as {
+    const projectPatch = fetchMock.mock.calls.find(
+      (call) => call[0] === paths.routes.apiProjectDetail(detail.id),
+    )
+    const body = JSON.parse(projectPatch?.[1]?.body as string) as {
       knowledgeChapters: { id: string; title: string; body: string }[]
       companyContext: string
     }
@@ -370,10 +374,16 @@ describe('project workspace components', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
 
     await vi.waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled()
+      expect(
+        fetchMock.mock.calls.some(
+          (call) => call[0] === paths.routes.apiPersonaDetail('persona-alex-morgan'),
+        ),
+      ).toBe(true)
     })
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(paths.routes.apiPersonaDetail('persona-alex-morgan'))
-    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
+    const personaPatch = fetchMock.mock.calls.find(
+      (call) => call[0] === paths.routes.apiPersonaDetail('persona-alex-morgan'),
+    )
+    expect(JSON.parse(personaPatch?.[1]?.body as string)).toEqual({
       name: 'Alex Updated',
     })
     vi.unstubAllGlobals()

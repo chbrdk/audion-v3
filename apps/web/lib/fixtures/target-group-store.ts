@@ -16,7 +16,8 @@ async function dbApi() {
   return import('../db/target-groups')
 }
 
-let groups: TargetGroupDetail[] = DEMO_TARGET_GROUPS.map((g) => structuredClone(g))
+/** Empty until create or `resetTargetGroupStore()` (tests). No DEMO product seed. */
+let groups: TargetGroupDetail[] = []
 
 export function resetTargetGroupStore(): void {
   groups = DEMO_TARGET_GROUPS.map((g) => structuredClone(g))

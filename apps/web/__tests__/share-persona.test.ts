@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { storeSharePersona } from '../lib/fixtures/chat-share'
 
 vi.mock('../lib/fixtures/persona-store', () => ({
   storePersonaDetail: vi.fn(),
@@ -84,11 +83,11 @@ describe('fetchSharePersona', () => {
     expect(result.name).toBe('Legacy')
   })
 
-  it('uses demo fixtures when data source is fixtures and persona is not in store', async () => {
+  it('returns 404 when persona is not in store (no DEMO fallback)', async () => {
     process.env.NEXT_PERSONA_DATA_SOURCE = 'fixtures'
     vi.mocked(storePersonaDetail).mockResolvedValue(null)
     const result = await fetchSharePersona('persona-alex-morgan', 'proj-audion-core')
-    expect(result).toEqual(storeSharePersona('persona-alex-morgan', 'proj-audion-core'))
+    expect(result).toEqual({ error: 'Persona not found', status: 404 })
   })
 
   it('still reads Postgres store when NEXT_PERSONA_DATA_SOURCE=fixtures', async () => {

@@ -15,22 +15,16 @@ const COUNT_KEYS: Record<HubEntity, string> = {
   conversations: 'status.conversationsCount',
 }
 
-/** Locale-aware TopStatus for list hubs (SET-L1). */
+/** Quiet count TopStatus for list hubs — no demo/fixtures chrome. */
 export function HubTopStatus({
-  demo,
   total,
   entity,
 }: {
-  demo: boolean
   total: number
   entity: HubEntity
+  /** @deprecated Ignored — fixtures origin is not surfaced in the UI. */
+  demo?: boolean
 }) {
   const t = useT()
-  return (
-    <TopStatus
-      level="ok"
-      primary={demo ? t('status.demoData') : t(COUNT_KEYS[entity], { count: total })}
-      secondary={demo ? t('status.fixturesCount', { count: total }) : t('status.live')}
-    />
-  )
+  return <TopStatus level="ok" primary={t(COUNT_KEYS[entity], { count: total })} />
 }

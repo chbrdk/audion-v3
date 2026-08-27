@@ -12,7 +12,7 @@ Device-local user prefs (display name, theme, locale) plus optional Plexon Accou
 ## Locale (SET-L1)
 
 WHEN the author changes Language in Settings, AUDION SHALL store `paths.localeStorageKey` (`en` | `de`) and set `document.documentElement.lang`.  
-WHEN locale is `de` or `en`, shell chrome, page titles/leads, settings, login, hub list chrome, create/edit dialogs, chat chrome (incl. tool-approval / guest budget / inspect), easy setup, queue, detail magazine section titles, Soft-Q/wave section chrome, UX flow canvas + inspector, Prompt Builder, persona editable subpanel chrome, journey phases, knowledge dossier, and admin API docs SHALL render via `t(key)` dictionaries (`apps/web/locales/{en,de}.json`) through `useUserPrefs().t` / `useT()`.  
+WHEN locale is `de` or `en`, shell chrome, page titles/leads, settings, login, hub list chrome, create/edit dialogs, chat chrome (incl. tool-approval / guest budget / inspect), queue, detail magazine section titles, Soft-Q/wave section chrome, UX flow canvas + inspector, Prompt Builder, persona editable subpanel chrome, journey phases, knowledge dossier, home magazine, and admin API docs SHALL render via `t(key)` dictionaries (`apps/web/locales/{en,de}.json`) through `useUserPrefs().t` / `useT()`.  
 Persona **content** locale (`profileDe`, AI `output_locale`) remains separate from UI chrome.  
 Default locale is `en`. No URL/`[locale]` routing or next-intl.
 

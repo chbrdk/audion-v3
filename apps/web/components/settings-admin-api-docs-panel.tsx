@@ -73,7 +73,6 @@ const API_CATALOG: Array<{
     groupKey: 'groupProjects',
     routes: [
       { method: 'POST', path: paths.routes.apiProjects, note: 'Create project' },
-      { method: 'POST', path: paths.routes.apiProjectsBootstrap, note: 'Easy Setup bootstrap' },
     ],
   },
   {

@@ -18,9 +18,10 @@ Browse personas as a magazine index, read a full-width profile article, and crea
 
 ## Index composition
 
-- Portrait cards: `@msqdx/ui` `Avatar`, display title, role, status facet
-- **App cards** (shared with TG): `audion-tg-card` / `audion-tg-grid` — large name, airy top, small meta (role · archetype · status)
-- **Create tile** (`audion-tg-card--create`): brand-tinted dashed panel + “New persona”
+- **Layout switch** (Cards | List) on the index — preference in `sessionStorage` (`paths.hubIndexLayoutKey`); shared with projects / TGs / journeys
+- **Cards** (default): `@msqdx/ui` `Panel` app cards (`audion-tg-card` / `audion-tg-grid`) — large name, airy top, small meta (role · archetype · status)
+- **List**: numbered `audion-magazine-list` rows (name + meta) — same destinations
+- **Create tile** (`audion-tg-card--create`): brand-tinted dashed panel + “New persona” (cards); compact button in list mode
 - **Generate with AI tile** (Wave 1 stub → `personas/generate`; pick TG) — `knowledge/ai-workflows.md`
 - Optional filter form (`q`) — no header create button
 - Paths via `paths.routes.personas` / `personaDetail(id)`
@@ -44,11 +45,13 @@ Browse personas as a magazine index, read a full-width profile article, and crea
 ## Data
 
 - Source: `NEXT_PERSONA_DATA_SOURCE` = `auto` | `fixtures` | `api`
-- Fixtures: `apps/web/lib/fixtures/personas.ts` + mutable `persona-store.ts`
+  - `fixtures` = v3 store only (Postgres when `DATABASE_URL`, else empty memory)
+  - `auto` / `api` = live FastAPI when available — **no DEMO_* fallback** (`allowPersonaFixtureFallback` always false)
+- Store: `persona-store.ts` · DEMO shapes in `personas.ts` only for tests via `resetPersonaStore()`
 
 ## Acceptance
 
-1. Index renders fixtures or API; filter narrows by name/role/archetype.
+1. Index renders store or API; filter narrows by name/role/archetype. Empty when store empty — never auto-seed DEMO.
 2. Create tile opens create dialog; save navigates to new detail.
 3. Detail magazine reads; Edit / template dialogs validate name and refresh; Goals/Frustrations edit inline; Channels via bubble icon picker.
 4. Empty / error states use `@msqdx/ui` primitives.

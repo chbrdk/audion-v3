@@ -16,10 +16,14 @@ Magazine-style project workspace: browse projects, read company context, manage 
 
 | Route | Role |
 |-------|------|
-| `/projects` | App-card grid + create |
+| `/projects` | Cards|List index + create (shared `paths.hubIndexLayoutKey`) |
 | `/projects/[projectId]` | Magazine detail: masthead → intro → audience → knowledge dossier |
 
-## Detail composition
+## Index composition
+
+- **Layout switch** (Cards | List) — shared with personas / TGs / journeys
+- **Cards**: app-card grid + create tile
+- **List**: numbered magazine rows (name · persona/TG counts · status); create as compact button
 
 - Magazine hero **text-only** (`.audion-magazine-hero--text`): full-width eyebrow, title, optional DE deck, facets — no portrait/avatar
 - **Intro row** (`.audion-project-intro`): description (~2/3) | larger Team canvas right (~1/3, max 32rem)
@@ -35,13 +39,13 @@ Magazine-style project workspace: browse projects, read company context, manage 
 ## Non-goals (MVP)
 
 - Research SSE stream, CHECKION topics, project prompts, bootstrap
-- Product Postgres (platform IDs stored on fixtures in Wave 1)
 - Live persona-api proxy for AI (Wave 2) — stubs document target calls
 - Forking Accordion CSS into app globals (use `@msqdx/ui`)
+- DEMO_* product seed / FastAPI→fixture fallback (Postgres/store SoT)
 
 ## Acceptance
 
-1. List/detail load from fixtures (auto fallback like other slices).
+1. List/detail load from v3 store (Postgres when `DATABASE_URL`) or live API — no DEMO fallback.
 2. Create/edit persist via `/api/projects*`.
 3. Project detail lists personas/TGs filtered by `projectId`; create cards pass that id.
 4. Knowledge chapters use DS `Accordion`; inline edit PATCHes `knowledgeChapters` (+ derived `companyContext`).

@@ -1,6 +1,6 @@
 import React from 'react'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PromptBuilderWorkspace } from '../components/prompt-builder/PromptBuilderWorkspace'
 import {
   getPersonaPromptDetail,
@@ -11,10 +11,17 @@ import {
   resetPersonaPromptsStore,
   resolvePersonaSystemPrompt,
 } from '../lib/fixtures/persona-prompts-store'
+import { resetPersonaStore } from '../lib/fixtures/persona-store'
 import { paths } from '../lib/paths'
 
 describe('persona prompts store', () => {
+  beforeEach(() => {
+    resetPersonaStore()
+    resetPersonaPromptsStore()
+  })
+
   afterEach(() => {
+    resetPersonaStore()
     resetPersonaPromptsStore()
   })
 

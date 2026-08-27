@@ -12,7 +12,7 @@ export default async function StudyDetailPage({
 }) {
   const { studyId } = await params
   try {
-    const { study, origin } = await fetchUxStudyDetail(studyId)
+    const { study } = await fetchUxStudyDetail(studyId)
     if (!study) {
       return (
         <AppShell title="Study" description="Not found">
@@ -24,12 +24,10 @@ export default async function StudyDetailPage({
     return (
       <AppShell
         title={study.name}
-        description={origin === 'fixtures' ? 'Demo fixtures — magazine study workspace.' : undefined}
         status={
           <TopStatus
             level="ok"
-            primary={origin === 'fixtures' ? 'demo data' : 'live'}
-            secondary={`${study.waveCount} waves`}
+            primary={`${study.waveCount} waves`}
           />
         }
       >

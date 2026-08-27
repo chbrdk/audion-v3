@@ -14,12 +14,10 @@ export default async function TargetGroupsPage({
   try {
     const result = await fetchTargetGroupList()
     const list = filterTargetGroupList(result, query)
-    const demo = result.origin === 'fixtures'
     return (
       <AppShell
         titleKey="pages.targetGroups.title"
-        descriptionKey={demo ? 'hubs.demoFixturesOffline' : undefined}
-        status={<HubTopStatus demo={demo} total={list.total} entity="groups" />}
+        status={<HubTopStatus total={list.total} entity="groups" />}
       >
         <TargetGroupListPanel list={list} query={query} />
       </AppShell>

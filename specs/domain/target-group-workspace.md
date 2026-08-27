@@ -18,9 +18,11 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 
 ## Index composition
 
-- Grid of `@msqdx/ui` `Panel` app cards (`audion-tg-card`)
+- **Layout switch** (Cards | List) — shared preference `paths.hubIndexLayoutKey`
+- **Cards** (default): grid of `@msqdx/ui` `Panel` app cards (`audion-tg-card`)
+- **List**: numbered magazine rows (name + meta)
 - Tall cards: large display **name** bottom-aligned, lots of top air; meta (segment · persona count · status) small underneath
-- **First tile**: create card (`audion-tg-card--create`) — dashed border, soft `--accent` wash, “New target group”
+- **First tile**: create card (`audion-tg-card--create`) — dashed border, soft `--accent` wash, “New target group” (cards); compact button in list mode
 - **Second tile**: Suggest with AI (Wave 1 stub → `suggest-target-groups`)
 - Paths via `paths.routes.targetGroups` / `targetGroupDetail(id)`
 
@@ -51,7 +53,7 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 
 ## Acceptance
 
-1. List/detail load from fixtures or API (same data-source pattern as personas).
+1. List/detail load from v3 store or API (same pattern as personas — no DEMO fallback).
 2. Create card opens dialog; save navigates to new detail.
 3. Detail linked personas are readable links into `/personas/[id]`; Cards | List toggle persists for the session.
 4. Index has no redundant title/filter header — cards are the surface.

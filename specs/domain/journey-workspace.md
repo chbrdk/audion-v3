@@ -19,8 +19,10 @@ Browse customer journey maps as a magazine/card index, read a phase timeline on 
 
 ## Index composition
 
-- Cards: display **name**, journey type, status, linked TG name/count of phases
-- **Create tile** (`audion-index-card--create` language): “New journey”
+- **Layout switch** (Cards | List) — shared preference `paths.hubIndexLayoutKey`
+- **Cards** (default): display **name**, journey type, status, linked TG name/count of phases
+- **List**: numbered magazine rows (name + meta)
+- **Create tile** (`audion-index-card--create` language): “New journey” (cards); compact button in list mode
 - **Generate with AI tile** (Wave 1 stub → `/api/journeys/generate`)
 - Optional filter `q` (name / type) — no header create button
 - Paths via `paths.routes.journeys` / `journeyDetail(id)`
@@ -63,7 +65,7 @@ Browse customer journey maps as a magazine/card index, read a phase timeline on 
 
 ## Acceptance
 
-1. Index renders fixtures or API; create tile opens dialog; save navigates to detail.
+1. Index renders store or API (no DEMO fallback); create tile opens dialog; save navigates to detail.
 2. Detail shows ordered phases in a horizontal slider with create card and per-phase edit/delete; journey delete returns to index.
 3. Linked TG is a real navigation link when `targetGroupId` resolves.
 4. Empty / error / loading use `@msqdx/ui` (`EmptyState`, `Alert`, `LoadingText`/`Skeleton`).

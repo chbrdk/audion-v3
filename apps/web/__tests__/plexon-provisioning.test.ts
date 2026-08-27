@@ -12,6 +12,10 @@ import {
   storeGetProvisionedUser,
   storeProjectDetail,
 } from '../lib/fixtures/project-store'
+import { resetPersonaStore } from '../lib/fixtures/persona-store'
+import { resetTargetGroupStore } from '../lib/fixtures/target-group-store'
+import { resetJourneyStore } from '../lib/fixtures/journey-store'
+import { resetUxStudyStore } from '../lib/fixtures/ux-study-store'
 
 describe('project platform binding', () => {
   afterEach(() => {
@@ -45,12 +49,20 @@ describe('project platform binding', () => {
 describe('provisioning routes', () => {
   beforeEach(() => {
     resetProjectStore()
+    resetPersonaStore()
+    resetTargetGroupStore()
+    resetJourneyStore()
+    resetUxStudyStore()
     vi.stubEnv(paths.envPlexonAuthUrl, 'https://plexon.example')
     vi.stubEnv(paths.envPlexonServiceSecret, 'shared-secret')
   })
 
   afterEach(() => {
     resetProjectStore()
+    resetPersonaStore()
+    resetTargetGroupStore()
+    resetJourneyStore()
+    resetUxStudyStore()
     vi.unstubAllEnvs()
   })
 

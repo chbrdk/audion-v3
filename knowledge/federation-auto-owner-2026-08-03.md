@@ -5,7 +5,7 @@ Bearer/machine project creates skipped Plexon Collection registration because or
 
 ## Fix
 1. **plexon-v3** `resolveProductOriginOwner` — auto-pick membership or bootstrap Federation home (`knowledge/product-origin-owner-resolution.md`). Origin body owner/company optional.
-2. **audion-v3** — `POST /api/projects`, easy-setup, `sync-plexon` always call origin when federated.
+2. **audion-v3** — `POST /api/projects`, `sync-plexon` always call origin when federated.
 3. **checkion-v3** — live create + GEO auto-create always call origin when federated.
 
 ## Deploy

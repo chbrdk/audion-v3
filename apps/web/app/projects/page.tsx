@@ -14,12 +14,10 @@ export default async function ProjectsPage({
   try {
     const result = await fetchProjectList()
     const list = filterProjectList(result, query)
-    const demo = result.origin === 'fixtures'
     return (
       <AppShell
         titleKey="pages.projects.title"
-        descriptionKey={demo ? 'pages.projects.leadDemo' : undefined}
-        status={<HubTopStatus demo={demo} total={list.total} entity="projects" />}
+        status={<HubTopStatus total={list.total} entity="projects" />}
       >
         <ProjectListPanel list={list} query={query} />
       </AppShell>

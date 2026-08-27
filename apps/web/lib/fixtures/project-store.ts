@@ -24,7 +24,8 @@ async function dbApi() {
   return import('../db/projects')
 }
 
-let projects: ProjectDetail[] = DEMO_PROJECTS.map((p) => structuredClone(p))
+/** Empty until create or `resetProjectStore()` (tests). No DEMO product seed. */
+let projects: ProjectDetail[] = []
 
 /** Inbound Plexon user provisioning shadow (fixture; not yet Postgres). */
 let provisionedUsers = new Map<

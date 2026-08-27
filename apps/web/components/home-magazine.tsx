@@ -163,9 +163,6 @@ export function HomeMagazine({
           <Link href={paths.routes.chat}>
             <Button>{t('home.chatCta')}</Button>
           </Link>
-          <Link href={paths.routes.setup}>
-            <Button variant="ghost">{t('home.easySetup')}</Button>
-          </Link>
           <Link href={paths.routes.projects}>
             <Button variant="ghost">{t('nav.projects')}</Button>
           </Link>

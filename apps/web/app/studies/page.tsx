@@ -14,12 +14,10 @@ export default async function StudiesPage({
   try {
     const result = await fetchUxStudyList()
     const list = filterUxStudyList(result, query)
-    const demo = result.origin === 'fixtures'
     return (
       <AppShell
         titleKey="pages.studies.title"
-        descriptionKey={demo ? 'pages.studies.leadDemo' : undefined}
-        status={<HubTopStatus demo={demo} total={list.total} entity="studies" />}
+        status={<HubTopStatus total={list.total} entity="studies" />}
       >
         <StudyListPanel list={list} query={query} />
       </AppShell>

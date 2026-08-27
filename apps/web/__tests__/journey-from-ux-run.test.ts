@@ -1,8 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { runStubConvertUxRunToJourney } from '../lib/journey-from-ux-run'
 import { resetJourneyStore, storeJourneyDetail } from '../lib/fixtures/journey-store'
 import { resetUxStudyStore, storeUxWaveDetail } from '../lib/fixtures/ux-study-store'
 import { DEMO_UX_STUDIES, DEMO_UX_WAVES } from '../lib/fixtures/ux-studies'
+
+beforeEach(() => {
+  resetJourneyStore()
+  resetUxStudyStore()
+})
 
 afterEach(() => {
   resetJourneyStore()

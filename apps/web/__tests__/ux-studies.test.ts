@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   buildWaveReportMarkdown,
   resetUxStudyStore,
@@ -17,6 +17,10 @@ import { filterUxStudyList } from '../lib/ux-studies'
 import { mapStudiesApiPath } from '../lib/ux-studies-proxy'
 import { paths } from '../lib/paths'
 import { TOOL_URL } from '../lib/fixtures/ux-studies'
+
+beforeEach(() => {
+  resetUxStudyStore()
+})
 
 afterEach(() => {
   resetUxStudyStore()

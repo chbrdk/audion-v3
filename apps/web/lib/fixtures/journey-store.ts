@@ -12,7 +12,8 @@ async function dbApi() {
   return import('../db/journeys')
 }
 
-let journeys: JourneyDetail[] = DEMO_JOURNEYS.map((j) => structuredClone(j))
+/** Empty until create or `resetJourneyStore()` (tests). No DEMO product seed. */
+let journeys: JourneyDetail[] = []
 
 export function resetJourneyStore(): void {
   journeys = DEMO_JOURNEYS.map((j) => structuredClone(j))

@@ -47,6 +47,7 @@ PLEXON_SERVICE_SECRET=<same as plexon-v3>
 # PLEXON_DEMO_COMPANY_ID=<platform company uuid>
 NEXT_PUBLIC_PLEXON_REGISTER_URL=https://plexon-v3.projects-a.plygrnd.tech/register
 NEXT_PERSONA_DATA_SOURCE=fixtures
+# `fixtures` = v3 store only (Postgres via DATABASE_URL). No DEMO_* auto-seed / API fallback.
 NEXT_AI_RUNTIME=auto
 OPENAI_API_KEY=<secret>
 # Tavus CVI (persona video chat)

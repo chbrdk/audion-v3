@@ -55,7 +55,7 @@ function seedConversations(): StoredConversation[] {
   ]
 }
 
-let conversations: StoredConversation[] = seedConversations()
+let conversations: StoredConversation[] = []
 
 export function resetChatStore(): void {
   conversations = seedConversations()

@@ -14,12 +14,10 @@ export default async function PersonasPage({
   try {
     const result = await fetchPersonaList()
     const list = filterPersonaList(result, query)
-    const demo = result.origin === 'fixtures'
     return (
       <AppShell
         titleKey="pages.personas.title"
-        descriptionKey={demo ? 'hubs.demoFixturesOffline' : undefined}
-        status={<HubTopStatus demo={demo} total={list.total} entity="personas" />}
+        status={<HubTopStatus total={list.total} entity="personas" />}
       >
         <PersonaListPanel list={list} query={query} />
       </AppShell>

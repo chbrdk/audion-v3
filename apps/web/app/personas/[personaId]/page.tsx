@@ -13,7 +13,6 @@ export default async function PersonaDetailPage({
   const { personaId } = await params
   try {
     const detailResult = await fetchPersonaDetail(personaId)
-    const demo = detailResult.origin === 'fixtures'
     const targetGroup = await storeTargetGroupForPersona(personaId)
     const title = targetGroup?.name ?? 'Personas'
     return (
@@ -24,8 +23,7 @@ export default async function PersonaDetailPage({
         status={
           <TopStatus
             level="ok"
-            primary={demo ? 'demo data' : 'persona'}
-            secondary={demo ? 'fixtures' : 'live'}
+            primary={detailResult.persona?.status ?? 'persona'}
           />
         }
       >

@@ -13,8 +13,6 @@
     "signOut": "Abmelden",
     "signingOut": "Wird abgemeldet…",
     "signingIn": "Wird angemeldet…",
-    "live": "live",
-    "fixtures": "Fixtures",
     "backToSettings": "← Einstellungen",
     "apply": "Anwenden",
     "filter": "Filter",
@@ -81,8 +79,7 @@
     },
     "projects": {
       "title": "Projekte",
-      "lead": "Workspaces durchsuchen.",
-      "leadDemo": "Lokale Fixtures (ohne DATABASE_URL). Staging nutzt Postgres — Plexon-syncte Projekte überleben Redeploys."
+      "lead": "Workspaces durchsuchen."
     },
     "personas": {
       "title": "Personas",
@@ -98,8 +95,7 @@
     },
     "studies": {
       "title": "UX-Studien",
-      "lead": "UX-Studien-Wellen durchsuchen.",
-      "leadDemo": "Demo-Fixtures — Study → Wave → Evaluate → Compare."
+      "lead": "UX-Studien-Wellen durchsuchen."
     },
     "chat": {
       "title": "Chat",
@@ -114,10 +110,6 @@
     "queue": {
       "title": "Queue",
       "lead": "Dokument-Jobs — Fixture-Dashboard (V2-Queue-Form)."
-    },
-    "setup": {
-      "title": "Easy Setup",
-      "lead": "Projekt, Zielgruppe und Persona aus einem Brief bootstrapen."
     },
     "settings": {
       "title": "Einstellungen",
@@ -149,13 +141,8 @@
       "backStudies": "← Studien"
     }
   },
-  "hubs": {
-    "demoFixturesOffline": "Demo-Fixtures — API offline."
-  },
+  "hubs": {},
   "status": {
-    "demoData": "Demo-Daten",
-    "live": "live",
-    "fixturesCount": "{count} Fixtures",
     "personasCount": "{count} Personas",
     "projectsCount": "{count} Projekte",
     "groupsCount": "{count} Gruppen",
@@ -167,7 +154,7 @@
     "hint": "Gerätebezogene Einstellungen — Theme, Sprache und Anzeige in der Rail.",
     "account": "Konto",
     "accountSignedIn": "Angemeldet über Plexon. Identität liegt in der Control Plane.",
-    "accountSignedOut": "Keine Plexon-Session. Fixture-Modus bleibt ohne Login offen, wenn Auth-Env fehlt.",
+    "accountSignedOut": "Keine Plexon-Session.",
     "name": "Name",
     "email": "E-Mail",
     "profile": "Profil",
@@ -204,7 +191,6 @@
     "title": "Persona-Workspace",
     "lede": "Projekte, Personas und Audiences in einem redaktionellen Home — Chat, wenn du bereit bist.",
     "chatCta": "Chat öffnen",
-    "easySetup": "Easy Setup",
     "topicsEyebrow": "01 · Themen",
     "topicsTitle": "Einstiege",
     "topicsDeck": "Zu Personas, Projekten, Zielgruppen, Journeys oder Chat springen.",
@@ -280,6 +266,9 @@
     "backAdmin": "← Admin"
   },
   "lists": {
+    "layoutAria": "Index-Darstellung",
+    "layoutCards": "Karten",
+    "layoutList": "Liste",
     "personas": {
       "title": "Personas",
       "searchAria": "Personas suchen",
@@ -287,8 +276,6 @@
       "empty": "Keine Personas passen zur aktuellen Suche."
     },
     "projects": {
-      "easySetup": "Easy Setup",
-      "easySetupMeta": "Projekt + Gruppe + Persona",
       "personaOne": "{count} Persona",
       "personaMany": "{count} Personas",
       "groupOne": "{count} Gruppe",
@@ -489,30 +476,6 @@
     "historyOpenFull": "Vollständigen Verlauf öffnen",
     "historyLoadFailed": "Verlauf konnte nicht geladen werden",
     "moodboard": "Moodboard"
-  },
-  "setup": {
-    "title": "Easy Setup",
-    "body": "Ein Brief erzeugt Projekt, erste Zielgruppe und erste Persona.",
-    "customer": "Kunde / Marke",
-    "customerPh": "Acme Mobility",
-    "about": "Über",
-    "aboutPh": "Was die Marke macht, wen sie bedient, und was du lernen willst…",
-    "website": "Website-URL (optional)",
-    "websitePh": "https://example.com",
-    "projectName": "Projektname (optional)",
-    "projectNamePh": "Standard: Kundenname",
-    "requiredFields": "Kundenname und About sind erforderlich.",
-    "submit": "Workspace erstellen",
-    "submitting": "Erstellen…",
-    "setupFailed": "Setup fehlgeschlagen",
-    "readyTitle": "Workspace bereit",
-    "readyStub": "Mit Demo-Seeds erstellt (AI-Stub). Beliebigen Link unten öffnen.",
-    "readyLive": "Mit nativen KI-Vorschlägen erstellt. Beliebigen Link unten öffnen.",
-    "websiteMerged": "Website-Text wurde in Projekt-Knowledge übernommen.",
-    "linkProject": "Projekt: {name}",
-    "linkTg": "Zielgruppe: {name}",
-    "linkPersona": "Persona: {name}",
-    "runAgain": "Erneut ausführen"
   },
   "queue": {
     "hint": "Fixture Document-Processing-Jobs (V2-Queue-Form). Kein Redis/Celery — nur Demo-Store.",

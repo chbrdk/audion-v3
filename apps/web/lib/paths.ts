@@ -26,6 +26,8 @@ export const paths = {
   commLayoutStorageKey: 'audion.v3.commLayout',
   /** TG linked personas layout: cards | list */
   tgLinkedPersonasLayoutKey: 'audion.v3.tgLinkedPersonasLayout',
+  /** Hub index layout (personas/projects/TGs/journeys): cards | list */
+  hubIndexLayoutKey: 'audion.v3.hubIndexLayout',
   /** Prefer DS `MSQDX_SHELL_CORNER_RADIUS` (24) via BrandCorner default — do not override. */
   brandCornerRadiusPx: 24,
   brandLabel: 'AUDION',
@@ -45,7 +47,7 @@ export const paths = {
   envCheckionPublicUrl: 'NEXT_PUBLIC_CHECKION_URL',
   devPort: 3006,
   personaBackendInternalUrl: 'http://api:8000',
-  /** Default local mode: try API, then demo fixtures */
+  /** Default: store-first (`auto` tries live API without DEMO fallback) */
   personaDataSource: 'auto' as const,
   personaFixturesPath: 'apps/web/lib/fixtures/personas.ts',
   personaStorePath: 'apps/web/lib/fixtures/persona-store.ts',
@@ -180,12 +182,6 @@ export const paths = {
   /** Vision detail for per-step screenshots — override via UX_JOURNEY_VISION_DETAIL */
   uxJourneyVisionDetail: 'high',
   aiOpenAiImageModel: 'gpt-image-1-mini',
-  /** Easy Setup optional website fetch (SSRF-safe) — knowledge/easy-setup-2026.md */
-  easySetupUrlFetchTimeoutMs: 20_000,
-  easySetupUrlMaxResponseBytes: 2 * 1024 * 1024,
-  easySetupUrlMaxTextChars: 16_000,
-  easySetupUrlUserAgent:
-    'Mozilla/5.0 (compatible; AudionEasySetup/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
   defaultDisplayName: 'AUDION',
   displayNameStorageKey: 'audion.v3.displayName',
   themeStorageKey: 'audion.v3.theme',
@@ -207,10 +203,7 @@ export const paths = {
       `/api/platform/provisioning/projects/${id}`,
     projects: '/projects',
     projectDetail: (id: string) => `/projects/${id}`,
-    /** Magazine Easy Setup — project + TG + persona bootstrap */
-    setup: '/setup',
     apiProjects: '/api/projects',
-    apiProjectsBootstrap: '/api/projects/bootstrap',
     apiProjectDetail: (id: string) => `/api/projects/${id}`,
     apiProjectKnowledgeUpload: (id: string) => `/api/projects/${id}/knowledge/upload`,
     /** Register existing project on Plexon Collection (audion-project-origin). */

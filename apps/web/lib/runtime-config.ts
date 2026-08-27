@@ -41,9 +41,9 @@ export function shouldUsePersonaFixturesOnly(): boolean {
   return getPersonaDataSource() === 'fixtures'
 }
 
+/** Product path never falls back to DEMO_* fixtures (Postgres/store SoT). */
 export function allowPersonaFixtureFallback(): boolean {
-  const source = getPersonaDataSource()
-  return source === 'fixtures' || source === 'auto'
+  return false
 }
 
 export type AiRuntimeMode = 'stub' | 'native' | 'auto'

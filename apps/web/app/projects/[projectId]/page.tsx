@@ -19,16 +19,13 @@ export default async function ProjectDetailPage({
     ])
     const personas = personasResult.items.filter((p) => p.projectId === projectId)
     const targetGroups = groupsResult.items.filter((g) => g.projectId === projectId)
-    const demo = result.origin === 'fixtures'
     return (
       <AppShell
         title={result.project?.name ?? 'Project'}
-        description={demo ? 'Demo fixtures — API offline.' : undefined}
         status={
           <TopStatus
             level={result.project ? 'ok' : 'warn'}
-            primary={result.project ? (demo ? 'demo data' : 'live') : 'missing'}
-            secondary={result.project?.status ?? 'not found'}
+            primary={result.project?.status ?? 'missing'}
           />
         }
       >

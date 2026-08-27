@@ -14,12 +14,10 @@ export default async function JourneysPage({
   try {
     const result = await fetchJourneyList()
     const list = filterJourneyList(result, query)
-    const demo = result.origin === 'fixtures'
     return (
       <AppShell
         titleKey="pages.journeys.title"
-        descriptionKey={demo ? 'hubs.demoFixturesOffline' : undefined}
-        status={<HubTopStatus demo={demo} total={list.total} entity="journeys" />}
+        status={<HubTopStatus total={list.total} entity="journeys" />}
       >
         <JourneyListPanel list={list} query={query} />
       </AppShell>

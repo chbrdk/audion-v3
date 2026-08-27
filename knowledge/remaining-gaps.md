@@ -26,7 +26,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | **Research SSE polish** | Poll spine + status/latest/stream; progress UI on Start research |
 | **TG + persona knowledge** | Magazine Accordion CRUD + sources list metadata |
 | **Chat modalities** | Share + moodboard strip + inspect HITL + convert; **Tavus CVI video**; Voice stub |
-| **Easy Setup** | `/setup` magazine bootstrap — project + TG + persona (`knowledge/easy-setup-2026.md`) |
+| **Easy Setup** | **Dropped** — hub create dialogs only (`knowledge/easy-setup-2026.md`) |
 | **Settings admin** | `/settings/admin` providers + prompts test + API catalog (`knowledge/settings-admin-2026.md`) |
 | **Queue** | `/queue` document job fixtures (`knowledge/queue-dashboard-2026.md`) |
 
@@ -59,7 +59,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 | ~~Queue~~ | **Done 2026-07-30** — `/queue` fixture dashboard (`knowledge/queue-dashboard-2026.md`) |
 | ~~Settings admin~~ | **Done 2026-07-30** — hub; prompts + **Prompt Builder workspace** + API tokens **Done 2026-07-31** (`knowledge/prompt-builder-workspace-2026.md`, `knowledge/settings-api-tokens-2026.md`) |
 | Chat modalities | ~~Public share, moodboard drawer, inspect/convert~~ **Done 2026-07-30**; ~~Tavus CVI~~ **Done 2026-08-17** (`knowledge/tavus-video-chat.md`); Voice stub remains |
-| ~~Easy Setup~~ | **Done 2026-07-30** — `/setup` + `POST /api/projects/bootstrap` (`knowledge/easy-setup-2026.md`) |
+| ~~Easy Setup~~ | **Dropped 2026-08-27** — was `/setup` + bootstrap API (`knowledge/easy-setup-2026.md`) |
 
 ### Open / out of scope (product policy)
 
@@ -72,7 +72,7 @@ Home · **Projects** · Personas · Target Groups · Journeys · **Studies** (pr
 
 ## Deferred depth (detail pointers)
 
-- Projects: federation, project prompts — `project-migration-map.md`; ~~bootstrap~~ → `easy-setup-2026.md`
+- Projects: federation, project prompts — `project-migration-map.md`; Easy Setup **dropped** → `easy-setup-2026.md`
 - Settings: full admin stack — ~~hub + prompts + tokens shipped~~ `settings-admin-2026.md` / `settings-api-tokens-2026.md` — `settings-migration.md`
 - Personas: see `persona-magazine.md` / `persona-migration-map.md`
 - TGs: `target-group-migration-map.md`
