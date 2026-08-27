@@ -4683,3 +4683,291 @@ main { min-height: 100vh; }
 body.msqdx-flow-board-active .audion-page-lead,
 body.msqdx-flow-board-active .msqdx-flow-lede{display:none}
 
+/* —— Home magazine (specs/domain/home-magazine.md) —— */
+.audion-magazine--home {
+  display: grid;
+  gap: clamp(1.75rem, 3.5vw, 2.75rem);
+  max-width: none;
+  width: 100%;
+}
+
+.audion-home-cover {
+  display: grid;
+  gap: 0.55rem;
+  padding-block: clamp(1.75rem, 4vw, 3rem) 0.15rem;
+}
+
+.audion-home-cover__kicker {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent, var(--muted));
+}
+
+.audion-home-cover__title {
+  margin: 0;
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(2.35rem, 5.5vw, 3.35rem);
+  font-weight: var(--weight-light, 300);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--ink, var(--fg));
+}
+
+.audion-home-cover__lede {
+  margin: 0.35rem 0 0;
+  max-width: 40rem;
+  font-size: var(--type-md, 1.05rem);
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.audion-home-cover__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.audion-home-chapter {
+  display: grid;
+  gap: 1rem;
+  padding-top: 0.15rem;
+}
+
+.audion-home-chapter__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.audion-home-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-home-headline {
+  margin: 0;
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(1.45rem, 2.8vw, 1.85rem);
+  font-weight: var(--weight-light, 300);
+  letter-spacing: -0.03em;
+  color: var(--ink, var(--fg));
+}
+
+.audion-home-chapter__deck {
+  margin: 0.4rem 0 0;
+  max-width: 42rem;
+  font-size: var(--type-sm, 0.92rem);
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.audion-home-chapter__empty {
+  margin: 0;
+  padding: 0.35rem 0;
+}
+
+.audion-home-chapter__empty a {
+  color: inherit;
+  text-underline-offset: 0.15em;
+}
+
+.audion-home-cta-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  width: 100%;
+  border-bottom: 1px solid var(--line);
+}
+
+.audion-capability-tile {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  min-height: 8.5rem;
+  padding: 1rem 1.05rem 1.15rem 0;
+  margin: 0;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--ink, var(--fg)) 55%, var(--muted));
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.audion-capability-tile:not(:first-child) {
+  padding-left: 1.05rem;
+}
+
+.audion-capability-tile:last-child {
+  border-right: 0;
+}
+
+.audion-capability-tile:hover {
+  color: var(--ink, var(--fg));
+}
+
+.audion-capability-tile:focus-visible {
+  outline: 2px solid var(--accent, var(--ink));
+  outline-offset: 2px;
+}
+
+.audion-capability-tile__kicker {
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.audion-capability-tile__label {
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+  font-weight: var(--weight-light, 300);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: inherit;
+}
+
+.audion-capability-tile__deck {
+  font-size: var(--type-sm, 0.88rem);
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.audion-home-recent-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  width: 100%;
+  align-items: start;
+}
+
+.audion-home-recent-col {
+  min-width: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.audion-home-recent-col__title {
+  margin: 0;
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+  font-weight: var(--weight-light, 300);
+  letter-spacing: -0.02em;
+  color: var(--ink, var(--fg));
+}
+
+.audion-home-recent-list {
+  margin: 0;
+}
+
+.audion-home-recent-list > li {
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+}
+
+.audion-home-recent-list__main {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.audion-home-recent-list__title {
+  color: inherit;
+  text-decoration: none;
+  font-family: var(--font-display, var(--font-body));
+  font-size: var(--type-md, 1rem);
+  letter-spacing: -0.01em;
+}
+
+.audion-home-recent-list__title:hover {
+  color: var(--accent, var(--ink));
+}
+
+.audion-home-recent-list__meta {
+  margin: 0;
+}
+
+.audion-home-journeys {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: clamp(1rem, 2vw, 1.35rem);
+  width: 100%;
+}
+
+.audion-home-journey-card {
+  display: grid;
+  gap: 0.45rem;
+  min-height: 11rem;
+  padding: 1rem 0 0.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.audion-home-journey-card__kicker {
+  margin: 0;
+}
+
+.audion-home-journey-card__title {
+  margin: 0;
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(1.15rem, 2vw, 1.35rem);
+  font-weight: var(--weight-light, 300);
+  letter-spacing: -0.02em;
+}
+
+.audion-home-journey-card__meta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: var(--type-sm, 0.88rem);
+  color: var(--muted);
+}
+
+.audion-home-journey-card__actions {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+@media (max-width: 1100px) {
+  .audion-home-recent-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .audion-home-cta-row {
+    grid-template-columns: 1fr;
+  }
+
+  a.audion-home-cta.audion-capability-tile {
+    border-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  a.audion-home-cta.audion-capability-tile:not(:last-child) {
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 720px) {
+  .audion-home-journeys {
+    grid-template-columns: 1fr;
+  }
+}
+

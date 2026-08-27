@@ -5,6 +5,7 @@
 | Spec | Path |
 |------|------|
 | App shell | `specs/domain/app-shell.md` |
+| Home magazine | `specs/domain/home-magazine.md` |
 | Persona workspace | `specs/domain/persona-workspace.md` |
 | Persona fields | `specs/domain/persona-fields.md` |
 | Target group workspace | `specs/domain/target-group-workspace.md` |

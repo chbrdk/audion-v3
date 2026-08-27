@@ -16,6 +16,7 @@
 - Public staging URL: `https://audion-v3.projects-a.plygrnd.tech` — `knowledge/deploy-urls.md`
 - Docker / Coolify: `Dockerfile` · `.dockerignore` · health `paths.routes.apiHealth` (`/api/health`)
 - Shell paths helper: `apps/web/lib/paths.ts` (`paths.routes.*`)
+- Home magazine (`/`): Spec `specs/domain/home-magazine.md` · `apps/web/components/home-magazine.tsx` · Cover + topic tiles + recent Personas/Projects/TGs + Journeys strip
 - Plexon federation Wave 1: `knowledge/plexon-federation.md` · login `/login` · env `PLEXON_AUTH_URL` / `PLEXON_SERVICE_SECRET` / `NEXT_PUBLIC_PLEXON_REGISTER_URL` / `AUTH_SECRET`
 - Central Assistant flyout: `PlatformAssistantHost` · plexon embed `/assistant/embed?theme=` + `assistant:theme` · SoT `plexon-v3/specs/domain/central-assistant-flyout.md` · public plexon base from `PLEXON_AUTH_URL` / `NEXT_PUBLIC_PLEXON_URL` (never hardcode) · persona `/chat` stays separate; EQC hosts `/chat/embed` in its own overlay
 - Product launcher: BrandCorner → `ShellBrandCorner` / `lib/platform-product-switcher.ts`; staging fallbacks in `paths.ecosystemStaging*` when `NEXT_PUBLIC_*_URL` unset

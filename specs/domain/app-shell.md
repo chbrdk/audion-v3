@@ -20,6 +20,7 @@
 
 ## Layout notes
 
+- **Home** (`/`) is a full-width editorial magazine (`specs/domain/home-magazine.md`) — cover + topic tiles + recent strips; no duplicate PageTitle/lead on the shell.
 - Project / Persona / TG / Journey **index** and **detail** are full-width magazine pages.
 - Chat is a full-height conversation surface (persona).
 - Platform Assistant is the dock-end flyout (cross-app).

@@ -6,6 +6,7 @@ const repoRoot = path.resolve(__dirname, '../../..')
 
 const requiredSpecs = [
   'specs/domain/app-shell.md',
+  'specs/domain/home-magazine.md',
   'specs/domain/persona-workspace.md',
   'specs/domain/persona-fields.md',
   'specs/domain/target-group-workspace.md',
