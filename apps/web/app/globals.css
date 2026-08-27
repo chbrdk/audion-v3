@@ -3187,13 +3187,16 @@ main { min-height: 100vh; }
   gap: 0.15rem;
   flex: 0 0 auto;
   padding-bottom: 0.15rem;
+  order: 0;
 }
 
 .audion-chat-composer-row {
   display: flex;
+  flex-wrap: nowrap;
   align-items: flex-end;
   gap: 0.35rem;
   width: 100%;
+  flex: 1 1 100%;
 }
 
 .audion-chat-composer-row > .ds-field {

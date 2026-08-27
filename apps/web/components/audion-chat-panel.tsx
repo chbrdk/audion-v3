@@ -799,7 +799,6 @@ export function AudionChatPanel({
             </Button>
           </div>
         ) : null}
-        {composerLeading}
         {allowAttachments && pendingAttachments.length ? (
           <ul className="audion-chat-pending-attach" aria-label={t('chat.pendingAttachmentsAria')}>
             {pendingAttachments.map((img, index) => (
@@ -870,6 +869,7 @@ export function AudionChatPanel({
           </p>
         ) : null}
         <div className="audion-chat-composer-row">
+          {composerLeading}
           {allowAttachments ? (
             <>
               <input
