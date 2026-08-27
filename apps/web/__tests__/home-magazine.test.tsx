@@ -136,7 +136,7 @@ describe('HomeMagazine', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Persona workspace' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'AUDION' })).toBeTruthy()
     expect(screen.getByLabelText('Topic entry points')).toBeTruthy()
     expect(screen.getByLabelText('Recent personas, projects, and target groups')).toBeTruthy()
 

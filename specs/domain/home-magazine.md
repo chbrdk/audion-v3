@@ -9,7 +9,7 @@ Replace the thin Panel stub home with one magazine composition: brand cover, top
 ## Composition (`HomeMagazine` / `audion-magazine--home`)
 Full stage width (no narrow Panel cap). Spine — not stacked dashboard panels:
 
-1. **Cover** — AUDION as hero · short product lede · primary CTA **Chat** · ghost **Projects**
+1. **Cover** — large **AUDION** wordmark only (no lede, no cover CTAs)
 2. **01 · Topics** — five capability tiles: **Personas** · **Projects** · **Target groups** · **Journeys** · **Chat** → hub routes
 3. **02 · Recent** — three equal columns (`audion-home-recent-columns`), each a numbered `audion-magazine-list`:
    - **Personas** — recent summaries (~6–8); link `/personas/:id`
@@ -26,7 +26,7 @@ Sort recent items by `updatedAt` desc when present, else name. Empty columns use
 
 ## UI primitives (`@msqdx/ui`)
 `Button` · `EmptyState` · `Text`  
-App composition for magazine chrome (`audion-home-*`, topic tiles, recent lists, journey tiles). Do not invent parallel hub create dialogs on home.
+App composition for magazine chrome (`audion-home-*`, topic tiles, recent lists, journey tiles). Cover is brand wordmark only. Do not invent parallel hub create dialogs on home.
 
 ## Drop / reshape
 - `HomeWorkspacePanel` Panel spine and topbar Easy-setup / Queue / first-slice links as the home story

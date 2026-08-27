@@ -156,17 +156,7 @@ export function HomeMagazine({
       data-section="home-magazine"
     >
       <header className="audion-home-cover">
-        <p className="audion-home-cover__kicker">{t('home.kicker')}</p>
-        <h1 className="audion-home-cover__title">{t('home.title')}</h1>
-        <p className="audion-home-cover__lede">{t('home.lede')}</p>
-        <div className="audion-home-cover__actions">
-          <Link href={paths.routes.chat}>
-            <Button>{t('home.chatCta')}</Button>
-          </Link>
-          <Link href={paths.routes.projects}>
-            <Button variant="ghost">{t('nav.projects')}</Button>
-          </Link>
-        </div>
+        <h1 className="audion-home-cover__title">{t('home.kicker')}</h1>
       </header>
 
       <HomeChapter
