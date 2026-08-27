@@ -14,6 +14,7 @@ import {
   resolveKnowledgeChapters,
   sanitizeKnowledgeHtml,
 } from '../lib/project-knowledge'
+import { KnowledgeDocxUploadButton } from './knowledge-docx-upload'
 import { KnowledgeRichEditor } from './knowledge-rich-editor'
 import { KnowledgeRagStatusBadge, useKnowledgeRagStatus } from './knowledge-rag-status'
 import { PublishKnowledgePackCta } from './publish-knowledge-pack-cta'
@@ -187,6 +188,19 @@ export function ProjectKnowledgeDossier({
         platformProjectId={platformProjectId}
       />
       <p className="audion-knowledge-rag-hint">{t('knowledge.ragHint')}</p>
+      <KnowledgeDocxUploadButton
+        uploadUrl={paths.routes.apiProjectKnowledgeUpload(projectId)}
+        disabled={saving || editingId != null}
+        onUploaded={async (body) => {
+          const chapter = body.chapter as { id: string; title: string; body: string } | undefined
+          if (chapter?.id) {
+            setChapters((prev) => [...prev.filter((c) => c.id !== chapter.id), chapter])
+            setOpenId(chapter.id)
+          }
+          router.refresh()
+          window.setTimeout(() => void refreshRag(), 800)
+        }}
+      />
 
       {chapters.length === 0 ? (
         <button

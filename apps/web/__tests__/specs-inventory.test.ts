@@ -64,6 +64,8 @@ describe('specs inventory', () => {
     expect(paths.routes.apiChatDocumentsUpload).toBe('/api/chat/documents/upload')
     expect(paths.routes.apiKnowledgeRagIngest).toBe('/api/knowledge/rag/ingest')
     expect(paths.routes.apiKnowledgeRagRetrieve).toBe('/api/knowledge/rag/retrieve')
+    expect(paths.routes.apiProjectKnowledgeUpload('p1')).toBe('/api/projects/p1/knowledge/upload')
+    expect(paths.routes.apiPersonaKnowledgeUpload('x')).toBe('/api/personas/x/knowledge/upload')
     expect(paths.knowledgeRagEmbeddingDims).toBe(1536)
     expect(paths.knowledgeRagEmbeddingModel).toBe('openai/text-embedding-3-small')
     expect(paths.chatImageUploadMaxBytes).toBe(10 * 1024 * 1024)

@@ -138,9 +138,10 @@ OpenRouter headers: `HTTP-Referer` / `X-Title` from staging origin / brand label
 | Project knowledge chapter save (`PATCH` / research apply) | Auto-sync chapters → RAG (`sourceType` `chapter` / `research`) |
 | Persona / TG knowledge entry create/update | Auto-sync when `projectId` set (`sourceType` `entry`) |
 | Chapter / entry delete | Remove matching RAG document by `sourceRef` |
-| Manual `POST /api/knowledge/rag/ingest` | Still available for ops / DOCX; **no separate “Index for chat” CTA** |
+| Manual `POST /api/knowledge/rag/ingest` | Ops path; **no separate “Index for chat” CTA** |
+| DOCX upload on dossier | `POST …/knowledge/upload` → chapter/entry + auto RAG |
 
-UI shows status badges (`In chat` / `Indexing…` / failed) on dossier cards — no extra index button.
+UI: **Upload Word (.docx)** on project / persona / TG knowledge magazines; status badges on cards.
 
 Collection Knowledge Pack publish remains a **separate** distill path (`knowledge-pack-publish.md`) — RAG does not write to Plexon.
 

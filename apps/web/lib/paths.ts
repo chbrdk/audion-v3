@@ -212,6 +212,7 @@ export const paths = {
     apiProjects: '/api/projects',
     apiProjectsBootstrap: '/api/projects/bootstrap',
     apiProjectDetail: (id: string) => `/api/projects/${id}`,
+    apiProjectKnowledgeUpload: (id: string) => `/api/projects/${id}/knowledge/upload`,
     /** Register existing project on Plexon Collection (audion-project-origin). */
     apiProjectSyncPlexon: (id: string) => `/api/projects/${id}/sync-plexon`,
     personas: '/personas',
@@ -348,9 +349,13 @@ export const paths = {
     apiAiKnowledgePackPublish: (projectId: string) =>
       `/api/ai/projects/${encodeURIComponent(projectId)}/knowledge-pack/publish`,
     apiTargetGroupKnowledge: (tgId: string) => `/api/target-groups/${tgId}/knowledge`,
+    apiTargetGroupKnowledgeUpload: (tgId: string) =>
+      `/api/target-groups/${tgId}/knowledge/upload`,
     apiTargetGroupKnowledgeEntry: (tgId: string, entryId: string) =>
       `/api/target-groups/${tgId}/knowledge/${entryId}`,
     apiPersonaKnowledge: (personaId: string) => `/api/personas/${personaId}/knowledge`,
+    apiPersonaKnowledgeUpload: (personaId: string) =>
+      `/api/personas/${personaId}/knowledge/upload`,
     apiPersonaKnowledgeEntry: (personaId: string, entryId: string) =>
       `/api/personas/${personaId}/knowledge/${entryId}`,
     apiAiGenerateJourneyFromProject: (projectId: string) =>

@@ -10,6 +10,7 @@ import {
   sanitizeKnowledgeHtml,
 } from '../lib/project-knowledge'
 import { useT } from '../lib/user-prefs'
+import { KnowledgeDocxUploadButton } from './knowledge-docx-upload'
 import { KnowledgeRichEditor } from './knowledge-rich-editor'
 import { KnowledgeRagStatusBadge, useKnowledgeRagStatus } from './knowledge-rag-status'
 
@@ -26,6 +27,7 @@ export function ResourceKnowledgeDossier({
   entries = [],
   documents = [],
   listUrl,
+  uploadUrl = null,
   projectId = null,
   entrySourceRef,
 }: {
@@ -34,6 +36,8 @@ export function ResourceKnowledgeDossier({
   documents?: DocumentSource[]
   /** GET list · POST create; PUT/DELETE use `${listUrl}/${entryId}` */
   listUrl: string
+  /** DOCX upload endpoint (persona/TG knowledge). */
+  uploadUrl?: string | null
   /** When set, shows chat-index status for this project's RAG docs. */
   projectId?: string | null
   /** Map entry id → RAG sourceRef (persona:/tg: prefixes). */
@@ -232,6 +236,23 @@ export function ResourceKnowledgeDossier({
         as="h3"
       />
       {projectId ? <p className="audion-knowledge-rag-hint">{t('knowledge.ragHint')}</p> : null}
+      {uploadUrl ? (
+        <KnowledgeDocxUploadButton
+          uploadUrl={uploadUrl}
+          disabled={saving || editingId != null}
+          onUploaded={async (body) => {
+            const entry = body.entry as
+              | { id: string; title: string; content: string; updatedAt: string | null }
+              | undefined
+            if (entry?.id) {
+              setItems((prev) => [...prev.filter((e) => e.id !== entry.id), entry])
+              setOpenId(entry.id)
+            }
+            router.refresh()
+            window.setTimeout(() => void refreshRag(), 800)
+          }}
+        />
+      ) : null}
 
       {items.length === 0 ? (
         <button

@@ -3559,6 +3559,14 @@ main { min-height: 100vh; }
   line-height: 1.4;
 }
 
+.audion-knowledge-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.85rem;
+}
+
 .audion-knowledge-rag-badge {
   margin-right: auto;
   font-size: 0.75rem;

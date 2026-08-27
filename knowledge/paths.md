@@ -115,6 +115,7 @@
     - Dims: 1536 · topK default 5 · not Qdrant; not local BGE/MLX
     - Stream: persona chat with `projectId` injects Relevant context; `done.sources` when hits; guests skipped
   - Auto-ingest on knowledge save (project chapters, research apply, persona/TG entries); dossier shows “In chat” status — no Index CTA
+  - DOCX upload on dossiers: `apiProjectKnowledgeUpload` · `apiPersonaKnowledgeUpload` · `apiTargetGroupKnowledgeUpload` → chapter/entry + auto RAG
 - Chat API internal default: `paths.chatApiInternalUrl` · env `NEXT_CHAT_API_INTERNAL_URL`
 - Chat fixtures/store: `apps/web/lib/fixtures/chat-store.ts`
 - Chat answer port: `apps/web/lib/chat/`

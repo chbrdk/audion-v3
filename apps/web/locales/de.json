@@ -767,7 +767,11 @@
     "ragHint": "Gespeichertes Knowledge steht Persona-Chat automatisch zur Verfügung.",
     "ragReady": "Im Chat",
     "ragPending": "Indexiert…",
-    "ragFailed": "Chat-Index fehlgeschlagen"
+    "ragFailed": "Chat-Index fehlgeschlagen",
+    "uploadDocx": "Word (.docx) hochladen",
+    "uploading": "Wird hochgeladen…",
+    "uploadFailed": "Dokument-Upload fehlgeschlagen",
+    "uploadInvalidType": "Nur .docx-Dateien werden unterstützt"
   },
   "apiDocs": {
     "hint": "Live-BFF-Routenkatalog. OpenAPI-Iframe kann später folgen.",

@@ -767,7 +767,11 @@
     "ragHint": "Saved knowledge is available to persona chat automatically.",
     "ragReady": "In chat",
     "ragPending": "Indexing…",
-    "ragFailed": "Chat index failed"
+    "ragFailed": "Chat index failed",
+    "uploadDocx": "Upload Word (.docx)",
+    "uploading": "Uploading…",
+    "uploadFailed": "Document upload failed",
+    "uploadInvalidType": "Only .docx files are supported"
   },
   "apiDocs": {
     "hint": "Live BFF route catalog. OpenAPI iframe may follow later.",

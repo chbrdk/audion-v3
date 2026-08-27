@@ -193,6 +193,7 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
           entries={persona.knowledgeEntries}
           documents={persona.documents}
           listUrl={paths.routes.apiPersonaKnowledge(persona.id)}
+          uploadUrl={paths.routes.apiPersonaKnowledgeUpload(persona.id)}
           projectId={persona.projectId}
           entrySourceRef={(entryId) => `persona:${persona.id}:${entryId}`}
         />
