@@ -2,6 +2,7 @@
  * Native chat NDJSON stream — OpenAI completions → V3 ChatStreamEvent.
  */
 
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import type { ChatSendPayload, ChatStreamEvent } from '@audion-v3/contracts'
 import { createOpenAiClient, getAiOpenAiModel, toAiNativeError } from '../ai/client'
 import {
@@ -19,12 +20,7 @@ const HISTORY_MESSAGE_LIMIT = 12
 
 type OpenAiTextPart = { type: 'text'; text: string }
 type OpenAiImagePart = { type: 'image_url'; image_url: { url: string } }
-type OpenAiContent = string | Array<OpenAiTextPart | OpenAiImagePart>
-
-type OpenAiChatMessage = {
-  role: 'system' | 'user' | 'assistant'
-  content: OpenAiContent
-}
+type OpenAiUserContent = string | Array<OpenAiTextPart | OpenAiImagePart>
 
 async function systemPromptForPersona(
   personaId: string,
@@ -47,7 +43,7 @@ Do not say you cannot open or fetch websites. Keep your answer short: acknowledg
 function userContentWithImages(
   text: string,
   images: { dataUrl: string }[],
-): OpenAiContent {
+): OpenAiUserContent {
   if (!images.length) return text || '(image attachment)'
   const parts: Array<OpenAiTextPart | OpenAiImagePart> = []
   const body = text.trim() || 'Please review the attached image(s).'
@@ -64,8 +60,8 @@ async function buildOpenAiMessages(
   currentMessage: string,
   images: { id: string; dataUrl: string }[],
   abCompare: boolean,
-): Promise<OpenAiChatMessage[]> {
-  const system: OpenAiChatMessage = {
+): Promise<ChatCompletionMessageParam[]> {
+  const system: ChatCompletionMessageParam = {
     role: 'system',
     content: await systemPromptForPersona(personaId, currentMessage, abCompare),
   }
@@ -74,10 +70,17 @@ async function buildOpenAiMessages(
     .filter((m) => m.role === 'user' || m.role === 'assistant')
     .slice(-HISTORY_MESSAGE_LIMIT)
   // Prior turns: text-only (token budget). Current user turn: multimodal.
-  const history: OpenAiChatMessage[] = recent.slice(0, -1).map((m) => ({
-    role: m.role === 'assistant' ? 'assistant' : 'user',
-    content: m.content || (m.images?.length ? '(image attachment)' : ''),
-  }))
+  const history: ChatCompletionMessageParam[] = recent.slice(0, -1).map((m) =>
+    m.role === 'assistant'
+      ? {
+          role: 'assistant' as const,
+          content: m.content || '',
+        }
+      : {
+          role: 'user' as const,
+          content: m.content || (m.images?.length ? '(image attachment)' : ''),
+        },
+  )
   history.push({
     role: 'user',
     content: userContentWithImages(currentMessage, images),
