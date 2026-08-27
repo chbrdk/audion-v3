@@ -20,6 +20,7 @@
 | UX Test Flow Model (nodes/gates/compile) | `specs/domain/ux-test-flow-model.md` |
 | Chat workspace | `specs/domain/chat-workspace.md` |
 | Chat fields | `specs/domain/chat-fields.md` |
+| Chat image attachments | `specs/domain/chat-image-attachments.md` |
 | Tavus video chat | `specs/domain/tavus-video-chat.md` |
 | Project workspace | `specs/domain/project-workspace.md` |
 | Project fields | `specs/domain/project-fields.md` |

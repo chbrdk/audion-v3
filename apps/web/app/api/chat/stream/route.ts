@@ -60,8 +60,9 @@ function resolveGuestSessionId(request: Request, body: ChatSendPayload): string 
 
 export async function POST(request: Request) {
   const body = (await request.json()) as ChatSendPayload
-  if (!body?.message?.trim()) {
-    return NextResponse.json({ error: 'Message is required' }, { status: 400 })
+  const imageIds = (body.imageIds ?? []).map((id) => id.trim()).filter(Boolean)
+  if (!body?.message?.trim() && imageIds.length === 0) {
+    return NextResponse.json({ error: 'Message or image is required' }, { status: 400 })
   }
   if (!body?.personaId?.trim()) {
     return NextResponse.json({ error: 'personaId is required' }, { status: 400 })
@@ -70,6 +71,13 @@ export async function POST(request: Request) {
   const session = await auth()
   const isGuest = !session?.user?.id
 
+  if (isGuest && (imageIds.length > 0 || body.abCompare)) {
+    return NextResponse.json(
+      { error: 'Image attachments are not available in guest chat', code: 'GUEST_ATTACHMENTS_DENIED' },
+      { status: 403 },
+    )
+  }
+
   if (session?.user?.id) {
     reportUsage({
       userId: session.user.id,
@@ -77,6 +85,7 @@ export async function POST(request: Request) {
       rawUnits: {
         persona_id: body.personaId,
         message_chars: body.message.trim().length,
+        image_count: imageIds.length,
       },
     })
   }

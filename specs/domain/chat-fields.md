@@ -24,19 +24,26 @@
 |-------|--------|
 | `id` | required |
 | `role` | `user` \| `assistant` \| `system` |
-| `content` | markdown string |
+| `content` | markdown string (may be empty when `images` present) |
 | `createdAt` | nullable ISO |
 | `status` | `complete` \| `streaming` \| `error` (client) |
+| `images` | optional `{ id, dataUrl }[]` — compressed attachments for UI history |
+| `abCompare` | optional bool — user requested A/B compare on this turn |
 
 ## Send payload (`ChatSendPayload`)
 
 | Field | Notes |
 |-------|--------|
 | `personaId` | **required** |
-| `message` | **required** non-empty trim |
+| `message` | string; may be empty when `imageIds.length ≥ 1` |
 | `conversationId` | optional (create if absent) |
 | `projectId` | optional nullable |
 | `journeyId` | optional — deferred context |
+| `guestSessionId` | optional guest embed cookie fallback |
+| `imageIds` | optional string[] — IDs from `POST /api/chat/images/upload` |
+| `abCompare` | optional bool — effective only when exactly **2** `imageIds` |
+
+See `specs/domain/chat-image-attachments.md`.
 
 ## UX journey step (`ChatUxJourneyStep`)
 
@@ -74,9 +81,10 @@ Exact wire format follows chat-api; adapter lives in `apps/web/lib/chat/`.
 
 ## Validation
 
-- Empty `message` → Field error on composer; do not POST
+- Empty `message` **and** no `imageIds` → Field error on composer; do not POST
 - Missing `personaId` → block send; prompt persona picker
 - Unknown roles on history load → drop or coerce to `assistant`
+- Guest/TG: reject `imageIds` / `abCompare`
 
 ## Target-group ask-all (client shapes)
 
@@ -107,7 +115,7 @@ Missing replica → 400. Missing `TAVUS_API_KEY` → 503. Session create ends le
 
 ## Deferred
 
-- Attachment / document ids on send
+- Document ids on send (DOCX)
 - Moodboard asset refs
 - Share-token conversation persistence
 - Voice session ids

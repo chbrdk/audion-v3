@@ -90,6 +90,7 @@ const API_CATALOG: Array<{
     routes: [
       { method: 'GET', path: paths.routes.apiAiOptions, note: 'AI dialog picker options' },
       { method: 'POST', path: paths.routes.apiChatStream, note: 'Chat NDJSON stream' },
+      { method: 'POST', path: paths.routes.apiChatImagesUpload, note: 'Chat image upload (temp)' },
     ],
   },
 ]

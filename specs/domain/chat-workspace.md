@@ -33,6 +33,7 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 | Streaming / busy | `LoadingText` |
 | Errors | `Alert tone="error"` |
 | Composer | Underline `Textarea.chat-composer`; expands on hover/focus/`is-expanded`; icon send `.chat-send.chat-send-icon` |
+| Attachments | Persona only: attach control + pending thumbs; A/B checkbox when exactly 2 pending (`specs/domain/chat-image-attachments.md`) |
 | Optional | Stop generation while streaming |
 
 ## Target-group ask-all (Phase TG)
@@ -88,6 +89,10 @@ Persona mode only (off on public share, TG, and embed). Composer **Video** toggl
 
 See `specs/domain/tavus-video-chat.md` · `knowledge/tavus-video-chat.md`.
 
+## Image attachments + A/B compare
+
+Persona mode only (off on TG, guest embed, public share guest). Composer attach → compress → `POST /api/chat/images/upload` → pending `imageIds` on send. With exactly two pending images, optional **A/B compare** injects the structured winner instruction into the native stream. Spec: `specs/domain/chat-image-attachments.md`.
+
 ## Non-goals (MVP)
 
 - Moodboard drawer
@@ -98,6 +103,7 @@ See `specs/domain/tavus-video-chat.md` · `knowledge/tavus-video-chat.md`.
 - Journey-in-chat context picker (follow-on once journeys ship)
 - Persisted TG round history / multi-turn TG sessions
 - Voice / inspect / attachments in TG mode
+- Guest-embed attachments
 
 ## Acceptance
 
@@ -111,3 +117,4 @@ See `specs/domain/tavus-video-chat.md` · `knowledge/tavus-video-chat.md`.
 8. TG detail exposes CTA to `/chat?targetGroupId=`.
 9. TG mode smoke test: fan-out mocked streams → N cards.
 10. Persona video toggle with `tavusReplicaId` embeds a Tavus CVI iframe (not a stub URL).
+11. Persona chat can attach images, stream with vision, and A/B-compare exactly two images.

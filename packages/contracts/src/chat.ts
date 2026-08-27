@@ -16,12 +16,22 @@ export type ChatConversationList = {
   total: number
 }
 
+export type ChatMessageImage = {
+  id: string
+  /** Compressed data URL for UI history / vision resolve at send. */
+  dataUrl: string
+}
+
 export type ChatMessage = {
   id: string
   role: ChatMessageRole
   content: string
   createdAt: string | null
   status: ChatMessageStatus
+  /** User-turn attachments (persona chat). */
+  images?: ChatMessageImage[]
+  /** User requested A/B compare on this turn (exactly two images). */
+  abCompare?: boolean
 }
 
 export type ChatConversationDetail = ChatConversationSummary & {
@@ -75,6 +85,10 @@ export type ChatSendPayload = {
   journeyId?: string | null
   /** Guest embed session id (cookie fallback when third-party cookies blocked). */
   guestSessionId?: string | null
+  /** Temp upload IDs from POST /api/chat/images/upload. */
+  imageIds?: string[] | null
+  /** When true and exactly two imageIds, inject A/B compare system instruction. */
+  abCompare?: boolean | null
 }
 
 /** Chat workspace scope — persona thread vs target-group ask-all. */

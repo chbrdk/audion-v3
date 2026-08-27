@@ -105,6 +105,7 @@ describe('audion chat workspace', () => {
     expect(form?.querySelector('[aria-label="History"]')).toBeNull()
     expect(screen.getByRole('button', { name: 'Voice' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Video' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Attach image' })).toBeInTheDocument()
     expect(topbar?.querySelector('[aria-label="Share"]')).toBeTruthy()
     expect(topbar?.querySelector('[aria-label="History"]')).toBeTruthy()
     expect(topbar?.querySelector('a[aria-label="History"]')).toBeNull()

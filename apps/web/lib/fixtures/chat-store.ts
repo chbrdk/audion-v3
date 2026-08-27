@@ -89,9 +89,14 @@ function memoryChatConversationDetail(id: string): ChatConversationDetail | null
 
 function memoryChatBeginUserTurn(
   payload: ChatSendPayload,
+  opts?: {
+    images?: { id: string; dataUrl: string }[]
+    abCompare?: boolean
+  },
 ): { conversationId: string; personaName: string | null } | { error: string } {
   const message = payload.message.trim()
-  if (!message) return { error: 'Message is required' }
+  const images = opts?.images ?? []
+  if (!message && images.length === 0) return { error: 'Message or image is required' }
   if (!payload.personaId.trim()) return { error: 'personaId is required' }
 
   let conversation = payload.conversationId
@@ -100,12 +105,19 @@ function memoryChatBeginUserTurn(
 
   const personaName = resolvePersonaNameDemo(payload.personaId)
   const now = new Date().toISOString()
+  const content = message || (images.length ? '(image attachment)' : '')
   const userMsg: ChatMessage = {
     id: `m-user-${Date.now().toString(36)}`,
     role: 'user',
-    content: message,
+    content,
     createdAt: now,
     status: 'complete',
+    ...(images.length
+      ? {
+          images,
+          abCompare: Boolean(opts?.abCompare),
+        }
+      : {}),
   }
 
   if (!conversation) {
@@ -115,9 +127,9 @@ function memoryChatBeginUserTurn(
       personaId: payload.personaId,
       personaName,
       projectId: payload.projectId ?? null,
-      title: message.slice(0, 48),
+      title: content.slice(0, 48),
       updatedAt: now,
-      preview: message.slice(0, 80),
+      preview: content.slice(0, 80),
       messages: [userMsg],
       inspect: null,
     }
@@ -127,8 +139,8 @@ function memoryChatBeginUserTurn(
       ...conversation,
       messages: [...conversation.messages, userMsg],
       updatedAt: now,
-      preview: message.slice(0, 80),
-      title: conversation.title || message.slice(0, 48),
+      preview: content.slice(0, 80),
+      title: conversation.title || content.slice(0, 48),
     }
     conversations = conversations.map((c) => (c.id === conversation!.id ? conversation! : c))
   }
@@ -197,12 +209,16 @@ export async function storeChatConversationDetail(
 /** Persist user turn; shared by fixture + native chat. */
 export async function storeChatBeginUserTurn(
   payload: ChatSendPayload,
+  opts?: {
+    images?: { id: string; dataUrl: string }[]
+    abCompare?: boolean
+  },
 ): Promise<{ conversationId: string; personaName: string | null } | { error: string }> {
   if (isProjectsDatabaseConfigured()) {
     const db = await dbApi()
-    return db.dbChatBeginUserTurn(payload)
+    return db.dbChatBeginUserTurn(payload, opts)
   }
-  return memoryChatBeginUserTurn(payload)
+  return memoryChatBeginUserTurn(payload, opts)
 }
 
 export async function storeChatAppendAssistant(
@@ -232,19 +248,48 @@ export async function storeChatSetInspect(
 export async function* storeChatFakeStream(
   payload: ChatSendPayload,
 ): AsyncGenerator<ChatStreamEvent> {
-  const turn = await storeChatBeginUserTurn(payload)
+  const message = payload.message.trim()
+  const imageIds = (payload.imageIds ?? []).map((id) => id.trim()).filter(Boolean)
+  if (!message && imageIds.length === 0) {
+    yield { type: 'error', message: 'Message or image is required' }
+    return
+  }
+
+  let images: { id: string; dataUrl: string }[] = []
+  if (imageIds.length > 0) {
+    const { resolveChatImages } = await import('../chat/image-upload-store')
+    const resolved = resolveChatImages(imageIds)
+    if (!resolved.ok) {
+      yield { type: 'error', message: resolved.error }
+      return
+    }
+    images = resolved.images
+  }
+
+  const { shouldEnableAbCompare } = await import('../chat/ab-compare')
+  const abCompare = shouldEnableAbCompare(payload.abCompare, images.length)
+  const turnPayload: ChatSendPayload = {
+    ...payload,
+    message: message || (images.length ? '(image attachment)' : ''),
+    imageIds,
+    abCompare,
+  }
+
+  const turn = await storeChatBeginUserTurn(turnPayload, { images, abCompare })
   if ('error' in turn) {
     yield { type: 'error', message: turn.error }
     return
   }
 
   const proposal = maybeProposeInspectWebsite(
-    payload.message.trim(),
+    message,
     payload.personaId,
     payload.projectId ?? null,
     turn.conversationId,
   )
-  const reply = fixtureReply(payload.message.trim(), turn.personaName, Boolean(proposal))
+  const reply = abCompare
+    ? `## From ${turn.personaName || 'this persona'}\n\n### A summary\nVariant A looks clearer.\n\n### B summary\nVariant B is denser.\n\n### Key differences\nContrast and hierarchy.\n\n### Winner & why\n**A** — clearer scan path for the stated goal.\n\n### Recommendations\nKeep A's hierarchy; borrow B's accent sparingly.`
+    : fixtureReply(message || 'image', turn.personaName, Boolean(proposal))
   const chunks = reply.match(/.{1,24}/gs) || [reply]
   for (const chunk of chunks) {
     yield { type: 'delta', text: chunk }

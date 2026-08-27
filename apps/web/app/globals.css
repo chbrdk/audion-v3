@@ -3045,6 +3045,129 @@ main { min-height: 100vh; }
   padding-bottom: 0.15rem;
 }
 
+.audion-chat-composer-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.audion-chat-composer-row > .ds-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.audion-chat-attach-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.audion-chat-pending-attach {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  width: 100%;
+}
+
+.audion-chat-pending-attach-item {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 0.35rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--msqdx-ink, #111) 18%, transparent);
+}
+
+.audion-chat-pending-attach-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.audion-chat-pending-attach-remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 1.5rem !important;
+  padding: 0 !important;
+  line-height: 1;
+  background: color-mix(in srgb, var(--msqdx-surface, #fff) 85%, transparent) !important;
+}
+
+.audion-chat-attach-ab-label {
+  position: absolute;
+  left: 0.25rem;
+  top: 0.25rem;
+  z-index: 1;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+  background: color-mix(in srgb, var(--msqdx-ink, #111) 80%, transparent);
+  color: var(--msqdx-surface, #fff);
+}
+
+.audion-chat-ab-compare {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+  width: 100%;
+}
+
+.audion-chat-attach-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+}
+
+.audion-chat-attach-thumbs.is-ab {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  max-width: 22rem;
+}
+
+.audion-chat-attach-thumb {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 0.35rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--msqdx-ink, #111) 18%, transparent);
+}
+
+.audion-chat-attach-thumbs.is-ab .audion-chat-attach-thumb {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+}
+
+.audion-chat-attach-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.audion-chat-user-turn-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
 .audion-chat-topbar-leading {
   display: flex;
   align-items: flex-end;

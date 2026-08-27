@@ -70,9 +70,14 @@ export async function dbChatConversationDetail(
 
 export async function dbChatBeginUserTurn(
   payload: ChatSendPayload,
+  opts?: {
+    images?: { id: string; dataUrl: string }[]
+    abCompare?: boolean
+  },
 ): Promise<{ conversationId: string; personaName: string | null } | { error: string }> {
   const message = payload.message.trim()
-  if (!message) return { error: 'Message is required' }
+  const images = opts?.images ?? []
+  if (!message && images.length === 0) return { error: 'Message or image is required' }
   if (!payload.personaId.trim()) return { error: 'personaId is required' }
 
   const db = getDb()
@@ -83,12 +88,19 @@ export async function dbChatBeginUserTurn(
   const personaName = await resolvePersonaName(payload.personaId)
   const now = new Date()
   const nowIso = now.toISOString()
+  const content = message || (images.length ? '(image attachment)' : '')
   const userMsg: ChatMessage = {
     id: `m-user-${Date.now().toString(36)}`,
     role: 'user',
-    content: message,
+    content,
     createdAt: nowIso,
     status: 'complete',
+    ...(images.length
+      ? {
+          images,
+          abCompare: Boolean(opts?.abCompare),
+        }
+      : {}),
   }
 
   if (!conversation) {
@@ -98,9 +110,9 @@ export async function dbChatBeginUserTurn(
       personaId: payload.personaId,
       personaName,
       projectId: payload.projectId ?? null,
-      title: message.slice(0, 48),
+      title: content.slice(0, 48),
       updatedAt: nowIso,
-      preview: message.slice(0, 80),
+      preview: content.slice(0, 80),
       messages: [userMsg],
       inspect: null,
     }
@@ -120,8 +132,8 @@ export async function dbChatBeginUserTurn(
       ...conversation,
       messages: [...conversation.messages, userMsg],
       updatedAt: nowIso,
-      preview: message.slice(0, 80),
-      title: conversation.title || message.slice(0, 48),
+      preview: content.slice(0, 80),
+      title: conversation.title || content.slice(0, 48),
     }
     await db
       .update(chatConversations)
