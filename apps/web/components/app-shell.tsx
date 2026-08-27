@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import {
   AppFrame,
-  BrandCorner,
   MsqdxLogoMark,
   NavRail,
   PageTitle,
@@ -26,6 +25,7 @@ import {
 import { paths } from '../lib/paths'
 import { useUserPrefs } from '../lib/user-prefs'
 import { PlatformAssistantHost } from './platform-assistant-host'
+import { ShellBrandCorner } from './shell-brand-corner'
 
 export function AppShell({
   children,
@@ -172,7 +172,7 @@ export function AppShell({
           />
         )
       }
-      brandCorner={embed ? null : <BrandCorner label={paths.brandLabel} />}
+      brandCorner={embed ? null : <ShellBrandCorner />}
       topbar={
         <>
           <div className="topbar-brand">{brandContent}</div>

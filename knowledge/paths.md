@@ -18,6 +18,7 @@
 - Shell paths helper: `apps/web/lib/paths.ts` (`paths.routes.*`)
 - Plexon federation Wave 1: `knowledge/plexon-federation.md` · login `/login` · env `PLEXON_AUTH_URL` / `PLEXON_SERVICE_SECRET` / `NEXT_PUBLIC_PLEXON_REGISTER_URL` / `AUTH_SECRET`
 - Central Assistant flyout: `PlatformAssistantHost` · plexon embed `/assistant/embed?theme=` + `assistant:theme` · SoT `plexon-v3/specs/domain/central-assistant-flyout.md` · public plexon base from `PLEXON_AUTH_URL` / `NEXT_PUBLIC_PLEXON_URL` (never hardcode) · persona `/chat` stays separate; EQC hosts `/chat/embed` in its own overlay
+- Product launcher: BrandCorner → `ShellBrandCorner` / `lib/platform-product-switcher.ts`; staging fallbacks in `paths.ecosystemStaging*` when `NEXT_PUBLIC_*_URL` unset
 - Rail nav icons: `apps/web/components/nav-icons.tsx` · `knowledge/nav-rail-icons.md`
 - Rail dock storage key: `audion.v3.railDock`
 - Comm layout storage key: `audion.v3.commLayout` (`paths.commLayoutStorageKey`)
@@ -168,6 +169,7 @@
 - DS component gaps: `knowledge/ds-component-gaps.md`
 - Journeys + Chat gaps: `knowledge/journeys-chat-gaps.md`
 - V2 ↔ V3 runtime separation: `knowledge/v2-v3-runtime-separation.md`
+- V2 → v3 project migrate (Plexon-first): `knowledge/migrate-project-v2-to-v3.md` · `scripts/migrate-project-v2-to-v3.mjs` · Collection create `POST {PLEXON}/api/platform/companies/:id/platform-projects` · sync `POST …/projects/:id/sync` · Audion fill via PATCH mirror (not Audion-first create)
 - Deploy URLs (Coolify staging): `knowledge/deploy-urls.md`
 - V2 ↔ V3 feature parity audit + smoke checklist: `knowledge/v2-v3-feature-parity.md`
 - AI workflows Wave 2 (live proxy + stubs): `knowledge/ai-workflows.md` · `apps/web/lib/ai-workflows.ts` · `ai-workflows-live.ts` · `persona-api-proxy.ts`

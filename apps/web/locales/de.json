@@ -58,6 +58,10 @@
     "untitled": "Ohne Titel",
     "new": "Neu"
   },
+  "shell": {
+    "productMenu": "MSQ DX Produkte",
+    "allProducts": "Alle Produkte in PLEXON"
+  },
   "nav": {
     "chat": "Chat",
     "home": "Home",

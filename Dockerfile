@@ -60,7 +60,9 @@ RUN --mount=type=cache,target=/root/.npm \
 RUN test -d /workspace/msqdx-ui/packages/ui/src \
     && test -f /workspace/msqdx-ui/packages/ui-tokens/dist/index.js \
     && test -f /workspace/msqdx-ui/packages/ui/src/components/ChatOverlay.tsx \
+    && test -f /workspace/msqdx-ui/packages/ui/src/components/BrandCornerProductMenu.tsx \
     && grep -q "export { ChatOverlay }" /workspace/msqdx-ui/packages/ui/src/index.ts \
+    && grep -q "export { BrandCornerProductMenu }" /workspace/msqdx-ui/packages/ui/src/index.ts \
     && rm -rf /workspace/msqdx-ui/node_modules \
     && ln -s /workspace/audion-v3/node_modules /workspace/msqdx-ui/node_modules \
     && test -d /workspace/msqdx-ui/node_modules/@types/react

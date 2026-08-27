@@ -26,7 +26,23 @@ export const paths = {
   commLayoutStorageKey: 'audion.v3.commLayout',
   /** TG linked personas layout: cards | list */
   tgLinkedPersonasLayoutKey: 'audion.v3.tgLinkedPersonasLayout',
-  brandCornerRadiusPx: 32,
+  /** Prefer DS `MSQDX_SHELL_CORNER_RADIUS` (24) via BrandCorner default — do not override. */
+  brandCornerRadiusPx: 24,
+  brandLabel: 'AUDION',
+  productId: 'audion' as const,
+  /** v3 staging origins for product launcher (overridden by NEXT_PUBLIC_* env). */
+  ecosystemStagingPlexon: 'https://plexon-v3.projects-a.plygrnd.tech',
+  ecosystemStagingAudion: 'https://audion-v3.projects-a.plygrnd.tech',
+  ecosystemStagingCheckion: 'https://checkion-v3.projects-a.plygrnd.tech',
+  ecosystemStagingBrandion: 'https://brandion-v3.projects-a.plygrnd.tech',
+  ecosystemStagingCreation: 'https://creation-v3.projects-a.plygrnd.tech',
+  ecosystemStagingEchon: 'https://echon-v3.projects-a.plygrnd.tech',
+  plexonProductsPath: '/products',
+  envAudionPublicUrl: 'NEXT_PUBLIC_AUDION_URL',
+  envBrandionPublicUrl: 'NEXT_PUBLIC_BRANDION_URL',
+  envCreationPublicUrl: 'NEXT_PUBLIC_CREATION_URL',
+  envEchonPublicUrl: 'NEXT_PUBLIC_ECHON_URL',
+  envCheckionPublicUrl: 'NEXT_PUBLIC_CHECKION_URL',
   devPort: 3006,
   personaBackendInternalUrl: 'http://api:8000',
   /** Default local mode: try API, then demo fixtures */
@@ -170,7 +186,6 @@ export const paths = {
   easySetupUrlMaxTextChars: 16_000,
   easySetupUrlUserAgent:
     'Mozilla/5.0 (compatible; AudionEasySetup/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-  brandLabel: 'AUDION',
   defaultDisplayName: 'AUDION',
   displayNameStorageKey: 'audion.v3.displayName',
   themeStorageKey: 'audion.v3.theme',

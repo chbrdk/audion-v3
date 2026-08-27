@@ -9,6 +9,7 @@
 
 - Shared chrome only via `@msqdx/ui` (server barrel `lib/msqdx-ui.ts`, shell barrel `lib/msqdx-ui-shell.ts`).
 - Composition language: `app-frame`, atmospheric background, floating rail, top-right brand corner, quiet topbar.
+- **Product launcher:** `ShellBrandCorner` (`BrandCornerProductMenu`) — click opens federated app list; static staging URLs via `lib/platform-product-switcher.ts`; footer links Plexon `/products` when a Plexon public base is available. Prefer DS BrandCorner radius default (24).
 - Topbar: `PageTitle` + optional `TopStatus` / actions / `leading`.
 - Primary nav **enabled:** Home · Projects · Personas · Target groups · Journeys · Chat
 - Settings rail footer: enabled → `paths.routes.settings`; avatar from user prefs display name
