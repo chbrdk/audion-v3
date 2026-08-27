@@ -2600,17 +2600,54 @@ main { min-height: 100vh; }
 }
 
 .audion-chat-panel.chat-panel-open {
-  --chat-panel-open-min-height: calc(100dvh - 7.25rem);
-  /* Full stage width (rail stays); uncapped from DS 56rem editorial column */
+  /* Fill remaining stage height (flex); avoid fixed 100dvh − N which pushes the composer below the fold after shell/topbar padding. */
+  --chat-panel-open-min-height: 0;
   width: 100%;
   max-width: none;
   margin-inline: 0;
-  min-height: var(--chat-panel-open-min-height);
-  max-height: var(--chat-panel-open-min-height);
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  height: auto;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
+}
+
+/* Chat route: stage + panel consume leftover viewport under the topbar */
+.app-main:has(.audion-chat-panel) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-bottom: 0.75rem;
+  box-sizing: border-box;
+}
+
+.app-main:has(.audion-chat-panel) .page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.app-main:has(.audion-chat-panel) .audion-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-block-start: clamp(0.65rem, 1.4vw, 1.15rem);
+  padding-block-end: 0;
+}
+
+.app-main:has(.audion-chat-panel) .audion-stage > .visually-hidden {
+  position: absolute;
+}
+
+.app-main:has(.audion-chat-panel) .audion-stage > .audion-chat-modality-note,
+.app-main:has(.audion-chat-panel) .audion-stage > .audion-chat-tavus {
+  flex: 0 0 auto;
 }
 
 .audion-chat-panel.chat-panel-open .chat-turns {
