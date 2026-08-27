@@ -23,6 +23,16 @@ export function getAiOpenAiImageModel(): string {
   return process.env[paths.envAiOpenAiImageModel]?.trim() || paths.aiOpenAiImageModel
 }
 
+/** Completion token cap for native persona chat — override via AI_CHAT_MAX_TOKENS. */
+export function getChatCompletionMaxTokens(): number {
+  const raw = process.env[paths.envAiChatMaxTokens]?.trim()
+  if (raw) {
+    const n = Number.parseInt(raw, 10)
+    if (Number.isFinite(n) && n > 0) return Math.min(n, 4096)
+  }
+  return paths.chatCompletionMaxTokens
+}
+
 export function hasOpenAiApiKey(): boolean {
   return Boolean(getOpenAiApiKey())
 }

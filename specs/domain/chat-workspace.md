@@ -3,7 +3,7 @@
 **Status:** Accepted — 2026-07-29 · Open surface on DS 2026-07-29  
 **Routes:** `/chat`, `/chat/history`  
 **Contracts:** `packages/contracts/src/chat.ts`  
-**Knowledge:** `knowledge/chat-surface.md`, `knowledge/chat-migration-map.md`, `knowledge/journeys-chat-gaps.md`, `knowledge/paths.md`, `knowledge/tavus-video-chat.md`  
+**Knowledge:** `knowledge/chat-surface.md`, `knowledge/chat-migration-map.md`, `knowledge/journeys-chat-gaps.md`, `knowledge/paths.md`, `knowledge/tavus-video-chat.md`, `knowledge/adaptive-persona-chat-2026-08-27.md`  
 **DS chrome:** `msqdx-ui/specs/domain/msqdx-ui-chat-chrome.md` · `.chat-panel-open`  
 **ECHON reference:** `msqdx-echon/v3/apps/web-ui/src/chat/` (`ChatPanel`, `ChatAnswer`, Overlay, Thinking)  
 **Legacy:** AUDION-v2 `/admin/chat`, `/chat` · `knowledge/admin-chat-layout.md` · `chat-share-paths.md`
@@ -97,9 +97,25 @@ Persona mode only (off on TG, guest embed, public share guest). Composer attach 
 
 Persona mode only. Composer DOCX pick → `POST /api/chat/documents/upload` → pending `documentIds`; extracted text merges into the user turn for the LLM. Spec: `specs/domain/chat-document-attachments.md`.
 
+## Persona system prompt (adaptive)
+
+Each native chat turn resolves a **deterministic adaptive system prompt** from the full `PersonaDetail` (traits, communication style, goals, frustrations, journey behaviour, sections, capped knowledge). Magazine fields are the SSOT for personality — not Skills, not RAG-on-traits.
+
+| Layer | Role |
+|-------|------|
+| Identity / embodiment | First-person “you ARE this persona” |
+| Adaptive profile | Always built from current persona store/DB |
+| Custom voice (optional) | Admin overlay from persona-prompts store — **does not replace** the adaptive profile |
+| Chat rules | Short turns (~80–120 words, 1–3 paragraphs); sparse markdown |
+| Tooling | URL / inspect hints appended in `native-stream` |
+
+Assembly: `apps/web/lib/chat/adaptive-persona-chat-prompt.ts` · resolve: `resolvePersonaSystemPrompt` · stream: `native-stream.ts` with `max_tokens` (`paths.chatCompletionMaxTokens`, default 500).
+
+Custom voice is edited under Settings → Prompts (persona band). Preview of what the model sees is `resolvedSystemPrompt` on the detail API.
+
 ## Project knowledge RAG
 
-Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenRouter preferred / OpenAI key fallback (`openai/text-embedding-3-small`). Session DOCX merge stays separate. Spec: `specs/domain/chat-knowledge-rag.md` · API `specs/api/knowledge-rag.md`.
+Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenRouter preferred / OpenAI key fallback (`openai/text-embedding-3-small`). Session DOCX merge stays separate. Spec: `specs/domain/chat-knowledge-rag.md` · API `specs/api/knowledge-rag.md`. RAG grounds **project facts** in the user message — it does **not** carry personality traits.
 
 ## Non-goals (MVP)
 
@@ -112,6 +128,7 @@ Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenR
 - Voice / inspect / attachments in TG mode
 - Guest-embed attachments
 - Legacy `.doc` / S3 blob storage
+- LLM-regenerated `ensure-chat-prompt` / Skills-as-identity
 
 ## Acceptance
 
@@ -127,3 +144,4 @@ Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenR
 10. Persona video toggle with `tavusReplicaId` embeds a Tavus CVI iframe (not a stub URL).
 11. Persona chat can attach images, stream with vision, and A/B-compare exactly two images.
 12. Persona chat can attach `.docx`; text merges into the user turn; attachments survive redeploy when Postgres is configured.
+13. Adaptive system prompt includes traits/style/goals/pains; custom voice overlays without dropping the profile; chat completions pass `max_tokens`.

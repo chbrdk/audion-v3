@@ -80,7 +80,7 @@ const V3_EXTRA: Partial<Record<AssistTemplateId, AssistTemplate>> = {
     id: 'persona.chat_system_default',
     label: 'Persona chat system (default)',
     description:
-      'Default first-person persona chat system prompt (local substituteVars — no LLM).',
+      'Catalog stub only — runtime chat uses buildAdaptivePersonaChatSystemPrompt from PersonaDetail (traits/style/goals). Do not treat this template as the live system prompt.',
     category: 'persona',
     json: false,
     system: AUDION_ASSIST_SYSTEM,
@@ -90,9 +90,8 @@ Bio: \${bio}
 Archetype: \${archetype}
 Interests: \${interests}
 Values: \${values}
-Answer in first person as this persona. Be concrete, magazine-brief, and evidence-minded.
-Use short markdown (## headings, lists) when helpful.
-When the user shares a website URL, do **not** claim you cannot visit the web. AUDION can launch a real browser inspect tool after your reply — briefly acknowledge the URL and invite them to Approve the inspect card.`,
+[Deprecated as sole chat body — adaptive assembly in adaptive-persona-chat-prompt.ts is SSOT.]
+Answer in first person as this persona. Be concrete, magazine-brief, and evidence-minded.`,
   },
   'project.suggest_target_groups': {
     id: 'project.suggest_target_groups',

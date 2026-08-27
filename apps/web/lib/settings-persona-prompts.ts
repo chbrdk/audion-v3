@@ -8,6 +8,7 @@ import type {
   SettingsPersonaPromptListResponse,
   SettingsPersonaPromptUpdateRequest,
 } from '@audion-v3/contracts'
+import { buildAdaptivePersonaChatSystemPrompt } from './chat/adaptive-persona-chat-prompt'
 import { storePersonaDetail } from './fixtures/persona-store'
 import {
   generateDefaultPersonaSystemPrompt,
@@ -31,10 +32,17 @@ export async function getPersonaPromptDetail(
   const persona = await storePersonaDetail(personaId)
   if (!persona) return { error: 'Persona not found', status: 404 }
   const custom = await storeGetPersonaPromptRecord(personaId)
+  const customVoice = custom?.systemPrompt?.trim() || ''
+  const adaptiveProfilePrompt = generateDefaultPersonaSystemPrompt(persona)
+  const resolvedSystemPrompt = buildAdaptivePersonaChatSystemPrompt(persona, {
+    customVoice: customVoice || undefined,
+  })
   return {
     personaId,
     name: persona.name,
-    systemPrompt: custom?.systemPrompt ?? generateDefaultPersonaSystemPrompt(persona),
+    systemPrompt: customVoice,
+    adaptiveProfilePrompt,
+    resolvedSystemPrompt,
     systemPromptDe: custom?.systemPromptDe ?? null,
     templateVersion: custom?.templateVersion ?? PERSONA_CHAT_PROMPT_VERSION,
     hasCustom: Boolean(custom),

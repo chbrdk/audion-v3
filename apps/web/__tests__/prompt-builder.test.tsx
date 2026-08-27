@@ -25,22 +25,35 @@ describe('persona prompts store', () => {
     resetPersonaPromptsStore()
   })
 
-  it('updates and resolves custom system prompt', async () => {
+  it('updates and resolves custom voice as overlay on adaptive profile', async () => {
     const personaId = 'persona-alex-morgan'
     const before = await resolvePersonaSystemPrompt(personaId)
-    expect(before.length).toBeGreaterThan(10)
+    expect(before).toContain('You ARE Alex Morgan')
+    expect(before).toContain('Personality traits')
+    expect(before).toContain('Analytical: 0.82')
 
     const updated = await updatePersonaPrompt(personaId, {
-      systemPrompt: 'CUSTOM PROMPT FOR ALEX',
+      systemPrompt: 'CUSTOM VOICE FOR ALEX',
     })
     expect('error' in updated).toBe(false)
     if ('error' in updated) return
     expect(updated.hasCustom).toBe(true)
-    expect(await resolvePersonaSystemPrompt(personaId)).toBe('CUSTOM PROMPT FOR ALEX')
+    expect(updated.systemPrompt).toBe('CUSTOM VOICE FOR ALEX')
+    expect(updated.resolvedSystemPrompt).toContain('CUSTOM VOICE FOR ALEX')
+    expect(updated.resolvedSystemPrompt).toContain('Analytical: 0.82')
+    expect(updated.adaptiveProfilePrompt).not.toContain('CUSTOM VOICE FOR ALEX')
+
+    const resolved = await resolvePersonaSystemPrompt(personaId)
+    expect(resolved).toContain('CUSTOM VOICE FOR ALEX')
+    expect(resolved).toContain('Personality traits')
+    expect(resolved).not.toBe('CUSTOM VOICE FOR ALEX')
 
     await resetPersonaPrompt(personaId)
-    expect(await resolvePersonaSystemPrompt(personaId)).not.toBe('CUSTOM PROMPT FOR ALEX')
-    expect(await getPersonaPromptDetail(personaId)).toMatchObject({ hasCustom: false })
+    const after = await resolvePersonaSystemPrompt(personaId)
+    expect(after).not.toContain('CUSTOM VOICE FOR ALEX')
+    expect(after).toContain('Analytical: 0.82')
+    const detail = await getPersonaPromptDetail(personaId)
+    expect(detail).toMatchObject({ hasCustom: false, systemPrompt: '' })
   })
 })
 

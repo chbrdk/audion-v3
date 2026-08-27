@@ -4,7 +4,7 @@
 
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import type { ChatSendPayload, ChatStreamEvent } from '@audion-v3/contracts'
-import { createOpenAiClient, getAiOpenAiModel, toAiNativeError } from '../ai/client'
+import { createOpenAiClient, getAiOpenAiModel, getChatCompletionMaxTokens, toAiNativeError } from '../ai/client'
 import {
   storeChatAppendAssistant,
   storeChatBeginUserTurn,
@@ -205,6 +205,7 @@ export async function* nativeChatStreamEvents(
         abCompare,
       ),
       temperature: 0.7,
+      max_tokens: getChatCompletionMaxTokens(),
     })
 
     let full = ''

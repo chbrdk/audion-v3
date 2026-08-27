@@ -106,7 +106,12 @@ export type SettingsPersonaPromptListResponse = {
 export type SettingsPersonaPromptDetail = {
   personaId: string
   name: string
+  /** Editable custom voice overlay (empty when adaptive-only). */
   systemPrompt: string
+  /** Full prompt the chat model receives (adaptive + optional voice). */
+  resolvedSystemPrompt: string
+  /** Adaptive magazine profile without custom voice (preview / dirty compose). */
+  adaptiveProfilePrompt: string
   systemPromptDe: string | null
   templateVersion: string
   hasCustom: boolean

@@ -3,15 +3,17 @@
  * - With DATABASE_URL: Postgres (drizzle)
  * - Without: in-memory fixtures (local/dev/tests)
  * Spec: specs/api/settings-persona-prompts.md
+ *
+ * Custom stored text is a **voice overlay** on the adaptive magazine profile —
+ * it does not replace traits/style/goals assembly.
  */
 
 import type { PersonaDetail } from '@audion-v3/contracts'
 import { isProjectsDatabaseConfigured } from '../db/config'
-import { ASSIST_TEMPLATES } from '../ai/prompts/templates'
-import { substituteVars } from '../ai/prompts/render'
+import { buildAdaptivePersonaChatSystemPrompt } from '../chat/adaptive-persona-chat-prompt'
 import { storePersonaDetail, storePersonaList } from './persona-store'
 
-export const PERSONA_CHAT_PROMPT_VERSION = '2026-07-chat-v1'
+export const PERSONA_CHAT_PROMPT_VERSION = '2026-08-adaptive-v1'
 
 export type PersonaPromptRecord = {
   personaId: string
@@ -43,22 +45,10 @@ export function resetPersonaPromptsStore(): void {
 }
 
 /**
- * Sync default from base catalog `persona.chat_system_default` (no override).
+ * Adaptive default from full PersonaDetail (traits, style, goals, …).
  */
 export function generateDefaultPersonaSystemPrompt(persona: PersonaDetail): string {
-  const body = ASSIST_TEMPLATES['persona.chat_system_default'].prompt
-  const rendered = substituteVars(body, {
-    name: persona.name,
-    role: persona.role,
-    bio: persona.bio?.trim() || '',
-    archetype: persona.archetype?.trim() || '',
-    interests: persona.interests.join(', ') || 'n/a',
-    values: persona.values.join(', ') || 'n/a',
-  })
-  return rendered
-    .split('\n')
-    .filter((line) => !/^Bio:\s*$/.test(line) && !/^Archetype:\s*$/.test(line))
-    .join('\n')
+  return buildAdaptivePersonaChatSystemPrompt(persona)
 }
 
 export async function storeGetPersonaPromptRecord(
@@ -132,12 +122,14 @@ export async function storeListPersonaPromptSummaries(): Promise<
   })
 }
 
+/** Resolved system prompt for native chat: adaptive profile + optional custom voice. */
 export async function resolvePersonaSystemPrompt(personaId: string): Promise<string> {
-  const custom = await storeGetPersonaPromptRecord(personaId)
-  if (custom?.systemPrompt.trim()) return custom.systemPrompt
   const persona = await storePersonaDetail(personaId)
   if (!persona) {
     return 'You are a helpful audience research assistant speaking as a persona.'
   }
-  return generateDefaultPersonaSystemPrompt(persona)
+  const custom = await storeGetPersonaPromptRecord(personaId)
+  return buildAdaptivePersonaChatSystemPrompt(persona, {
+    customVoice: custom?.systemPrompt,
+  })
 }

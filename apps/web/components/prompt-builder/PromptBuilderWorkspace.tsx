@@ -22,6 +22,7 @@ import {
   Textarea,
   ToggleGroup,
 } from '@msqdx/ui'
+import { previewAdaptivePromptWithVoice } from '../../lib/chat/adaptive-persona-chat-prompt'
 import { paths } from '../../lib/paths'
 import { useT } from '../../lib/user-prefs'
 import { ExecutionOutputPanel } from './ExecutionOutputPanel'
@@ -209,10 +210,14 @@ export function PromptBuilderWorkspace() {
     setResult(null)
     try {
       if (kind === 'persona') {
+        const preview =
+          personaMeta != null
+            ? previewAdaptivePromptWithVoice(personaMeta.adaptiveProfilePrompt, prompt)
+            : prompt
         setResult({
           stubbed: true,
           templateId: `persona-chat:${selectedId}`,
-          text: prompt,
+          text: preview,
           json: null,
           suggestions: [],
         })
@@ -250,6 +255,11 @@ export function PromptBuilderWorkspace() {
 
   const canReset =
     kind === 'assist' ? Boolean(selectedAssist?.overridden) : Boolean(personaMeta?.hasCustom)
+
+  const personaLivePreview =
+    kind === 'persona' && personaMeta
+      ? previewAdaptivePromptWithVoice(personaMeta.adaptiveProfilePrompt, prompt)
+      : prompt
 
   return (
     <div className="pb-workspace" data-testid="prompt-builder-workspace">
@@ -399,6 +409,8 @@ export function PromptBuilderWorkspace() {
               />
             )}
 
+            {kind === 'persona' ? <Hint panel>{t('prompts.personaAdaptiveHint')}</Hint> : null}
+
             <ToggleGroup
               aria-label={t('prompts.editor')}
               value={centerTab}
@@ -417,12 +429,12 @@ export function PromptBuilderWorkspace() {
                   setDirty(true)
                 }}
                 placeholder={
-                  kind === 'assist' ? t('prompts.assistBodyPh') : t('prompts.personaSystemPh')
+                  kind === 'assist' ? t('prompts.assistBodyPh') : t('prompts.personaVoicePh')
                 }
               />
             ) : (
               <LivePreviewPanel
-                prompt={prompt}
+                prompt={personaLivePreview}
                 useMockData={useMockData}
                 context={{
                   locale,

@@ -177,6 +177,9 @@ export const paths = {
   aiRuntime: 'auto' as const,
   /** Cheap default for chat/assist — override via AI_OPENAI_MODEL */
   aiOpenAiModel: 'gpt-5.4-nano',
+  /** Native persona chat completion cap — override via AI_CHAT_MAX_TOKENS */
+  chatCompletionMaxTokens: 500,
+  envAiChatMaxTokens: 'AI_CHAT_MAX_TOKENS',
   /** UX Journey Agent OpenAI — default gpt-5.6-luna; override via UX_JOURNEY_OPENAI_MODEL */
   uxJourneyOpenAiModel: 'gpt-5.6-luna',
   /** Vision detail for per-step screenshots — override via UX_JOURNEY_VISION_DETAIL */

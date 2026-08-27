@@ -23,13 +23,13 @@
 | Renderer | `apps/web/lib/ai/prompts/render.ts` — `${}` + `{{}}`, locale aliases, footer |
 | Context builders | `apps/web/lib/ai/prompts/context.ts` |
 | Overrides | `apps/web/lib/fixtures/prompt-overrides-store.ts` (+ Postgres `assist_prompt_overrides` when `DATABASE_URL`) |
-| Persona chat default | Template `persona.chat_system_default` — prompt body is the system prompt; `generateDefaultPersonaSystemPrompt` uses base catalog + `substituteVars` (no hardcoded multi-line array) |
+| Persona chat default | Adaptive assembly `adaptive-persona-chat-prompt.ts` from PersonaDetail; catalog `persona.chat_system_default` is docs/stub only |
 | Admin | `/settings/admin/prompts` — list / edit / save / reset / test |
 | APIs | `GET/PUT/DELETE /api/settings/prompts[/{id}]` · `POST …/test` |
 
-## Shared SYSTEM + persona.chat_system_default
+## Shared SYSTEM + persona chat
 
-`AUDION_ASSIST_SYSTEM` is the single assist preamble. Default persona chat system prompts are not LLM-rendered: the catalog entry `persona.chat_system_default` holds the prompt body with `${name}`, `${role}`, `${bio}`, `${archetype}`, `${interests}`, `${values}`; `generateDefaultPersonaSystemPrompt` substitutes from the base `ASSIST_TEMPLATES` catalog (overrides do not affect the default generator).
+`AUDION_ASSIST_SYSTEM` is the single assist preamble. Persona **chat** system prompts are built deterministically by `buildAdaptivePersonaChatSystemPrompt` from magazine `PersonaDetail` (traits, style, goals, pains, journey). Catalog entry `persona.chat_system_default` remains for Prompt Builder docs only. Optional admin custom text is a **voice overlay**, not a full replace. See `knowledge/adaptive-persona-chat-2026-08-27.md`.
 
 ## Still deferred
 
