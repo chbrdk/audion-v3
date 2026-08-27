@@ -15,7 +15,7 @@ export default async function StudyDetailPage({
     const { study } = await fetchUxStudyDetail(studyId)
     if (!study) {
       return (
-        <AppShell title="Study" description="Not found">
+        <AppShell description="Not found">
           <Alert tone="error">Study not found.</Alert>
           <Link href={paths.routes.studies}>Back to studies</Link>
         </AppShell>
@@ -23,7 +23,6 @@ export default async function StudyDetailPage({
     }
     return (
       <AppShell
-        title={study.name}
         status={
           <TopStatus
             level="ok"
@@ -36,7 +35,7 @@ export default async function StudyDetailPage({
     )
   } catch (error) {
     return (
-      <AppShell title="Study">
+      <AppShell>
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Failed to load study.'}
         </Alert>

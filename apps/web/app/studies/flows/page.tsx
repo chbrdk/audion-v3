@@ -9,7 +9,6 @@ export default function StudiesFlowsPage() {
   const items = listUxTestFlows()
   return (
     <AppShell
-      titleKey="pages.flows.title"
       descriptionKey="pages.flows.lead"
       status={
         <TopStatus level="ok" primary={`${items.length} templates`} secondary="product layer" />

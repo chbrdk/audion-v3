@@ -3,7 +3,7 @@ import { SettingsAdminProvidersPanel } from '../../../../components/settings-adm
 
 export default function SettingsAdminProvidersPage() {
   return (
-    <AppShell titleKey="pages.providers.title" descriptionKey="pages.providers.lead">
+    <AppShell descriptionKey="pages.providers.lead">
       <SettingsAdminProvidersPanel />
     </AppShell>
   )

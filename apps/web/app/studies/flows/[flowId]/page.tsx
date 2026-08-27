@@ -17,7 +17,7 @@ export default async function StudiesFlowDetailPage({
   const flow = getUxTestFlow(flowId)
   if (!flow) {
     return (
-      <AppShell title="Flow" description="Not found">
+      <AppShell description="Not found">
         <Alert tone="error">Unknown flow.</Alert>
         <Link href={paths.routes.studiesFlows}>Back to flows</Link>
       </AppShell>
@@ -34,7 +34,6 @@ export default async function StudiesFlowDetailPage({
 
   return (
     <AppShell
-      title={flow.name}
       description={flow.description}
       status={
         <TopStatus

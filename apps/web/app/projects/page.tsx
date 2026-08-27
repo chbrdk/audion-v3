@@ -16,7 +16,6 @@ export default async function ProjectsPage({
     const list = filterProjectList(result, query)
     return (
       <AppShell
-        titleKey="pages.projects.title"
         status={<HubTopStatus total={list.total} entity="projects" />}
       >
         <ProjectListPanel list={list} query={query} />
@@ -24,7 +23,7 @@ export default async function ProjectsPage({
     )
   } catch (error) {
     return (
-      <AppShell titleKey="pages.projects.title" descriptionKey="pages.projects.lead">
+      <AppShell descriptionKey="pages.projects.lead">
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Project backend unavailable.'}
         </Alert>

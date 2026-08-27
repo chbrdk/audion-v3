@@ -21,7 +21,6 @@ export default async function ProjectDetailPage({
     const targetGroups = groupsResult.items.filter((g) => g.projectId === projectId)
     return (
       <AppShell
-        title={result.project?.name ?? 'Project'}
         status={
           <TopStatus
             level={result.project ? 'ok' : 'warn'}
@@ -38,7 +37,7 @@ export default async function ProjectDetailPage({
     )
   } catch (error) {
     return (
-      <AppShell title="Project">
+      <AppShell>
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Project backend unavailable.'}
         </Alert>

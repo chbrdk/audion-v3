@@ -10,7 +10,7 @@ export default async function QueuePage({
   const projectId = typeof params.projectId === 'string' ? params.projectId : null
 
   return (
-    <AppShell titleKey="pages.queue.title" descriptionKey="pages.queue.lead">
+    <AppShell descriptionKey="pages.queue.lead">
       <QueueDashboardPanel projectId={projectId} />
     </AppShell>
   )

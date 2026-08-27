@@ -13,7 +13,6 @@ export default async function JourneyDetailPage({
     const result = await fetchJourneyDetail(journeyId)
     return (
       <AppShell
-        title={result.journey?.name ?? 'Journey'}
         status={
           <TopStatus
             level={result.journey ? 'ok' : 'warn'}
@@ -26,7 +25,7 @@ export default async function JourneyDetailPage({
     )
   } catch (error) {
     return (
-      <AppShell title="Journey">
+      <AppShell>
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Journey backend unavailable.'}
         </Alert>

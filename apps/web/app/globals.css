@@ -16,8 +16,18 @@ main { min-height: 100vh; }
   width: 100%;
 }
 
+/* Content stage — extra top air when the global PageTitle topbar is gone */
+.audion-stage {
+  width: 100%;
+  max-width: none;
+}
+
+.audion-stage--flush-top {
+  padding-block-start: clamp(1.5rem, 3.5vw, 2.75rem);
+}
+
 .audion-page-lead {
-  margin: 0 0 0.85rem;
+  margin: 0 0 1.25rem;
   color: var(--muted);
   font-size: var(--type-sm);
   line-height: 1.45;

@@ -10,7 +10,6 @@ export default async function ChatHistoryPage() {
   const list = await fetchChatConversationList()
   return (
     <AppShell
-      titleKey="pages.chatHistory.title"
       status={<HubTopStatus total={list.total} entity="conversations" />}
     >
       <ChatHistoryPanel items={list.items} />

@@ -16,7 +16,6 @@ export default async function PersonasPage({
     const list = filterPersonaList(result, query)
     return (
       <AppShell
-        titleKey="pages.personas.title"
         status={<HubTopStatus total={list.total} entity="personas" />}
       >
         <PersonaListPanel list={list} query={query} />
@@ -24,7 +23,7 @@ export default async function PersonasPage({
     )
   } catch (error) {
     return (
-      <AppShell titleKey="pages.personas.title" descriptionKey="pages.personas.lead">
+      <AppShell descriptionKey="pages.personas.lead">
         <Alert tone="error">{error instanceof Error ? error.message : 'Persona backend unavailable.'}</Alert>
       </AppShell>
     )

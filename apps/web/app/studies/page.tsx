@@ -16,7 +16,6 @@ export default async function StudiesPage({
     const list = filterUxStudyList(result, query)
     return (
       <AppShell
-        titleKey="pages.studies.title"
         status={<HubTopStatus total={list.total} entity="studies" />}
       >
         <StudyListPanel list={list} query={query} />
@@ -24,7 +23,7 @@ export default async function StudiesPage({
     )
   } catch (error) {
     return (
-      <AppShell titleKey="pages.studies.title" descriptionKey="pages.studies.lead">
+      <AppShell descriptionKey="pages.studies.lead">
         <Alert tone="error">
           {error instanceof Error ? error.message : 'UX studies backend unavailable.'}
         </Alert>

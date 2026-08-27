@@ -16,7 +16,6 @@ export default async function TargetGroupsPage({
     const list = filterTargetGroupList(result, query)
     return (
       <AppShell
-        titleKey="pages.targetGroups.title"
         status={<HubTopStatus total={list.total} entity="groups" />}
       >
         <TargetGroupListPanel list={list} query={query} />
@@ -24,7 +23,7 @@ export default async function TargetGroupsPage({
     )
   } catch (error) {
     return (
-      <AppShell titleKey="pages.targetGroups.title" descriptionKey="pages.targetGroups.lead">
+      <AppShell descriptionKey="pages.targetGroups.lead">
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Target group backend unavailable.'}
         </Alert>

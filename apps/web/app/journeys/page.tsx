@@ -16,7 +16,6 @@ export default async function JourneysPage({
     const list = filterJourneyList(result, query)
     return (
       <AppShell
-        titleKey="pages.journeys.title"
         status={<HubTopStatus total={list.total} entity="journeys" />}
       >
         <JourneyListPanel list={list} query={query} />
@@ -24,7 +23,7 @@ export default async function JourneysPage({
     )
   } catch (error) {
     return (
-      <AppShell titleKey="pages.journeys.title" descriptionKey="pages.journeys.lead">
+      <AppShell descriptionKey="pages.journeys.lead">
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Journey backend unavailable.'}
         </Alert>

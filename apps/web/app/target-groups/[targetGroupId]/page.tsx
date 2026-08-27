@@ -13,7 +13,6 @@ export default async function TargetGroupDetailPage({
     const result = await fetchTargetGroupDetail(targetGroupId)
     return (
       <AppShell
-        title={result.targetGroup?.name ?? 'Target group'}
         status={
           <TopStatus
             level={result.targetGroup ? 'ok' : 'warn'}
@@ -26,7 +25,7 @@ export default async function TargetGroupDetailPage({
     )
   } catch (error) {
     return (
-      <AppShell title="Target group">
+      <AppShell>
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Target group backend unavailable.'}
         </Alert>

@@ -8,7 +8,6 @@ import {
   AppFrame,
   MsqdxLogoMark,
   NavRail,
-  PageTitle,
   shellFrameStyle,
   type RailDockEdge,
 } from '../lib/msqdx-ui-shell'
@@ -29,10 +28,6 @@ import { ShellBrandCorner } from './shell-brand-corner'
 
 export function AppShell({
   children,
-  title,
-  titleKey,
-  titleHref,
-  titleTone = 'default',
   description,
   descriptionKey,
   leading,
@@ -41,30 +36,31 @@ export function AppShell({
   presentation = 'default',
 }: {
   children: ReactNode
-  /** Page title in the topbar left. Omit when using `leading` / `titleKey`. */
-  title?: string | null
-  /** Prefer over `title` — resolves via locale dictionary. */
-  titleKey?: string
-  /** Optional link for context titles (e.g. target group on persona detail). */
-  titleHref?: string
-  /** `context` = quieter / smaller topbar label (not the magazine hero). */
-  titleTone?: 'default' | 'context'
+  /** Optional in-page lead under the rail chrome (not a global topbar title). */
   description?: string
   /** Prefer over `description` — resolves via locale dictionary. */
   descriptionKey?: string
-  /** Replaces the title slot on the left (e.g. chat persona picker). */
+  /** Chat / special chrome on the left of the optional topbar. */
   leading?: ReactNode
   actions?: ReactNode
   status?: ReactNode
   /** Embed: no nav rail / brand corner / platform assistant. Spec: chat-embed.md */
   presentation?: 'default' | 'embed'
+  /** @deprecated Global AppShell PageTitle removed — ignored (nav + magazine heroes own identity). */
+  title?: string | null
+  /** @deprecated Global AppShell PageTitle removed — ignored. */
+  titleKey?: string
+  /** @deprecated Global AppShell PageTitle removed — ignored. */
+  titleHref?: string
+  /** @deprecated Global AppShell PageTitle removed — ignored. */
+  titleTone?: 'default' | 'context'
 }) {
   const pathname = usePathname()
   const { displayName, t } = useUserPrefs()
   const [railEdge, setRailEdge] = useState<RailDockEdge>(paths.railDockEdge)
   const embed = presentation === 'embed'
-  const pageTitle = titleKey ? t(titleKey) : title
   const pageLead = descriptionKey ? t(descriptionKey) : description
+  const showTopbar = Boolean(leading || actions || status)
 
   const frameStyle = useMemo(
     () =>
@@ -124,25 +120,6 @@ export function AppShell({
     [t],
   )
 
-  const titleNode =
-    pageTitle != null && pageTitle !== '' ? (
-      titleTone === 'context' ? (
-        <PageTitle className="audion-page-title--context">{pageTitle}</PageTitle>
-      ) : (
-        <PageTitle>{pageTitle}</PageTitle>
-      )
-    ) : null
-
-  const brandContent = leading ?? (
-    titleNode && titleHref ? (
-      <Link href={titleHref} className="audion-page-title-link">
-        {titleNode}
-      </Link>
-    ) : (
-      titleNode
-    )
-  )
-
   return (
     <AppFrame
       railEdge={railEdge}
@@ -174,17 +151,21 @@ export function AppShell({
       }
       brandCorner={embed ? null : <ShellBrandCorner />}
       topbar={
-        <>
-          <div className="topbar-brand">{brandContent}</div>
-          <div className="topbar-right">
-            {status}
-            {actions}
-          </div>
-        </>
+        showTopbar ? (
+          <>
+            <div className="topbar-brand">{leading ?? null}</div>
+            <div className="topbar-right">
+              {status}
+              {actions}
+            </div>
+          </>
+        ) : undefined
       }
     >
-      {pageLead ? <p className="audion-page-lead">{pageLead}</p> : null}
-      {children}
+      <div className={showTopbar ? 'audion-stage' : 'audion-stage audion-stage--flush-top'}>
+        {pageLead ? <p className="audion-page-lead">{pageLead}</p> : null}
+        {children}
+      </div>
       {embed ? null : <PlatformAssistantHost />}
     </AppFrame>
   )

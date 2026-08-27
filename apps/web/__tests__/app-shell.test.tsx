@@ -14,9 +14,9 @@ function renderShell(ui: React.ReactElement) {
 }
 
 describe('app shell', () => {
-  it('renders brand, floating navigation, and page title', () => {
+  it('renders brand and floating navigation without a PageTitle topbar', () => {
     renderShell(
-      <AppShell title="Persona Workspace" description="Manage personas.">
+      <AppShell description="Manage personas.">
         <div>Content</div>
       </AppShell>,
     )
@@ -43,10 +43,14 @@ describe('app shell', () => {
       'href',
       paths.routes.settings,
     )
-    expect(screen.getByText('Persona Workspace')).toBeInTheDocument()
+    expect(document.querySelector('.ds-page-title')).toBeNull()
+    expect(document.querySelector('.topbar')).toBeNull()
+    expect(document.querySelector('.audion-stage--flush-top')).toBeTruthy()
+    expect(screen.getByText('Manage personas.')).toBeInTheDocument()
+    expect(screen.getByText('Content')).toBeInTheDocument()
   })
 
-  it('renders a quiet context title that can link out', () => {
+  it('ignores legacy title props so headlines are not duplicated', () => {
     renderShell(
       <AppShell
         title="Digital Product Leads"
@@ -57,22 +61,21 @@ describe('app shell', () => {
       </AppShell>,
     )
 
-    const title = screen.getByRole('heading', { name: 'Digital Product Leads' })
-    expect(title).toHaveClass('audion-page-title--context')
-    expect(screen.getByRole('link', { name: 'Digital Product Leads' })).toHaveAttribute(
-      'href',
-      '/target-groups/tg-digital-product-leads',
-    )
+    expect(screen.queryByRole('heading', { name: 'Digital Product Leads' })).toBeNull()
+    expect(document.querySelector('.ds-page-title')).toBeNull()
+    expect(document.querySelector('.topbar')).toBeNull()
   })
 
-  it('can replace the title with a leading slot', () => {
+  it('keeps an optional topbar for leading / actions chrome', () => {
     renderShell(
       <AppShell leading={<label htmlFor="x">Persona</label>} actions={<a href="/chat/history">History</a>}>
         <div>Content</div>
       </AppShell>,
     )
+    expect(document.querySelector('.topbar')).toBeTruthy()
     expect(document.querySelector('.topbar-brand')?.textContent).toContain('Persona')
     expect(document.querySelector('.ds-page-title')).toBeNull()
+    expect(document.querySelector('.audion-stage--flush-top')).toBeNull()
     expect(screen.getByRole('link', { name: 'History' })).toBeInTheDocument()
   })
 })

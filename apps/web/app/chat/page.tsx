@@ -44,7 +44,7 @@ export default async function ChatPage({
       const shared = await fetchSharePersona(personaId, projectId)
       if ('error' in shared) {
         return (
-          <AppShell titleKey="pages.chat.sharedTitle">
+          <AppShell>
             <Alert tone="error">{shared.error}</Alert>
           </AppShell>
         )
@@ -97,7 +97,7 @@ export default async function ChatPage({
     )
   } catch (error) {
     return (
-      <AppShell titleKey="pages.chat.title">
+      <AppShell>
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Chat unavailable.'}
         </Alert>

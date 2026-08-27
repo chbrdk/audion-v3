@@ -19,7 +19,7 @@ export default async function StudyWavePage({
     ])
     if (!study || !wave) {
       return (
-        <AppShell title="Wave" description="Not found">
+        <AppShell description="Not found">
           <Alert tone="error">Wave not found.</Alert>
           <Link href={paths.routes.studyDetail(studyId)}>Back to study</Link>
         </AppShell>
@@ -27,7 +27,6 @@ export default async function StudyWavePage({
     }
     return (
       <AppShell
-        title={wave.waveKey}
         description={study.name}
         status={
           <TopStatus
@@ -42,7 +41,7 @@ export default async function StudyWavePage({
     )
   } catch (error) {
     return (
-      <AppShell title="Wave">
+      <AppShell>
         <Alert tone="error">
           {error instanceof Error ? error.message : 'Failed to load wave.'}
         </Alert>

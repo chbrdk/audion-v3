@@ -3,7 +3,7 @@ import { SettingsAdminPromptsPanel } from '../../../../components/settings-admin
 
 export default function SettingsAdminPromptsPage() {
   return (
-    <AppShell titleKey="pages.prompts.title" descriptionKey="pages.prompts.lead">
+    <AppShell descriptionKey="pages.prompts.lead">
       <SettingsAdminPromptsPanel />
     </AppShell>
   )
