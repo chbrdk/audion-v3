@@ -39,6 +39,9 @@ describe('Dockerfile Coolify packaging', () => {
     const cfg = readFileSync(resolve(repoRoot, 'apps/web/next.config.ts'), 'utf8')
     expect(cfg).toContain('workspaceNodeModules')
     expect(cfg).toContain('config.resolve.modules')
+    expect(cfg).toContain('pdf-parse')
+    expect(cfg).toContain('pdfjs-dist')
+    expect(cfg).toContain('serverExternalPackages')
   })
 
   it('re-exports ChatOverlay from the client @msqdx/ui barrel', () => {

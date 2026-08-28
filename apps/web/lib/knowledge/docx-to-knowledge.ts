@@ -58,13 +58,28 @@ function applyCharCap(text: string, maxChars: number): { text: string; truncated
 }
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  const parser = new PDFParse({ data: buffer })
+  // pdfjs may transfer TypedArray ownership to a worker — copy so Buffer stays valid.
+  const data = Uint8Array.from(buffer)
+  const parser = new PDFParse({ data })
   try {
     const result = await parser.getText()
     return (result?.text || '').replace(/\r\n/g, '\n').trim()
   } finally {
     await parser.destroy().catch(() => undefined)
   }
+}
+
+function extractFailureMessage(format: KnowledgeUploadExt, err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err ?? '')
+  const lower = raw.toLowerCase()
+  if (lower.includes('password') || lower.includes('encrypted')) {
+    return `Failed to extract ${format} text (password-protected PDF)`
+  }
+  if (lower.includes('invalid') || lower.includes('corrupt') || lower.includes('structure')) {
+    return `Failed to extract ${format} text (invalid or corrupt file)`
+  }
+  // Keep operator-facing detail short; full stack goes to server logs.
+  return `Failed to extract ${format} text`
 }
 
 async function extractPptxText(buffer: Buffer): Promise<string> {
@@ -157,8 +172,9 @@ export async function extractFileForKnowledge(file: File): Promise<KnowledgeFile
       truncated: capped.truncated,
       format,
     }
-  } catch {
-    return { ok: false, error: `Failed to extract ${format} text`, status: 422 }
+  } catch (err) {
+    console.error('[knowledge-upload] extract failed', { format, err })
+    return { ok: false, error: extractFailureMessage(format, err), status: 422 }
   }
 }
 

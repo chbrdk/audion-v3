@@ -6,7 +6,9 @@ const workspaceNodeModules = path.resolve(workspaceRoot, 'node_modules')
 const webNodeModules = path.resolve(__dirname, 'node_modules')
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['pg', 'drizzle-orm'],
+  // Keep native Node loaders for native/worker-heavy deps — webpack bundling of
+  // pdfjs breaks PDF knowledge upload at runtime ("Failed to extract .pdf text").
+  serverExternalPackages: ['pg', 'drizzle-orm', 'pdf-parse', 'pdfjs-dist'],
   webpack: (config) => {
     config.resolve = config.resolve || {}
     config.resolve.alias = {
