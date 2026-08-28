@@ -85,7 +85,7 @@ async function patchRemotePrefs(body: { locale?: string; themePreference?: strin
 }
 
 export function UserPrefsProvider({ children }: { children: ReactNode }) {
-  const [displayName, setDisplayNameState] = useState(paths.defaultDisplayName)
+  const [displayName, setDisplayNameState] = useState<string>(paths.defaultDisplayName)
   const [theme, setThemeState] = useState<UiThemeId>(paths.defaultTheme)
   const [locale, setLocaleState] = useState<UiLocaleId>(paths.defaultLocale)
   const [hydrated, setHydrated] = useState(false)
