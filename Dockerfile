@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 FROM base AS ds
 ARG MSQDX_UI_REPO=https://github.com/chbrdk/msqdx-ui.git
 # msqdx-ui origin/main @ 2026-08-27 (BrandCorner launcher, AppShell 24px, MarkdownProse, …)
-ARG MSQDX_UI_REF=c9af717d17a8194c59256de178e31f1fa901deef
+ARG MSQDX_UI_REF=3e324b8a8dc2b35170ca57add9b6f7046561aa3f
 RUN git init /workspace/msqdx-ui \
     && cd /workspace/msqdx-ui \
     && git remote add origin "${MSQDX_UI_REPO}" \
