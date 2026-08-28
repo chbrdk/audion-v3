@@ -1,0 +1,58 @@
+{
+  "idMap": {
+    "collection": {
+      "platformProjectId": "f3d27e9f-d14c-4880-82be-3ca31c051173",
+      "companyId": "70811332-e74b-4765-a278-20568ffd1306",
+      "created": false,
+      "mirrors": {
+        "audion": "proj-vaillant-group-mtb6qr6b",
+        "checkion": "proj-mtb6qr4j",
+        "brandion": "proj-mtb6qr7q",
+        "creation": "proj-mtb6qr9e",
+        "spirion": "dig-mtb6qrbo"
+      }
+    },
+    "project": {
+      "361f189a-b372-4990-958f-52555686a293": "proj-vaillant-group-mtb6qr6b"
+    },
+    "personas": {
+      "58823c13-35db-47fd-a7e0-ad5c195690af": "persona-marcus-mtb7d0er"
+    },
+    "targetGroups": {
+      "9219f520-4c4a-405b-a68c-3b4837c3ad36": "tg-b2b-und-b2c-installateure-shk-fachhandwerker-als-prim-re-absatzmittler-mtb7d0fy"
+    },
+    "journeys": {}
+  },
+  "syncResults": [
+    {
+      "platformProjectId": "f3d27e9f-d14c-4880-82be-3ca31c051173",
+      "productId": "checkion",
+      "ok": true,
+      "externalProjectId": "proj-mtb6qr4j"
+    },
+    {
+      "platformProjectId": "f3d27e9f-d14c-4880-82be-3ca31c051173",
+      "productId": "audion",
+      "ok": true,
+      "externalProjectId": "proj-vaillant-group-mtb6qr6b"
+    },
+    {
+      "platformProjectId": "f3d27e9f-d14c-4880-82be-3ca31c051173",
+      "productId": "brandion",
+      "ok": true,
+      "externalProjectId": "proj-mtb6qr7q"
+    },
+    {
+      "platformProjectId": "f3d27e9f-d14c-4880-82be-3ca31c051173",
+      "productId": "creation",
+      "ok": true,
+      "externalProjectId": "proj-mtb6qr9e"
+    },
+    {
+      "platformProjectId": "f3d27e9f-d14c-4880-82be-3ca31c051173",
+      "productId": "spirion",
+      "ok": true,
+      "externalProjectId": "dig-mtb6qrbo"
+    }
+  ]
+}

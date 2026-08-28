@@ -1,0 +1,50 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"/>
+<title>UEQ+ eBike Human vs AI</title>
+<style>
+body{font-family:-apple-system,sans-serif;max-width:920px;margin:0 auto;padding:32px;line-height:1.5;color:#16181d}
+h1{font-size:24px} h2{font-size:17px;margin-top:28px;border-bottom:1px solid #ddd;padding-bottom:6px}
+.muted{color:#5c6470;font-size:13px}
+.box{background:#fff8e6;border:1px solid #e8dfc0;padding:14px;border-radius:8px;margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:13px;margin:12px 0}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+th{background:#f5f7fa}
+.good td:last-child{color:#2d6a4f} .warn td:last-child{color:#b07d00} .bad td:last-child{color:#b42318}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.cols{grid-template-columns:1fr}}
+</style></head><body>
+<h1>Bosch eBike UEQ+ — Human vs AI</h1>
+<p class="muted">Human: Testbirds Abschlussbericht Aug/Sep 2025 (n=50, Smartphone) · AI: 24 Runs + inferiert (gpt-4o-mini) · 2026-08-19</p>
+<div class="box"><strong>Skala:</strong> UEQ-Standard <strong>−3 … +3</strong> (positiv = gut). AI-Werte aus 1–7-Mitteln konvertiert (score − 4). Human ohne „Intuitive Bedienung“ (5 Dimensionen).</div>
+
+<h2>Gesamteindruck</h2>
+<table><thead><tr><th>Quelle</th><th>Overall (gewichtet)</th><th>Runs / n</th></tr></thead>
+<tbody>
+<tr><td>Human (Testbirds)</td><td><strong>+1.54</strong></td><td>n=50</td></tr>
+<tr><td>AI (Proxy)</td><td><strong>+0.73</strong></td><td>24 Runs</td></tr>
+<tr><td>Delta (AI − Human)</td><td><strong>-0.81</strong></td><td>AI deutlich kritischer</td></tr>
+</tbody></table>
+
+<h2>Dimensionen (−3 … +3)</h2>
+<table><thead><tr><th>Dimension</th><th>Human</th><th>AI</th><th>Δ AI−Human</th></tr></thead><tbody><tr class="good"><td>Effizienz</td><td>+1.02</td><td>+1.00</td><td>-0.02</td></tr><tr class="warn"><td>Durchschaubarkeit</td><td>+1.19</td><td>+0.56</td><td>-0.63</td></tr><tr class="bad"><td>Stimulation</td><td>+1.52</td><td>+0.31</td><td>-1.21</td></tr><tr class="bad"><td>Inhaltsqualität</td><td>+2.08</td><td>+0.83</td><td>-1.25</td></tr><tr class="bad"><td>Nützlichkeit</td><td>+1.84</td><td>+0.97</td><td>-0.87</td></tr></tbody></table>
+
+<h2>Interpretation</h2>
+<ul>
+<li><strong>Übereinstimmung:</strong> Effizienz nahe beieinander — beide sehen Struktur/Übersichtlichkeit als Schwachpunkt (Human: „überladen“, „wenig übersichtlich“).</li>
+<li><strong>Größte Lücke:</strong> Inhaltsqualität (Δ -1.25) — AI bewertet Think-Aloud-Journeys kritischer als Human-Umfrage.</li>
+<li><strong>Human-Stärke:</strong> Inhaltsqualität (+2,08) — AI nur +0,83; Humans loben Professionalität und Beratung stärker.</li>
+<li><strong>Methodik:</strong> Human = post-task UEQ+ auf Smartphone nach Use Cases; AI = Desktop-Agent, oft unvollständige Navigation, inferierte Scores.</li>
+</ul>
+
+<div class="cols">
+<div><h2>Human — qualitative Stimmen</h2><ul><li>Menü gut strukturiert — Startseite sollte Ziele schneller führen; sonst verliert man Interessenten schon auf Seite 1.</li><li>Ansprechend und professionell; eBike-Beratung hilfreich — aber teils überladen durch viele Unterpunkte.</li><li>Komponenten-Vergleich auf Handy schwer (nur scrollen); Differenzierung zu anderen Marken fehlt; Texte wirken wie Werbesprüche.</li><li>Schwer zurechtzufinden; verständliche Unterschiede anstrengend zu finden.</li><li>Navigation verwinkelt und aufwendig — für ältere Nutzer und kleine Screens problematisch.</li></ul></div>
+<div><h2>AI — wiederkehrende Befunde</h2><ul><li>Flow App / Erweiterung auf Startseite sichtbar — Detail-Navigation oft blockiert.</li><li>Service & Beratung in Nav vorhanden — Öffnen scheitert wiederholt (Help Center teils erreicht).</li><li>Über uns (Wave 4): starke Markeninhalte wenn Seite geladen — sonst Nav-Frustration.</li><li>UC2 Technik: System-Narrativ überzeugend; direkter Wettbewerbsvergleich fehlt (wie Human).</li><li>Goal-reached Rate AI nur ~17% — erklärt niedrigere AI-Scores vs. Human post-task Bewertung.</li></ul></div>
+</div>
+
+<h2>Empfehlungen (Human, bestätigt durch AI)</h2>
+<ul>
+<li>Startseite als Schnellzugriff zu Zielen (nicht nur Menü) — beide Quellen.</li>
+<li>Visuelle Hierarchie / weniger Überladung — Human explizit, AI Navigations-Frustration.</li>
+<li>Bessere Differenzierung vs. andere Marken — Human qualitativ; AI UC2 Technik-Vergleich.</li>
+<li>Mobile Komponenten-Vergleich — Human; AI-Tests überwiegend Desktop-Agent.</li>
+</ul>
+</body></html>

@@ -1,0 +1,55 @@
+{
+  "mode": "plexon-first",
+  "source": {
+    "audionProjectId": "361f189a-b372-4990-958f-52555686a293",
+    "legacyPlatformProjectId": null,
+    "legacyCheckionProjectId": null,
+    "name": "Vaillant Group"
+  },
+  "plexon": {
+    "base": "https://plexon-v3.projects-a.plygrnd.tech",
+    "companyId": null,
+    "existingCollectionId": "f3d27e9f-d14c-4880-82be-3ca31c051173",
+    "collectionName": "Vaillant Group",
+    "collectionDomain": null
+  },
+  "counts": {
+    "personas": 1,
+    "targetGroups": 1,
+    "journeys": 0,
+    "knowledgeChapters": 1
+  },
+  "audionPatch": {
+    "name": "Vaillant Group",
+    "nameDe": null,
+    "description": null,
+    "companyContext": "Unternehmen: Vaillant Group\nWebsite: https://www.vaillant-group.com/\nDomain: www.vaillant-group.com\nBranche: Heiz- und Klimatechnik / Energie-Systemlösungen\n\nDie Vaillant Group ist ein führender internationaler Hersteller von Wärmepumpen, Gas-Brennwertgeräten und digitalen Servicedienstleistungen. Das Unternehmen entwickelt und vertreibt klimafreundliche Heiz- und Klimatechniklösungen für den Wohn- und Gewerbebereich. Mit einem klaren Fokus auf Nachhaltigkeit setzt Vaillant Maßstäbe für die Energiewende im Gebäudesektor.\n\nZielgruppen-Fokus: B2B und B2C: Installateure/SHK-Fachhandwerker als primäre Absatzmittler, daneben Bauherren, Hausbesitzer und Wohnungsunternehmen als Endkunden sowie Architekten und Planer im Projektgeschäft\n\nDer Firmenname ist eine Marke — die Zielgruppen-Persona ist kein Handwerker/Berufsträger, der zufällig dem Namen entspricht, sondern typische Käufer oder Nutzer laut Website.",
+    "knowledgeChapters": [
+      {
+        "id": "ch-company",
+        "title": "Brief",
+        "body": "Unternehmen: Vaillant Group\nWebsite: https://www.vaillant-group.com/\nDomain: www.vaillant-group.com\nBranche: Heiz- und Klimatechnik / Energie-Systemlösungen\n\nDie Vaillant Group ist ein führender internationaler Hersteller von Wärmepumpen, Gas-Brennwertgeräten und digitalen Servicedienstleistungen. Das Unternehmen entwickelt und vertreibt klimafreundliche Heiz- und Klimatechniklösungen für den Wohn- und Gewerbebereich. Mit einem klaren Fokus auf Nachhaltigkeit setzt Vaillant Maßstäbe für die Energiewende im Gebäudesektor.\n\nZielgruppen-Fokus: B2B und B2C: Installateure/SHK-Fachhandwerker als primäre Absatzmittler, daneben Bauherren, Hausbesitzer und Wohnungsunternehmen als Endkunden sowie Architekten und Planer im Projektgeschäft\n\nDer Firmenname ist eine Marke — die Zielgruppen-Persona ist kein Handwerker/Berufsträger, der zufällig dem Namen entspricht, sondern typische Käufer oder Nutzer laut Website."
+      }
+    ],
+    "status": "draft"
+  },
+  "personas": [
+    {
+      "v2Id": "58823c13-35db-47fd-a7e0-ad5c195690af",
+      "name": "Marcus"
+    }
+  ],
+  "targetGroups": [
+    {
+      "v2Id": "9219f520-4c4a-405b-a68c-3b4837c3ad36",
+      "name": "B2B und B2C: Installateure/SHK-Fachhandwerker als primäre Absatzmittler,",
+      "linkedCount": 0
+    }
+  ],
+  "steps": [
+    "Reuse Collection f3d27e9f-d14c-4880-82be-3ca31c051173 + sync mirrors",
+    "Resolve audion externalProjectId from sync/dashboard",
+    "PATCH audion project knowledge/description",
+    "POST personas + target groups (+ optional journeys)"
+  ]
+}

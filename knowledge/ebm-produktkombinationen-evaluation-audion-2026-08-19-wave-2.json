@@ -1,0 +1,270 @@
+{
+  "schemaVersion": "1.0.0",
+  "studyId": "ebm-produktkombinationen-tool-v1.3",
+  "waveId": "audion-v3-2026-08-19-wave-2",
+  "evaluatedAt": "2026-08-19T10:06:05.006Z",
+  "method": "audion_v3_ux_journey_agent",
+  "sourceGuide": "EBM-Testleitfaden Produktkombinationen-Tool v1.3 (Testbirds)",
+  "targetUrlKey": "bosch.ebike.produktkombinationen",
+  "notes": [
+    "Aggregated from 5 run files in knowledge/ebm-runs/2026-08-19/wave-2"
+  ],
+  "runs": [
+    {
+      "runId": "A-erstkontakt",
+      "leitfadenBlock": "2 Erstkontakt",
+      "persona": "Alex Lab Ungeduldig",
+      "segment": "owner_upgrade",
+      "taskCompleted": false,
+      "validEvidence": true,
+      "frictionScore": 8,
+      "goalReached": false,
+      "deeplinkCheat": false,
+      "finding": "Ich suche nach produktkombination. Wahrgenommen: Display-Karten sind ausgegraut; grau / disabled; unklar warum; Kompatibilitätsfilter ohne Erklärung; Performance Line Karte; Displays Ausgegraute Optionen ohne Erklärung — ich will nicht raten. Confusion: disabled_option_unexplained",
+      "steps": 6,
+      "actions": [
+        "navigate",
+        "wait",
+        "scroll",
+        "scroll",
+        "scroll",
+        "done"
+      ]
+    },
+    {
+      "runId": "B-aufgabe1-nachruesten",
+      "leitfadenBlock": "3 Aufgabe 1",
+      "persona": "Alex Lab Ungeduldig",
+      "segment": "owner_upgrade",
+      "taskCompleted": false,
+      "validEvidence": true,
+      "frictionScore": 8,
+      "goalReached": false,
+      "deeplinkCheat": false,
+      "finding": "Ich suche nach produktkombination. Wahrgenommen: Display-Karten sind ausgegraut; grau / disabled; unklar warum; Kompatibilitätsfilter ohne Erklärung; Performance Line Karte; Displays Ausgegraute Optionen ohne Erklärung — ich will nicht raten. Confusion: disabled_option_unexplained",
+      "steps": 6,
+      "actions": [
+        "navigate",
+        "scroll",
+        "scroll",
+        "click",
+        "click",
+        "done"
+      ]
+    },
+    {
+      "runId": "B-aufgabe1-purchase-intent",
+      "leitfadenBlock": "3 Aufgabe 1 (purchase framing)",
+      "persona": "Sam Lab Geduldig",
+      "segment": "purchase_intent",
+      "taskCompleted": false,
+      "validEvidence": true,
+      "frictionScore": 8,
+      "goalReached": false,
+      "deeplinkCheat": false,
+      "finding": "Ich suche nach produktkombination. Wahrgenommen: Performance Line Karte; Display-Karten sind ausgegraut; Kompatibilitätsfilter ohne Erklärung; grau / disabled Ich wähle Performance Line aus und prüfe anschließend die Display-Kompatibilität. Confusion: filter_cause_unknown",
+      "steps": 8,
+      "actions": [
+        "navigate",
+        "wait",
+        "scroll",
+        "scroll",
+        "scroll",
+        "scroll",
+        "scroll",
+        "done"
+      ]
+    },
+    {
+      "runId": "C-aufgabe2-kombination",
+      "leitfadenBlock": "3 Aufgabe 2",
+      "persona": "Sam Lab Geduldig",
+      "segment": "purchase_intent",
+      "taskCompleted": false,
+      "validEvidence": true,
+      "frictionScore": 8,
+      "goalReached": false,
+      "deeplinkCheat": false,
+      "finding": "Ich suche nach kompatibil. Wahrgenommen: Cargo Line-Karte; PowerPack 800; Mini Remote; Kiox 400C ist im aktuellen Ausschnitt nicht sichtbar Ich klicke auf die Cargo-Line-Karte. Confusion: filter_cause_unknown",
+      "steps": 7,
+      "actions": [
+        "navigate",
+        "wait",
+        "scroll",
+        "scroll",
+        "scroll",
+        "scroll",
+        "done"
+      ]
+    },
+    {
+      "runId": "Nav-home-to-tool",
+      "leitfadenBlock": "4 Auffindbarkeit / H3",
+      "persona": "Alex Lab Ungeduldig",
+      "segment": "owner_upgrade",
+      "taskCompleted": true,
+      "validEvidence": true,
+      "frictionScore": 8,
+      "goalReached": true,
+      "deeplinkCheat": false,
+      "finding": "Ich suche nach produktkombination. Wahrgenommen: Startseite geladen; service als möglicher Einstieg; produktkombination noch nicht verifiziert Ich öffne das Menü und suche einen Einstieg zu produktkombination.",
+      "steps": 6,
+      "actions": [
+        "navigate",
+        "wait",
+        "wait",
+        "evaluate",
+        "wait",
+        "done"
+      ]
+    }
+  ],
+  "aggregate": {
+    "runsTotal": 5,
+    "leitfadenCoreRunsTotal": 4,
+    "runsTaskCompleted": 1,
+    "runsValidEvidence": 5,
+    "taskCompletionRate": 0.2,
+    "taskCompletionRateCoreAbc": 0,
+    "validEvidenceRate": 1,
+    "validEvidenceRateCoreAbc": 1,
+    "infrastructureBlockRate": 0,
+    "deeplinkCheatRate": 0,
+    "meanFrictionValidOnly": 8,
+    "meanPersonaFitValidOnly": null,
+    "goalReachedRateValidOnly": 0.2,
+    "navH3Pass": true,
+    "segmentsCoveredWithValidEvidence": [
+      "owner_upgrade",
+      "purchase_intent"
+    ],
+    "segmentsMissingValidEvidence": []
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "statement": "Tool wird als komplex/überfordernd wahrgenommen",
+      "verdict": "supported",
+      "confidence": "medium",
+      "score": 8,
+      "evidenceRunIds": [
+        "A-erstkontakt",
+        "B-aufgabe1-nachruesten",
+        "B-aufgabe1-purchase-intent",
+        "C-aufgabe2-kombination"
+      ],
+      "rationale": "Mean friction (core) = 8.0"
+    },
+    {
+      "id": "H2",
+      "statement": "Nutzer verstehen Matrix-Filtersystem nicht",
+      "verdict": "supported",
+      "confidence": "medium",
+      "score": 1,
+      "evidenceRunIds": [
+        "A-erstkontakt",
+        "B-aufgabe1-nachruesten",
+        "B-aufgabe1-purchase-intent",
+        "C-aufgabe2-kombination",
+        "Nav-home-to-tool"
+      ],
+      "rationale": "Confusion keywords found in findings"
+    },
+    {
+      "id": "H3",
+      "statement": "Kein natürlicher Einstieg / Next Step",
+      "verdict": "not_supported",
+      "confidence": "medium",
+      "score": 0,
+      "evidenceRunIds": [
+        "Nav-home-to-tool"
+      ],
+      "rationale": "Nav run reached tool"
+    },
+    {
+      "id": "H4",
+      "statement": "Produktnahe Antwort reicht oft besser als volle Matrix",
+      "verdict": "partially_supported",
+      "confidence": "low",
+      "score": 0,
+      "evidenceRunIds": [
+        "A-erstkontakt",
+        "B-aufgabe1-nachruesten",
+        "B-aufgabe1-purchase-intent",
+        "C-aufgabe2-kombination"
+      ],
+      "rationale": "Task completion (core) = 0%"
+    },
+    {
+      "id": "H5",
+      "statement": "Segmente bewerten Nutzen unterschiedlich",
+      "verdict": "partially_supported",
+      "confidence": "low",
+      "score": null,
+      "evidenceRunIds": [
+        "A-erstkontakt",
+        "B-aufgabe1-nachruesten",
+        "B-aufgabe1-purchase-intent",
+        "C-aufgabe2-kombination",
+        "Nav-home-to-tool"
+      ],
+      "rationale": "Only 1 persona type per run in batch — cannot fully differentiate"
+    }
+  ],
+  "softScores": {
+    "Q1_nuetzlichkeit": {
+      "scale": "1-5",
+      "value": 4,
+      "confidence": "medium",
+      "rationale": "Derived from taskCompletionRate=0.20"
+    },
+    "Q2_bedienbarkeit": {
+      "scale": "1-5",
+      "value": 2,
+      "confidence": "medium",
+      "rationale": "Derived from meanFriction=8.0"
+    },
+    "Q3_filterlogik": {
+      "scale": "1-5",
+      "value": 2,
+      "confidence": "low",
+      "rationale": "Confusion keywords detected"
+    },
+    "Q4_auffindbarkeit": {
+      "scale": "1-5",
+      "value": 4,
+      "confidence": "medium",
+      "rationale": "Nav run passed"
+    },
+    "Q5_produktnah_vs_tool": {
+      "scale": "choice",
+      "value": "produktseite_bevorzugt_vermutet",
+      "confidence": "low",
+      "rationale": "Based on taskCompletionRateCoreAbc=0.00"
+    },
+    "Q6_nutzungswahrscheinlichkeit": {
+      "scale": "1-5",
+      "value": 3,
+      "confidence": "low",
+      "rationale": "Mean of Q1 and Q2"
+    },
+    "Q7_gesamteindruck": {
+      "scale": "1-6_schulnote",
+      "value": 3,
+      "confidence": "low",
+      "rationale": "6 - mean(Q1,Q2,Q3,Q4,Q6) = 6 - 3.0"
+    },
+    "basis": "5 valid runs out of 5 total"
+  },
+  "comparisonKeys": [
+    "taskCompletionRate",
+    "taskCompletionRateCoreAbc",
+    "validEvidenceRate",
+    "validEvidenceRateCoreAbc",
+    "meanFrictionValidOnly",
+    "goalReachedRateValidOnly",
+    "navH3Pass",
+    "deeplinkCheatRate",
+    "infrastructureBlockRate"
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "date": "2026-08-19",
+    "human_source": "/Users/christoph.bordeck/Desktop/Abschlussbericht_UEQ+_eBike_2025 (1).pdf",
+    "ai_source": "knowledge/ueq-ebike-benchmark-2026-08-19.json",
+    "ai_run_count": 24,
+    "scale": "UEQ -3..+3"
+  },
+  "human": {
+    "meta": {
+      "source": "/Users/christoph.bordeck/Desktop/Abschlussbericht_UEQ+_eBike_2025 (1).pdf",
+      "label": "Testbirds UEQ+ Abschlussbericht Aug/Sep 2025",
+      "n": 50,
+      "scale": "UEQ -3..+3 (converted from 1-7)",
+      "overall_weighted": 1.54,
+      "device": "Smartphone (24 iOS, 26 Android)"
+    },
+    "dimensions": {
+      "effizienz": {
+        "mean": 1.02,
+        "importance": 1.74,
+        "items": [
+          1.5,
+          1.28,
+          0.96,
+          0.34
+        ],
+        "item_labels": [
+          "langsam→schnell",
+          "ineffizient→effizient",
+          "unpragmatisch→pragmatisch",
+          "überladen→aufgeräumt"
+        ]
+      },
+      "durchschaubarkeit": {
+        "mean": 1.19,
+        "importance": 1.92,
+        "items": [
+          1.42,
+          1.56,
+          1.12,
+          0.66
+        ],
+        "item_labels": [
+          "unverständlich→verständlich",
+          "schwer→leicht zu lernen",
+          "kompliziert→einfach",
+          "verwirrend→übersichtlich"
+        ]
+      },
+      "stimulation": {
+        "mean": 1.52,
+        "importance": 1.3,
+        "items": [
+          1.74,
+          1.3,
+          1.8,
+          1.22
+        ],
+        "item_labels": [
+          "uninteressant→interessant",
+          "langweilig→spannend",
+          "minderwertig→wertvoll",
+          "einschläfernd→aktivierend"
+        ]
+      },
+      "inhaltsqualitaet": {
+        "mean": 2.08,
+        "importance": 2.22,
+        "items": [
+          2.44,
+          2.0,
+          1.94,
+          1.94
+        ],
+        "item_labels": [
+          "veraltet→aktuell",
+          "uninteressant→interessant",
+          "schlecht→gut aufbereitet",
+          "unverständlich→verständlich"
+        ]
+      },
+      "nuetzlichkeit": {
+        "mean": 1.84,
+        "importance": 1.88,
+        "items": [
+          2.08,
+          1.98,
+          1.72,
+          1.56
+        ],
+        "item_labels": [
+          "nutzlos→nützlich",
+          "nicht hilfreich→hilfreich",
+          "nicht vorteilhaft→vorteilhaft",
+          "nicht lohnend→lohnend"
+        ]
+      }
+    },
+    "qualitative": [
+      "Menü gut strukturiert — Startseite sollte Ziele schneller führen; sonst verliert man Interessenten schon auf Seite 1.",
+      "Ansprechend und professionell; eBike-Beratung hilfreich — aber teils überladen durch viele Unterpunkte.",
+      "Komponenten-Vergleich auf Handy schwer (nur scrollen); Differenzierung zu anderen Marken fehlt; Texte wirken wie Werbesprüche.",
+      "Schwer zurechtzufinden; verständliche Unterschiede anstrengend zu finden.",
+      "Navigation verwinkelt und aufwendig — für ältere Nutzer und kleine Screens problematisch."
+    ],
+    "recommendations": [
+      "Verbesserungsbedarf bei Effizienz (aufgeräumt) und Durchschaubarkeit (übersichtlich).",
+      "Inhaltsqualität, Durchschaubarkeit, Nützlichkeit = höchste Wichtigkeit.",
+      "Grundsätzlich gute Bewertung (Gesamteindruck 1,54)."
+    ]
+  },
+  "ai": {
+    "overall_raw_1_7": 4.78,
+    "dimensions_raw_1_7": {
+      "effizienz": 5.0,
+      "durchschaubarkeit": 4.56,
+      "stimulation": 4.31,
+      "inhaltsqualitaet": 4.83,
+      "nuetzlichkeit": 4.97
+    },
+    "method": "AI-inferred UEQ+ proxy from think-aloud text"
+  },
+  "comparison": {
+    "overall": {
+      "human_ueq": 1.54,
+      "ai_ueq": 0.73,
+      "delta": -0.81
+    },
+    "dimensions": {
+      "effizienz": {
+        "label": "Effizienz",
+        "human_ueq": 1.02,
+        "ai_ueq": 1.0,
+        "ai_raw_1_7": 5.0,
+        "delta": -0.02,
+        "human_importance": 1.74
+      },
+      "durchschaubarkeit": {
+        "label": "Durchschaubarkeit",
+        "human_ueq": 1.19,
+        "ai_ueq": 0.56,
+        "ai_raw_1_7": 4.56,
+        "delta": -0.63,
+        "human_importance": 1.92
+      },
+      "stimulation": {
+        "label": "Stimulation",
+        "human_ueq": 1.52,
+        "ai_ueq": 0.31,
+        "ai_raw_1_7": 4.31,
+        "delta": -1.21,
+        "human_importance": 1.3
+      },
+      "inhaltsqualitaet": {
+        "label": "Inhaltsqualität",
+        "human_ueq": 2.08,
+        "ai_ueq": 0.83,
+        "ai_raw_1_7": 4.83,
+        "delta": -1.25,
+        "human_importance": 2.22
+      },
+      "nuetzlichkeit": {
+        "label": "Nützlichkeit",
+        "human_ueq": 1.84,
+        "ai_ueq": 0.97,
+        "ai_raw_1_7": 4.97,
+        "delta": -0.87,
+        "human_importance": 1.88
+      }
+    }
+  },
+  "insights": {
+    "largest_gap_dim": "Inhaltsqualität",
+    "largest_gap_delta": -1.25,
+    "closest_dim": "Effizienz"
+  },
+  "ai_cross_cutting": [
+    "Flow App / Erweiterung auf Startseite sichtbar — Detail-Navigation oft blockiert.",
+    "Service & Beratung in Nav vorhanden — Öffnen scheitert wiederholt (Help Center teils erreicht).",
+    "Über uns (Wave 4): starke Markeninhalte wenn Seite geladen — sonst Nav-Frustration.",
+    "UC2 Technik: System-Narrativ überzeugend; direkter Wettbewerbsvergleich fehlt (wie Human).",
+    "Goal-reached Rate AI nur ~17% — erklärt niedrigere AI-Scores vs. Human post-task Bewertung."
+  ]
+}

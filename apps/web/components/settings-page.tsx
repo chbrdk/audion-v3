@@ -4,7 +4,17 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
-import { Avatar, Button, Field, Hint, Input, SectionChrome, Text, ToggleGroup } from '@msqdx/ui'
+import {
+  Avatar,
+  Button,
+  Field,
+  Hint,
+  Input,
+  SettingsBand,
+  SettingsShell,
+  Text,
+  ToggleGroup,
+} from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { useUserPrefs, type UiLocaleId, type UiThemeId } from '../lib/user-prefs'
 
@@ -16,10 +26,9 @@ export function SettingsPage() {
   const [loggingOut, setLoggingOut] = useState(false)
 
   const themeLabels: Record<UiThemeId, string> = {
-    msqdx: t('settings.themeLight'),
-    'msqdx-dark': t('settings.themeDark'),
-    'msqdx-v2': t('settings.themeV2Light'),
-    'msqdx-v2-dark': t('settings.themeV2Dark'),
+    light: t('settings.themeLight'),
+    dark: t('settings.themeDark'),
+    auto: t('settings.themeAuto'),
   }
 
   const localeLabels: Record<UiLocaleId, string> = {
@@ -59,46 +68,50 @@ export function SettingsPage() {
   const accountName = session?.user?.name ?? null
 
   return (
-    <div className="audion-settings">
-      <Hint panel>{t('settings.hint')}</Hint>
-
-      {status === 'authenticated' && accountEmail ? (
-        <section className="audion-settings-section">
-          <SectionChrome quiet title={t('settings.account')} as="h2" />
-          <Text role="body" className="audion-settings-help">
-            {t('settings.accountSignedIn')}
-          </Text>
-          <dl className="audion-settings-account">
-            {accountName ? (
-              <>
-                <dt>{t('settings.name')}</dt>
-                <dd>{accountName}</dd>
-              </>
-            ) : null}
-            <dt>{t('settings.email')}</dt>
-            <dd>{accountEmail}</dd>
-          </dl>
-          <Button type="button" variant="subtle" onClick={handleLogout} disabled={loggingOut}>
-            {loggingOut ? t('common.signingOut') : t('common.signOut')}
-          </Button>
-        </section>
-      ) : status !== 'loading' ? (
-        <section className="audion-settings-section">
-          <SectionChrome quiet title={t('settings.account')} as="h2" />
-          <Text role="body" className="audion-settings-help">
-            {t('settings.accountSignedOut')}
-          </Text>
-          <p className="audion-settings-account-link">
-            <Link href={paths.routes.login} className="audion-link">
-              {t('common.signIn')}
-            </Link>
-          </p>
-        </section>
-      ) : null}
-
-      <section className="audion-settings-section">
-        <SectionChrome quiet title={t('settings.profile')} as="h2" />
-        <div className="audion-settings-profile-row">
+    <SettingsShell
+      className="audion-settings"
+      labels={{
+        account: t('settings.account'),
+        profile: t('settings.profile'),
+        appearance: t('settings.appearance'),
+        language: t('settings.language'),
+      }}
+      lede={<Hint panel>{t('settings.hint')}</Hint>}
+      account={
+        status === 'authenticated' && accountEmail ? (
+          <>
+            <Text role="body" className="audion-settings-help">
+              {t('settings.accountSignedIn')}
+            </Text>
+            <dl className="ds-settings-account-dl audion-settings-account">
+              {accountName ? (
+                <>
+                  <dt>{t('settings.name')}</dt>
+                  <dd>{accountName}</dd>
+                </>
+              ) : null}
+              <dt>{t('settings.email')}</dt>
+              <dd>{accountEmail}</dd>
+            </dl>
+            <Button type="button" variant="subtle" onClick={handleLogout} disabled={loggingOut}>
+              {loggingOut ? t('common.signingOut') : t('common.signOut')}
+            </Button>
+          </>
+        ) : status !== 'loading' ? (
+          <>
+            <Text role="body" className="audion-settings-help">
+              {t('settings.accountSignedOut')}
+            </Text>
+            <p className="audion-settings-account-link">
+              <Link href={paths.routes.login} className="audion-link">
+                {t('common.signIn')}
+              </Link>
+            </p>
+          </>
+        ) : null
+      }
+      profile={
+        <div className="ds-settings-profile-row audion-settings-profile-row">
           <Avatar name={draft.trim() || displayName} size="lg" />
           <Field label={t('settings.displayName')} size="sm">
             <Input
@@ -117,13 +130,9 @@ export function SettingsPage() {
             />
           </Field>
         </div>
-      </section>
-
-      <section className="audion-settings-section">
-        <SectionChrome quiet title={t('settings.appearance')} as="h2" />
-        <Text role="body" className="audion-settings-help">
-          {t('settings.appearanceHelp')}
-        </Text>
+      }
+      appearanceHelp={t('settings.appearanceHelp')}
+      appearance={
         <ToggleGroup
           className="theme-toggle"
           aria-label={t('settings.theme')}
@@ -134,13 +143,9 @@ export function SettingsPage() {
             label: themeLabels[id],
           }))}
         />
-      </section>
-
-      <section className="audion-settings-section">
-        <SectionChrome quiet title={t('settings.language')} as="h2" />
-        <Text role="body" className="audion-settings-help">
-          {t('settings.languageHelp')}
-        </Text>
+      }
+      languageHelp={t('settings.languageHelp')}
+      language={
         <ToggleGroup
           aria-label={t('settings.language')}
           value={locale}
@@ -150,19 +155,16 @@ export function SettingsPage() {
             label: localeLabels[id],
           }))}
         />
-      </section>
-
-      <section className="audion-settings-section" data-testid="settings-admin-entry">
-        <SectionChrome quiet title={t('settings.admin')} as="h2" />
-        <Text role="body" className="audion-settings-help">
-          {t('settings.adminHelp')}
-        </Text>
-        <p>
-          <Link href={paths.routes.settingsAdmin} className="audion-link">
-            {t('settings.openAdmin')}
-          </Link>
-        </p>
-      </section>
-    </div>
+      }
+      extras={
+        <SettingsBand title={t('settings.admin')} help={t('settings.adminHelp')} data-testid="settings-admin-entry">
+          <p>
+            <Link href={paths.routes.settingsAdmin} className="audion-link">
+              {t('settings.openAdmin')}
+            </Link>
+          </p>
+        </SettingsBand>
+      }
+    />
   )
 }

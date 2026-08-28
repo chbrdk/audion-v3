@@ -29,6 +29,20 @@ export { TopStatus } from '../../../../msqdx-ui/packages/ui/src/components/TopSt
 export { SectionChrome } from '../../../../msqdx-ui/packages/ui/src/SectionChrome'
 export { ToggleGroup } from '../../../../msqdx-ui/packages/ui/src/components/ToggleGroup'
 export { Hint } from '../../../../msqdx-ui/packages/ui/src/components/Hint'
+export { SettingsShell, SettingsBand } from '../../../../msqdx-ui/packages/ui/src/components/SettingsShell'
+export type {
+  SettingsShellProps,
+  SettingsShellLabels,
+  SettingsBandProps,
+} from '../../../../msqdx-ui/packages/ui/src/components/SettingsShell'
+export {
+  THEME_PREFERENCE_CHOICES,
+  isThemePreference,
+  migrateLegacyThemeId,
+  resolveThemeId,
+  applyThemePreference,
+} from '../../../../msqdx-ui/packages/ui/src/themePreference'
+export type { ThemePreference, ResolvedThemeId } from '../../../../msqdx-ui/packages/ui/src/themePreference'
 export { WizardSteps } from '../../../../msqdx-ui/packages/ui/src/components/WizardSteps'
 export type { WizardStep, WizardStepsProps } from '../../../../msqdx-ui/packages/ui/src/components/WizardSteps'
 export { Lede, LedeStrip } from '../../../../msqdx-ui/packages/ui/src/components/Lede'

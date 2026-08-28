@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EBM Produkterkenntnisse: AI vs Human</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --fg: #16181d;
+        --muted: #5c6470;
+        --line: #d9dde5;
+        --soft: #f5f7fa;
+        --warn: #fff4d6;
+        --info: #eef5ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+        line-height: 1.45;
+      }
+      .page {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 40px 36px 56px;
+      }
+      h1, h2, h3 { margin: 0 0 12px; line-height: 1.2; }
+      h1 { font-size: 30px; }
+      h2 { font-size: 22px; margin-top: 28px; }
+      h3 { font-size: 18px; margin-top: 20px; }
+      p { margin: 0 0 10px; }
+      .muted { color: var(--muted); }
+      .callout {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin: 22px 0;
+      }
+      .callout.warn { background: var(--warn); }
+      .callout.info { background: var(--info); }
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 18px;
+        background: #fff;
+      }
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 18px;
+        background: var(--soft);
+      }
+      .stat .value {
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .pill {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 13px;
+        background: var(--soft);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 14px;
+      }
+      th, td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        vertical-align: top;
+        text-align: left;
+      }
+      th {
+        background: var(--soft);
+        font-weight: 600;
+      }
+      .small { font-size: 12px; }
+      .bar-wrap {
+        margin-top: 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 18px;
+      }
+      .bar-row { margin-bottom: 14px; }
+      .bar-label {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 14px;
+      }
+      .bars {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .bar-track {
+        width: 100%;
+        height: 12px;
+        background: var(--soft);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar-human { height: 100%; background: #7aa7ff; }
+      .bar-ai { height: 100%; background: #f0b44c; }
+      hr {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 28px 0;
+      }
+      @media print {
+        .page { padding: 20px 24px 28px; }
+        h2, h3, .card, .callout, table, .bar-wrap { break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>EBM Produkterkenntnisse: AI vs Human</h1>
+      <p class="muted">
+        Fokus auf Produktbefunde, nicht auf Testqualitaet. Human-Referenz n=17
+        plus AI-Waves vom 2026-08-19.
+      </p>
+
+      <div class="callout warn">
+        <strong>Kernaussage.</strong> Das groesste Produktproblem liegt im Tool
+        selbst: Nutzer verstehen die Filter- und Ausgrauungslogik nicht und
+        erhalten bei der Kernfrage zu kompatiblen Displays oft keine sichere
+        Antwort. Die Auffindbarkeit ist im aktuellen Agentenpfad loesbar,
+        bleibt aber im Human Testing schwach.
+      </div>
+
+      <h2>Exec Summary</h2>
+      <div class="grid grid-3">
+        <section class="card">
+          <h3>Was ist kaputt?</h3>
+          <p>Die Filter-Matrix erklaert nicht, warum Optionen grau oder ausgeschlossen sind.</p>
+          <p>Nutzer erhalten bei kompatiblen Displays oft keine belastbare Endantwort.</p>
+        </section>
+        <section class="card">
+          <h3>Was ist bestaetigt?</h3>
+          <p>Human und AI bestaetigen denselben Kernbefund: Verwirrung in der Matrix.</p>
+          <p>Die In-Tool-Entscheidung ist das groessere Problem als der reine Zugang zum Tool.</p>
+        </section>
+        <section class="card">
+          <h3>Was priorisieren wir?</h3>
+          <p>1. Ausgrauung erklaeren.</p>
+          <p>2. Direkte Kurzantwort liefern.</p>
+          <p>3. Naechsten Schritt nach der Pruefung zeigen.</p>
+        </section>
+      </div>
+
+      <div class="grid grid-3" style="margin-top: 18px;">
+        <section class="stat">
+          <div class="value">100%</div>
+          <div>AI-Waves bestaetigen Filterproblem</div>
+        </section>
+        <section class="stat">
+          <div class="value">3/3</div>
+          <div>AI findet Tool von Home aus</div>
+        </section>
+        <section class="stat">
+          <div class="value">n=17</div>
+          <div>Human-Referenz fuer Gegenpruefung</div>
+        </section>
+      </div>
+
+      <hr />
+
+      <h2>Klare Antworten der Agenten</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Run</th>
+            <th>Klare Antwort</th>
+            <th>Blocker</th>
+            <th>Tool gefunden?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>A Erstkontakt</td><td>Display-Karten sind grau oder disabled.</td><td>Unklar, warum etwas nicht passt.</td><td>Nein</td></tr>
+          <tr><td>B Aufgabe 1</td><td>Keine sichere Liste kompatibler Displays.</td><td>Matrix erklaert die Ausgrauung nicht.</td><td>Nein</td></tr>
+          <tr><td>C Aufgabe 2</td><td>Komponenten sind sichtbar, aber nicht belastbar verifizierbar.</td><td>Filterursache bleibt unklar.</td><td>Nein</td></tr>
+          <tr><td>Purchase</td><td>Performance Line wird gefunden, die passende Display-Antwort aber nicht.</td><td>Display-Logik bleibt unklar.</td><td>Nein</td></tr>
+          <tr><td>Nav Home to Tool</td><td>Das Tool ist auffindbar.</td><td>Kein eigentlicher In-Tool-Beweis fuer die Nutzbarkeit.</td><td>Ja</td></tr>
+        </tbody>
+      </table>
+
+      <hr />
+
+      <div class="grid grid-2">
+        <section class="card">
+          <h2>Erkenntnisse aus dem AI-Lauf</h2>
+          <p>Die Matrix liefert fuer die Kernaufgabe keine ausreichend selbsterklaerende Antwort.</p>
+          <p>Ausgegraute Optionen werden als Ausschluss wahrgenommen, aber die Ursache bleibt unklar.</p>
+          <p>Das Problem ist stabil ueber Personas und Waves hinweg und kein Einzelfall.</p>
+          <p>Das Tool ist erreichbar, aber die Entscheidungslogik im Tool selbst bleibt zu schwer.</p>
+        </section>
+        <section class="card">
+          <h2>Was das fuer das Produkt bedeutet</h2>
+          <p>Das Hauptproblem ist nicht mehr primaer die Navigation, sondern die fehlende Antwortsicherheit im Tool.</p>
+          <p>Die aktuelle UX verlangt zu viel Interpretation statt eine klare, produktnahe Antwort zu liefern.</p>
+          <p>Wenn etwas nicht passt, muss die UI erklaeren warum und was als Naechstes zu tun ist.</p>
+        </section>
+      </div>
+
+      <hr />
+
+      <h2>Gegenueberstellung vs. Human Testing</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>AI</th>
+            <th>Human</th>
+            <th>Urteil</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Filterlogik verstehen</td><td>Scheitert reproduzierbar</td><td>Scheitert ebenfalls</td><td>Klar bestaetigt</td></tr>
+          <tr><td>Warum ist etwas grau?</td><td>Nicht erklaert</td><td>Nicht selbsterklaerend</td><td>Klar bestaetigt</td></tr>
+          <tr><td>Sichere Display-Antwort bekommen</td><td>Nein</td><td>Oft nein / unsicher</td><td>Klar bestaetigt</td></tr>
+          <tr><td>Tool finden</td><td>Ja, im aktuellen Pfad</td><td>Schwacher bewertet</td><td>Uneinheitlich</td></tr>
+          <tr><td>Next Step nach der Pruefung</td><td>Offen</td><td>Kritisch</td><td>Weiter offen</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Soft-Signal Vergleich</h3>
+      <p class="muted">Skala 1-5, hoeher ist besser.</p>
+      <div class="bar-wrap">
+        <div class="bar-row">
+          <div class="bar-label"><span>Bedienbarkeit</span><span>Human 3.8 / AI 2.0</span></div>
+          <div class="bars">
+            <div class="bar-track"><div class="bar-human" style="width:76%"></div></div>
+            <div class="bar-track"><div class="bar-ai" style="width:40%"></div></div>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span>Filterlogik</span><span>Human 3.7 / AI 2.0</span></div>
+          <div class="bars">
+            <div class="bar-track"><div class="bar-human" style="width:74%"></div></div>
+            <div class="bar-track"><div class="bar-ai" style="width:40%"></div></div>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span>Auffindbarkeit</span><span>Human 2.6 / AI 4.0</span></div>
+          <div class="bars">
+            <div class="bar-track"><div class="bar-human" style="width:52%"></div></div>
+            <div class="bar-track"><div class="bar-ai" style="width:80%"></div></div>
+          </div>
+        </div>
+      </div>
+      <p class="small muted">
+        Source: Human-Referenz n=17 und AI-Auswertungen 2026-08-04 / 2026-08-19.
+        Der Vergleich zeigt Produktsignale, keine Aussage ueber die Guete der Methoden.
+      </p>
+
+      <hr />
+
+      <h2>Methodenvergleich: AI vs Human</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Metrik</th>
+            <th>AI</th>
+            <th>Human</th>
+            <th>Einordnung</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Stichprobe</td><td>15 Runs in 3 Waves</td><td>n=17</td><td>Human hat mehr Breite, AI mehr Wiederholung.</td></tr>
+          <tr><td>Durchschnitt pro Run</td><td>2.2 min (Video-Offset Proxy)</td><td>Nicht im Repo ausgewiesen</td><td>AI-Laufzeit ist direkt messbar, Human hier nicht voll quantifiziert.</td></tr>
+          <tr><td>Median pro Run</td><td>1.7 min</td><td>Nicht im Repo ausgewiesen</td><td>AI ist fuer schnelle Wiederholungen gut vergleichbar.</td></tr>
+          <tr><td>Gesamtdauer dieses AI-Batches</td><td>32.4 min ueber 15 Runs</td><td>Nicht im Repo ausgewiesen</td><td>AI eignet sich fuer schnelle Re-Runs und Regression Checks.</td></tr>
+          <tr><td>Wiederholbarkeit</td><td>Hoch: 3 Waves mit stabilem Kernbefund</td><td>Natuerlich variabler</td><td>AI ist staerker fuer Reproduzierbarkeit.</td></tr>
+          <tr><td>Direkte Kosten</td><td>Nicht in den Artefakten instrumentiert</td><td>Nicht in den Artefakten dokumentiert</td><td>Kostenvergleich braucht zusaetzliche Abrechnungsdaten.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="grid grid-2" style="margin-top: 18px;">
+        <section class="card">
+          <h3>Wo AI stark ist</h3>
+          <p>AI ist schnell wiederholbar und deshalb stark fuer Regressionen, Vergleiche und Hypothesen-Checks.</p>
+          <p>AI bricht konsistent an denselben Stellen ab und macht reproduzierbare UX-Muster sichtbar.</p>
+          <p>AI ist besonders nuetzlich, wenn wir wissen wollen, ob ein Problem stabil im Interface selbst steckt.</p>
+        </section>
+        <section class="card">
+          <h3>Warum AI nicht wie ein Mensch sieht</h3>
+          <p>AI hat keine echten Kaufkonsequenzen, keine persoenliche Unsicherheit und keine reale Motivation wie ein echter Nutzer.</p>
+          <p>AI folgt einem vorgegebenen Prompt und einer Persona-Logik; Menschen bringen eigene Ziele, Vorwissen und Abkuerzungen mit.</p>
+          <p>AI testet hier in einer Desktop-Chromium-Umgebung; Human Testing bildet eher die natuerliche Varianz realer Nutzung ab.</p>
+          <p>Darum ist AI sehr gut fuer Muster und Reibung, aber kein vollwertiger Ersatz fuer echte Verhaltens- und Priorisierungsunterschiede zwischen Menschen.</p>
+        </section>
+      </div>
+
+      <div class="callout info">
+        <strong>Saubere Lesart.</strong> Wenn AI und Human denselben Befund zeigen,
+        ist das ein starkes Produktsignal. Wenn sie auseinanderlaufen, zeigt AI eher,
+        was im UI prinzipiell moeglich ist, waehrend Human Testing zeigt, was echte
+        Nutzer unter realen Erwartungen und realem Frust tatsaechlich tun.
+      </div>
+
+      <hr />
+
+      <h2>Wofuer nutzen wir AI, wofuer Human?</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Fragestellung</th>
+            <th>Empfohlene Methode</th>
+            <th>Warum</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Regression nach UI-Aenderung</td><td>AI</td><td>Schnell, wiederholbar und gut fuer Vorher/Nachher-Vergleiche.</td></tr>
+          <tr><td>Hypothese auf Reproduzierbarkeit pruefen</td><td>AI</td><td>Mehrere Waves zeigen schnell, ob ein Befund stabil im Interface steckt.</td></tr>
+          <tr><td>Echte Motivation, Kaufdruck, Vertrauen verstehen</td><td>Human</td><td>Nur Menschen bringen reale Konsequenzen, Zweifel und persoenliche Prioritaeten mit.</td></tr>
+          <tr><td>Segmentunterschiede wirklich absichern</td><td>Human</td><td>Echte Nutzer unterscheiden sich staerker im Vorwissen und Verhalten als simulierte Personas.</td></tr>
+          <tr><td>Fruehe Produktkritik vor Human-Test</td><td>AI zuerst, dann Human</td><td>AI findet schnelle UX-Reibung; Human validiert Relevanz und Prioritaet.</td></tr>
+          <tr><td>Auseinanderlaufende Befunde aufklaeren</td><td>AI plus Human</td><td>AI zeigt, was machbar ist; Human zeigt, was real getan wird.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="grid grid-3" style="margin-top: 18px;">
+        <section class="card">
+          <h3>AI zuerst</h3>
+          <p>Wenn wir schnell wissen wollen, ob eine UI-Aenderung Reibung reduziert.</p>
+          <p>Wenn wir mehrere Wiederholungen brauchen, bevor wir Menschen erneut einladen.</p>
+        </section>
+        <section class="card">
+          <h3>Human zuerst</h3>
+          <p>Wenn Motivation, Vertrauen, Kaufdruck oder Erwartungshaltung entscheidend sind.</p>
+          <p>Wenn wir echte Segmentunterschiede oder Prioritaeten absichern muessen.</p>
+        </section>
+        <section class="card">
+          <h3>Beides zusammen</h3>
+          <p>AI fuer schnelles Screening und Re-Tests, Human fuer Gewichtung und finale Produktentscheidungen.</p>
+          <p>Das ist der staerkste Modus fuer kritische User Journeys wie dieses Tool.</p>
+        </section>
+      </div>
+
+      <hr />
+
+      <h2>Was jetzt als klares Ergebnis steht</h2>
+      <div class="pill-row">
+        <span class="pill">Matrix ist das Kernproblem</span>
+        <span class="pill">Ausgrauung muss erklaert werden</span>
+        <span class="pill">Kurzantwort fehlt</span>
+        <span class="pill">Auffindbarkeit ist nicht das staerkste Problem</span>
+      </div>
+
+      <h2>Priorisierte Produktentscheidungen</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Prio</th>
+            <th>Massnahme</th>
+            <th>Warum</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Disabled-Zustaende erklaeren</td><td>Inline oder direkt an der Option: warum ausgeschlossen, was zuerst gewaehlt werden muss.</td></tr>
+          <tr><td>2</td><td>Kurzantwort statt nur Matrix</td><td>Eine direkte Ausgabe wie „kompatible Displays sind ...“ reduziert Interpretationslast.</td></tr>
+          <tr><td>3</td><td>Naechsten Schritt zeigen</td><td>Nach der Pruefung klar zu Kauf, Haendler oder Support fuehren.</td></tr>
+        </tbody>
+      </table>
+    </main>
+  </body>
+  </html>

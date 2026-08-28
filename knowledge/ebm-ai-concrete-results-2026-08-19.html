@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EBM AI Testergebnisse — Konkrete Befunde (2026-08-19)</title>
+    <style>
+      :root {
+        --fg: #16181d;
+        --muted: #5c6470;
+        --line: #d9dde5;
+        --soft: #f5f7fa;
+        --warn-bg: #fff8e6;
+        --red-bg: #fef2f2;
+        --green-bg: #f0faf0;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+        color: var(--fg);
+        background: #fff;
+        line-height: 1.5;
+        font-size: 14px;
+      }
+      .page { max-width: 900px; margin: 0 auto; padding: 32px 32px 48px; }
+      h1 { font-size: 26px; margin: 0 0 6px; }
+      h2 { font-size: 20px; margin: 28px 0 10px; border-bottom: 2px solid var(--line); padding-bottom: 6px; }
+      h3 { font-size: 16px; margin: 20px 0 8px; }
+      p { margin: 0 0 8px; }
+      .muted { color: var(--muted); }
+      .small { font-size: 12px; }
+      .hr { height: 1px; background: var(--line); margin: 24px 0; }
+
+      .finding {
+        border-left: 3px solid var(--line);
+        padding: 10px 14px;
+        margin: 8px 0 14px;
+        background: var(--soft);
+        border-radius: 0 8px 8px 0;
+      }
+      .finding.problem { border-left-color: #e45858; background: var(--red-bg); }
+      .finding.success { border-left-color: #3da65c; background: var(--green-bg); }
+
+      .quote {
+        font-style: italic;
+        color: var(--muted);
+        margin: 4px 0;
+      }
+
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        margin-right: 4px;
+        background: var(--soft);
+      }
+      .tag.red { border-color: #e45858; color: #b83232; background: var(--red-bg); }
+      .tag.green { border-color: #3da65c; color: #2d7a42; background: var(--green-bg); }
+
+      .summary-box {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin: 16px 0;
+        background: var(--warn-bg);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin: 10px 0;
+      }
+      th, td {
+        border: 1px solid var(--line);
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th { background: var(--soft); font-weight: 600; }
+
+      @media print {
+        .page { padding: 18px 20px 24px; }
+        h2 { break-after: avoid; }
+        .finding, .summary-box { break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>EBM AI Testergebnisse: Konkrete Befunde</h1>
+      <p class="muted">Produktkombinationen-Tool &middot; 3 Waves &middot; 15 Runs &middot; 2026-08-19</p>
+      <p class="muted small">Quelle: AUDION v3 UX Journey Agent gegen <code>bosch-ebike.com/de/service/produktkombinationen</code>. Personas: Alex Lab Ungeduldig + Sam Lab Geduldig.</p>
+
+      <div class="summary-box">
+        <strong>Verdichtetes Gesamtergebnis.</strong>
+        In 12 von 15 Runs konnte die gestellte Aufgabe nicht geloest werden. Der Agent bricht
+        jedes Mal an derselben Stelle ab: die Filter-Matrix zeigt ausgegraute Optionen, erklaert
+        aber nicht warum. Nur die Navigation von der Startseite zum Tool gelingt zuverlaessig (3/3).
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>A &mdash; Erstkontakt (erster Eindruck)</h2>
+      <p><strong>Aufgabe:</strong> Tool zum ersten Mal oeffnen, umschauen, scrollen, nichts aendern. Was faellt auf?</p>
+
+      <div class="finding problem">
+        <p><strong>Was der Agent sieht:</strong></p>
+        <p>Display-Karten sind ausgegraut. Akkus wirken deaktiviert. Drive Units links sind aktiv, aber rechts ist vieles grau. Es gibt keinen sichtbaren Hinweis, warum.</p>
+        <p class="quote">&bdquo;Ausgegraute Optionen ohne Erklaerung &mdash; ich will nicht raten.&ldquo;</p>
+        <p class="quote">&bdquo;Drive Units wirken aktiv, waehrend Akku- und Display-Karten grau erscheinen; die Ursache ist erklaerungsbeduerftig.&ldquo;</p>
+        <span class="tag red">disabled_option_unexplained</span>
+      </div>
+      <p><strong>Ergebnis:</strong> Keine Aufgabe abgeschlossen. Friction 8. Stabil ueber alle 3 Waves.</p>
+
+      <!-- ============================================================ -->
+      <h2>B &mdash; Aufgabe 1: Kompatible Displays fuer Performance Line</h2>
+      <p><strong>Aufgabe:</strong> Welche Displays passen zu einem Bosch Performance Line Motor? Nutze das Tool.</p>
+
+      <div class="finding problem">
+        <p><strong>Was der Agent sieht:</strong></p>
+        <p>Performance Line ist sichtbar und kann ausgewaehlt werden. Aber die Display-Karten bleiben grau. Es gibt keine Erklaerung, ob das bedeutet &bdquo;nicht kompatibel&ldquo; oder &bdquo;noch nicht ausgewaehlt&ldquo;.</p>
+        <p class="quote">&bdquo;Die ausgegrauten Optionen werden nicht erklaert; ich will nicht raten.&ldquo;</p>
+        <p class="quote">&bdquo;Performance Line ist sichtbar; Displays und Akkus wirken ausgegraut, und der Grund ist noch nicht ersichtlich.&ldquo;</p>
+        <p class="quote">&bdquo;Die zwei kurzen Scrolls haben die ausgegrauten Displays und den deaktivierten Auswahl-Button bestaetigt, aber noch keine Erklaerung geliefert.&ldquo;</p>
+        <span class="tag red">disabled_option_unexplained</span>
+      </div>
+      <p><strong>Ergebnis:</strong> Keine sichere Antwort auf die Display-Frage. Abbruch in allen 3 Waves. Friction 8.</p>
+
+      <!-- ============================================================ -->
+      <h2>B &mdash; Aufgabe 1 (Kaufinteressent): Displays fuer Performance Line</h2>
+      <p><strong>Aufgabe:</strong> Gleiche Frage, aber aus der Sicht eines Kaufinteressenten (Sam Lab Geduldig).</p>
+
+      <div class="finding problem">
+        <p><strong>Was der Agent sieht:</strong></p>
+        <p>Die gleichen ausgegrauten Displays. Der Agent versucht, die Auswahlreihenfolge zu verstehen (&bdquo;muss ich zuerst den Motor waehlen?&ldquo;), kommt aber nicht weiter.</p>
+        <p class="quote">&bdquo;Ich muss die Auswahlreihenfolge anhand der sichtbaren Rueckmeldung verifizieren.&ldquo;</p>
+        <p class="quote">&bdquo;Die ausgegrauten Optionen ohne Erklaerung erlauben keine verlaessliche Auswahl.&ldquo;</p>
+        <p class="quote">&bdquo;Die Displays sind weiterhin grau, daher ist noch keine Kompatibilitaet ablesbar.&ldquo;</p>
+        <span class="tag red">disabled_option_unexplained</span>
+        <span class="tag red">selection_order_surprise</span>
+        <span class="tag red">filter_cause_unknown</span>
+      </div>
+      <p><strong>Ergebnis:</strong> Kein Ergebnis. Abbruch in allen 3 Waves. Friction 8. Auch der geduldige Agent scheitert.</p>
+
+      <!-- ============================================================ -->
+      <h2>C &mdash; Aufgabe 2: Vierer-Kombination pruefen</h2>
+      <p><strong>Aufgabe:</strong> Kiox 400C + Mini Remote + Cargo Line + leistungsfaehiger Rahmenakku &mdash; ist das kompatibel?</p>
+
+      <div class="finding problem">
+        <p><strong>Was der Agent sieht:</strong></p>
+        <p>Cargo Line wird gefunden. Kiox 400C ist grau. Rahmenakkus sind grau. Mini Remote ist sichtbar, aber weiter unten. Der Agent klickt Cargo Line an, kann danach aber nicht sicher ablesen, was freigeschaltet wurde und was nicht.</p>
+        <p class="quote">&bdquo;Kiox 400C ist grau dargestellt; Rahmenakkus sind grau dargestellt.&ldquo;</p>
+        <p class="quote">&bdquo;Ich klicke Cargo Line an und pruefe anschliessend die freigeschalteten Komponenten.&ldquo;</p>
+        <p class="quote">&bdquo;Mehrere Akkuoptionen sind aktuell grau.&ldquo;</p>
+        <span class="tag red">filter_cause_unknown</span>
+        <span class="tag red">disabled_option_unexplained</span>
+      </div>
+      <p><strong>Ergebnis:</strong> Kombination nicht verifizierbar. Abbruch in allen 3 Waves. Friction 8.</p>
+
+      <!-- ============================================================ -->
+      <h2>Nav &mdash; Von der Startseite zum Tool</h2>
+      <p><strong>Aufgabe:</strong> Starte auf <code>bosch-ebike.com/de/</code> und finde den Weg zum Produktkombinationen-Tool. Kein Direkt-Link.</p>
+
+      <div class="finding success">
+        <p><strong>Was der Agent sieht:</strong></p>
+        <p>Startseite laedt. Der Agent erkennt &bdquo;Service &amp; Beratung&ldquo; in der Navigation und findet von dort den Weg zum Tool.</p>
+        <p class="quote">&bdquo;Sichtbar sind die Hauptnavigation und der Einstieg Service &amp; Beratung.&ldquo;</p>
+        <p class="quote">&bdquo;Ich oeffne das Menue und suche einen Einstieg zu Produktkombination.&ldquo;</p>
+        <span class="tag green">Tool erreicht</span>
+      </div>
+      <p><strong>Ergebnis:</strong> Tool gefunden in allen 3 Waves. Friction 7&ndash;8. Kein Deeplink-Cheat.</p>
+
+      <!-- ============================================================ -->
+      <div class="hr"></div>
+
+      <h2>Verdichtung: Was hat der Test konkret ergeben?</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Frage aus dem Leitfaden</th>
+            <th>Antwort des Agenten</th>
+            <th>Reproduzierbar?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Was faellt beim ersten Oeffnen auf?</td>
+            <td>Ausgegraute Display- und Akkukarten ohne Erklaerung dominieren den Eindruck.</td>
+            <td>Ja, 3/3 Waves identisch.</td>
+          </tr>
+          <tr>
+            <td>Welche Displays passen zu Performance Line?</td>
+            <td>Kann nicht beantwortet werden. Die Matrix zeigt graue Optionen, erklaert aber nicht, welche kompatibel sind.</td>
+            <td>Ja, 6/6 Runs (Alex + Sam).</td>
+          </tr>
+          <tr>
+            <td>Ist die Vierer-Kombination kompatibel?</td>
+            <td>Nicht verifizierbar. Cargo Line kann angeklickt werden, danach ist unklar, was freigeschaltet wurde.</td>
+            <td>Ja, 3/3 Waves.</td>
+          </tr>
+          <tr>
+            <td>Findet man das Tool von der Startseite?</td>
+            <td>Ja, ueber Service &amp; Beratung in der Navigation.</td>
+            <td>Ja, 3/3 Waves.</td>
+          </tr>
+          <tr>
+            <td>Was ist der groesste Blocker?</td>
+            <td>Der Agent kann nicht unterscheiden, ob grau &bdquo;nicht kompatibel&ldquo; oder &bdquo;noch nicht ausgewaehlt&ldquo; bedeutet. Es fehlt jede Erklaerung.</td>
+            <td>In jedem einzelnen Run.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="hr"></div>
+
+      <h2>Wiederkehrende Confusion-Tags (alle Runs)</h2>
+      <table>
+        <thead>
+          <tr><th>Tag</th><th>Bedeutung</th><th>Haeufigkeit</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="tag red">disabled_option_unexplained</span></td><td>Optionen sind deaktiviert/grau, aber es steht nirgends warum.</td><td>In 12 von 15 Runs</td></tr>
+          <tr><td><span class="tag red">filter_cause_unknown</span></td><td>Der Filter schliesst etwas aus, die Ursache ist nicht lesbar.</td><td>In 6 von 15 Runs</td></tr>
+          <tr><td><span class="tag red">selection_order_surprise</span></td><td>Unklar, in welcher Reihenfolge die Auswahl getroffen werden muss.</td><td>In 3 von 15 Runs</td></tr>
+        </tbody>
+      </table>
+
+      <div class="hr"></div>
+
+      <p class="small muted">
+        Datenquelle: <code>knowledge/ebm-runs/2026-08-19/wave-{1,2,3}/run-*.json</code> und
+        <code>knowledge/ebm-produktkombinationen-evaluation-audion-2026-08-19-wave-{1,2,3}.json</code>.
+        Alle Zitate sind woertlich aus den Agent Think-Alouds und Findings.
+      </p>
+    </main>
+  </body>
+</html>

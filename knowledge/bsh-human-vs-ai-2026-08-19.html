@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <title>BSH Human vs AI — Waschmaschinen Shop</title>
+  <style>
+    body{font-family:-apple-system,sans-serif;max-width:920px;margin:0 auto;padding:32px;line-height:1.5;color:#16181d;font-size:14px}
+    h1{font-size:26px;margin:0 0 8px} h2{font-size:20px;margin:28px 0 10px;border-bottom:2px solid #ddd;padding-bottom:6px}
+    .muted{color:#5c6470;font-size:13px}
+    .box{background:#fff8e6;border:1px solid #e8dfc0;padding:16px;border-radius:8px;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+    th,td{border:1px solid #d9dde5;padding:10px;text-align:left;vertical-align:top}
+    th{background:#f5f7fa}
+    .col2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:16px 0}
+    .card{border:1px solid #d9dde5;border-radius:8px;padding:14px;background:#fafbfc}
+    .card h3{margin:0 0 8px;font-size:15px}
+    ul{margin:8px 0;padding-left:20px}
+    .tag{display:inline-block;font-size:11px;padding:3px 10px;border-radius:999px;border:1px solid #ccc;margin:4px 4px 0 0;background:#f5f7fa}
+    .tag.yes{border-color:#3da65c;background:#f0faf0}
+  </style>
+</head>
+<body>
+  <h1>BSH Waschmaschinen: Human vs AI</h1>
+  <p class="muted">Human: RESULT_TESTING.pdf (8 Interviews, Sep–Okt 2023) · AI: 30 Agent-Runs, Aug 2026 · bosch-home.com</p>
+
+  <div class="box">
+    <strong>Kernaussage.</strong> Human und AI bestätigen dasselbe Kernproblem: Der Where-to-Buy-Pfad ist für Online-Käufer unklar —
+    „Beim Händler kaufen“ wird als Offline interpretiert. Lieferzeit und Verfügbarkeit sind der stärkste Kaufhebel.
+    AI ist bei fehlenden Informationen toleranter als echte Nutzer.
+  </div>
+
+  <h2>Hypothesen-Vergleich</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Hypothese</th><th>Human (2023)</th><th>AI (2026)</th><th>Urteil</th></tr></thead>
+    <tbody>
+      <tr><td>H1</td><td>D2C-Preis gilt auch beim Händler</td><td>Teilweise — Preis am Produkt verwirrt</td><td>Preise klar auf PLP sichtbar</td><td>Uneinheitlich</td></tr>
+      <tr><td>H2</td><td>D2C-Preise schrecken ab</td><td><strong>Nein</strong> — Qualität rechtfertigt Preis</td><td>Realistisch, mittel–hoch (549–819 €)</td><td><strong>Bestätigt</strong></td></tr>
+      <tr><td>H3</td><td>Preisvergleich parallel</td><td><strong>Ja</strong> — Google, Idealo</td><td>Teils auf PLP, teils Browser blockiert</td><td><strong>Bestätigt</strong></td></tr>
+      <tr><td>H4</td><td>Ohne Preis/Lieferung = nicht kaufbar</td><td><strong>Ja</strong> — fliegt raus</td><td>Fehlende Info ≠ automatisch raus</td><td>Abweichend</td></tr>
+      <tr><td>H5</td><td>Beim Händler = offline</td><td><strong>Ja</strong> — fast alle Probanden</td><td>WTB nicht gefunden; „Beratung im Fachhandel“</td><td><strong>Bestätigt</strong></td></tr>
+      <tr><td>H6</td><td>Nur im Fachhandel abschreckt</td><td><strong>Ja</strong> — Online-Kunden</td><td>Label auf PLP nicht wahrgenommen</td><td>Teilweise</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Human — wichtigste Erkenntnisse (RESULT_TESTING.pdf)</h2>
+  <ul>
+    <li>„Beim Händler kaufen“ auf PLP = Offline-Händler, wo man hinfahren muss.</li>
+    <li>WTB-Button irrelevant für Online-Käufer (Probanden würden online kaufen).</li>
+    <li>Preisvergleich parallel über Google und Preisvergleichsseiten.</li>
+    <li>Produkte ohne Preis oder mit langer Lieferzeit werden aus Auswahl entfernt.</li>
+    <li>D2C-Preise schrecken im ersten Moment nicht ab — Bosch = Qualität.</li>
+    <li>„Nur im Fachhandel“: wenige sehen es, schreckt Online-Kunden ab.</li>
+  </ul>
+
+  <h2>AI — konkrete Befunde (30 Runs)</h2>
+  <ul>
+    <li>„Beim Händler kaufen“ auf PLP nicht gefunden — sichtbar: „Beratung im Fachhandel“.</li>
+    <li>PDP wirkt gut (949 €, 4,8 Sterne), aber <strong>Lieferzeit 6–9 Wochen = Kaufstopper</strong>.</li>
+    <li>Preise 549–819 € wirken realistisch, aber eher mittel bis hoch.</li>
+    <li>„Auf Lager“ klar sichtbar; fehlende Lieferangabe bedeutet nicht automatisch nicht kaufbar.</li>
+    <li>Fachhandel-Label auf aktueller PLP nicht gefunden (Seitensuche 0 Treffer).</li>
+  </ul>
+
+  <div class="col2">
+    <div class="card">
+      <h3>Übereinstimmung</h3>
+      <span class="tag yes">WTB = Offline</span>
+      <span class="tag yes">Lieferzeit kritisch</span>
+      <span class="tag yes">Preisvergleich extern</span>
+      <span class="tag yes">Preise OK</span>
+    </div>
+    <div class="card">
+      <h3>Abweichung</h3>
+      <p><strong>Fehlende Lieferinfo:</strong> Human filtert raus, AI toleriert.</p>
+      <p><strong>Fachhandel-Label:</strong> Human sieht und schreckt ab; AI findet es auf PLP nicht.</p>
+    </div>
+  </div>
+
+  <h2>Priorisierte Massnahmen (Human + AI)</h2>
+  <table>
+    <thead><tr><th>Prio</th><th>Massnahme</th><th>Beleg</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>WTB klar formulieren: Online-Händler vs. Vor-Ort-Händler</td><td>Human H5, AI Run D</td></tr>
+      <tr><td>2</td><td>Lieferzeit konkret kommunizieren (nicht 6–9 Wochen ohne Erklärung)</td><td>Human + AI PDP</td></tr>
+      <tr><td>3</td><td>Preis und Lieferbarkeit bei allen Produkten anzeigen</td><td>Human H4</td></tr>
+      <tr><td>4</td><td>Fachhandel-Label überdenken oder Mehrwert erklären</td><td>Human H6</td></tr>
+    </tbody>
+  </table>
+
+  <p class="muted">Quellen: /Users/christoph.bordeck/Desktop/RESULT_TESTING.pdf · knowledge/bsh-home-runs/2026-08-19/</p>
+</body>
+</html>

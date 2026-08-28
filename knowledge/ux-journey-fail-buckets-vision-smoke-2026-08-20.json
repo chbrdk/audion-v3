@@ -1,0 +1,30 @@
+{
+  "total": 4,
+  "counts": {
+    "click_blocked": 3,
+    "goal_ok": 1
+  },
+  "rates": {
+    "click_blocked": 75.0,
+    "goal_ok": 25.0
+  },
+  "baseline_note": "UEQ eBike 2026-08-19 URL-grounded goal_ok ≈ 8.3%",
+  "rows": [
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-20-vision-smoke/wave-1/run-C-UC2-ebiker-service.json",
+      "bucket": "click_blocked"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-20-vision-smoke/wave-1/run-D-UC2-interessent-technik.json",
+      "bucket": "click_blocked"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-20-vision-smoke/wave-1/run-E-UC3-ebiker-ueber-uns.json",
+      "bucket": "goal_ok"
+    },
+    {
+      "file": "knowledge/ueq-ebike-runs/2026-08-20-vision-smoke/wave-1/run-F-UC3-interessent-ueber-uns.json",
+      "bucket": "click_blocked"
+    }
+  ]
+}

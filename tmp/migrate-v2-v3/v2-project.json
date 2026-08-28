@@ -1,0 +1,28 @@
+{
+  "id": "361f189a-b372-4990-958f-52555686a293",
+  "name": "Vaillant Group",
+  "name_de": null,
+  "owner_user_id": "59b71676-2fcd-46b1-9562-f234e8dac726",
+  "description": null,
+  "description_de": null,
+  "company_context": "Unternehmen: Vaillant Group\nWebsite: https://www.vaillant-group.com/\nDomain: www.vaillant-group.com\nBranche: Heiz- und Klimatechnik / Energie-Systemlösungen\n\nDie Vaillant Group ist ein führender internationaler Hersteller von Wärmepumpen, Gas-Brennwertgeräten und digitalen Servicedienstleistungen. Das Unternehmen entwickelt und vertreibt klimafreundliche Heiz- und Klimatechniklösungen für den Wohn- und Gewerbebereich. Mit einem klaren Fokus auf Nachhaltigkeit setzt Vaillant Maßstäbe für die Energiewende im Gebäudesektor.\n\nZielgruppen-Fokus: B2B und B2C: Installateure/SHK-Fachhandwerker als primäre Absatzmittler, daneben Bauherren, Hausbesitzer und Wohnungsunternehmen als Endkunden sowie Architekten und Planer im Projektgeschäft\n\nDer Firmenname ist eine Marke — die Zielgruppen-Persona ist kein Handwerker/Berufsträger, der zufällig dem Namen entspricht, sondern typische Käufer oder Nutzer laut Website.",
+  "company_context_de": null,
+  "status": "draft",
+  "checkion_project_id": "cc9a7d62-8d33-462c-a0dc-b73472b88524",
+  "platform_project_id": "83708141-66dc-4871-9493-c882da820067",
+  "platform_company_id": "555f32e1-c653-4a1f-ae2c-a697840ffa19",
+  "created_at": "2026-07-30T11:48:57.976206",
+  "updated_at": "2026-07-30T11:48:58.148331",
+  "plexon_mirror_status": null,
+  "members": [
+    {
+      "id": "485335ca-db55-43df-b9cc-11109e3dfda4",
+      "user_id": "59b71676-2fcd-46b1-9562-f234e8dac726",
+      "email": "christoph.bordeck@msqdx.com",
+      "name": "cbbc",
+      "role": "owner",
+      "status": "active",
+      "created_at": "2026-07-30T11:48:57.980149"
+    }
+  ]
+}

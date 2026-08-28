@@ -165,6 +165,7 @@
     "theme": "Theme",
     "themeLight": "Light",
     "themeDark": "Dark",
+    "themeAuto": "Auto",
     "themeV2Light": "V2 light",
     "themeV2Dark": "V2 dark",
     "language": "Language",

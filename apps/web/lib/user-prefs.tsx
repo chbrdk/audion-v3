@@ -6,13 +6,19 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
+import {
+  applyThemePreference,
+  migrateLegacyThemeId,
+  type ThemePreference,
+} from '@msqdx/ui'
 import { createTranslator, type Translator } from './i18n'
 import { paths } from './paths'
 
-export type UiThemeId = (typeof paths.themeChoices)[number]
+export type UiThemeId = ThemePreference
 export type UiLocaleId = (typeof paths.localeChoices)[number]
 
 type UserPrefsContextValue = {
@@ -50,11 +56,7 @@ function readDisplayName(): string {
 }
 
 function readTheme(): UiThemeId {
-  const raw = readStored(paths.themeStorageKey)
-  if (raw && (paths.themeChoices as readonly string[]).includes(raw)) {
-    return raw as UiThemeId
-  }
-  return paths.defaultTheme
+  return migrateLegacyThemeId(readStored(paths.themeStorageKey))
 }
 
 function readLocale(): UiLocaleId {
@@ -65,14 +67,21 @@ function readLocale(): UiLocaleId {
   return paths.defaultLocale
 }
 
-function applyTheme(theme: UiThemeId) {
-  if (typeof document === 'undefined') return
-  document.documentElement.setAttribute('data-theme', theme)
-}
-
 function applyLocale(locale: UiLocaleId) {
   if (typeof document === 'undefined') return
   document.documentElement.setAttribute('lang', locale)
+}
+
+async function patchRemotePrefs(body: { locale?: string; themePreference?: string }) {
+  try {
+    await fetch('/api/prefs/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  } catch {
+    /* offline / unauthenticated — local cache still applies */
+  }
 }
 
 export function UserPrefsProvider({ children }: { children: ReactNode }) {
@@ -80,6 +89,12 @@ export function UserPrefsProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<UiThemeId>(paths.defaultTheme)
   const [locale, setLocaleState] = useState<UiLocaleId>(paths.defaultLocale)
   const [hydrated, setHydrated] = useState(false)
+  const themeCleanup = useRef<(() => void) | undefined>(undefined)
+
+  const paintTheme = useCallback((next: UiThemeId) => {
+    themeCleanup.current?.()
+    themeCleanup.current = applyThemePreference(next)
+  }, [])
 
   useEffect(() => {
     const nextTheme = readTheme()
@@ -87,10 +102,32 @@ export function UserPrefsProvider({ children }: { children: ReactNode }) {
     setDisplayNameState(readDisplayName())
     setThemeState(nextTheme)
     setLocaleState(nextLocale)
-    applyTheme(nextTheme)
+    paintTheme(nextTheme)
     applyLocale(nextLocale)
     setHydrated(true)
-  }, [])
+
+    void fetch('/api/prefs/profile')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const user = data?.user
+        if (!user) return
+        if (typeof user.locale === 'string' && (paths.localeChoices as readonly string[]).includes(user.locale)) {
+          const next = user.locale as UiLocaleId
+          setLocaleState(next)
+          writeStored(paths.localeStorageKey, next)
+          applyLocale(next)
+        }
+        if (user.themePreference != null) {
+          const pref = migrateLegacyThemeId(user.themePreference)
+          setThemeState(pref)
+          writeStored(paths.themeStorageKey, pref)
+          paintTheme(pref)
+        }
+      })
+      .catch(() => undefined)
+
+    return () => themeCleanup.current?.()
+  }, [paintTheme])
 
   const setDisplayName = useCallback((next: string) => {
     const trimmed = next.trim() || paths.defaultDisplayName
@@ -98,16 +135,21 @@ export function UserPrefsProvider({ children }: { children: ReactNode }) {
     writeStored(paths.displayNameStorageKey, trimmed)
   }, [])
 
-  const setTheme = useCallback((next: UiThemeId) => {
-    setThemeState(next)
-    writeStored(paths.themeStorageKey, next)
-    applyTheme(next)
-  }, [])
+  const setTheme = useCallback(
+    (next: UiThemeId) => {
+      setThemeState(next)
+      writeStored(paths.themeStorageKey, next)
+      paintTheme(next)
+      void patchRemotePrefs({ themePreference: next })
+    },
+    [paintTheme],
+  )
 
   const setLocale = useCallback((next: UiLocaleId) => {
     setLocaleState(next)
     writeStored(paths.localeStorageKey, next)
     applyLocale(next)
+    void patchRemotePrefs({ locale: next })
   }, [])
 
   const t = useMemo(() => createTranslator(locale), [locale])

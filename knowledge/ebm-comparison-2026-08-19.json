@@ -1,0 +1,345 @@
+{
+  "comparedAt": "2026-08-19T10:06:09.954Z",
+  "baselineWaveId": "audion-v3-2026-08-04-pathfind",
+  "waveIds": [
+    "audion-v3-2026-08-19-wave-1",
+    "audion-v3-2026-08-19-wave-2",
+    "audion-v3-2026-08-19-wave-3"
+  ],
+  "kpiTable": {
+    "taskCompletionRate": {
+      "baseline": 0,
+      "waves": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "mean": 0.2,
+      "stddev": 0,
+      "delta": 0.2
+    },
+    "validEvidenceRate": {
+      "baseline": 1,
+      "waves": [
+        1,
+        1,
+        1
+      ],
+      "mean": 1,
+      "stddev": 0,
+      "delta": 0
+    },
+    "meanFrictionValidOnly": {
+      "baseline": 8,
+      "waves": [
+        8,
+        8,
+        7.8
+      ],
+      "mean": 7.9333,
+      "stddev": 0.0943,
+      "delta": -0.0667
+    },
+    "goalReachedRateValidOnly": {
+      "baseline": 0,
+      "waves": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "mean": 0.2,
+      "stddev": 0,
+      "delta": 0.2
+    },
+    "deeplinkCheatRate": {
+      "baseline": 0,
+      "waves": [
+        0,
+        0,
+        0
+      ],
+      "mean": 0,
+      "stddev": 0,
+      "delta": 0
+    },
+    "navH3Pass": {
+      "baseline": false,
+      "waves": [
+        true,
+        true,
+        true
+      ],
+      "mean": 1,
+      "stddev": 0,
+      "delta": 1
+    }
+  },
+  "hypothesisTable": {
+    "H1": {
+      "baseline": {
+        "verdict": "supported",
+        "score": 1
+      },
+      "waves": [
+        {
+          "verdict": "supported",
+          "score": 8
+        },
+        {
+          "verdict": "supported",
+          "score": 8
+        },
+        {
+          "verdict": "supported",
+          "score": 8
+        }
+      ],
+      "stable": true
+    },
+    "H2": {
+      "baseline": {
+        "verdict": "supported",
+        "score": 1
+      },
+      "waves": [
+        {
+          "verdict": "supported",
+          "score": 1
+        },
+        {
+          "verdict": "supported",
+          "score": 1
+        },
+        {
+          "verdict": "supported",
+          "score": 1
+        }
+      ],
+      "stable": true
+    },
+    "H3": {
+      "baseline": {
+        "verdict": "supported",
+        "score": 1
+      },
+      "waves": [
+        {
+          "verdict": "not_supported",
+          "score": 0
+        },
+        {
+          "verdict": "not_supported",
+          "score": 0
+        },
+        {
+          "verdict": "not_supported",
+          "score": 0
+        }
+      ],
+      "stable": false
+    },
+    "H4": {
+      "baseline": {
+        "verdict": "partially_supported",
+        "score": 0.5
+      },
+      "waves": [
+        {
+          "verdict": "partially_supported",
+          "score": 0
+        },
+        {
+          "verdict": "partially_supported",
+          "score": 0
+        },
+        {
+          "verdict": "partially_supported",
+          "score": 0
+        }
+      ],
+      "stable": true
+    },
+    "H5": {
+      "baseline": {
+        "verdict": "partially_supported",
+        "score": 0.5
+      },
+      "waves": [
+        {
+          "verdict": "partially_supported",
+          "score": null
+        },
+        {
+          "verdict": "partially_supported",
+          "score": null
+        },
+        {
+          "verdict": "partially_supported",
+          "score": null
+        }
+      ],
+      "stable": true
+    }
+  },
+  "softScoreTable": {
+    "Q1_nuetzlichkeit": {
+      "baseline": 2,
+      "waves": [
+        4,
+        4,
+        4
+      ],
+      "mean": 4,
+      "stddev": 0,
+      "delta": 2
+    },
+    "Q2_bedienbarkeit": {
+      "baseline": 2,
+      "waves": [
+        2,
+        2,
+        2
+      ],
+      "mean": 2,
+      "stddev": 0,
+      "delta": 0
+    },
+    "Q3_filterlogik": {
+      "baseline": 2,
+      "waves": [
+        2,
+        2,
+        2
+      ],
+      "mean": 2,
+      "stddev": 0,
+      "delta": 0
+    },
+    "Q4_auffindbarkeit": {
+      "baseline": 2,
+      "waves": [
+        4,
+        4,
+        4
+      ],
+      "mean": 4,
+      "stddev": 0,
+      "delta": 2
+    },
+    "Q5_produktnah_vs_tool": {
+      "baseline": "produktseite_bevorzugt_vermutet",
+      "waves": [
+        "produktseite_bevorzugt_vermutet",
+        "produktseite_bevorzugt_vermutet",
+        "produktseite_bevorzugt_vermutet"
+      ],
+      "mean": null,
+      "stddev": null,
+      "delta": null
+    },
+    "Q6_nutzungswahrscheinlichkeit": {
+      "baseline": 2,
+      "waves": [
+        3,
+        3,
+        3
+      ],
+      "mean": 3,
+      "stddev": 0,
+      "delta": 1
+    },
+    "Q7_gesamteindruck": {
+      "baseline": 5,
+      "waves": [
+        3,
+        3,
+        3
+      ],
+      "mean": 3,
+      "stddev": 0,
+      "delta": -2
+    }
+  },
+  "runStability": {
+    "A-erstkontakt": {
+      "frictionScores": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "mean": 8,
+      "stddev": 0,
+      "taskCompleted": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    "B-aufgabe1-nachruesten": {
+      "frictionScores": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "mean": 8,
+      "stddev": 0,
+      "taskCompleted": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    "C-aufgabe2-kombination": {
+      "frictionScores": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "mean": 8,
+      "stddev": 0,
+      "taskCompleted": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    "Nav-home-to-tool": {
+      "frictionScores": [
+        8,
+        8,
+        8,
+        7
+      ],
+      "mean": 7.75,
+      "stddev": 0.43,
+      "taskCompleted": [
+        false,
+        true,
+        true,
+        true
+      ]
+    },
+    "B-aufgabe1-purchase-intent": {
+      "frictionScores": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "mean": 8,
+      "stddev": 0,
+      "taskCompleted": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  }
+}

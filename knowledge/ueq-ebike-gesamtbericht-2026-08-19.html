@@ -1,0 +1,175 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"/>
+<title>UEQ+ eBike — Gesamtbericht Human + AI</title>
+<style>
+@page{margin:18mm}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:920px;margin:0 auto;padding:36px 32px;line-height:1.5;color:#16181d;font-size:13px}
+h1{font-size:26px;margin:0 0 6px;font-weight:700}
+h2{font-size:17px;margin:36px 0 10px;padding-bottom:6px;border-bottom:2px solid #16181d;page-break-after:avoid}
+h3{font-size:14px;margin:20px 0 8px;page-break-after:avoid}
+h4{font-size:13px;margin:0 0 6px}
+.muted{color:#5c6470;font-size:12px}
+.box{background:#f8f9fb;border:1px solid #dde1e8;border-radius:8px;padding:14px 16px;margin:14px 0}
+.box-warn{background:#fff8e6;border-color:#e8dfc0}
+.box-good{background:#eef8ee;border-color:#b8dfc4}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+table{border-collapse:collapse;width:100%;margin:10px 0 16px;font-size:12px}
+th,td{border:1px solid #ccd0d8;padding:7px 9px;text-align:left}
+th{background:#eef1f6;font-weight:600}
+blockquote{border-left:3px solid #889;margin:10px 0;padding:8px 14px;background:#f5f7fa;font-style:italic;color:#333}
+.voice{border:1px solid #dde1e8;border-radius:8px;padding:14px;margin:12px 0;page-break-inside:avoid}
+.voice.ok{border-left:4px solid #2d6a4f} .voice.partial{border-left:4px solid #c47f00}
+.vmeta,.vgap{font-size:11px;color:#5c6470;margin:0 0 6px}
+.vquote{margin:0 0 8px}
+ul,ol{margin:8px 0;padding-left:20px}
+li{margin:4px 0}
+.toc a{color:#2d6cdf;text-decoration:none}
+@media print{body{padding:0;max-width:none} h2{margin-top:24px}}
+</style></head><body>
+
+<h1>UEQ+ Evaluation — Bosch eBike Website</h1>
+<p class="muted">Gesamtbericht Human (Testbirds Sep 2025) + AI Mirror (Aug 2026) · bosch-ebike.com/de · 2026-08-19</p>
+
+<div class="box box-good">
+<strong>Management Summary.</strong> Human-Tester (n=50, Smartphone) bewerten die Seite grundsätzlich positiv (Gesamteindruck <strong>+1,54</strong> auf Skala −3…+3). Größter Verbesserungsbedarf: <strong>Effizienz</strong> (aufgeräumt) und <strong>Durchschaubarkeit</strong> (übersichtlich). AI-Runs (24 Sessions) bestätigen Navigations- und Strukturprobleme, sind in den Scores aber kritischer (+0,73). Qualitativ stimmen Human und AI bei fehlendem Markenvergleich, Startseiten-Führung und Überladung überein.
+</div>
+
+<h2>Inhaltsverzeichnis</h2>
+<ol class="toc">
+<li><a href="#setup">Test Setup</a></li>
+<li><a href="#ueq">UEQ+ Benchmark Human vs AI</a></li>
+<li><a href="#human-voices">Human — qualitative Stimmen</a></li>
+<li><a href="#ai-voices">AI — qualitative Stimmen</a></li>
+<li><a href="#vergleich">Auswertung &amp; Parallelen</a></li>
+<li><a href="#empfehlungen">Empfehlungen</a></li>
+<li><a href="#methodik">Methodik &amp; Artefakte</a></li>
+</ol>
+
+<h2 id="setup">1. Test Setup</h2>
+<div class="cols2">
+<div class="box"><h3>Human (Testbirds)</h3><ul>
+<li><strong>n=50</strong> · Smartphone (24 iOS, 26 Android)</li>
+<li>50% Fahrer:in / 50% Interessent:in · Alter 25–75</li>
+<li>3 Use Cases · 5 UEQ+ Skalen</li>
+<li>Abschlussbericht Aug/Sep 2025</li></ul></div>
+<div class="box"><h3>AI Mirror</h3><ul>
+<li><strong>24 Runs</strong> (18 + 6 Retry Wave 4, max_steps=25)</li>
+<li>6 Use Cases · 2 Personas · Think-Aloud DE</li>
+<li>UX Journey Agent · UEQ+ Proxy (gpt-4o-mini)</li>
+<li>2026-08-19</li></ul></div>
+</div>
+
+<h3>Use Cases</h3>
+<table><thead><tr><th>UC</th><th>Fahrer:in</th><th>Interessent:in</th></tr></thead><tbody>
+<tr><td>UC1</td><td>Flow App / Fahrerlebnis erweitern</td><td>Erste Orientierung (Typen)</td></tr>
+<tr><td>UC2</td><td>Service &amp; Beratung</td><td>Technische Vorteile</td></tr>
+<tr><td>UC3</td><td>Über uns / Marke</td><td>Über uns / Vertrauen</td></tr>
+</tbody></table>
+
+<h2 id="ueq">2. UEQ+ Benchmark (−3 … +3)</h2>
+
+<h3>2.1 Gesamteindruck</h3>
+<table><thead><tr><th>Quelle</th><th>Overall</th></tr></thead><tbody>
+<tr><td>Human (Testbirds, gewichtet)</td><td><strong>+1.54</strong></td></tr>
+<tr><td>AI (Proxy, 5 Dimensionen)</td><td><strong>+0.73</strong></td></tr>
+<tr><td>Delta (AI − Human)</td><td><strong>-0.81</strong></td></tr>
+</tbody></table>
+
+<h3>2.2 Dimensionen — Human vs AI</h3>
+<table><thead><tr><th>Dimension</th><th>Human</th><th>AI</th><th>Δ</th></tr></thead>
+<tbody><tr><td>Effizienz</td><td>+1.02</td><td>+1.00</td><td>-0.02</td></tr><tr><td>Durchschaubarkeit</td><td>+1.19</td><td>+0.56</td><td>-0.63</td></tr><tr><td>Stimulation</td><td>+1.52</td><td>+0.31</td><td>-1.21</td></tr><tr><td>Inhaltsqualität</td><td>+2.08</td><td>+0.83</td><td>-1.25</td></tr><tr><td>Nützlichkeit</td><td>+1.84</td><td>+0.97</td><td>-0.87</td></tr></tbody></table>
+
+<h3>2.3 Human — Item-Detail (Auswahl)</h3>
+<table><thead><tr><th>Dimension</th><th>Schwächstes Item</th><th>Stärkstes Item</th><th>Wichtigkeit</th></tr></thead><tbody>
+<tr><td>Effizienz</td><td>überladen→aufgeräumt (+0,34)</td><td>langsam→schnell (+1,50)</td><td>+1,74</td></tr>
+<tr><td>Durchschaubarkeit</td><td>verwirrend→übersichtlich (+0,66)</td><td>schwer→leicht (+1,56)</td><td>+1,92</td></tr>
+<tr><td>Stimulation</td><td>einschläfernd→aktivierend (+1,22)</td><td>minderwertig→wertvoll (+1,80)</td><td>+1,30</td></tr>
+<tr><td>Inhaltsqualität</td><td>schlecht→gut (+1,94)</td><td>veraltet→aktuell (+2,44)</td><td>+2,22</td></tr>
+<tr><td>Nützlichkeit</td><td>nicht lohnend→lohnend (+1,56)</td><td>nutzlos→nützlich (+2,08)</td><td>+1,88</td></tr>
+</tbody></table>
+
+<h3>2.4 AI nach Use Case (Proxy)</h3>
+<table><thead><tr><th>UC</th><th>Overall</th><th>Effizienz</th><th>Durchschaubarkeit</th><th>Stimulation</th><th>Inhaltsqualität</th><th>Nützlichkeit</th></tr></thead>
+<tbody><tr><td>UC1</td><td>+0.97</td><td>+1.22</td><td>+0.53</td><td>+0.53</td><td>+0.97</td><td>+1.41</td></tr><tr><td>UC2</td><td>+0.62</td><td>+0.81</td><td>+0.44</td><td>+0.22</td><td>+0.75</td><td>+0.66</td></tr><tr><td>UC3</td><td>+0.74</td><td>+0.97</td><td>+0.72</td><td>+0.19</td><td>+0.78</td><td>+0.84</td></tr></tbody></table>
+
+<h3>2.5 AI nach Segment (Proxy)</h3>
+<table><thead><tr><th>Segment</th><th>Overall</th><th>Effizienz</th><th>Durchschaubarkeit</th><th>Stimulation</th><th>Inhaltsqualität</th><th>Nützlichkeit</th></tr></thead>
+<tbody><tr><td>Interessent</td><td>+0.94</td><td>+1.29</td><td>+0.60</td><td>+0.38</td><td>+0.90</td><td>+1.21</td></tr><tr><td>eBiker</td><td>+0.61</td><td>+0.71</td><td>+0.52</td><td>+0.25</td><td>+0.77</td><td>+0.73</td></tr></tbody></table>
+
+<div class="box box-warn">AI goal-reached Rate: <strong>16.7%</strong> · Stärkste AI-Dimension: Effizienz · Schwächste: Stimulation</div>
+
+<h2 id="human-voices">3. Human — qualitative Stimmen</h2>
+<blockquote>Menü gut strukturiert — Startseite sollte Ziele schneller führen; sonst verliert man Interessenten schon auf Seite 1.</blockquote><blockquote>Ansprechend und professionell; eBike-Beratung hilfreich — aber teils überladen durch viele Unterpunkte.</blockquote><blockquote>Komponenten-Vergleich auf Handy schwer (nur scrollen); Differenzierung zu anderen Marken fehlt; Texte wirken wie Werbesprüche.</blockquote><blockquote>Schwer zurechtzufinden; verständliche Unterschiede anstrengend zu finden.</blockquote><blockquote>Navigation verwinkelt und aufwendig — für ältere Nutzer und kleine Screens problematisch.</blockquote>
+
+<h2 id="ai-voices">4. AI — qualitative Stimmen</h2>
+
+<div class="voice partial">
+  <p class="vmeta"><strong>AI-UC1-EBIKER-W4</strong> · wave-4 / A-UC1-ebiker-fahrerlebnis · ○ Ziel nicht vollständig</p>
+  <h4>Use Case 1 — eBike Fahrer:in — Erweiterung des Fahrerlebnisses / Flow App</h4>
+  <p class="vquote">Als eBike-Fahrer:in sehe ich auf der Startseite den Bereich „Erweitere dein Erlebnis“ mit der Flow App — Personalisierung, komoot, Strava, Apple Health sowie Navigation mit Abbiegehinweisen, Fahrdetails und Sprachausgabe. Das klingt vielversprechend für mein Fahrerlebnis. Allerdings komme ich auf die Detailseite über „Mehr erfahren“ nicht zuverlässig. Ich bleibe auf der Startseite hängen und verstehe am Ende nicht vollständig, wie ich die App Schritt für Schritt einrichte und nutze.</p>
+  <p class="vgap"><em>Lücke:</em> Flow-App-Detailseite in mehreren Runs nicht erreichbar (Browser-Navigation).</p>
+</div>
+<div class="voice partial">
+  <p class="vmeta"><strong>AI-UC1-INTERESSENT-W3</strong> · wave-3 / B-UC1-interessent-orientierung · ○ Ziel nicht vollständig</p>
+  <h4>Use Case 1 — eBike Interessent:in — Erste Orientierung</h4>
+  <p class="vquote">Ich spiele mit dem Gedanken, mir ein eBike zuzulegen. Die Startseite zeigt mir Nutzungssituationen — Alltag, Sport, Freizeit, Transport — sowie Typen wie eCity, eMTB und eTrekking. Für City-eBikes lese ich: entspanntes Fahren im Stadtverkehr. Das hilft beim Sortieren, aber welcher Typ wirklich zu mir passt, bleibt unklar. Die Seite wirkt technisch und visuell stark; näher an einer Kaufentscheidung bin ich nach dem Besuch noch nicht.</p>
+  <p class="vgap"><em>Lücke:</em> Typ-Teaser (z. B. eCity) in mehreren Runs nicht zuverlässig geöffnet.</p>
+</div>
+<div class="voice ok">
+  <p class="vmeta"><strong>AI-UC2-EBIKER-W3</strong> · wave-3 / C-UC2-ebiker-service · ✓ Ziel erreicht</p>
+  <h4>Use Case 2 — eBike Fahrer:in — Beratung &amp; Serviceangebote</h4>
+  <p class="vquote">Als eBike-Nutzer:in bin ich positiv überrascht, wie viel Bosch im Help Center bietet: Wartungsintervalle mit Erstinspektion und Erinnerung am Display, Händler-Diagnose mit DiagnosticTool und Servicebericht, digitale Servicehistorie in der Flow App, Reparatur/Ersatzteile mit mindestens sechs Jahren Verfügbarkeit sowie Pflege- und Akkuhinweise. Vertrauenswürdig wirkt der Weg über den Fachhändler bei technischen Defekten. Was mir fehlt: konkrete Zubehör-Empfehlungen — und ein klarer Service-Einstieg schon auf der Startseite. Ich musste erst über „Service &amp; Beratung“ in die Tiefe navigieren.</p>
+  <p class="vgap"><em>Lücke:</em> Zubehör-Empfehlungen nicht gefunden; Startseite bewirbt Service kaum.</p>
+</div>
+<div class="voice ok">
+  <p class="vmeta"><strong>AI-UC2-INTERESSENT-W1W2</strong> · wave-1+2 / D-UC2-interessent-technik · ✓ Ziel erreicht</p>
+  <h4>Use Case 2 — eBike Interessent:in — Technische Vorteile verstehen</h4>
+  <p class="vquote">Ich habe Bosch im Vergleich zu anderen Marken angesehen. Überzeugend finde ich das vernetzte System — Motor, Display, Akku, ABS, Flow App, Integration mit komoot und Strava. Produktnamen wie Performance Line CX, Kiox 300 oder PowerTube 800 sind nachvollziehbar. Aber: Ein direkter Vergleich „Was macht Bosch besser als andere Systeme?“ fehlt mir. Die Texte beschreiben Features und Komponenten, nicht den spürbaren Unterschied im Alltag — genau das würde mir bei der Kaufentscheidung helfen.</p>
+  <p class="vgap"><em>Lücke:</em> Kein Wettbewerbsvergleich auf der Seite (Human-Befund deckungsgleich).</p>
+</div>
+<div class="voice ok">
+  <p class="vmeta"><strong>AI-UC3-EBIKER-W4</strong> · wave-4 / E-UC3-ebiker-ueber-uns · ✓ Ziel erreicht</p>
+  <h4>Use Case 3 — eBike Fahrer:in — Hintergrundwissen / Über uns</h4>
+  <p class="vquote">Ich wollte wissen, wer hinter meinem Bosch eBike steckt. Über „Über uns“ finde ich eine glaubwürdige Geschichte: 2009 als Start-up in der Bosch-Gruppe, Entwicklung zum Marktführer, weltweit erste serienreife eBike-ABS, über 100 Fahrradmarken im Portfolio. Das stärkt mein Vertrauen in die Marke. Konkrete Nachhaltigkeitskennzahlen oder Recycling-Zahlen hätte ich mir auf der Seite noch gewünscht — dazu steht eher allgemein „emissionsärmere Mobilität“.</p>
+  <p class="vgap"><em>Lücke:</em> Nachhaltigkeit ohne harte Kennzahlen.</p>
+</div>
+<div class="voice partial">
+  <p class="vmeta"><strong>AI-UC3-INTERESSENT-W4</strong> · wave-4 / F-UC3-interessent-ueber-uns · ○ Ziel nicht vollständig</p>
+  <h4>Use Case 3 — eBike Interessent:in — Hintergrundwissen / Über uns</h4>
+  <p class="vquote">Bevor ich mich für Bosch entscheide, will ich verstehen, wofür die Marke steht. Auf der Startseite lese ich viel über vernetzte Systeme, Qualität, Zuverlässigkeit und umfassende Sicherheitstests — das wirkt professionell und seriös. Den Bereich „Über uns“ konnte ich in meiner Session jedoch nicht zuverlässig öffnen. Deshalb fehlen mir Unternehmenswerte, Innovationsgeschichte und Nachhaltigkeit im Detail — genau die Infos, die ich für eine Kaufentscheidung bräuchte.</p>
+  <p class="vgap"><em>Lücke:</em> Navigation zu „Über uns“ in diesem Run blockiert.</p>
+</div>
+
+<h2 id="vergleich">5. Auswertung &amp; Parallelen</h2>
+<div class="cols2">
+<div><h3>Übereinstimmungen</h3><ul>
+<li>Effizienz &amp; Durchschaubarkeit: Struktur/Übersicht kritisch</li>
+<li>Fehlender Marken-/Alltagsvergleich (UC2)</li>
+<li>Startseite führt nicht schnell genug zum Ziel</li>
+<li>Professionell, aber teils überladen</li></ul></div>
+<div><h3>Unterschiede</h3><ul>
+<li>Human +1,54 vs AI +0,73 (AI kritischer)</li>
+<li>Größte Lücke: Inhaltsqualität (Δ -1.25)</li>
+<li>Human Smartphone · AI Desktop-Agent</li>
+<li>Human 5 Skalen · AI + Intuitive Bedienung</li></ul></div>
+</div>
+<ul><li><strong>Startseite führt nicht schnell genug zum Ziel</strong> — UC1 Interessent + Human Report 1608644</li><li><strong>Website teils überladen, viele Unterpunkte</strong> — UC1 + Human Report 1608801</li><li><strong>Kein Vergleich zu anderen Marken / Alltagsnutzen unklar</strong> — UC2 Interessent + Human Report 1608893</li><li><strong>Schwer zurechtzufinden, anstrengend</strong> — UC1/2 + Human Report 1608833</li><li><strong>Navigation verwinkelt, mobil/schlecht für ältere Nutzer</strong> — Querschnitt + Human Report 1609263</li></ul>
+
+<h2 id="empfehlungen">6. Empfehlungen</h2>
+<ol>
+<li><strong>Startseite als Schnellzugriff</strong> — Ziele direkt führen (Human 1608644, AI UC1).</li>
+<li><strong>Visuelle Hierarchie / Entrümpelung</strong> — klarere Struktur (Human Management Summary).</li>
+<li><strong>Markenvergleich &amp; Alltagsnutzen</strong> — konkret beantworten (Human 1608893, AI UC2).</li>
+<li><strong>Mobile Komponenten-Vergleich</strong> — Human: Side-by-side auf Handy schwer.</li>
+<li><strong>Service sichtbarer</strong> — AI: Help Center stark, Startseite schwach.</li>
+<li><strong>Navigation Flow App / Über uns</strong> — AI: Detail-Links blockiert.</li>
+</ol>
+
+<h2 id="methodik">7. Methodik &amp; Quellen</h2>
+<table><thead><tr><th>Quelle</th><th>Pfad</th></tr></thead><tbody>
+<tr><td>Test-Setup docx</td><td>Desktop/Test_Setup_UEQ+Benchmarking_final (1).docx</td></tr>
+<tr><td>Human Abschlussbericht</td><td>Desktop/Abschlussbericht_UEQ+_eBike_2025 (1).pdf</td></tr>
+<tr><td>AI Raw Runs</td><td>knowledge/ueq-ebike-runs/2026-08-19/</td></tr>
+<tr><td>Scripts</td><td>run-ueq-ebike-batch.sh · infer · build-compare · export-voices · export-gesamtbericht</td></tr>
+</tbody></table>
+<p class="muted" style="margin-top:28px">AUDION v3 · UEQ+ eBike Gesamtbericht · AI-Scores = Proxy aus Think-Aloud</p>
+</body></html>

@@ -1,29 +1,38 @@
 # Settings
 
-**Status:** Accepted — 2026-07-30 · MVP + Plexon Account Wave 1 · **SET-L1 locale chrome**  
+**Status:** Accepted — 2026-07-30 · MVP + Plexon Account Wave 1 · **SET-L1 locale chrome** · **2026-08-28 SettingsShell + cross-app prefs**  
 **Route:** `/settings`  
 **Knowledge:** `knowledge/settings-migration.md`, `knowledge/paths.md`, `knowledge/plexon-federation.md`, `knowledge/i18n.md`  
-**Reference:** ECHON v3 `SettingsPage` + `UserPrefsContext` · checkion-v3 / brandion-v3 SET-L1
+**Reference:** `@msqdx/ui` `SettingsShell` · Plexon `themePreference` / `locale` profile fields
 
 ## Purpose
 
-Device-local user prefs (display name, theme, locale) plus optional Plexon Account band when a session exists.
+Shared magazine settings layout (`SettingsShell`) with device-local display name cache; **locale + themePreference** sync via Plexon profile (service profile API) when authenticated.
+
+## Cross-app prefs
+
+WHEN authenticated, AUDION SHALL hydrate `locale` + `themePreference` from Plexon and PATCH on change.  
+WHEN Appearance changes, AUDION SHALL use only `light` | `dark` | `auto` and `applyThemePreference` from `@msqdx/ui`.  
+Local storage caches preferences for first paint; Plexon remains SSOT.
 
 ## Locale (SET-L1)
 
-WHEN the author changes Language in Settings, AUDION SHALL store `paths.localeStorageKey` (`en` | `de`) and set `document.documentElement.lang`.  
+WHEN the author changes Language in Settings, AUDION SHALL store `paths.localeStorageKey` (`en` | `de`), set `document.documentElement.lang`, and PATCH Plexon when a session exists.  
 WHEN locale is `de` or `en`, shell chrome, page titles/leads, settings, login, hub list chrome, create/edit dialogs, chat chrome (incl. tool-approval / guest budget / inspect), queue, detail magazine section titles, Soft-Q/wave section chrome, UX flow canvas + inspector, Prompt Builder, persona editable subpanel chrome, journey phases, knowledge dossier, home magazine, and admin API docs SHALL render via `t(key)` dictionaries (`apps/web/locales/{en,de}.json`) through `useUserPrefs().t` / `useT()`.  
 Persona **content** locale (`profileDe`, AI `output_locale`) remains separate from UI chrome.  
 Default locale is `en`. No URL/`[locale]` routing or next-intl.
 
 ## Composition
 
+Mount `SettingsShell` (Account → Profile → Appearance → Language → extras).
+
 | Band | Treatment |
 |------|-----------|
 | Account | When authenticated: Plexon name/email (read) + Sign out. When unauthenticated: Sign in link |
 | Profile | `Avatar` + display name `Input` (localStorage); may seed from session name |
-| Appearance | Theme `ToggleGroup` → `data-theme` + storage |
-| Language | Locale `ToggleGroup` (`en` / `de`) — drives UI chrome via SET-L1 |
+| Appearance | `light` / `dark` / `auto` ToggleGroup → `applyThemePreference` + Plexon |
+| Language | Locale `ToggleGroup` (`en` / `de`) — SET-L1 + Plexon |
+| Extras | Admin entry → `/settings/admin` |
 
 ## Shell
 
@@ -34,7 +43,7 @@ Default locale is `en`. No URL/`[locale]` routing or next-intl.
 
 ## Non-goals (MVP)
 
-Providers, API docs iframe, password/tokens, brand color, PATCH profile to Plexon (Wave 1 read + logout only)
+Providers, API docs iframe, password/tokens, brand color (Plexon-owned). Locale/themePreference PATCH is in scope.
 
 Admin prompts / providers live under `/settings/admin` (see `specs/domain/prompt-templating.md`).
 

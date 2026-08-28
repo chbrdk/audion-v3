@@ -1,0 +1,15 @@
+{
+  "title": "UEQ+ eBike Gesamtbericht",
+  "date": "2026-08-19",
+  "sources": [
+    "ueq-ebike-human-vs-ai-2026-08-19.json",
+    "ueq-ebike-benchmark-2026-08-19.json",
+    "ueq-ebike-ai-voices-2026-08-19.json"
+  ],
+  "output_html": "ueq-ebike-gesamtbericht-2026-08-19.html",
+  "overall": {
+    "human_ueq": 1.54,
+    "ai_ueq": 0.73,
+    "delta": -0.81
+  }
+}

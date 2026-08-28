@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "date": "2026-08-19",
+    "format": "Testbirds-style qualitative feedback",
+    "human_reference": "/Users/christoph.bordeck/Desktop/Abschlussbericht_UEQ+_eBike_2025 (1).pdf",
+    "voice_count": 6
+  },
+  "voices": [
+    {
+      "id": "AI-UC1-EBIKER-W4",
+      "use_case": "Use Case 1 — eBike Fahrer:in",
+      "title": "Erweiterung des Fahrerlebnisses / Flow App",
+      "source_run": "wave-4 / A-UC1-ebiker-fahrerlebnis",
+      "goal_reached": false,
+      "quote": "Als eBike-Fahrer:in sehe ich auf der Startseite den Bereich „Erweitere dein Erlebnis“ mit der Flow App — Personalisierung, komoot, Strava, Apple Health sowie Navigation mit Abbiegehinweisen, Fahrdetails und Sprachausgabe. Das klingt vielversprechend für mein Fahrerlebnis. Allerdings komme ich auf die Detailseite über „Mehr erfahren“ nicht zuverlässig. Ich bleibe auf der Startseite hängen und verstehe am Ende nicht vollständig, wie ich die App Schritt für Schritt einrichte und nutze.",
+      "gap": "Flow-App-Detailseite in mehreren Runs nicht erreichbar (Browser-Navigation)."
+    },
+    {
+      "id": "AI-UC1-INTERESSENT-W3",
+      "use_case": "Use Case 1 — eBike Interessent:in",
+      "title": "Erste Orientierung",
+      "source_run": "wave-3 / B-UC1-interessent-orientierung",
+      "goal_reached": false,
+      "quote": "Ich spiele mit dem Gedanken, mir ein eBike zuzulegen. Die Startseite zeigt mir Nutzungssituationen — Alltag, Sport, Freizeit, Transport — sowie Typen wie eCity, eMTB und eTrekking. Für City-eBikes lese ich: entspanntes Fahren im Stadtverkehr. Das hilft beim Sortieren, aber welcher Typ wirklich zu mir passt, bleibt unklar. Die Seite wirkt technisch und visuell stark; näher an einer Kaufentscheidung bin ich nach dem Besuch noch nicht.",
+      "gap": "Typ-Teaser (z. B. eCity) in mehreren Runs nicht zuverlässig geöffnet."
+    },
+    {
+      "id": "AI-UC2-EBIKER-W3",
+      "use_case": "Use Case 2 — eBike Fahrer:in",
+      "title": "Beratung & Serviceangebote",
+      "source_run": "wave-3 / C-UC2-ebiker-service",
+      "goal_reached": true,
+      "quote": "Als eBike-Nutzer:in bin ich positiv überrascht, wie viel Bosch im Help Center bietet: Wartungsintervalle mit Erstinspektion und Erinnerung am Display, Händler-Diagnose mit DiagnosticTool und Servicebericht, digitale Servicehistorie in der Flow App, Reparatur/Ersatzteile mit mindestens sechs Jahren Verfügbarkeit sowie Pflege- und Akkuhinweise. Vertrauenswürdig wirkt der Weg über den Fachhändler bei technischen Defekten. Was mir fehlt: konkrete Zubehör-Empfehlungen — und ein klarer Service-Einstieg schon auf der Startseite. Ich musste erst über „Service & Beratung“ in die Tiefe navigieren.",
+      "gap": "Zubehör-Empfehlungen nicht gefunden; Startseite bewirbt Service kaum."
+    },
+    {
+      "id": "AI-UC2-INTERESSENT-W1W2",
+      "use_case": "Use Case 2 — eBike Interessent:in",
+      "title": "Technische Vorteile verstehen",
+      "source_run": "wave-1+2 / D-UC2-interessent-technik",
+      "goal_reached": true,
+      "quote": "Ich habe Bosch im Vergleich zu anderen Marken angesehen. Überzeugend finde ich das vernetzte System — Motor, Display, Akku, ABS, Flow App, Integration mit komoot und Strava. Produktnamen wie Performance Line CX, Kiox 300 oder PowerTube 800 sind nachvollziehbar. Aber: Ein direkter Vergleich „Was macht Bosch besser als andere Systeme?“ fehlt mir. Die Texte beschreiben Features und Komponenten, nicht den spürbaren Unterschied im Alltag — genau das würde mir bei der Kaufentscheidung helfen.",
+      "gap": "Kein Wettbewerbsvergleich auf der Seite (Human-Befund deckungsgleich)."
+    },
+    {
+      "id": "AI-UC3-EBIKER-W4",
+      "use_case": "Use Case 3 — eBike Fahrer:in",
+      "title": "Hintergrundwissen / Über uns",
+      "source_run": "wave-4 / E-UC3-ebiker-ueber-uns",
+      "goal_reached": true,
+      "quote": "Ich wollte wissen, wer hinter meinem Bosch eBike steckt. Über „Über uns“ finde ich eine glaubwürdige Geschichte: 2009 als Start-up in der Bosch-Gruppe, Entwicklung zum Marktführer, weltweit erste serienreife eBike-ABS, über 100 Fahrradmarken im Portfolio. Das stärkt mein Vertrauen in die Marke. Konkrete Nachhaltigkeitskennzahlen oder Recycling-Zahlen hätte ich mir auf der Seite noch gewünscht — dazu steht eher allgemein „emissionsärmere Mobilität“.",
+      "gap": "Nachhaltigkeit ohne harte Kennzahlen."
+    },
+    {
+      "id": "AI-UC3-INTERESSENT-W4",
+      "use_case": "Use Case 3 — eBike Interessent:in",
+      "title": "Hintergrundwissen / Über uns",
+      "source_run": "wave-4 / F-UC3-interessent-ueber-uns",
+      "goal_reached": false,
+      "quote": "Bevor ich mich für Bosch entscheide, will ich verstehen, wofür die Marke steht. Auf der Startseite lese ich viel über vernetzte Systeme, Qualität, Zuverlässigkeit und umfassende Sicherheitstests — das wirkt professionell und seriös. Den Bereich „Über uns“ konnte ich in meiner Session jedoch nicht zuverlässig öffnen. Deshalb fehlen mir Unternehmenswerte, Innovationsgeschichte und Nachhaltigkeit im Detail — genau die Infos, die ich für eine Kaufentscheidung bräuchte.",
+      "gap": "Navigation zu „Über uns“ in diesem Run blockiert."
+    }
+  ],
+  "human_parallels": [
+    {
+      "theme": "Startseite führt nicht schnell genug zum Ziel",
+      "reference": "UC1 Interessent + Human Report 1608644"
+    },
+    {
+      "theme": "Website teils überladen, viele Unterpunkte",
+      "reference": "UC1 + Human Report 1608801"
+    },
+    {
+      "theme": "Kein Vergleich zu anderen Marken / Alltagsnutzen unklar",
+      "reference": "UC2 Interessent + Human Report 1608893"
+    },
+    {
+      "theme": "Schwer zurechtzufinden, anstrengend",
+      "reference": "UC1/2 + Human Report 1608833"
+    },
+    {
+      "theme": "Navigation verwinkelt, mobil/schlecht für ältere Nutzer",
+      "reference": "Querschnitt + Human Report 1609263"
+    }
+  ]
+}

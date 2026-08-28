@@ -42,6 +42,7 @@ export type PlexonProfile = {
   company?: string
   avatar_url?: string
   locale?: string
+  themePreference?: string
   default_platform_company_id?: string
 }
 
@@ -66,6 +67,7 @@ function mapPlexonServiceUser(raw: unknown): PlexonProfile | null {
     company: typeof u.company === 'string' ? u.company : undefined,
     avatar_url: typeof u.avatar_url === 'string' ? u.avatar_url : undefined,
     locale: typeof u.locale === 'string' ? u.locale : undefined,
+    themePreference: typeof u.themePreference === 'string' ? u.themePreference : undefined,
     default_platform_company_id,
   }
 }
@@ -96,6 +98,7 @@ export async function patchPlexonProfile(
     company?: string | null
     avatar_url?: string | null
     locale?: string | null
+    themePreference?: string | null
   },
 ): Promise<PlexonProfile | null> {
   const baseUrl = getPlexonAuthUrl()
@@ -108,6 +111,7 @@ export async function patchPlexonProfile(
   if (updates.company !== undefined) body.company = updates.company
   if (updates.avatar_url !== undefined) body.avatar_url = updates.avatar_url
   if (updates.locale !== undefined) body.locale = updates.locale
+  if (updates.themePreference !== undefined) body.themePreference = updates.themePreference
   try {
     const res = await fetch(`${base}/api/services/profile`, {
       method: 'PATCH',

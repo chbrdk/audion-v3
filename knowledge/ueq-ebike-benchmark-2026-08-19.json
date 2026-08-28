@@ -1,0 +1,1878 @@
+{
+  "meta": {
+    "date": "2026-08-19",
+    "runs_dir": "knowledge/ueq-ebike-runs/2026-08-19",
+    "run_count": 24,
+    "model": "gpt-4o-mini",
+    "method": "AI-inferred UEQ+ proxy from think-aloud text"
+  },
+  "runs": [
+    {
+      "wave": 1,
+      "run_id": "A-UC1-ebiker-fahrerlebnis",
+      "use_case": "UC1",
+      "segment": "eBiker",
+      "label": "Fahrerlebnis / Flow App",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Journey zeigt eine insgesamt positive Erfahrung, jedoch gab es Schwierigkeiten beim Zugriff auf spezifische Detailseiten. Die Inhalte sind ansprechend, aber die Navigation könnte intuitiver sein. Die Nützlichkeit der Informationen ist hoch, was die Effizienz und Inhaltsqualität unterstützt.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            4,
+            4,
+            3
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            4,
+            3
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            3,
+            4,
+            4,
+            3
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            4,
+            4,
+            3,
+            3
+          ],
+          "importance": 5
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            5,
+            4,
+            5,
+            4
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            5,
+            4,
+            4
+          ],
+          "importance": 7
+        }
+      },
+      "dimension_means": {
+        "effizienz": 4,
+        "durchschaubarkeit": 4,
+        "stimulation": 3.5,
+        "intuitive_bedienung": 3.5,
+        "inhaltsqualitaet": 4.5,
+        "nuetzlichkeit": 4.5
+      },
+      "overall": 4.06
+    },
+    {
+      "wave": 1,
+      "run_id": "B-UC1-interessent-orientierung",
+      "use_case": "UC1",
+      "segment": "Interessent",
+      "label": "Orientierung",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation auf der Website war größtenteils effizient, jedoch fehlten konkrete Modelle, was die Durchschaubarkeit und Nützlichkeit beeinträchtigte. Die intuitive Bedienung war gut, da die Struktur klar war, aber die Inhalte könnten detaillierter sein.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            4,
+            5
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 5
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            6,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            5,
+            5,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 4.5,
+        "stimulation": 5.25,
+        "intuitive_bedienung": 5.75,
+        "inhaltsqualitaet": 5,
+        "nuetzlichkeit": 5.5
+      },
+      "overall": 5.27
+    },
+    {
+      "wave": 1,
+      "run_id": "C-UC2-ebiker-service",
+      "use_case": "UC2",
+      "segment": "eBiker",
+      "label": "Service",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation zur Service-Seite war teilweise erfolgreich, jedoch fehlten konkrete Serviceangebote. Die Benutzererfahrung war insgesamt positiv, aber es gab Schwierigkeiten, die gewünschten Informationen zu finden.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            5,
+            4,
+            4
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            4,
+            5,
+            5
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            3,
+            4,
+            4,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            5,
+            4,
+            4
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            4,
+            4,
+            5,
+            5
+          ],
+          "importance": 5
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            4,
+            4,
+            3,
+            3
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 4.5,
+        "durchschaubarkeit": 4.5,
+        "stimulation": 3.75,
+        "intuitive_bedienung": 4.5,
+        "inhaltsqualitaet": 4.5,
+        "nuetzlichkeit": 3.5
+      },
+      "overall": 4.22
+    },
+    {
+      "wave": 1,
+      "run_id": "D-UC2-interessent-technik",
+      "use_case": "UC2",
+      "segment": "Interessent",
+      "label": "Technik",
+      "friction_score": null,
+      "goal_reached_agent": true,
+      "rationale": "Die Website bietet eine gute Übersicht über die Produkte und deren Funktionen, jedoch fehlen einige technische Details. Die Navigation ist intuitiv, aber die Informationen sind nicht immer vollständig. Insgesamt ist die Nutzererfahrung positiv, aber es gibt Raum für Verbesserungen in der Detailtiefe.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            4,
+            5
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            6,
+            5,
+            6,
+            5
+          ],
+          "importance": 5
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            5,
+            4,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            6,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 4.5,
+        "stimulation": 5.5,
+        "intuitive_bedienung": 5.5,
+        "inhaltsqualitaet": 4.75,
+        "nuetzlichkeit": 5.5
+      },
+      "overall": 5.22
+    },
+    {
+      "wave": 1,
+      "run_id": "E-UC3-ebiker-ueber-uns",
+      "use_case": "UC3",
+      "segment": "eBiker",
+      "label": "Über uns",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation zur 'Über uns'-Seite war nicht erfolgreich, was die Effizienz und Durchschaubarkeit beeinträchtigt hat. Die Inhalte waren nicht direkt zugänglich, was die Nutzererfahrung negativ beeinflusste. Die Stimulation war moderat, da die Qualität und Sicherheit der Produkte angesprochen wurden, jedoch fehlten die gewünschten Informationen.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            3,
+            4,
+            3,
+            4
+          ],
+          "importance": 5
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            3,
+            4,
+            3,
+            3
+          ],
+          "importance": 6
+        },
+        "stimulation": {
+          "scores": [
+            4,
+            4,
+            5,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            3,
+            3,
+            3,
+            4
+          ],
+          "importance": 5
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            3,
+            4,
+            3,
+            3
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            3,
+            3,
+            4,
+            3
+          ],
+          "importance": 5
+        }
+      },
+      "dimension_means": {
+        "effizienz": 3.5,
+        "durchschaubarkeit": 3.25,
+        "stimulation": 4.25,
+        "intuitive_bedienung": 3.25,
+        "inhaltsqualitaet": 3.25,
+        "nuetzlichkeit": 3.25
+      },
+      "overall": 3.42
+    },
+    {
+      "wave": 1,
+      "run_id": "F-UC3-interessent-ueber-uns",
+      "use_case": "UC3",
+      "segment": "Interessent",
+      "label": "Über uns",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation zur Seite 'Über uns' war teilweise erfolgreich, jedoch gab es Schwierigkeiten beim Auffinden des Links. Die Inhalte wurden noch nicht erfasst, was die Inhaltsqualität beeinträchtigt. Die Benutzerführung war intuitiv, aber die Stimulation könnte verbessert werden.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            5,
+            6,
+            6
+          ],
+          "importance": 5
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "stimulation": {
+          "scores": [
+            3,
+            4,
+            4,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            5,
+            6,
+            6
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            3,
+            4,
+            4,
+            4
+          ],
+          "importance": 5
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            4,
+            5,
+            5,
+            5
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 4.75,
+        "stimulation": 3.75,
+        "intuitive_bedienung": 5.5,
+        "inhaltsqualitaet": 3.75,
+        "nuetzlichkeit": 4.75
+      },
+      "overall": 4.73
+    },
+    {
+      "wave": 2,
+      "run_id": "A-UC1-ebiker-fahrerlebnis",
+      "use_case": "UC1",
+      "segment": "eBiker",
+      "label": "Fahrerlebnis / Flow App",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Journey zeigt eine klare Struktur und Navigation, die es dem Nutzer ermöglicht, effizient Informationen zu finden. Die Sichtbarkeit der Produktkacheln und die Möglichkeit zur Interaktion sind positiv, jedoch gibt es noch Raum für Verbesserungen in der Detailansicht und der Benutzerführung.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            6,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            5,
+            6,
+            5,
+            5
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 5
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            6,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            6,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            6,
+            5,
+            6,
+            6
+          ],
+          "importance": 7
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 5.25,
+        "stimulation": 5.5,
+        "intuitive_bedienung": 5.5,
+        "inhaltsqualitaet": 5.5,
+        "nuetzlichkeit": 5.75
+      },
+      "overall": 5.51
+    },
+    {
+      "wave": 2,
+      "run_id": "B-UC1-interessent-orientierung",
+      "use_case": "UC1",
+      "segment": "Interessent",
+      "label": "Orientierung",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Nutzererfahrung auf der Website war insgesamt positiv, jedoch fehlten konkrete Modelle und detaillierte Informationen zu den Nutzungssituationen, was die Durchschaubarkeit und Inhaltsqualität beeinträchtigte.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            4,
+            5,
+            4,
+            4
+          ],
+          "importance": 5
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            4,
+            5,
+            4,
+            4
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.25,
+        "durchschaubarkeit": 4.5,
+        "stimulation": 4.25,
+        "intuitive_bedienung": 5.25,
+        "inhaltsqualitaet": 4.25,
+        "nuetzlichkeit": 5.25
+      },
+      "overall": 4.82
+    },
+    {
+      "wave": 2,
+      "run_id": "C-UC2-ebiker-service",
+      "use_case": "UC2",
+      "segment": "eBiker",
+      "label": "Service",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation zur Service-Seite war wiederholt frustrierend, da die konkreten Service-Angebote nicht leicht zu finden waren. Die Benutzererfahrung war durch die wiederholten Scrolls und das Fehlen spezifischer Informationen beeinträchtigt.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            3,
+            3,
+            4,
+            4
+          ],
+          "importance": 5
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            4,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "stimulation": {
+          "scores": [
+            3,
+            3,
+            4,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            4,
+            4,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            3,
+            3,
+            4,
+            4
+          ],
+          "importance": 5
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            3,
+            3,
+            4,
+            4
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 3.5,
+        "durchschaubarkeit": 4.5,
+        "stimulation": 3.5,
+        "intuitive_bedienung": 4.5,
+        "inhaltsqualitaet": 3.5,
+        "nuetzlichkeit": 3.5
+      },
+      "overall": 3.88
+    },
+    {
+      "wave": 2,
+      "run_id": "D-UC2-interessent-technik",
+      "use_case": "UC2",
+      "segment": "Interessent",
+      "label": "Technik",
+      "friction_score": null,
+      "goal_reached_agent": true,
+      "rationale": "Die Website bietet eine klare Struktur und relevante Informationen zu Bosch eBike-Systemen, jedoch fehlen spezifische Produktdetails an einigen Stellen. Die Benutzererfahrung ist insgesamt positiv, da die Navigation intuitiv ist und die Inhalte ansprechend präsentiert werden.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            6,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            5,
+            5,
+            4,
+            4
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            6,
+            6,
+            5,
+            5
+          ],
+          "importance": 5
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            5,
+            4,
+            4
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            6,
+            6,
+            5,
+            5
+          ],
+          "importance": 7
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            6,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 4.5,
+        "stimulation": 5.5,
+        "intuitive_bedienung": 4.5,
+        "inhaltsqualitaet": 5.5,
+        "nuetzlichkeit": 5.5
+      },
+      "overall": 5.19
+    },
+    {
+      "wave": 2,
+      "run_id": "E-UC3-ebiker-ueber-uns",
+      "use_case": "UC3",
+      "segment": "eBiker",
+      "label": "Über uns",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation zur Seite 'Über uns' war mehrmals erfolgreich, jedoch gab es Schwierigkeiten beim Öffnen des Bereichs. Die Inhalte sind klar und informativ, was die Durchschaubarkeit und Inhaltsqualität positiv beeinflusst. Die Effizienz und intuitive Bedienung sind gut, aber es gab einige wiederholte Schritte, die die Nutzererfahrung beeinträchtigt haben.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            4,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            6,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "stimulation": {
+          "scores": [
+            4,
+            4,
+            5,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            4,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            6,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            4,
+            5,
+            4
+          ],
+          "importance": 5
+        }
+      },
+      "dimension_means": {
+        "effizienz": 4.5,
+        "durchschaubarkeit": 5.5,
+        "stimulation": 4.25,
+        "intuitive_bedienung": 4.5,
+        "inhaltsqualitaet": 5.5,
+        "nuetzlichkeit": 4.5
+      },
+      "overall": 4.85
+    },
+    {
+      "wave": 2,
+      "run_id": "F-UC3-interessent-ueber-uns",
+      "use_case": "UC3",
+      "segment": "Interessent",
+      "label": "Über uns",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation war größtenteils klar und die Inhalte wurden als nützlich wahrgenommen. Es gab jedoch einige Schwierigkeiten beim Zugriff auf die 'Über uns'-Seite, was die Effizienz und Durchschaubarkeit beeinträchtigte.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            5,
+            6,
+            6
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            5,
+            5
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            3,
+            4,
+            4,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            5,
+            6,
+            6
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            4,
+            5,
+            5,
+            5
+          ],
+          "importance": 5
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            6,
+            6,
+            6
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 4.75,
+        "stimulation": 3.75,
+        "intuitive_bedienung": 5.5,
+        "inhaltsqualitaet": 4.75,
+        "nuetzlichkeit": 5.75
+      },
+      "overall": 5.09
+    },
+    {
+      "wave": 3,
+      "run_id": "A-UC1-ebiker-fahrerlebnis",
+      "use_case": "UC1",
+      "segment": "eBiker",
+      "label": "Fahrerlebnis / Flow App",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Journey zeigt eine klare Struktur und Navigation, jedoch fehlen detaillierte Inhalte und die Verifizierung der nächsten Schritte. Die Effizienz und intuitive Bedienung sind hoch, während die Stimulation und Durchschaubarkeit noch verbessert werden können.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            4,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            3,
+            4,
+            4,
+            3
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            4,
+            4,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.25,
+        "durchschaubarkeit": 4.25,
+        "stimulation": 3.5,
+        "intuitive_bedienung": 5.25,
+        "inhaltsqualitaet": 4.25,
+        "nuetzlichkeit": 5.25
+      },
+      "overall": 4.72
+    },
+    {
+      "wave": 3,
+      "run_id": "B-UC1-interessent-orientierung",
+      "use_case": "UC1",
+      "segment": "Interessent",
+      "label": "Orientierung",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Website bietet eine klare Struktur und ist visuell ansprechend, jedoch fehlen konkrete Modelle und Informationen, was die Navigation etwas erschwert. Die Inhalte sind qualitativ hochwertig, aber die Benutzerführung könnte intuitiver sein.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            5,
+            5
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            4,
+            5,
+            4,
+            5
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 4.75,
+        "stimulation": 4.5,
+        "intuitive_bedienung": 5.25,
+        "inhaltsqualitaet": 5.5,
+        "nuetzlichkeit": 5.5
+      },
+      "overall": 5.22
+    },
+    {
+      "wave": 3,
+      "run_id": "C-UC2-ebiker-service",
+      "use_case": "UC2",
+      "segment": "eBiker",
+      "label": "Service",
+      "friction_score": 7,
+      "goal_reached_agent": false,
+      "rationale": "Die Journey zeigt eine klare Struktur und Navigation, jedoch fehlte es an konkreten Serviceangeboten auf der Startseite. Die Inhalte im Help Center sind hilfreich und gut strukturiert, was die Effizienz und Nützlichkeit erhöht. Die Benutzerführung könnte intuitiver gestaltet werden, um die Suche nach Informationen zu erleichtern.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "stimulation": {
+          "scores": [
+            4,
+            5,
+            5,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            6,
+            5,
+            5
+          ],
+          "importance": 5
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            6,
+            6,
+            6,
+            6
+          ],
+          "importance": 7
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            6,
+            6,
+            6,
+            6
+          ],
+          "importance": 7
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 5.25,
+        "stimulation": 4.5,
+        "intuitive_bedienung": 5.25,
+        "inhaltsqualitaet": 6,
+        "nuetzlichkeit": 6
+      },
+      "overall": 5.51
+    },
+    {
+      "wave": 3,
+      "run_id": "D-UC2-interessent-technik",
+      "use_case": "UC2",
+      "segment": "Interessent",
+      "label": "Technik",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation auf der Website war größtenteils effizient und die Inhalte waren klar strukturiert. Es gab jedoch einige Schwierigkeiten beim Zugriff auf bestimmte Informationen, was die Benutzererfahrung beeinträchtigte. Insgesamt war die Nützlichkeit der Informationen hoch, aber die Erreichbarkeit könnte verbessert werden.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            4,
+            5,
+            5,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            5,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            6,
+            6,
+            5,
+            6
+          ],
+          "importance": 7
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 5.25,
+        "stimulation": 4.5,
+        "intuitive_bedienung": 5.25,
+        "inhaltsqualitaet": 5.25,
+        "nuetzlichkeit": 5.75
+      },
+      "overall": 5.31
+    },
+    {
+      "wave": 3,
+      "run_id": "E-UC3-ebiker-ueber-uns",
+      "use_case": "UC3",
+      "segment": "eBiker",
+      "label": "Über uns",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation war größtenteils klar, aber es gab Schwierigkeiten beim Zugriff auf den Bereich 'Über uns'. Die Inhalte waren informativ, jedoch war die Benutzerführung nicht immer intuitiv.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            6,
+            4,
+            5
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            6,
+            5,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            4,
+            3,
+            5,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            4,
+            5,
+            3
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            6,
+            5,
+            6,
+            5
+          ],
+          "importance": 7
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            6,
+            4,
+            5
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5,
+        "durchschaubarkeit": 5,
+        "stimulation": 4,
+        "intuitive_bedienung": 4.25,
+        "inhaltsqualitaet": 5.5,
+        "nuetzlichkeit": 5
+      },
+      "overall": 4.85
+    },
+    {
+      "wave": 3,
+      "run_id": "F-UC3-interessent-ueber-uns",
+      "use_case": "UC3",
+      "segment": "Interessent",
+      "label": "Über uns",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation zur 'Über uns'-Seite war klar und die Informationen auf der Startseite waren relevant, jedoch fehlten spezifische Unternehmenswerte. Die Effizienz und intuitive Bedienung wurden positiv bewertet, während die Inhaltsqualität und Stimulation etwas schwächer abschnitten.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            6,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            5,
+            5,
+            6,
+            6
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            4,
+            4,
+            5,
+            5
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            6,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            4,
+            4,
+            5,
+            5
+          ],
+          "importance": 5
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            5,
+            6,
+            6
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 5.5,
+        "stimulation": 4.5,
+        "intuitive_bedienung": 5.5,
+        "inhaltsqualitaet": 4.5,
+        "nuetzlichkeit": 5.5
+      },
+      "overall": 5.22
+    },
+    {
+      "wave": 4,
+      "run_id": "A-UC1-ebiker-fahrerlebnis",
+      "use_case": "UC1",
+      "segment": "eBiker",
+      "label": "Fahrerlebnis / Flow App",
+      "friction_score": null,
+      "goal_reached_agent": true,
+      "rationale": "Die Journey zeigt, dass der Nutzer die Informationen zur Flow-App nach mehreren Scroll-Vorgängen erfolgreich gefunden hat. Die Navigation war größtenteils intuitiv, jedoch gab es einige Wartezeiten, die die Effizienz beeinträchtigten. Die Inhalte waren nützlich und von hoher Qualität, was die Nutzererfahrung positiv beeinflusste.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            6,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 5
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            4,
+            5,
+            5,
+            4
+          ],
+          "importance": 6
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            5,
+            6,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            6,
+            6,
+            7,
+            6
+          ],
+          "importance": 7
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.5,
+        "durchschaubarkeit": 4.5,
+        "stimulation": 5.25,
+        "intuitive_bedienung": 4.5,
+        "inhaltsqualitaet": 5.5,
+        "nuetzlichkeit": 6.25
+      },
+      "overall": 5.3
+    },
+    {
+      "wave": 4,
+      "run_id": "B-UC1-interessent-orientierung",
+      "use_case": "UC1",
+      "segment": "Interessent",
+      "label": "Orientierung",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation auf der Website war größtenteils effizient, jedoch gab es Schwierigkeiten beim Finden der Typ-Teaser. Die Inhalte waren qualitativ hochwertig, aber die Durchschaubarkeit könnte verbessert werden. Die Benutzererfahrung war stimulierend, jedoch nicht immer intuitiv.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            4,
+            5,
+            5,
+            4
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            4,
+            4,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            5,
+            5,
+            6,
+            5
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.25,
+        "durchschaubarkeit": 4.5,
+        "stimulation": 4.5,
+        "intuitive_bedienung": 4.25,
+        "inhaltsqualitaet": 5.25,
+        "nuetzlichkeit": 5.25
+      },
+      "overall": 4.88
+    },
+    {
+      "wave": 4,
+      "run_id": "C-UC2-ebiker-service",
+      "use_case": "UC2",
+      "segment": "eBiker",
+      "label": "Service",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation zur Service-Seite war nicht direkt erfolgreich, da der Nutzer mehrmals auf die falschen Links geklickt hat. Die Sichtbarkeit der Service-Optionen war jedoch gegeben, was die Effizienz und Durchschaubarkeit beeinflusste. Die Inhalte waren nicht konkret genug, um sofortige Hilfe zu bieten.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            4,
+            3,
+            5,
+            4
+          ],
+          "importance": 5
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            3,
+            4,
+            3,
+            4
+          ],
+          "importance": 6
+        },
+        "stimulation": {
+          "scores": [
+            3,
+            3,
+            4,
+            3
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            4,
+            3,
+            4,
+            3
+          ],
+          "importance": 5
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            4,
+            3,
+            4,
+            3
+          ],
+          "importance": 5
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            3,
+            4,
+            3,
+            4
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 4,
+        "durchschaubarkeit": 3.5,
+        "stimulation": 3.25,
+        "intuitive_bedienung": 3.5,
+        "inhaltsqualitaet": 3.5,
+        "nuetzlichkeit": 3.5
+      },
+      "overall": 3.55
+    },
+    {
+      "wave": 4,
+      "run_id": "D-UC2-interessent-technik",
+      "use_case": "UC2",
+      "segment": "Interessent",
+      "label": "Technik",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Journey zeigt, dass die Navigation und das Finden der gewünschten Informationen teilweise erfolgreich waren, jedoch nicht immer intuitiv und effizient. Die Inhalte sind qualitativ hochwertig, aber die Struktur könnte klarer sein.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            4,
+            5,
+            4
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            3,
+            4,
+            3
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            3,
+            4,
+            3,
+            3
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            4,
+            3,
+            4,
+            3
+          ],
+          "importance": 5
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            5,
+            5,
+            5,
+            5
+          ],
+          "importance": 7
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            4,
+            4,
+            4,
+            4
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 4.5,
+        "durchschaubarkeit": 3.5,
+        "stimulation": 3.25,
+        "intuitive_bedienung": 3.5,
+        "inhaltsqualitaet": 5,
+        "nuetzlichkeit": 4
+      },
+      "overall": 4.06
+    },
+    {
+      "wave": 4,
+      "run_id": "E-UC3-ebiker-ueber-uns",
+      "use_case": "UC3",
+      "segment": "eBiker",
+      "label": "Über uns",
+      "friction_score": null,
+      "goal_reached_agent": true,
+      "rationale": "Die Journey war insgesamt positiv. Die Navigation war klar, und die Informationen auf der 'Über uns'-Seite waren umfassend und informativ. Es gab jedoch einige Schwierigkeiten beim Zugriff auf die Seite, die die Nutzererfahrung beeinträchtigten.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            6,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            5,
+            5,
+            4,
+            5
+          ],
+          "importance": 5
+        },
+        "stimulation": {
+          "scores": [
+            6,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            5,
+            5,
+            4,
+            5
+          ],
+          "importance": 5
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            6,
+            6,
+            5,
+            6
+          ],
+          "importance": 7
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            6,
+            6,
+            5,
+            6
+          ],
+          "importance": 6
+        }
+      },
+      "dimension_means": {
+        "effizienz": 5.75,
+        "durchschaubarkeit": 4.75,
+        "stimulation": 5.75,
+        "intuitive_bedienung": 4.75,
+        "inhaltsqualitaet": 5.75,
+        "nuetzlichkeit": 5.75
+      },
+      "overall": 5.46
+    },
+    {
+      "wave": 4,
+      "run_id": "F-UC3-interessent-ueber-uns",
+      "use_case": "UC3",
+      "segment": "Interessent",
+      "label": "Über uns",
+      "friction_score": null,
+      "goal_reached_agent": false,
+      "rationale": "Die Navigation zur Seite 'Über uns' war teilweise erfolgreich, jedoch gab es Schwierigkeiten beim Scrollen und Finden der gewünschten Informationen. Die Inhalte auf der Startseite waren ansprechend und informativ, was die Inhaltsqualität positiv beeinflusste. Die Benutzerführung könnte jedoch klarer sein, um die Effizienz und Durchschaubarkeit zu verbessern.",
+      "pairs": {
+        "effizienz": {
+          "scores": [
+            5,
+            5,
+            4,
+            4
+          ],
+          "importance": 5
+        },
+        "durchschaubarkeit": {
+          "scores": [
+            4,
+            5,
+            4,
+            4
+          ],
+          "importance": 6
+        },
+        "stimulation": {
+          "scores": [
+            3,
+            4,
+            3,
+            3
+          ],
+          "importance": 4
+        },
+        "intuitive_bedienung": {
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "importance": 5
+        },
+        "inhaltsqualitaet": {
+          "scores": [
+            5,
+            6,
+            5,
+            5
+          ],
+          "importance": 6
+        },
+        "nuetzlichkeit": {
+          "scores": [
+            4,
+            5,
+            4,
+            4
+          ],
+          "importance": 5
+        }
+      },
+      "dimension_means": {
+        "effizienz": 4.5,
+        "durchschaubarkeit": 4.25,
+        "stimulation": 3.25,
+        "intuitive_bedienung": 3.75,
+        "inhaltsqualitaet": 5.25,
+        "nuetzlichkeit": 4.25
+      },
+      "overall": 4.27
+    }
+  ],
+  "aggregates": {
+    "overall": {
+      "effizienz": 5.0,
+      "durchschaubarkeit": 4.56,
+      "stimulation": 4.31,
+      "intuitive_bedienung": 4.7,
+      "inhaltsqualitaet": 4.83,
+      "nuetzlichkeit": 4.97,
+      "weighted_mean": 4.78
+    },
+    "by_use_case": {
+      "UC1": {
+        "overall": 4.97,
+        "effizienz": 5.22,
+        "durchschaubarkeit": 4.53,
+        "stimulation": 4.53,
+        "intuitive_bedienung": 4.91,
+        "inhaltsqualitaet": 4.97,
+        "nuetzlichkeit": 5.41
+      },
+      "UC2": {
+        "overall": 4.62,
+        "effizienz": 4.81,
+        "durchschaubarkeit": 4.44,
+        "stimulation": 4.22,
+        "intuitive_bedienung": 4.56,
+        "inhaltsqualitaet": 4.75,
+        "nuetzlichkeit": 4.66
+      },
+      "UC3": {
+        "overall": 4.74,
+        "effizienz": 4.97,
+        "durchschaubarkeit": 4.72,
+        "stimulation": 4.19,
+        "intuitive_bedienung": 4.62,
+        "inhaltsqualitaet": 4.78,
+        "nuetzlichkeit": 4.84
+      }
+    },
+    "by_segment": {
+      "Interessent": {
+        "overall": 4.94,
+        "effizienz": 5.29,
+        "durchschaubarkeit": 4.6,
+        "stimulation": 4.38,
+        "intuitive_bedienung": 4.96,
+        "inhaltsqualitaet": 4.9,
+        "nuetzlichkeit": 5.21
+      },
+      "eBiker": {
+        "overall": 4.61,
+        "effizienz": 4.71,
+        "durchschaubarkeit": 4.52,
+        "stimulation": 4.25,
+        "intuitive_bedienung": 4.44,
+        "inhaltsqualitaet": 4.77,
+        "nuetzlichkeit": 4.73
+      }
+    }
+  },
+  "insights": {
+    "strongest_dim": "effizienz",
+    "strongest_val": 5.0,
+    "weakest_dim": "stimulation",
+    "weakest_val": 4.31,
+    "goal_reached_rate": 16.7
+  }
+}
