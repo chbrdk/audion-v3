@@ -83,7 +83,8 @@
 - Lab empty-action crash: `knowledge/lab-agent-empty-actions-2026-08-03.md` · env `UX_JOURNEY_MAX_FAILURES` (default 10)
 - Local agent lab: `knowledge/local-ux-journey-lab-2026-08-03.md` · `scripts/local-lab-agent-setup.sh` · `local-lab-agent-serve.sh` · `local-lab-run.sh`
 - Project routes: `/projects`, `/projects/[projectId]`
-- Project API: `/api/projects`, `/api/projects/[projectId]`
+- Project API: `/api/projects`, `/api/projects/[projectId]`, `POST /api/projects/[projectId]/archive` (global Collection archive; `DELETE` = archive alias)
+- Plexon lifecycle: `PATCH {PLEXON_AUTH_URL}/api/platform/provisioning/projects/:platformProjectId` `{ status: archived }` (`paths.plexonProvisioningProjectPath`)
 - Easy Setup: **dropped** — see `knowledge/easy-setup-2026.md` (no `/setup`, no bootstrap API)
 - Project fixtures/store: `apps/web/lib/fixtures/projects.ts` · `project-store.ts`
 - Project lib: `apps/web/lib/projects.ts`

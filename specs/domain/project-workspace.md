@@ -30,7 +30,11 @@ Magazine-style project workspace: browse projects, read company context, manage 
 - **AI actions band** (Wave 1 stub): Suggest TGs · Suggest personas · Start research · Generate journey — see `knowledge/ai-workflows.md`
 - **Audience band** (`.audion-project-split`): Target groups | Personas at **50 / 50**; compact lists with inline rename / **delete** / add (hard delete via `DELETE /api/personas|target-groups/[id]`)
 - **Project knowledge** dossier: `@msqdx/ui` **Accordion** (`.ds-accordion`) of `knowledgeChapters` + TipTap WYSIWYG panel content. `SectionChrome` count with `metaTone="accent"`. Legacy `companyContext` → single Brief chapter when chapters empty.
-- Topbar: edit actions only (persona pattern)
+- Topbar: edit + **Archive** (Collection lifecycle via `POST /api/projects/:id/archive`) — not hard-delete
+- Edit dialog status: `draft` | `published` only — use Archive CTA for Collection archive (not status select)
+
+## Archive semantics
+UI **Archive** calls `POST /api/projects/:projectId/archive` → Plexon `PATCH …/provisioning/projects/:platformProjectId` `{ status: archived }` when bound, then local mirror `status: archived` (hidden from default lists). Unbound / Plexon unconfigured: local archive only. Hard-delete remains Plexon global-admin / ops only.
 
 ## Rail
 
@@ -52,3 +56,4 @@ Magazine-style project workspace: browse projects, read company context, manage 
 5. AI band buttons call `/api/ai/projects/[id]/*` stubs and return `stubbed` + `target`.
 6. Paths only via `paths.ts`.
 7. Unit tests for normalize + panels + rail + AI stubs.
+8. Archive CTA uses global Plexon lifecycle when bound; list hides `status: archived`.

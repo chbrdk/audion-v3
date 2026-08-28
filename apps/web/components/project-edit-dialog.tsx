@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ProjectDetail, ProjectStatus, ProjectWritePayload } from '@audion-v3/contracts'
-import { Button, Field, Input, Panel, Text, Textarea } from '@msqdx/ui'
-import { Dialog, Select } from '../lib/msqdx-ui-client'
+import { Button, Field, Input, Panel, Text, Textarea, Alert } from '@msqdx/ui'
+import { ConfirmDialog, Dialog, Select } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
-import { IconEdit } from './nav-icons'
+import { IconDelete, IconEdit } from './nav-icons'
 
 function emptyPayload(): ProjectWritePayload {
   return {
@@ -40,7 +40,6 @@ export function ProjectEditDialog({
   const statusOptions = [
     { value: 'draft', label: t('dialogs.statusDraft') },
     { value: 'published', label: t('dialogs.statusPublished') },
-    { value: 'archived', label: t('dialogs.statusArchived') },
   ]
 
   useEffect(() => {
@@ -250,7 +249,28 @@ export function ProjectCreateButton({ variant = 'card' }: { variant?: 'card' | '
 
 export function ProjectDetailActions({ project }: { project: ProjectDetail }) {
   const t = useT()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function confirmArchive() {
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await fetch(paths.routes.apiProjectArchive(project.id), { method: 'POST' })
+      if (!res.ok) throw new Error(t('dialogs.archiveFailed', { status: res.status }))
+      setArchiveOpen(false)
+      router.push(paths.routes.projects)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('dialogs.archiveFailedGeneric'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <>
       <Button
@@ -261,7 +281,33 @@ export function ProjectDetailActions({ project }: { project: ProjectDetail }) {
         icon={<IconEdit />}
         onClick={() => setOpen(true)}
       />
+      <Button
+        variant="ghost"
+        size="sm"
+        className="audion-edit-icon-btn"
+        aria-label={t('tiles.archiveProject')}
+        icon={<IconDelete />}
+        onClick={() => {
+          setError(null)
+          setArchiveOpen(true)
+        }}
+      />
       <ProjectEditDialog open={open} onClose={() => setOpen(false)} mode="edit" project={project} />
+      <ConfirmDialog
+        open={archiveOpen}
+        onClose={() => {
+          if (!busy) setArchiveOpen(false)
+        }}
+        onConfirm={() => {
+          void confirmArchive()
+        }}
+        title={t('dialogs.archiveTitle')}
+        confirmLabel={busy ? t('dialogs.archiving') : t('dialogs.archiveConfirm')}
+        danger
+      >
+        {t('dialogs.archiveBody', { name: project.name })}
+        {error ? <Alert tone="error">{error}</Alert> : null}
+      </ConfirmDialog>
     </>
   )
 }

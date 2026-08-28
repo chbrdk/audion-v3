@@ -209,6 +209,7 @@ export const paths = {
     projectDetail: (id: string) => `/projects/${id}`,
     apiProjects: '/api/projects',
     apiProjectDetail: (id: string) => `/api/projects/${id}`,
+    apiProjectArchive: (id: string) => `/api/projects/${id}/archive`,
     apiProjectKnowledgeUpload: (id: string) => `/api/projects/${id}/knowledge/upload`,
     /** Register existing project on Plexon Collection (audion-project-origin). */
     apiProjectSyncPlexon: (id: string) => `/api/projects/${id}/sync-plexon`,
@@ -457,6 +458,9 @@ export const paths = {
   plexonFederationContractVersion: '2026-05-plexon-federation-v3',
   /** Service: Collections the user may see (access model B). */
   plexonAccessibleCollectionsPath: '/api/platform/provisioning/accessible-collections',
+  /** Service: Collection lifecycle (archive / restore). */
+  plexonProvisioningProjectPath: (platformProjectId: string) =>
+    `/api/platform/provisioning/projects/${encodeURIComponent(platformProjectId)}`,
 }
 
 /** Resolve a persona portrait path from the central avatar base. */

@@ -366,3 +366,8 @@ export async function storePatchProject(
 
   return patched
 }
+
+/** Soft-remove from hubs: set status archived (Collection lifecycle mirror). */
+export async function storeArchiveProject(id: string): Promise<ProjectDetail | null> {
+  return storePatchProject(id, { status: 'archived' })
+}
