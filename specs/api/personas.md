@@ -21,8 +21,19 @@ AUDION v3 consumes the existing AUDION backend and does not reimplement persona 
 |--------|------|--------|
 | `POST` | `/api/personas` (`paths.routes.apiPersonas`) | `storeCreatePersona` |
 | `PATCH` | `/api/personas/[personaId]` | `storePatchPersona`; then Tavus PAL upsert when replica + `TAVUS_API_KEY` |
+| `DELETE` | `/api/personas/[personaId]` | `storeDeletePersona` — hard delete; unlink from target groups; clear persona prompt override |
 
 Seed: `apps/web/lib/fixtures/personas.ts` · store: `persona-store.ts`
+
+## Hub list UX
+
+- Personas index (`/personas`) list/cards: delete icon with confirm dialog → `DELETE` above.
+- Project audience band: remove is also hard delete (same API), not merely unlink.
+
+## EARS
+
+- WHEN the user confirms delete on the personas hub or project audience list THEN the persona MUST be removed from the store and MUST NOT appear in subsequent lists
+- WHEN a persona is deleted THEN target groups that linked it MUST drop that id from `linkedPersonaIds`
 
 ## Runtime rules
 

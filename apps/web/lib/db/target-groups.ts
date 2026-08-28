@@ -164,3 +164,33 @@ export async function dbPatchTargetGroup(
     .where(eq(targetGroups.id, id))
   return next
 }
+
+export async function dbDeleteTargetGroup(id: string): Promise<boolean> {
+  const db = getDb()
+  const deleted = await db
+    .delete(targetGroups)
+    .where(eq(targetGroups.id, id))
+    .returning({ id: targetGroups.id })
+  return deleted.length > 0
+}
+
+/** Drop a persona id from every target group that lists it. */
+export async function dbUnlinkPersonaFromAllTargetGroups(personaId: string): Promise<void> {
+  const db = getDb()
+  const rows = await db.select().from(targetGroups)
+  for (const row of rows) {
+    const ids = Array.isArray(row.linkedPersonaIds) ? row.linkedPersonaIds : []
+    if (!ids.includes(personaId)) continue
+    const nextIds = ids.filter((id) => id !== personaId)
+    const linkedPersonas = await dbPersonaSummariesByIds(nextIds)
+    await db
+      .update(targetGroups)
+      .set({
+        linkedPersonaIds: nextIds,
+        linkedPersonas,
+        personaCount: linkedPersonas.length,
+        updatedAt: new Date(),
+      })
+      .where(eq(targetGroups.id, row.id))
+  }
+}

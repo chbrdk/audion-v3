@@ -29,11 +29,11 @@
 - Runtime config helper: `apps/web/lib/runtime-config.ts`
 - Persona fixtures: `apps/web/lib/fixtures/personas.ts`
 - Persona fixture store: `apps/web/lib/fixtures/persona-store.ts`
-- Persona API routes: `/api/personas`, `/api/personas/[personaId]`
+- Persona API routes: `/api/personas`, `/api/personas/[personaId]` (`GET` list via store/API · `POST`/`PATCH`/`DELETE` on detail)
 - Target group fixtures: `apps/web/lib/fixtures/target-groups.ts`
 - Target group fixture store: `apps/web/lib/fixtures/target-group-store.ts`
 - Target group routes: `/target-groups`, `/target-groups/[targetGroupId]`
-- Target group API routes: `/api/target-groups`, `/api/target-groups/[targetGroupId]`
+- Target group API routes: `/api/target-groups`, `/api/target-groups/[targetGroupId]` (`POST`/`PATCH`/`DELETE`)
 - Journey routes: `/journeys`, `/journeys/[journeyId]` (`paths.routes.journeys*`)
 - Journey API routes: `/api/journeys`, `/api/journeys/[journeyId]`
 - Journey fixtures/store: `apps/web/lib/fixtures/journeys.ts` · `journey-store.ts`

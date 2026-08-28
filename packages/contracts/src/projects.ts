@@ -26,6 +26,10 @@ export type ProjectSummary = {
   targetGroupCount: number
   memberCount: number
   updatedAt: string | null
+  /** Plexon Collection id when federated (list ACL). */
+  platformProjectId?: string | null
+  /** Creator / owner for access model B. */
+  ownerPlexonUserId?: string | null
 }
 
 export type ProjectList = {

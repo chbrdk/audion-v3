@@ -299,3 +299,21 @@ export async function storePatchPersona(
   }
   return memoryPatchPersona(id, payload)
 }
+
+export async function storeDeletePersona(id: string): Promise<boolean> {
+  const { unlinkPersonaFromAllTargetGroups } = await import('./target-group-store')
+  await unlinkPersonaFromAllTargetGroups(id)
+  try {
+    const { storeDeletePersonaPrompt } = await import('./persona-prompts-store')
+    await storeDeletePersonaPrompt(id)
+  } catch {
+    /* prompt table optional */
+  }
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbDeletePersona(id)
+  }
+  const before = personas.length
+  personas = personas.filter((p) => p.id !== id)
+  return personas.length < before
+}

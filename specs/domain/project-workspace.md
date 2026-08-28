@@ -28,7 +28,7 @@ Magazine-style project workspace: browse projects, read company context, manage 
 - Magazine hero **text-only** (`.audion-magazine-hero--text`): full-width eyebrow, title, optional DE deck, facets — no portrait/avatar
 - **Intro row** (`.audion-project-intro`): description (~2/3) | larger Team canvas right (~1/3, max 32rem)
 - **AI actions band** (Wave 1 stub): Suggest TGs · Suggest personas · Start research · Generate journey — see `knowledge/ai-workflows.md`
-- **Audience band** (`.audion-project-split`): Target groups | Personas at **50 / 50**; compact lists with inline rename / remove / add
+- **Audience band** (`.audion-project-split`): Target groups | Personas at **50 / 50**; compact lists with inline rename / **delete** / add (hard delete via `DELETE /api/personas|target-groups/[id]`)
 - **Project knowledge** dossier: `@msqdx/ui` **Accordion** (`.ds-accordion`) of `knowledgeChapters` + TipTap WYSIWYG panel content. `SectionChrome` count with `metaTone="accent"`. Legacy `companyContext` → single Brief chapter when chapters empty.
 - Topbar: edit actions only (persona pattern)
 

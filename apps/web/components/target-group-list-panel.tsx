@@ -7,6 +7,7 @@ import { EmptyState, Panel, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { HubIndexLayoutSwitch, useHubIndexLayout } from './hub-index-layout'
+import { HubEntityDeleteButton } from './hub-entity-delete-button'
 import { TargetGroupCreateButton } from './target-group-edit-dialog'
 import { SuggestTargetGroupsAiButton } from './ai-workflow-actions'
 
@@ -43,7 +44,7 @@ export function TargetGroupListPanel({
             <SuggestTargetGroupsAiButton variant="card" />
           </li>
           {list.items.map((item) => (
-            <li key={item.id}>
+            <li key={item.id} className="audion-hub-card-with-action">
               <Link
                 href={`${paths.routes.targetGroupDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
                 className={`audion-tg-card audion-tg-card--${item.status}`}
@@ -68,6 +69,14 @@ export function TargetGroupListPanel({
                   </p>
                 </Panel>
               </Link>
+              <HubEntityDeleteButton
+                className="audion-hub-card-delete"
+                name={item.name}
+                deleteUrl={paths.routes.apiTargetGroupDetail(item.id)}
+                ariaLabel={t('tiles.deleteTargetGroup')}
+                titleKey="dialogs.deleteTargetGroupTitle"
+                bodyKey="dialogs.deleteTargetGroupBody"
+              />
             </li>
           ))}
         </ul>
@@ -78,24 +87,33 @@ export function TargetGroupListPanel({
               <span className="audion-magazine-list-num" aria-hidden>
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <Link
-                href={`${paths.routes.targetGroupDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
-                className="audion-hub-index-list-row"
-              >
-                <span className="audion-hub-index-list-name">{item.name}</span>
-                <span className="audion-hub-index-list-meta">
-                  {item.segment}
-                  <span aria-hidden> · </span>
-                  {t(
-                    item.personaCount === 1
-                      ? 'lists.targetGroups.personaOne'
-                      : 'lists.targetGroups.personaMany',
-                    { count: item.personaCount },
-                  )}
-                  <span aria-hidden> · </span>
-                  <span data-status={item.status}>{item.status}</span>
-                </span>
-              </Link>
+              <div className="audion-hub-index-list-main">
+                <Link
+                  href={`${paths.routes.targetGroupDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
+                  className="audion-hub-index-list-row"
+                >
+                  <span className="audion-hub-index-list-name">{item.name}</span>
+                  <span className="audion-hub-index-list-meta">
+                    {item.segment}
+                    <span aria-hidden> · </span>
+                    {t(
+                      item.personaCount === 1
+                        ? 'lists.targetGroups.personaOne'
+                        : 'lists.targetGroups.personaMany',
+                      { count: item.personaCount },
+                    )}
+                    <span aria-hidden> · </span>
+                    <span data-status={item.status}>{item.status}</span>
+                  </span>
+                </Link>
+                <HubEntityDeleteButton
+                  name={item.name}
+                  deleteUrl={paths.routes.apiTargetGroupDetail(item.id)}
+                  ariaLabel={t('tiles.deleteTargetGroup')}
+                  titleKey="dialogs.deleteTargetGroupTitle"
+                  bodyKey="dialogs.deleteTargetGroupBody"
+                />
+              </div>
             </li>
           ))}
         </ol>

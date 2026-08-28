@@ -68,6 +68,14 @@ async function patchJson(url: string, body: Record<string, unknown>) {
   return response.json()
 }
 
+async function deleteJson(url: string) {
+  const response = await fetch(url, { method: 'DELETE' })
+  if (!response.ok && response.status !== 204) {
+    const err = (await response.json().catch(() => null)) as { error?: string } | null
+    throw new Error(err?.error || `Delete failed (${response.status})`)
+  }
+}
+
 function CompactEditableList({
   title,
   singular,
@@ -274,8 +282,8 @@ function CompactEditableList({
                     variant="ghost"
                     size="sm"
                     className="audion-edit-icon-btn audion-delete-icon-btn audion-editable-list-delete"
-                    aria-label={`Remove ${singular}`}
-                    title="Remove"
+                    aria-label={`Delete ${singular}`}
+                    title="Delete"
                     icon={<IconDelete />}
                     disabled={saving}
                     onClick={() => setDeleteId(row.id)}
@@ -332,20 +340,21 @@ function CompactEditableList({
             if (!saving) setDeleteId(null)
           }}
           className="audion-edit-dialog"
-          title={`Remove ${singular}?`}
+          title={`Delete ${singular}?`}
           actions={
             <>
               <Button variant="ghost" size="md" onClick={() => setDeleteId(null)} disabled={saving}>
                 Cancel
               </Button>
               <Button size="md" onClick={() => void onConfirmDelete()} disabled={saving}>
-                {saving ? 'Removing…' : 'Remove'}
+                {saving ? 'Deleting…' : 'Delete'}
               </Button>
             </>
           }
         >
           <p>
-            Remove <strong>{deleteLabel.trim() || singular}</strong> from this project?
+            Permanently delete <strong>{deleteLabel.trim() || singular}</strong>? This cannot be
+            undone.
           </p>
         </Dialog>
       ) : null}
@@ -383,7 +392,7 @@ export function ProjectPersonaList({
         router.refresh()
       }}
       onRemove={async (id) => {
-        await patchJson(paths.routes.apiPersonaDetail(id), { projectId: null })
+        await deleteJson(paths.routes.apiPersonaDetail(id))
         router.refresh()
       }}
     />
@@ -424,7 +433,7 @@ export function ProjectTargetGroupList({
         router.refresh()
       }}
       onRemove={async (id) => {
-        await patchJson(paths.routes.apiTargetGroupDetail(id), { projectId: null })
+        await deleteJson(paths.routes.apiTargetGroupDetail(id))
         router.refresh()
       }}
     />

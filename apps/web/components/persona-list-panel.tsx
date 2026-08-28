@@ -7,6 +7,7 @@ import { Button, EmptyState, Field, Input, SectionChrome, Panel, Text } from '@m
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { HubIndexLayoutSwitch, useHubIndexLayout } from './hub-index-layout'
+import { HubEntityDeleteButton } from './hub-entity-delete-button'
 import { PersonaCreateButton } from './persona-actions'
 import { GeneratePersonasAiButton } from './ai-workflow-actions'
 
@@ -59,7 +60,7 @@ export function PersonaListPanel({
             <GeneratePersonasAiButton variant="card" />
           </li>
           {list.items.map((item) => (
-            <li key={item.id}>
+            <li key={item.id} className="audion-hub-card-with-action">
               <Link
                 href={`${paths.routes.personaDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
                 className={`audion-tg-card audion-tg-card--${item.status}`}
@@ -81,6 +82,14 @@ export function PersonaListPanel({
                   </p>
                 </Panel>
               </Link>
+              <HubEntityDeleteButton
+                className="audion-hub-card-delete"
+                name={item.name}
+                deleteUrl={paths.routes.apiPersonaDetail(item.id)}
+                ariaLabel={t('tiles.deletePersona')}
+                titleKey="dialogs.deletePersonaTitle"
+                bodyKey="dialogs.deletePersonaBody"
+              />
             </li>
           ))}
         </ul>
@@ -91,23 +100,32 @@ export function PersonaListPanel({
               <span className="audion-magazine-list-num" aria-hidden>
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <Link
-                href={`${paths.routes.personaDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
-                className="audion-hub-index-list-row"
-              >
-                <span className="audion-hub-index-list-name">{item.name}</span>
-                <span className="audion-hub-index-list-meta">
-                  {item.role}
-                  {item.archetype ? (
-                    <>
-                      <span aria-hidden> · </span>
-                      {item.archetype}
-                    </>
-                  ) : null}
-                  <span aria-hidden> · </span>
-                  <span data-status={item.status}>{item.status}</span>
-                </span>
-              </Link>
+              <div className="audion-hub-index-list-main">
+                <Link
+                  href={`${paths.routes.personaDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
+                  className="audion-hub-index-list-row"
+                >
+                  <span className="audion-hub-index-list-name">{item.name}</span>
+                  <span className="audion-hub-index-list-meta">
+                    {item.role}
+                    {item.archetype ? (
+                      <>
+                        <span aria-hidden> · </span>
+                        {item.archetype}
+                      </>
+                    ) : null}
+                    <span aria-hidden> · </span>
+                    <span data-status={item.status}>{item.status}</span>
+                  </span>
+                </Link>
+                <HubEntityDeleteButton
+                  name={item.name}
+                  deleteUrl={paths.routes.apiPersonaDetail(item.id)}
+                  ariaLabel={t('tiles.deletePersona')}
+                  titleKey="dialogs.deletePersonaTitle"
+                  bodyKey="dialogs.deletePersonaBody"
+                />
+              </div>
             </li>
           ))}
         </ol>

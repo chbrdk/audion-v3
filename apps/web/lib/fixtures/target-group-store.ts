@@ -165,3 +165,31 @@ export async function storePatchTargetGroup(
   }
   return memoryPatchTargetGroup(id, payload)
 }
+
+export async function storeDeleteTargetGroup(id: string): Promise<boolean> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    return db.dbDeleteTargetGroup(id)
+  }
+  const before = groups.length
+  groups = groups.filter((g) => g.id !== id)
+  return groups.length < before
+}
+
+/** Remove persona from every TG link list (memory + Postgres). */
+export async function unlinkPersonaFromAllTargetGroups(personaId: string): Promise<void> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    await db.dbUnlinkPersonaFromAllTargetGroups(personaId)
+    return
+  }
+  groups = groups.map((g) => {
+    if (!g.linkedPersonas.some((p) => p.id === personaId)) return g
+    const linkedPersonas = g.linkedPersonas.filter((p) => p.id !== personaId)
+    return withCounts({
+      ...g,
+      linkedPersonas,
+      updatedAt: new Date().toISOString(),
+    })
+  })
+}

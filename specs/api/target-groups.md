@@ -17,9 +17,20 @@
 |--------|------|--------|
 | `POST` | `/api/target-groups` | `storeCreateTargetGroup` |
 | `PATCH` | `/api/target-groups/[targetGroupId]` | `storePatchTargetGroup` |
+| `DELETE` | `/api/target-groups/[targetGroupId]` | `storeDeleteTargetGroup` — hard delete (linked personas remain) |
 
 Seed: `apps/web/lib/fixtures/target-groups.ts` · store: `target-group-store.ts`  
 Linked persona ids resolve against the persona fixture store.
+
+## Hub list UX
+
+- Target groups index (`/target-groups`) list/cards: delete icon with confirm → `DELETE` above.
+- Project audience band: remove is hard delete (same API).
+
+## EARS
+
+- WHEN the user confirms delete on the target-groups hub or project audience list THEN the target group MUST be removed and MUST NOT appear in subsequent lists
+- WHEN a target group is deleted THEN linked personas MUST remain (only the TG row is removed)
 
 ## Runtime
 

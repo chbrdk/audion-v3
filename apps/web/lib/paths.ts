@@ -455,6 +455,8 @@ export const paths = {
   /** Local-only NextAuth fallback when AUTH_SECRET unset (never use in prod). */
   authDevFallbackSecret: 'audion-v3-local-dev-auth-secret-min-32chars',
   plexonFederationContractVersion: '2026-05-plexon-federation-v3',
+  /** Service: Collections the user may see (access model B). */
+  plexonAccessibleCollectionsPath: '/api/platform/provisioning/accessible-collections',
 }
 
 /** Resolve a persona portrait path from the central avatar base. */

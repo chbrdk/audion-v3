@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { PersonaWritePayload } from '@audion-v3/contracts'
-import { storePatchPersona } from '../../../../lib/fixtures/persona-store'
+import { storeDeletePersona, storePatchPersona } from '../../../../lib/fixtures/persona-store'
 import { syncPersonaTavusPal } from '../../../../lib/tavus/sync'
 
 export async function PATCH(
@@ -13,4 +13,14 @@ export async function PATCH(
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const synced = await syncPersonaTavusPal(persona)
   return NextResponse.json(synced.persona)
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ personaId: string }> },
+) {
+  const { personaId } = await context.params
+  const ok = await storeDeletePersona(personaId)
+  if (!ok) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  return new NextResponse(null, { status: 204 })
 }

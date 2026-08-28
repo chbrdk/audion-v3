@@ -72,6 +72,18 @@ export function normalizeProjectSummary(raw: unknown): ProjectSummary | null {
         : typeof item.updated_at === 'string'
           ? item.updated_at
           : null,
+    platformProjectId:
+      typeof item.platformProjectId === 'string'
+        ? item.platformProjectId
+        : typeof item.platform_project_id === 'string'
+          ? item.platform_project_id
+          : null,
+    ownerPlexonUserId:
+      typeof item.ownerPlexonUserId === 'string'
+        ? item.ownerPlexonUserId
+        : typeof item.owner_plexon_user_id === 'string'
+          ? item.owner_plexon_user_id
+          : null,
   }
 }
 
@@ -148,10 +160,18 @@ async function fetchJson(url: string): Promise<Response> {
   }
 }
 
-export async function fetchProjectList(): Promise<ProjectListResult> {
+export async function fetchProjectList(viewerId?: string | null): Promise<ProjectListResult> {
+  const { resolveViewerId, filterProjectsForViewer } = await import('./project-access')
+  const resolvedViewer = await resolveViewerId(viewerId)
   const fixtures = await storeProjectList()
   if (shouldUsePersonaFixturesOnly()) {
-    return { ...fixtures, origin: 'fixtures' }
+    const items = await filterProjectsForViewer(fixtures.items, resolvedViewer)
+    return {
+      ...fixtures,
+      items,
+      total: items.length,
+      origin: 'fixtures',
+    }
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
@@ -173,10 +193,18 @@ export async function fetchProjectList(): Promise<ProjectListResult> {
       pageSize: typeof json.page_size === 'number' ? json.page_size : 50,
     }
     // Persistable / fixture projects (incl. Plexon provisioning) always surface in the UI.
-    return { ...mergeProjectLists(fromApi, fixtures), origin: 'api' }
+    const merged = mergeProjectLists(fromApi, fixtures)
+    const filtered = await filterProjectsForViewer(merged.items, resolvedViewer)
+    return {
+      ...merged,
+      items: filtered,
+      total: filtered.length,
+      origin: 'api',
+    }
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { ...fixtures, origin: 'fixtures' }
+    const items = await filterProjectsForViewer(fixtures.items, resolvedViewer)
+    return { ...fixtures, items, total: items.length, origin: 'fixtures' }
   }
 }
 

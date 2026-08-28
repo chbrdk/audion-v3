@@ -2035,6 +2035,29 @@ main { min-height: 100vh; }
   align-items: center;
 }
 
+.audion-hub-index-list-main {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.audion-hub-index-list-main .audion-hub-index-list-row {
+  flex: 1 1 auto;
+}
+
+.audion-hub-card-with-action {
+  position: relative;
+}
+
+.audion-hub-card-with-action .audion-hub-card-delete {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 2;
+}
+
 .audion-hub-index-list-row {
   display: flex;
   flex-wrap: nowrap;

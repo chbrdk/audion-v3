@@ -365,3 +365,9 @@ export async function dbPatchPersona(
     .where(eq(personas.id, id))
   return next
 }
+
+export async function dbDeletePersona(id: string): Promise<boolean> {
+  const db = getDb()
+  const deleted = await db.delete(personas).where(eq(personas.id, id)).returning({ id: personas.id })
+  return deleted.length > 0
+}
