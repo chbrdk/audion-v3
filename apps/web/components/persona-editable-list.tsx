@@ -298,32 +298,25 @@ export function PersonaEditableList({
           })}
         </ol>
       ) : (
-        <EmptyState>
-          {empty}{' '}
-          <button type="button" className="audion-link" onClick={onAdd} disabled={saving}>
-            Add one
-          </button>
-        </EmptyState>
+        <EmptyState>{empty}</EmptyState>
       )}
 
-      {localItems.length > 0 ? (
-        <div className="audion-editable-list-foot">
-          <div className="audion-editable-list-foot-inner">
-            <button
-              type="button"
-              className="audion-editable-list-add-row"
-              aria-label={`Add ${singular}`}
-              disabled={saving || editingIndex != null}
-              onClick={onAdd}
-            >
-              <span className="audion-magazine-list-num" aria-hidden>
-                {nextNum}
-              </span>
-              <span className="audion-editable-list-add-label">{t('personaEdit.addItem')}</span>
-            </button>
-          </div>
+      <div className="audion-editable-list-foot">
+        <div className="audion-editable-list-foot-inner">
+          <button
+            type="button"
+            className="audion-editable-list-add-row"
+            aria-label={`Add ${singular}`}
+            disabled={saving || editingIndex != null}
+            onClick={onAdd}
+          >
+            <span className="audion-magazine-list-num" aria-hidden>
+              {nextNum}
+            </span>
+            <span className="audion-editable-list-add-label">{t('personaEdit.addItem')}</span>
+          </button>
         </div>
-      ) : null}
+      </div>
 
       {error ? (
         <p className="audion-editable-list-error" role="alert">

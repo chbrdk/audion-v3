@@ -306,32 +306,25 @@ export function PersonaEditableTraits({ personaId, traits, className }: Props) {
           })}
         </MeterList>
       ) : (
-        <EmptyState>
-          No traits yet.{' '}
-          <button type="button" className="audion-link" onClick={onAdd} disabled={saving}>
-            Add one
-          </button>
-        </EmptyState>
+        <EmptyState>{t('personaEdit.emptyTraits')}</EmptyState>
       )}
 
-      {rows.length > 0 ? (
-        <div className="audion-editable-list-foot">
-          <div className="audion-editable-list-foot-inner">
-            <button
-              type="button"
-              className="audion-editable-list-add-row"
-              aria-label={t('personaEdit.addTrait')}
-              disabled={saving || editingIndex != null}
-              onClick={onAdd}
-            >
-              <span className="audion-magazine-list-num" aria-hidden>
-                {String(rows.length + 1).padStart(2, '0')}
-              </span>
-              <span className="audion-editable-list-add-label">{t('personaEdit.addTrait')}</span>
-            </button>
-          </div>
+      <div className="audion-editable-list-foot">
+        <div className="audion-editable-list-foot-inner">
+          <button
+            type="button"
+            className="audion-editable-list-add-row"
+            aria-label={t('personaEdit.addTrait')}
+            disabled={saving || editingIndex != null}
+            onClick={onAdd}
+          >
+            <span className="audion-magazine-list-num" aria-hidden>
+              {String(rows.length + 1).padStart(2, '0')}
+            </span>
+            <span className="audion-editable-list-add-label">{t('personaEdit.addTrait')}</span>
+          </button>
         </div>
-      ) : null}
+      </div>
 
       {error ? (
         <p className="audion-editable-list-error" role="alert">

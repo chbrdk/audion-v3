@@ -344,7 +344,7 @@ export function TargetGroupCreateButton({
         </button>
       ) : variant === 'link' ? (
         <button type="button" className="audion-link" onClick={() => setOpen(true)}>
-          Add one
+          {t('tiles.addTargetGroup')}
         </button>
       ) : (
         <Button type="button" size="sm" onClick={() => setOpen(true)}>

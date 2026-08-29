@@ -211,7 +211,7 @@ function CompactEditableList({
 
   const deleteLabel = deleteId ? localRows.find((r) => r.id === deleteId)?.name ?? singular : ''
   const nextNum = String(localRows.length + 1).padStart(2, '0')
-  const showAddFoot = localRows.length > 0 && (createSlot || onCreate)
+  const showAddFoot = Boolean(createSlot || onCreate)
 
   return (
     <Panel className="stage-panel audion-magazine-band audion-editable-list audion-project-compact-list">
@@ -294,14 +294,7 @@ function CompactEditableList({
           })}
         </ol>
       ) : (
-        <EmptyState>
-          {empty}{' '}
-          {onCreate && !createSlot ? (
-            <button type="button" className="audion-link" onClick={handleAddDraft} disabled={saving}>
-              Add one
-            </button>
-          ) : null}
-        </EmptyState>
+        <EmptyState>{empty}</EmptyState>
       )}
 
       {showAddFoot ? (
@@ -378,12 +371,7 @@ export function ProjectPersonaList({
       title={t('detail.project.personas')}
       singular="persona"
       rows={rows}
-      empty={
-        <>
-          No personas in this project yet.{' '}
-          <PersonaCreateButton variant="link" projectId={projectId} />
-        </>
-      }
+      empty={t('detail.project.emptyPersonas')}
       createSlot={
         <PersonaCreateButton variant="row" projectId={projectId} nextIndex={rows.length + 1} />
       }
@@ -415,12 +403,7 @@ export function ProjectTargetGroupList({
       title={t('detail.project.targetGroups')}
       singular="target group"
       rows={rows}
-      empty={
-        <>
-          No target groups in this project yet.{' '}
-          <TargetGroupCreateButton variant="link" projectId={projectId} />
-        </>
-      }
+      empty={t('detail.project.emptyTargetGroups')}
       createSlot={
         <TargetGroupCreateButton
           variant="row"

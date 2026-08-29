@@ -583,7 +583,9 @@
       "addChapter": "Kapitel hinzufügen",
       "personas": "Personas",
       "targetGroups": "Zielgruppen",
-      "team": "Team"
+      "team": "Team",
+      "emptyPersonas": "Noch keine Personas in diesem Projekt.",
+      "emptyTargetGroups": "Noch keine Zielgruppen in diesem Projekt."
     },
     "targetGroup": {
       "eyebrow": "Zielgruppe",
@@ -784,6 +786,7 @@
     "tileCaption": "Kachel-Caption",
     "tileImageUrl": "Kachel-Bild-URL",
     "addTrait": "Trait hinzufügen",
+    "emptyTraits": "Noch keine Traits.",
     "commLayout": "Kommunikations-Layout",
     "quote": "Zitat",
     "tone": "Tone",

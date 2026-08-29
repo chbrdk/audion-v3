@@ -583,7 +583,9 @@
       "addChapter": "Add chapter",
       "personas": "Personas",
       "targetGroups": "Target groups",
-      "team": "Team"
+      "team": "Team",
+      "emptyPersonas": "No personas in this project yet.",
+      "emptyTargetGroups": "No target groups in this project yet."
     },
     "targetGroup": {
       "eyebrow": "Target group",
@@ -784,6 +786,7 @@
     "tileCaption": "Tile caption",
     "tileImageUrl": "Tile image URL",
     "addTrait": "Add trait",
+    "emptyTraits": "No traits yet.",
     "commLayout": "Communication layout",
     "quote": "Quote",
     "tone": "Tone",
