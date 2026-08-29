@@ -1,10 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import {
+  HubIndexLayoutSwitch as DsHubIndexLayoutSwitch,
+  type HubIndexLayout,
+} from '../lib/msqdx-ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 
-export type HubIndexLayout = 'cards' | 'list'
+export type { HubIndexLayout }
 
 export function readHubIndexLayout(): HubIndexLayout {
   if (typeof window === 'undefined') return 'cards'
@@ -52,27 +56,12 @@ export function HubIndexLayoutSwitch({
 }) {
   const t = useT()
   return (
-    <div
-      className="audion-editable-comm-layout-switch"
-      role="group"
+    <DsHubIndexLayoutSwitch
+      value={layout}
+      onChange={onChange}
       aria-label={t('lists.layoutAria')}
-    >
-      <button
-        type="button"
-        className={layout === 'cards' ? 'is-active' : undefined}
-        aria-pressed={layout === 'cards'}
-        onClick={() => onChange('cards')}
-      >
-        {t('lists.layoutCards')}
-      </button>
-      <button
-        type="button"
-        className={layout === 'list' ? 'is-active' : undefined}
-        aria-pressed={layout === 'list'}
-        onClick={() => onChange('list')}
-      >
-        {t('lists.layoutList')}
-      </button>
-    </div>
+      cardsLabel={t('lists.layoutCards')}
+      listLabel={t('lists.layoutList')}
+    />
   )
 }

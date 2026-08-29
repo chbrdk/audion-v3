@@ -10,6 +10,13 @@ export type { CardActionsProps } from '../../../../msqdx-ui/packages/ui/src/comp
 export { Chip } from '../../../../msqdx-ui/packages/ui/src/components/Chip'
 export type { ChipProps, ChipSize } from '../../../../msqdx-ui/packages/ui/src/components/Chip'
 export { EmptyState, LoadingText } from '../../../../msqdx-ui/packages/ui/src/components/LoadingText'
+export { HubIndexCard } from '../../../../msqdx-ui/packages/ui/src/components/HubIndexCard'
+export type { HubIndexCardProps } from '../../../../msqdx-ui/packages/ui/src/components/HubIndexCard'
+export { HubIndexLayoutSwitch } from '../../../../msqdx-ui/packages/ui/src/components/HubIndexLayoutSwitch'
+export type {
+  HubIndexLayout,
+  HubIndexLayoutSwitchProps,
+} from '../../../../msqdx-ui/packages/ui/src/components/HubIndexLayoutSwitch'
 export { Field } from '../../../../msqdx-ui/packages/ui/src/components/Field'
 export { Input } from '../../../../msqdx-ui/packages/ui/src/components/Input'
 export { Panel } from '../../../../msqdx-ui/packages/ui/src/components/Panel'

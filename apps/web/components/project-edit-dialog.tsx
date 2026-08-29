@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ProjectDetail, ProjectStatus, ProjectWritePayload } from '@audion-v3/contracts'
-import { Button, Field, Input, Panel, Text, Textarea, Alert } from '@msqdx/ui'
+import { Button, Field, Input, Textarea, Alert } from '@msqdx/ui'
 import { ConfirmDialog, Dialog, Select } from '../lib/msqdx-ui-client'
+import { HubIndexCard } from '../lib/msqdx-ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { IconDelete, IconEdit } from './nav-icons'
@@ -221,20 +222,13 @@ export function ProjectCreateButton({ variant = 'card' }: { variant?: 'card' | '
   return (
     <>
       {variant === 'card' ? (
-        <button
-          type="button"
+        <HubIndexCard
+          variant="create"
           className="audion-tg-card audion-tg-card--create"
+          title={t('tiles.newProject')}
+          meta={t('tiles.newProjectMeta')}
           onClick={() => setOpen(true)}
-        >
-          <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
-            <Text role="headline" as="span" className="audion-tg-card-title">
-              {t('tiles.newProject')}
-            </Text>
-            <p className="audion-tg-card-meta">
-              <span>{t('tiles.newProjectMeta')}</span>
-            </p>
-          </Panel>
-        </button>
+        />
       ) : (
         <Button type="button" size="sm" onClick={() => setOpen(true)}>
           {t('tiles.newProject')}

@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import type { ProjectList } from '@audion-v3/contracts'
-import { EmptyState, Panel, Text } from '@msqdx/ui'
+import { EmptyState, HubIndexCard } from '../lib/msqdx-ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { HubIndexLayoutSwitch, useHubIndexLayout } from './hub-index-layout'
@@ -26,21 +26,18 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
       ) : null}
 
       {layout === 'cards' ? (
-        <ul className="audion-tg-grid">
+        <ul className="ds-hub-index-grid audion-tg-grid">
           <li>
             <ProjectCreateButton variant="card" />
           </li>
           {list.items.map((item) => (
             <li key={item.id}>
-              <Link
+              <HubIndexCard
                 href={`${paths.routes.projectDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
                 className={`audion-tg-card audion-tg-card--${item.status}`}
-              >
-                <Panel as="div" variant="card" className="audion-tg-card-panel">
-                  <Text role="headline" as="h2" className="audion-tg-card-title">
-                    {item.name}
-                  </Text>
-                  <p className="audion-tg-card-meta">
+                title={item.name}
+                meta={
+                  <>
                     <span>
                       {t(
                         item.personaCount === 1
@@ -60,9 +57,9 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
                     </span>
                     <span aria-hidden>·</span>
                     <span data-status={item.status}>{item.status}</span>
-                  </p>
-                </Panel>
-              </Link>
+                  </>
+                }
+              />
             </li>
           ))}
         </ul>
