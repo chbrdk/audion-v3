@@ -29,9 +29,11 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 ## Detail composition
 
 - Magazine hero **text-only** (`.audion-magazine-hero--text`): full-width eyebrow, title, segment deck, facets — no portrait column (same as projects)
+- Facets include **status**, **persona count**, and **project** (link to `/projects/[id]` when bound; label from server-resolved project name)
 - Optional description lede under hero
 - Topbar: breadcrumb + **Generate with AI** (stub → `personas/generate`) + **Ask all personas** → `/chat?targetGroupId=` (when ≥1 linked persona); **edit icon** in `.audion-magazine-hero-actions` (hero bottom-right)
 - Linked personas band (`TargetGroupLinkedPersonas`): **Cards** (default `audion-tg-card` grid) or **List** (numbered `audion-magazine-list`) via layout switch — preference in `sessionStorage` (`paths.tgLinkedPersonasLayoutKey`)
+- **Always-visible** “Add persona” row (same `audion-editable-list-add-row` language as project audience lists), including when the list is empty. Create opens `PersonaEditDialog` with `defaultProjectId` from the TG; on success the new persona is **linked** (`PATCH` `linkedPersonaIds`) and the TG detail refreshes
 - Edit opens `TargetGroupEditDialog`
 
 ## Edit dialog
@@ -57,7 +59,8 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 
 1. List/detail load from v3 store or API (same pattern as personas — no DEMO fallback).
 2. Create card opens dialog; save navigates to new detail.
-3. Detail linked personas are readable links into `/personas/[id]`; Cards | List toggle persists for the session.
-4. Index has no redundant title/filter header — cards are the surface.
-5. No hardcoded routes — `paths.ts` + `knowledge/paths.md`.
-6. Detail CTA opens `/chat?targetGroupId=` when the segment has linked personas.
+3. Detail linked personas are readable links into `/personas/[id]`; Cards | List toggle persists for the session; empty lists still expose **Add persona**.
+4. Detail shows the bound project (name + link) when `projectId` is set.
+5. Index has no redundant title/filter header — cards are the surface.
+6. No hardcoded routes — `paths.ts` + `knowledge/paths.md`.
+7. Detail CTA opens `/chat?targetGroupId=` when the segment has linked personas.

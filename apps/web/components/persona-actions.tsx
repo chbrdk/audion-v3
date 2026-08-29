@@ -51,11 +51,16 @@ export function PersonaCreateButton({
   variant = 'button',
   projectId,
   nextIndex,
+  linkTargetGroupId,
+  linkedPersonaIds,
 }: {
   variant?: 'button' | 'card' | 'row' | 'link'
   projectId?: string | null
   /** 1-based index shown on row variant (defaults to 1) */
   nextIndex?: number
+  /** When set, create also links the persona onto this target group. */
+  linkTargetGroupId?: string | null
+  linkedPersonaIds?: string[]
 }) {
   const t = useT()
   const [open, setOpen] = useState(false)
@@ -105,6 +110,8 @@ export function PersonaCreateButton({
           mode="create"
           persona={null}
           defaultProjectId={projectId}
+          linkTargetGroupId={linkTargetGroupId}
+          linkedPersonaIds={linkedPersonaIds}
         />
       ) : null}
     </>

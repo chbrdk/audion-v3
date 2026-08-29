@@ -593,7 +593,8 @@
       "askAll": "Alle Personas fragen",
       "knowledge": "Knowledge",
       "linkedPersonas": "Verknüpfte Personas",
-      "emptyLinked": "Noch keine Personas verknüpft."
+      "emptyLinked": "Noch keine Personas verknüpft.",
+      "noProject": "Kein Projekt"
     },
     "journey": {
       "eyebrow": "Journey-Map",

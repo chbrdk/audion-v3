@@ -6,6 +6,7 @@ import type { TargetGroupLinkedPersona } from '@audion-v3/contracts'
 import { EmptyState, Panel, SectionChrome, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
+import { PersonaCreateButton } from './persona-actions'
 
 export type LinkedPersonasLayout = 'cards' | 'list'
 
@@ -55,8 +56,12 @@ function LayoutSwitch({
 
 export function TargetGroupLinkedPersonas({
   personas,
+  targetGroupId,
+  projectId,
 }: {
   personas: TargetGroupLinkedPersona[]
+  targetGroupId: string
+  projectId?: string | null
 }) {
   const t = useT()
   const [layout, setLayout] = useState<LinkedPersonasLayout>('cards')
@@ -74,8 +79,23 @@ export function TargetGroupLinkedPersonas({
     }
   }
 
+  const linkedPersonaIds = personas.map((p) => p.id)
+  const addRow = (
+    <div className="audion-editable-list-foot">
+      <div className="audion-editable-list-foot-inner">
+        <PersonaCreateButton
+          variant="row"
+          projectId={projectId}
+          nextIndex={personas.length + 1}
+          linkTargetGroupId={targetGroupId}
+          linkedPersonaIds={linkedPersonaIds}
+        />
+      </div>
+    </div>
+  )
+
   return (
-    <section className="audion-magazine-band audion-tg-linked ds-motion-reveal">
+    <section className="audion-magazine-band audion-tg-linked audion-editable-list ds-motion-reveal">
       <div className="audion-editable-comm-chrome audion-tg-linked-chrome">
         <SectionChrome
           quiet
@@ -133,6 +153,8 @@ export function TargetGroupLinkedPersonas({
           ))}
         </ol>
       )}
+
+      {addRow}
     </section>
   )
 }

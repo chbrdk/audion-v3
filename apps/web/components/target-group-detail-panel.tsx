@@ -28,10 +28,18 @@ function FacetTile({
   )
 }
 
+export type TargetGroupProjectRef = {
+  id: string
+  name: string
+}
+
 export function TargetGroupDetailPanel({
   targetGroup,
+  project = null,
 }: {
   targetGroup: TargetGroupDetail | null
+  /** Resolved Collection / project for the hero facet (server-loaded). */
+  project?: TargetGroupProjectRef | null
 }) {
   const t = useT()
 
@@ -45,6 +53,18 @@ export function TargetGroupDetailPanel({
       </div>
     )
   }
+
+  const projectLink = project ? (
+    <Link href={paths.routes.projectDetail(project.id)} className="audion-link">
+      {project.name}
+    </Link>
+  ) : targetGroup.projectId ? (
+    <Link href={paths.routes.projectDetail(targetGroup.projectId)} className="audion-link">
+      {t('dialogs.fieldProject')}
+    </Link>
+  ) : (
+    t('detail.targetGroup.noProject')
+  )
 
   return (
     <article className="panel briefing-detail audion-magazine">
@@ -97,6 +117,7 @@ export function TargetGroupDetailPanel({
               value={String(targetGroup.personaCount)}
               kind="personas"
             />
+            <FacetTile label={t('dialogs.fieldProject')} kind="project" value={projectLink} />
           </ul>
         <div className="audion-magazine-hero-actions">
           <TargetGroupDetailActions targetGroup={targetGroup} />
@@ -109,7 +130,11 @@ export function TargetGroupDetailPanel({
       ) : null}
 
       <div className="audion-magazine-body">
-        <TargetGroupLinkedPersonas personas={targetGroup.linkedPersonas} />
+        <TargetGroupLinkedPersonas
+          personas={targetGroup.linkedPersonas}
+          targetGroupId={targetGroup.id}
+          projectId={targetGroup.projectId}
+        />
         <ResourceKnowledgeDossier
           title={t('detail.targetGroup.knowledge')}
           entries={targetGroup.knowledgeEntries}

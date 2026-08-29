@@ -51,12 +51,17 @@ export function PersonaEditDialog({
   mode,
   persona,
   defaultProjectId,
+  linkTargetGroupId,
+  linkedPersonaIds,
 }: {
   open: boolean
   onClose: () => void
   mode: PersonaEditMode
   persona: PersonaDetail | null
   defaultProjectId?: string | null
+  /** After create, also link this persona onto the TG and return to its detail. */
+  linkTargetGroupId?: string | null
+  linkedPersonaIds?: string[]
 }) {
   const t = useT()
   const router = useRouter()
@@ -148,6 +153,23 @@ export function PersonaEditDialog({
         throw new Error(err?.error || `Save failed (${response.status})`)
       }
       const saved = (await response.json()) as PersonaDetail
+      if (isCreate && linkTargetGroupId?.trim()) {
+        const existing = linkedPersonaIds ?? []
+        const nextIds = existing.includes(saved.id) ? existing : [...existing, saved.id]
+        const linkRes = await fetch(paths.routes.apiTargetGroupDetail(linkTargetGroupId.trim()), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ linkedPersonaIds: nextIds }),
+        })
+        if (!linkRes.ok) {
+          const err = (await linkRes.json().catch(() => null)) as { error?: string } | null
+          throw new Error(err?.error || `Link to target group failed (${linkRes.status})`)
+        }
+        onClose()
+        router.push(paths.routes.targetGroupDetail(linkTargetGroupId.trim()))
+        router.refresh()
+        return
+      }
       onClose()
       router.push(paths.routes.personaDetail(saved.id))
       router.refresh()

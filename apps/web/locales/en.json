@@ -593,7 +593,8 @@
       "askAll": "Ask all personas",
       "knowledge": "Knowledge",
       "linkedPersonas": "Linked personas",
-      "emptyLinked": "No personas linked yet."
+      "emptyLinked": "No personas linked yet.",
+      "noProject": "No project"
     },
     "journey": {
       "eyebrow": "Journey map",
