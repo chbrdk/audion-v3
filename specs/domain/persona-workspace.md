@@ -37,7 +37,9 @@ Browse personas as a magazine index, read a full-width profile article, and crea
 ## Edit dialog
 
 - Class `audion-edit-dialog` — wider sheet, airy padding
-- Form uses DS face from `@msqdx/ui` (`Field` `size="md"`, `Input`/`Textarea`/`Select`) — **profile only** (name, role, status, archetype, location, age, bio)
+- Form uses DS face from `@msqdx/ui` (`Field` `size="md"`, `Input`/`Textarea`/`Select`) — **profile only** (name, **project**, role, status, archetype, location, age, bio)
+- Project `Select` from `GET /api/ai/options`; required on create/template/edit save (Collection capability)
+- When opened from a project audience band with `defaultProjectId`, project is pre-selected
 - Goals / Frustrations / Channels are **not** in the dialog; create still sends empty arrays; template copies source arrays
 - Name required; persist via fixture store `/api/personas` or live API when wired
 - See `specs/domain/edit-dialogs.md`

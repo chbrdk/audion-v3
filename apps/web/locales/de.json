@@ -342,6 +342,7 @@
   },
   "dialogs": {
     "nameRequired": "Name ist erforderlich",
+    "projectRequired": "Projekt ist erforderlich",
     "saveFailed": "Speichern fehlgeschlagen",
     "deleteFailed": "Löschen fehlgeschlagen",
     "statusDraft": "Entwurf",

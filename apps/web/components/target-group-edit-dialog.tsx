@@ -13,6 +13,8 @@ import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { IconEdit } from './nav-icons'
 
+type ProjectOption = { id: string; name: string }
+
 function emptyPayload(projectId?: string | null): TargetGroupWritePayload {
   return {
     name: '',
@@ -41,13 +43,20 @@ export function TargetGroupEditDialog({
   const router = useRouter()
   const [form, setForm] = useState<TargetGroupWritePayload>(emptyPayload(defaultProjectId))
   const [nameError, setNameError] = useState<string | null>(null)
+  const [projectError, setProjectError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [projects, setProjects] = useState<ProjectOption[]>([])
 
   const statusOptions = [
     { value: 'draft', label: t('dialogs.statusDraft') },
     { value: 'active', label: t('dialogs.statusActive') },
     { value: 'archived', label: t('dialogs.statusArchived') },
+  ]
+
+  const projectOptions = [
+    { value: '', label: t('common.select') },
+    ...projects.map((p) => ({ value: p.id, label: p.name })),
   ]
 
   useEffect(() => {
@@ -65,12 +74,35 @@ export function TargetGroupEditDialog({
       })
     }
     setNameError(null)
+    setProjectError(null)
     setSaveError(null)
   }, [open, mode, targetGroup, defaultProjectId])
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch(paths.routes.apiAiOptions)
+        if (!res.ok) return
+        const data = (await res.json()) as { projects?: ProjectOption[] }
+        if (!cancelled && Array.isArray(data.projects)) setProjects(data.projects)
+      } catch {
+        /* picker stays empty; save still validates */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [open])
 
   async function onSave() {
     if (!form.name.trim()) {
       setNameError(t('dialogs.nameRequired'))
+      return
+    }
+    if (!form.projectId?.trim()) {
+      setProjectError(t('dialogs.projectRequired'))
       return
     }
     setSaving(true)
@@ -81,6 +113,7 @@ export function TargetGroupEditDialog({
         name: form.name.trim(),
         segment: form.segment.trim() || 'Segment',
         description: form.description || null,
+        projectId: form.projectId!.trim(),
       }
       const url =
         mode === 'create'
@@ -147,6 +180,25 @@ export function TargetGroupEditDialog({
               setForm((f) => ({ ...f, name: e.target.value }))
               setNameError(null)
             }}
+          />
+        </Field>
+
+        <Field
+          label={t('dialogs.fieldProject')}
+          size="md"
+          error={projectError ?? undefined}
+          htmlFor="tg-project"
+          className="audion-edit-field"
+        >
+          <Select
+            id="tg-project"
+            size="md"
+            value={form.projectId ?? ''}
+            onChange={(value) => {
+              setForm((f) => ({ ...f, projectId: value || null }))
+              setProjectError(null)
+            }}
+            options={projectOptions}
           />
         </Field>
 

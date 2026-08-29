@@ -136,6 +136,30 @@ describe('persona workspace components', () => {
     expect(container.querySelector('.audion-tg-card-title')).toHaveTextContent('New persona')
   })
 
+  it('create dialog exposes a project picker', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes(paths.routes.apiAiOptions)) {
+        return Response.json({
+          projects: [{ id: 'proj-1', name: 'North Collection' }],
+          targetGroups: [],
+        })
+      }
+      return Response.json({ error: 'unexpected' }, { status: 500 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderWithPrefs(<PersonaListPanel list={list} query="" />)
+    fireEvent.click(screen.getByRole('button', { name: /New persona/i }))
+    const projectField = await screen.findByLabelText(/^Project$/i)
+    expect(projectField).toBeInTheDocument()
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled()
+    })
+    fireEvent.click(projectField)
+    expect(await screen.findByRole('option', { name: 'North Collection' })).toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
   it('enables edit actions on magazine detail', () => {
     const { container } = renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     expect(screen.getByRole('button', { name: 'Edit persona' })).toBeEnabled()
@@ -333,6 +357,30 @@ describe('target group workspace components', () => {
     expect(container.querySelector('.audion-tg-card--create .audion-tg-card-panel')).toBeTruthy()
     expect(container.querySelector('.audion-tg-card-title')).toHaveTextContent('New target group')
     expect(container.querySelector('.audion-tg-card-meta')).toHaveTextContent(/Create a segment/)
+  })
+
+  it('create dialog exposes a project picker', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes(paths.routes.apiAiOptions)) {
+        return Response.json({
+          projects: [{ id: 'proj-1', name: 'North Collection' }],
+          targetGroups: [],
+        })
+      }
+      return Response.json({ error: 'unexpected' }, { status: 500 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderWithPrefs(<TargetGroupListPanel list={tgList} query="" />)
+    fireEvent.click(screen.getByRole('button', { name: /New target group/i }))
+    const projectField = await screen.findByLabelText(/^Project$/i)
+    expect(projectField).toBeInTheDocument()
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled()
+    })
+    fireEvent.click(projectField)
+    expect(await screen.findByRole('option', { name: 'North Collection' })).toBeInTheDocument()
+    vi.unstubAllGlobals()
   })
 
   it('renders linked personas as app cards and edit icon in hero', () => {

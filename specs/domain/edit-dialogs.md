@@ -1,6 +1,6 @@
 # AUDION v3 — Edit dialogs (Persona · Target Group · Journey)
 
-**Status:** Accepted — 2026-07-29 · Amended 2026-07-29 (Journey · Persona lists)  
+**Status:** Accepted — 2026-07-29 · Amended 2026-08-29 (TG project picker)  
 **Implements:** `persona-edit-dialog.tsx`, `target-group-edit-dialog.tsx` · `journey-edit-dialog.tsx` (planned)  
 **DS:** `@msqdx/ui` Field / Input / Textarea / Select / TagInput / Dialog · `specs/domain/msqdx-ui-field.md` · `msqdx-ui-forms.md`  
 **App CSS:** `.audion-edit-dialog`, `.audion-edit-form` (layout / hero only — **not** input chrome)
@@ -30,6 +30,7 @@ One airy modal language for create/edit profile fields. Persona **Goals / Frustr
 ## Validation
 
 - Primary name required (inline `Field` error + `aria-invalid`)
+- **Target group / persona create (and persona template):** project (`projectId`) required — picker options from `GET /api/ai/options`
 - Arrays normalize empty; optional strings may be `null` on write
 
 ## Persistence

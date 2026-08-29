@@ -10,6 +10,8 @@ import { useT } from '../lib/user-prefs'
 
 export type PersonaEditMode = 'edit' | 'create' | 'template'
 
+type ProjectOption = { id: string; name: string }
+
 function emptyPayload(projectId?: string | null): PersonaWritePayload {
   return {
     name: '',
@@ -60,8 +62,10 @@ export function PersonaEditDialog({
   const router = useRouter()
   const [form, setForm] = useState<PersonaWritePayload>(emptyPayload(defaultProjectId))
   const [nameError, setNameError] = useState<string | null>(null)
+  const [projectError, setProjectError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [projects, setProjects] = useState<ProjectOption[]>([])
 
   const statusOptions = [
     { value: 'draft', label: t('dialogs.statusDraft') },
@@ -69,13 +73,37 @@ export function PersonaEditDialog({
     { value: 'archived', label: t('dialogs.statusArchived') },
   ]
 
+  const projectOptions = [
+    { value: '', label: t('common.select') },
+    ...projects.map((p) => ({ value: p.id, label: p.name })),
+  ]
+
   useEffect(() => {
     if (!open) return
     if (mode === 'create') setForm(emptyPayload(defaultProjectId))
     else if (persona) setForm(fromPersona(persona, mode))
     setNameError(null)
+    setProjectError(null)
     setSaveError(null)
   }, [open, mode, persona, defaultProjectId])
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch(paths.routes.apiAiOptions)
+        if (!res.ok) return
+        const data = (await res.json()) as { projects?: ProjectOption[] }
+        if (!cancelled && Array.isArray(data.projects)) setProjects(data.projects)
+      } catch {
+        /* picker stays empty; save still validates */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [open])
 
   const title =
     mode === 'edit'
@@ -89,6 +117,10 @@ export function PersonaEditDialog({
       setNameError(t('dialogs.nameRequired'))
       return
     }
+    if (!form.projectId?.trim()) {
+      setProjectError(t('dialogs.projectRequired'))
+      return
+    }
     setSaving(true)
     setSaveError(null)
     try {
@@ -100,6 +132,7 @@ export function PersonaEditDialog({
         age: form.age || null,
         location: form.location || null,
         bio: form.bio || null,
+        projectId: form.projectId!.trim(),
       }
       const isCreate = mode === 'create' || mode === 'template'
       const url = isCreate
@@ -159,6 +192,24 @@ export function PersonaEditDialog({
               setForm((f) => ({ ...f, name: e.target.value }))
               setNameError(null)
             }}
+          />
+        </Field>
+        <Field
+          label={t('dialogs.fieldProject')}
+          size="md"
+          error={projectError ?? undefined}
+          htmlFor="persona-project"
+          className="audion-edit-field"
+        >
+          <Select
+            id="persona-project"
+            size="md"
+            value={form.projectId ?? ''}
+            onChange={(value) => {
+              setForm((f) => ({ ...f, projectId: value || null }))
+              setProjectError(null)
+            }}
+            options={projectOptions}
           />
         </Field>
         <div className="audion-edit-row">

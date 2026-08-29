@@ -37,8 +37,10 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 ## Edit dialog
 
 - Same `audion-edit-dialog` language as personas
-- Fields: name (hero), segment + status row, description, linked persona ids (`TagInput`)
-- Name required; persist via `target-group-store` + `/api/target-groups*`
+- Fields: name (hero), **project** (`Select` from `/api/ai/options` project list), segment + status row, description, linked persona ids (`TagInput`)
+- Name **and project** required on create (Collection capability — no orphan TGs from the hub)
+- When opened from a project audience band with `defaultProjectId`, project is pre-selected (still changeable)
+- Persist via `target-group-store` + `/api/target-groups*`
 - See `specs/domain/edit-dialogs.md` · `specs/domain/target-group-fields.md`
 
 ## Rail

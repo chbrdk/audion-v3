@@ -342,6 +342,7 @@
   },
   "dialogs": {
     "nameRequired": "Name is required",
+    "projectRequired": "Project is required",
     "saveFailed": "Save failed",
     "deleteFailed": "Delete failed",
     "statusDraft": "Draft",
