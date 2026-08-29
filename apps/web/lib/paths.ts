@@ -189,6 +189,7 @@ export const paths = {
   defaultDisplayName: 'AUDION',
   displayNameStorageKey: 'audion.v3.displayName',
   themeStorageKey: 'audion.v3.themePreference',
+  accentStorageKey: 'audion.v3.accentPreference',
   localeStorageKey: 'audion.v3.locale',
   defaultTheme: 'dark' as const,
   defaultLocale: 'en' as const,

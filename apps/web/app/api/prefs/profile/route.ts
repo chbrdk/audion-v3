@@ -24,9 +24,11 @@ export async function PATCH(request: Request) {
   const updates: {
     locale?: string | null
     themePreference?: string | null
+    accentPreference?: string | null
   } = {}
   if (typeof body.locale === 'string') updates.locale = body.locale
   if (typeof body.themePreference === 'string') updates.themePreference = body.themePreference
+  if (typeof body.accentPreference === 'string') updates.accentPreference = body.accentPreference
   const user = await patchPlexonProfile(userId, updates)
   if (!user) return NextResponse.json({ error: 'Profile update failed' }, { status: 502 })
   return NextResponse.json({ user })

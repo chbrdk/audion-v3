@@ -11,8 +11,11 @@ import React, {
   type ReactNode,
 } from 'react'
 import {
+  applyAccentPreference,
   applyThemePreference,
+  migrateLegacyAccent,
   migrateLegacyThemeId,
+  type AccentPreference,
   type ThemePreference,
 } from '@msqdx/ui'
 import { createTranslator, type Translator } from './i18n'
@@ -20,12 +23,15 @@ import { paths } from './paths'
 
 export type UiThemeId = ThemePreference
 export type UiLocaleId = (typeof paths.localeChoices)[number]
+export type UiAccentId = AccentPreference
 
 type UserPrefsContextValue = {
   displayName: string
   setDisplayName: (next: string) => void
   theme: UiThemeId
   setTheme: (next: UiThemeId) => void
+  accent: UiAccentId
+  setAccent: (next: UiAccentId) => void
   locale: UiLocaleId
   setLocale: (next: UiLocaleId) => void
   t: Translator
@@ -59,6 +65,10 @@ function readTheme(): UiThemeId {
   return migrateLegacyThemeId(readStored(paths.themeStorageKey))
 }
 
+function readAccent(): UiAccentId {
+  return migrateLegacyAccent(readStored(paths.accentStorageKey))
+}
+
 function readLocale(): UiLocaleId {
   const raw = readStored(paths.localeStorageKey)
   if (raw && (paths.localeChoices as readonly string[]).includes(raw)) {
@@ -72,7 +82,11 @@ function applyLocale(locale: UiLocaleId) {
   document.documentElement.setAttribute('lang', locale)
 }
 
-async function patchRemotePrefs(body: { locale?: string; themePreference?: string }) {
+async function patchRemotePrefs(body: {
+  locale?: string
+  themePreference?: string
+  accentPreference?: string
+}) {
   try {
     await fetch('/api/prefs/profile', {
       method: 'PATCH',
@@ -87,6 +101,7 @@ async function patchRemotePrefs(body: { locale?: string; themePreference?: strin
 export function UserPrefsProvider({ children }: { children: ReactNode }) {
   const [displayName, setDisplayNameState] = useState<string>(paths.defaultDisplayName)
   const [theme, setThemeState] = useState<UiThemeId>(paths.defaultTheme)
+  const [accent, setAccentState] = useState<UiAccentId>('green')
   const [locale, setLocaleState] = useState<UiLocaleId>(paths.defaultLocale)
   const [hydrated, setHydrated] = useState(false)
   const themeCleanup = useRef<(() => void) | undefined>(undefined)
@@ -96,13 +111,20 @@ export function UserPrefsProvider({ children }: { children: ReactNode }) {
     themeCleanup.current = applyThemePreference(next)
   }, [])
 
+  const paintAccent = useCallback((next: UiAccentId) => {
+    applyAccentPreference(next)
+  }, [])
+
   useEffect(() => {
     const nextTheme = readTheme()
+    const nextAccent = readAccent()
     const nextLocale = readLocale()
     setDisplayNameState(readDisplayName())
     setThemeState(nextTheme)
+    setAccentState(nextAccent)
     setLocaleState(nextLocale)
     paintTheme(nextTheme)
+    paintAccent(nextAccent)
     applyLocale(nextLocale)
     setHydrated(true)
 
@@ -123,11 +145,17 @@ export function UserPrefsProvider({ children }: { children: ReactNode }) {
           writeStored(paths.themeStorageKey, pref)
           paintTheme(pref)
         }
+        if (user.accentPreference != null) {
+          const next = migrateLegacyAccent(user.accentPreference)
+          setAccentState(next)
+          writeStored(paths.accentStorageKey, next)
+          paintAccent(next)
+        }
       })
       .catch(() => undefined)
 
     return () => themeCleanup.current?.()
-  }, [paintTheme])
+  }, [paintTheme, paintAccent])
 
   const setDisplayName = useCallback((next: string) => {
     const trimmed = next.trim() || paths.defaultDisplayName
@@ -145,6 +173,16 @@ export function UserPrefsProvider({ children }: { children: ReactNode }) {
     [paintTheme],
   )
 
+  const setAccent = useCallback(
+    (next: UiAccentId) => {
+      setAccentState(next)
+      writeStored(paths.accentStorageKey, next)
+      paintAccent(next)
+      void patchRemotePrefs({ accentPreference: next })
+    },
+    [paintAccent],
+  )
+
   const setLocale = useCallback((next: UiLocaleId) => {
     setLocaleState(next)
     writeStored(paths.localeStorageKey, next)
@@ -155,8 +193,18 @@ export function UserPrefsProvider({ children }: { children: ReactNode }) {
   const t = useMemo(() => createTranslator(locale), [locale])
 
   const value = useMemo(
-    () => ({ displayName, setDisplayName, theme, setTheme, locale, setLocale, t }),
-    [displayName, setDisplayName, theme, setTheme, locale, setLocale, t],
+    () => ({
+      displayName,
+      setDisplayName,
+      theme,
+      setTheme,
+      accent,
+      setAccent,
+      locale,
+      setLocale,
+      t,
+    }),
+    [displayName, setDisplayName, theme, setTheme, accent, setAccent, locale, setLocale, t],
   )
 
   return (

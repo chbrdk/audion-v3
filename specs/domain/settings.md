@@ -1,19 +1,19 @@
 # Settings
 
-**Status:** Accepted — 2026-07-30 · MVP + Plexon Account Wave 1 · **SET-L1 locale chrome** · **2026-08-28 SettingsShell + cross-app prefs**  
+**Status:** Accepted — 2026-07-30 · MVP + Plexon Account Wave 1 · **SET-L1 locale chrome** · **2026-08-28 SettingsShell** · **2026-08-29 polish + accent**  
 **Route:** `/settings`  
 **Knowledge:** `knowledge/settings-migration.md`, `knowledge/paths.md`, `knowledge/plexon-federation.md`, `knowledge/i18n.md`  
-**Reference:** `@msqdx/ui` `SettingsShell` · Plexon `themePreference` / `locale` profile fields
+**Reference:** `@msqdx/ui` `SettingsShell` · Plexon `themePreference` / `accentPreference` / `locale`
 
 ## Purpose
 
-Shared magazine settings layout (`SettingsShell`) with device-local display name cache; **locale + themePreference** sync via Plexon profile (service profile API) when authenticated.
+Dense 2-col `SettingsShell` with device-local display name cache; **locale + themePreference + accentPreference** sync via Plexon profile when authenticated.
 
 ## Cross-app prefs
 
-WHEN authenticated, AUDION SHALL hydrate `locale` + `themePreference` from Plexon and PATCH on change.  
-WHEN Appearance changes, AUDION SHALL use only `light` | `dark` | `auto` and `applyThemePreference` from `@msqdx/ui`.  
-Local storage caches preferences for first paint; Plexon remains SSOT.
+WHEN authenticated, AUDION SHALL hydrate `locale` + `themePreference` + `accentPreference` from Plexon and PATCH on change.  
+WHEN Appearance changes, AUDION SHALL use `light` | `dark` | `auto` via `applyThemePreference` and accent ids via `applyAccentPreference` / `AccentSwatchGroup`.  
+Local storage caches preferences for first paint; Plexon remains SSOT. No long lede/help copy.
 
 ## Locale (SET-L1)
 
@@ -30,7 +30,7 @@ Mount `SettingsShell` (Account → Profile → Appearance → Language → extra
 |------|-----------|
 | Account | When authenticated: Plexon name/email (read) + Sign out. When unauthenticated: Sign in link |
 | Profile | `Avatar` + display name `Input` (localStorage); may seed from session name |
-| Appearance | `light` / `dark` / `auto` ToggleGroup → `applyThemePreference` + Plexon |
+| Appearance | Theme ToggleGroup + AccentSwatchGroup → Plexon |
 | Language | Locale `ToggleGroup` (`en` / `de`) — SET-L1 + Plexon |
 | Extras | Admin entry → `/settings/admin` |
 
@@ -43,7 +43,7 @@ Mount `SettingsShell` (Account → Profile → Appearance → Language → extra
 
 ## Non-goals (MVP)
 
-Providers, API docs iframe, password/tokens, brand color (Plexon-owned). Locale/themePreference PATCH is in scope.
+Providers, API docs iframe, password/tokens, avatar upload. Locale/theme/accent PATCH is in scope.
 
 Admin prompts / providers live under `/settings/admin` (see `specs/domain/prompt-templating.md`).
 
