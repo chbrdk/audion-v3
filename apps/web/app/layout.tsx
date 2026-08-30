@@ -7,6 +7,7 @@ import { paths } from '../lib/paths'
 export const metadata: Metadata = {
   title: 'AUDION v3',
   description: 'Spec-driven persona workspace rebuild',
+  icons: { icon: '/favicon.ico' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
