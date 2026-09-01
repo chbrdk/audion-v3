@@ -5,7 +5,7 @@
  *   npx tsx scripts/seed-vaillant-group-mafo-store.ts
  */
 
-import { seedVaillantGroupMafoPersonas } from '../apps/web/lib/demo/seed-vaillant-group-mafo-personas.ts'
+import { seedVaillantGroupMafoPersonas } from '../apps/web/lib/demo/seed-vaillant-group-mafo-personas'
 
 async function main() {
   if (!process.env.DATABASE_URL?.trim()) {

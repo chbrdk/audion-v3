@@ -93,7 +93,7 @@ COPY --from=builder /workspace/audion-v3/apps/web/.next ./apps/web/.next
 COPY --from=builder /workspace/audion-v3/apps/web/next.config.ts ./apps/web/next.config.ts
 COPY --from=builder /workspace/audion-v3/apps/web/tsconfig.json ./apps/web/tsconfig.json
 COPY --from=builder /workspace/audion-v3/apps/web/drizzle.config.ts ./apps/web/drizzle.config.ts
-COPY --from=builder /workspace/audion-v3/apps/web/lib/db ./apps/web/lib/db
+COPY --from=builder /workspace/audion-v3/apps/web/lib ./apps/web/lib
 COPY --from=builder /workspace/audion-v3/scripts ./scripts
 # Runtime webpack aliases still resolve into msqdx-ui source (server components / SSR).
 COPY --from=builder /workspace/msqdx-ui /workspace/msqdx-ui
