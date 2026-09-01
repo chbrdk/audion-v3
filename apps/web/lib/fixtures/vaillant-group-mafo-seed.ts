@@ -102,13 +102,16 @@ function basePersona(
     tavusLanguage: null,
     goals: goals.map((label, priority) => ({ label, priority })),
     frustrations: frustrations.map((label) => ({ label, evidenceCount: 0 })),
+    channels: [],
     sections: [],
-    targetGroupIds: [],
-    notes: null,
-    journeyDimensions: {
-      riskAversion: 0.7,
-      trustSkepticism: 0.65,
-      detailOrientation: 0.6,
+    journeyBehavior: {
+      dimensionOverrides: {
+        riskAversion: 0.7,
+        trustSkepticism: 0.65,
+        detailOrientation: 0.6,
+      },
+      dos: [],
+      donts: [],
     },
   }
 }

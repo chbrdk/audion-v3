@@ -79,7 +79,7 @@ async function main() {
       traits: seed.traits,
       goals: seed.goals,
       frustrations: seed.frustrations,
-      journeyDimensions: seed.journeyDimensions,
+      journeyBehavior: seed.journeyBehavior,
       projectId: VAILLANT_GROUP_AUDION_PROJECT_ID,
     }
     const created = (await api('POST', '/api/personas', payload)) as { id: string; name: string }
