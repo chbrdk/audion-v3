@@ -17,6 +17,13 @@ if [ -n "$DATABASE_URL" ]; then
     echo "[AUDION-v3] drizzle-kit push failed (DB unreachable or schema error). Refusing to start."
     exit 1
   fi
+
+  echo "[AUDION-v3] Vaillant Group MaFo persona seed (idempotent)..."
+  if npx tsx scripts/seed-vaillant-group-mafo-store.ts; then
+    echo "[AUDION-v3] Vaillant Group seed complete."
+  else
+    echo "[AUDION-v3] Vaillant Group seed failed (non-fatal)."
+  fi
 else
   echo "[AUDION-v3] DATABASE_URL not set — projects use in-memory fixtures (dev only)."
 fi
