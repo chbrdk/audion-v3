@@ -115,6 +115,20 @@ function basePersona(
   }
 }
 
+function installerPersona(
+  id: string,
+  name: string,
+  role: string,
+  bio: string,
+  frustrations: string[],
+  goals: string[],
+): PersonaDetail {
+  return {
+    ...basePersona(id, name, role, bio, frustrations, goals),
+    archetype: 'SHK-Fachbetrieb',
+  }
+}
+
 /** UC1 homeowner personas for qualitative barrier research. */
 export const VAILLANT_GROUP_UC1_PERSONAS: PersonaDetail[] = [
   basePersona(
@@ -165,6 +179,39 @@ export const VAILLANT_GROUP_UC1_PERSONAS: PersonaDetail[] = [
     ['Grüne Claims ohne Beleg', 'Komplexe Anträge'],
     ['Klimawirkung', 'Einfacher Modernisierungspfad'],
   ),
+]
+
+/** UC2 installer personas for dual-perspective research. */
+export const VAILLANT_GROUP_UC2_INSTALLER_PERSONAS: PersonaDetail[] = [
+  installerPersona(
+    'persona-vg-meister-klaus',
+    'Klaus Brenner',
+    'Meister · SHK-Betrieb',
+    '12-köpfiger Familienbetrieb, empfiehlt Systeme nur wenn Planung und Service kalkulierbar sind.',
+    ['Unklare Planungsdaten', 'Service-Rückläufer', 'Schwer erklärbare Wirtschaftlichkeit'],
+    ['Sichere Empfehlung', 'Schnelle Inbetriebnahme', 'Weniger Rückfragen vom Endkunden'],
+  ),
+  installerPersona(
+    'persona-vg-planer-sandra',
+    'Sandra Vogt',
+    'Planungs-Ingenieurin',
+    'Plant Wärmepumpen für Bestandsgebäude, braucht valide Tools und Hersteller-Support.',
+    ['Fehlende Bestandsdaten', 'Komplexe Förderlogik', 'Unterschiedliche Hersteller-Apps'],
+    ['Valide Planungsgrundlage', 'Einheitliche Beratungsstory', 'Remote-Diagnose'],
+  ),
+  installerPersona(
+    'persona-vg-monteur-tim',
+    'Tim Schäfer',
+    'Monteur · Junge Generation',
+    'Montiert vor Ort, will klare Prozesse und wenig Nacharbeit.',
+    ['Unvollständige Übergabe', 'Diagnose am Gerät', 'Kundenfragen ohne Antworten'],
+    ['Standardisierte Montage', 'Gute Diagnose-Tools', 'Verständliche Kundeninfos'],
+  ),
+]
+
+export const VAILLANT_GROUP_ALL_MAFO_PERSONAS: PersonaDetail[] = [
+  ...VAILLANT_GROUP_UC1_PERSONAS,
+  ...VAILLANT_GROUP_UC2_INSTALLER_PERSONAS,
 ]
 
 export const VAILLANT_GROUP_UC1_RESEARCH_PROMPTS = [

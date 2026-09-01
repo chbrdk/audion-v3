@@ -4,8 +4,8 @@
  */
 
 import {
+  VAILLANT_GROUP_ALL_MAFO_PERSONAS,
   VAILLANT_GROUP_AUDION_PROJECT_ID,
-  VAILLANT_GROUP_UC1_PERSONAS,
 } from '../fixtures/vaillant-group-mafo-seed'
 import { dbInsertPersonaDetail, dbPersonaDetail } from '../db/personas'
 
@@ -19,7 +19,7 @@ export async function seedVaillantGroupMafoPersonas(): Promise<SeedVaillantGroup
   const created: string[] = []
   const skipped: string[] = []
 
-  for (const seed of VAILLANT_GROUP_UC1_PERSONAS) {
+  for (const seed of VAILLANT_GROUP_ALL_MAFO_PERSONAS) {
     const existing = await dbPersonaDetail(seed.id)
     if (existing) {
       skipped.push(seed.id)
