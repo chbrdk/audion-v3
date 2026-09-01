@@ -94,7 +94,6 @@ function basePersona(
     visuals: null,
     profileDe: null,
     headlineDe: null,
-    journeyBehavior: null,
     knowledgeEntries: [],
     documents: [],
     tavusReplicaId: null,
