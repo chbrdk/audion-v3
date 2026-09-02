@@ -1,5 +1,5 @@
 /**
- * Idempotent Vaillant Group UC1 persona seed (Postgres store).
+ * Idempotent Vaillant Group MaFo seed (Postgres store).
  * Used by container entrypoint and operator scripts — no HTTP Bearer required.
  */
 
@@ -8,14 +8,19 @@ import {
   VAILLANT_GROUP_AUDION_PROJECT_ID,
 } from '../fixtures/vaillant-group-mafo-seed'
 import { dbInsertPersonaDetail, dbPersonaDetail } from '../db/personas'
+import { seedVaillantGroupMafoTargetGroups } from './seed-vaillant-group-mafo-target-groups'
 
 export type SeedVaillantGroupMafoResult = {
   projectId: string
-  created: string[]
-  skipped: string[]
+  personas: { created: string[]; skipped: string[] }
+  targetGroups: { created: string[]; updated: string[]; skipped: string[] }
 }
 
-export async function seedVaillantGroupMafoPersonas(): Promise<SeedVaillantGroupMafoResult> {
+export async function seedVaillantGroupMafoPersonas(): Promise<{
+  projectId: string
+  created: string[]
+  skipped: string[]
+}> {
   const created: string[] = []
   const skipped: string[] = []
 
@@ -33,5 +38,20 @@ export async function seedVaillantGroupMafoPersonas(): Promise<SeedVaillantGroup
     projectId: VAILLANT_GROUP_AUDION_PROJECT_ID,
     created,
     skipped,
+  }
+}
+
+/** Personas first, then target groups (links require persona rows). */
+export async function seedVaillantGroupMafoStore(): Promise<SeedVaillantGroupMafoResult> {
+  const personas = await seedVaillantGroupMafoPersonas()
+  const targetGroups = await seedVaillantGroupMafoTargetGroups()
+  return {
+    projectId: VAILLANT_GROUP_AUDION_PROJECT_ID,
+    personas: { created: personas.created, skipped: personas.skipped },
+    targetGroups: {
+      created: targetGroups.created,
+      updated: targetGroups.updated,
+      skipped: targetGroups.skipped,
+    },
   }
 }

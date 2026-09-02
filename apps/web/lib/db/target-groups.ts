@@ -174,6 +174,29 @@ export async function dbDeleteTargetGroup(id: string): Promise<boolean> {
   return deleted.length > 0
 }
 
+/** Idempotent demo seed — fixed id (unlike dbCreateTargetGroup). */
+export async function dbInsertTargetGroupDetail(detail: TargetGroupDetail): Promise<TargetGroupDetail> {
+  const linkedPersonaIds = detail.linkedPersonas.map((p) => p.id)
+  const now = new Date()
+  const db = getDb()
+  await db.insert(targetGroups).values({
+    id: detail.id,
+    name: detail.name,
+    segment: detail.segment,
+    description: detail.description,
+    status: detail.status,
+    projectId: detail.projectId,
+    linkedPersonaIds,
+    linkedPersonas: detail.linkedPersonas,
+    personaCount: detail.personaCount,
+    knowledgeEntries: detail.knowledgeEntries ?? [],
+    documents: detail.documents ?? [],
+    updatedAt: now,
+    createdAt: now,
+  })
+  return { ...detail, updatedAt: now.toISOString() }
+}
+
 /** Drop a persona id from every target group that lists it. */
 export async function dbUnlinkPersonaFromAllTargetGroups(personaId: string): Promise<void> {
   const db = getDb()

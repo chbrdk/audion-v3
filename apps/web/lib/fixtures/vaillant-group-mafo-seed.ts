@@ -15,7 +15,9 @@ export type VaillantGroupTargetGroupSeed = {
   id: string
   name: string
   description: string
+  /** Flow / Plexon segment key (stored as AUDION `segment`). */
   segmentKey: string
+  linkedPersonaIds: string[]
 }
 
 export const VAILLANT_GROUP_UC1_TARGET_GROUPS: VaillantGroupTargetGroupSeed[] = [
@@ -24,36 +26,42 @@ export const VAILLANT_GROUP_UC1_TARGET_GROUPS: VaillantGroupTargetGroupSeed[] = 
     name: 'Familie · unsaniertes Bestandsgebäude',
     description: 'Eigenheim, älterer Bestand, unsicher ob Wärmepumpe technisch passt.',
     segmentKey: 'altbau_familie',
+    linkedPersonaIds: ['persona-vg-sandra-altbau'],
   },
   {
     id: 'tg-vg-heizungstausch',
     name: 'Eigentümer · Heizungstausch steht an',
     description: 'Gasheizung end-of-life, Zeitdruck, vergleicht Optionen.',
     segmentKey: 'heizungstausch',
+    linkedPersonaIds: ['persona-vg-thomas-tausch'],
   },
   {
     id: 'tg-vg-neubau-tech',
     name: 'Neubau · technikaffin',
     description: 'Plant Neubau/Sanierung, vergleicht Systeme datengetrieben.',
     segmentKey: 'neubau_tech',
+    linkedPersonaIds: ['persona-vg-lisa-neubau'],
   },
   {
     id: 'tg-vg-preissensibel',
     name: 'Preissensibler Haushalt',
     description: 'Fokus TCO, Förderung, monatliche Belastung.',
     segmentKey: 'preissensibel',
+    linkedPersonaIds: ['persona-vg-meier-budget'],
   },
   {
     id: 'tg-vg-gas-skeptiker',
     name: 'Gasheizung · skeptisch',
     description: 'Zufrieden mit Gas, braucht starke Argumente für Umstieg.',
     segmentKey: 'gas_skeptiker',
+    linkedPersonaIds: ['persona-vg-krause-gas'],
   },
   {
     id: 'tg-vg-oeko-modernisierer',
     name: 'Ökologisch motivierter Modernisierer',
     description: 'Klimaziele im Fokus, will Planungssicherheit.',
     segmentKey: 'oeko_modernisierer',
+    linkedPersonaIds: ['persona-vg-jana-oeko'],
   },
 ]
 
@@ -212,6 +220,29 @@ export const VAILLANT_GROUP_UC2_INSTALLER_PERSONAS: PersonaDetail[] = [
 export const VAILLANT_GROUP_ALL_MAFO_PERSONAS: PersonaDetail[] = [
   ...VAILLANT_GROUP_UC1_PERSONAS,
   ...VAILLANT_GROUP_UC2_INSTALLER_PERSONAS,
+]
+
+/** UC2 dual-perspective target groups (Endkunde + Fachhandwerker). */
+export const VAILLANT_GROUP_UC2_TARGET_GROUPS: VaillantGroupTargetGroupSeed[] = [
+  {
+    id: 'tg-vg-homeowner-decision',
+    name: 'Endkunden-Entscheider',
+    description: 'Hausbesitzer-Perspektive in der Installateur-Journey (UC2).',
+    segmentKey: 'homeowner_decision',
+    linkedPersonaIds: VAILLANT_GROUP_UC1_PERSONAS.map((p) => p.id),
+  },
+  {
+    id: 'tg-vg-fachhandwerker',
+    name: 'Fachhandwerker · SHK',
+    description: 'Meister, Planung und Montage — Empfehlungs- und Service-Perspektive (UC2).',
+    segmentKey: 'installer_recommendation',
+    linkedPersonaIds: VAILLANT_GROUP_UC2_INSTALLER_PERSONAS.map((p) => p.id),
+  },
+]
+
+export const VAILLANT_GROUP_ALL_MAFO_TARGET_GROUPS: VaillantGroupTargetGroupSeed[] = [
+  ...VAILLANT_GROUP_UC1_TARGET_GROUPS,
+  ...VAILLANT_GROUP_UC2_TARGET_GROUPS,
 ]
 
 export const VAILLANT_GROUP_UC1_RESEARCH_PROMPTS = [
