@@ -6,8 +6,9 @@ import { fetchSharePersona } from '../../lib/chat/share-persona'
 import { fetchChatConversationDetail } from '../../lib/chat/conversations'
 import { storeShareMoodboard } from '../../lib/fixtures/chat-share'
 import { fetchPersonaList } from '../../lib/personas'
+import { fetchProjectList } from '../../lib/projects'
 import { fetchTargetGroupDetail, fetchTargetGroupList } from '../../lib/target-groups'
-import type { PersonaSummary } from '@audion-v3/contracts'
+import type { ChatMode, PersonaSummary } from '@audion-v3/contracts'
 
 export default async function ChatPage({
   searchParams,
@@ -38,6 +39,8 @@ export default async function ChatPage({
     ? buildChatPrefillDraft({ prompt, studyName, waveKey })
     : null
   const shareMode = Boolean(projectId && personaId)
+  /** Project ask-all: projectId alone (share uses personaId + projectId). */
+  const projectAskAll = Boolean(projectId && !personaId && !targetGroupId)
 
   try {
     if (shareMode && personaId && projectId) {
@@ -74,14 +77,19 @@ export default async function ChatPage({
       )
     }
 
-    const [personaResult, conversation, tgList, tgDetail] = await Promise.all([
+    const [personaResult, conversation, tgList, tgDetail, projectResult] = await Promise.all([
       fetchPersonaList(),
       conversationId ? fetchChatConversationDetail(conversationId) : Promise.resolve(null),
       fetchTargetGroupList(),
       targetGroupId
         ? fetchTargetGroupDetail(targetGroupId).then((r) => r.targetGroup)
         : Promise.resolve(null),
+      fetchProjectList(),
     ])
+
+    let initialMode: ChatMode = 'persona'
+    if (targetGroupId) initialMode = 'target_group'
+    else if (projectAskAll) initialMode = 'project'
 
     return (
       <AudionChatWorkspace
@@ -92,7 +100,9 @@ export default async function ChatPage({
         shareProjectId={null}
         targetGroups={tgList.items}
         initialTargetGroup={tgDetail}
-        initialMode={targetGroupId ? 'target_group' : 'persona'}
+        projects={projectResult.items}
+        initialProjectId={projectAskAll ? projectId : null}
+        initialMode={initialMode}
       />
     )
   } catch (error) {

@@ -76,6 +76,7 @@
 - Journey from UX run: `apps/web/lib/journey-from-ux-run.ts` · `paths.routes.apiJourneyFromUxRun`
 - Chat deep-link / F-Fragen prefill: `paths.routes.chatWithContext` · `apps/web/lib/chat/prefill.ts`
 - Chat TG ask-all: `paths.routes.chatTargetGroup` → `/chat?targetGroupId=` · `apps/web/lib/chat/tg-ask-all.ts`
+- Chat project ask-all: `paths.routes.chatProject` → `/chat?projectId=` (ohne `personaId`; Share bleibt `personaId`+`projectId`)
   (`prompt`, `personaId`, `studyId`, `waveId`, `projectId`, `studyName`, `waveKey`)
 - Bosch EBM demo URL: `paths.boschEbikeProduktkombinationenUrl` / `paths.boschEbikeHomeUrl` / `paths.boschEbikePressHubMotorUrl`
 - Research crawl UA: `paths.researchCrawlUserAgent` (CloudFront on bosch-ebike.com blocks bare `node` UA → 403)
@@ -105,7 +106,7 @@
 - User prefs keys: `audion.v3.displayName` · `audion.v3.theme` · `audion.v3.locale`
 - UI i18n (SET-L1): `knowledge/i18n.md` · `paths.i18nLibPath` (`apps/web/lib/i18n.ts`) · `paths.localesDir` (`apps/web/locales/{en,de}.json`) · `useUserPrefs().t` / `useT()`
 - Workspace slice clone pattern: `knowledge/workspace-slice-pattern.md`
-- Chat routes: `/chat`, `/chat/embed`, `/chat/history`, `/chat?targetGroupId=` (ask-all)
+- Chat routes: `/chat`, `/chat/embed`, `/chat/history`, `/chat?targetGroupId=` (TG ask-all), `/chat?projectId=` alone (project ask-all)
 - Chat embed (EQC overlay): `specs/domain/chat-embed.md` · `paths.routes.chatEmbed` / `buildChatEmbedHref` · CSP `frame-ancestors` via `AUDION_CHAT_EMBED_FRAME_ANCESTORS` or `NEXT_PUBLIC_PLEXON_URL` / `PLEXON_AUTH_URL`
 - Guest chat budgets: `apps/web/lib/chat/guest-budget.ts` — `GUEST_CHAT_MAX_USER_TURNS=5`, `GUEST_CHAT_MAX_CHARS=800`, `GUEST_CHAT_TTL_MS=30m` · cookie `audion_guest_chat` · gate unauthenticated `POST /api/chat/stream`
 - Chat API proxies: `/api/chat/stream`, `/api/chat/images/upload`, `/api/chat/documents/upload`, `/api/chat/conversations`, `/api/chat/conversations/[id]`

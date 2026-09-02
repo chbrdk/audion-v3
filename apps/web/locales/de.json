@@ -467,8 +467,10 @@
     "mode": "Modus",
     "modePersona": "Persona",
     "modeTargetGroup": "Zielgruppe",
+    "modeProject": "Projekt",
     "fieldPersona": "Persona",
     "fieldTargetGroup": "Zielgruppe",
+    "fieldProject": "Projekt",
     "modalityAria": "Chat-Modalität",
     "voice": "Voice",
     "video": "Video",
@@ -480,6 +482,7 @@
     "badgePublicShare": "Öffentlicher Share",
     "titleChat": "Chat",
     "titleTgChat": "Zielgruppen-Chat",
+    "titleProjectChat": "Projekt-Chat",
     "titleSharedChat": "Geteilter Chat",
     "titleEmbeddedChat": "Eingebetteter Chat",
     "panelAria": "Persona-Chat",
@@ -585,7 +588,8 @@
       "targetGroups": "Zielgruppen",
       "team": "Team",
       "emptyPersonas": "Noch keine Personas in diesem Projekt.",
-      "emptyTargetGroups": "Noch keine Zielgruppen in diesem Projekt."
+      "emptyTargetGroups": "Noch keine Zielgruppen in diesem Projekt.",
+      "askAll": "Alle Personas fragen"
     },
     "targetGroup": {
       "eyebrow": "Zielgruppe",

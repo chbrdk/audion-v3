@@ -21,13 +21,14 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 | `/chat?personaId=&projectId=` | Deep-link / share-style entry (MVP may require auth; public share later) |
 | `/chat?prompt=&personaId=&studyId=&waveId=&studyName=&waveKey=` | F-Fragen / study hang: composer prefill + persona select (`lib/chat/prefill.ts`) |
 | `/chat?targetGroupId=` | **Target-group ask-all** mode — one question → N persona answers side by side |
+| `/chat?projectId=` (no `personaId`) | **Project ask-all** mode — one question → N project personas side by side |
 | `/chat/history` | Simple conversation list (persona conversations) |
 
 ## Composition (`/chat`)
 
 | Region | Treatment |
 |--------|-----------|
-| Shell topbar | No page title; mode control + persona **or** target-group `Select` in `leading` (`.topbar-brand`); History in `topbar-right` (persona mode); visually-hidden `h1` “Chat” |
+| Shell topbar | No page title; mode control + persona **or** target-group **or** project `Select` in `leading` (`.topbar-brand`); History in `topbar-right` (persona mode); visually-hidden `h1` “Chat” |
 | Panel | `.chat-panel.chat-panel-open` (+ thin `.audion-chat-panel` for shell offset) |
 | Message stack | Scroll; assistant via `ChatAnswer`; user `.chat-text` display type, right-aligned |
 | Empty | `@msqdx/ui` `EmptyState` + `.chat-empty` |
@@ -56,7 +57,7 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 
 | Region | Treatment |
 |--------|-----------|
-| Topbar | Mode select (Persona \| Zielgruppe) + TG `Select` + persona count |
+| Topbar | Mode select (Persona \| Zielgruppe \| Projekt) + TG `Select` + persona count |
 | Body | Stack of rounds: user question (`.chat-text`) → grid of persona cards |
 | Card | Name/role label + `ChatAnswer` / `LoadingText` / error |
 | Empty | Pick TG or “no linked personas” |
@@ -70,6 +71,23 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 | **Reshape** | Editorial topbar + magazine grid on DS open chrome; deep-link + TG detail CTA |
 | **Drop** | MUI Tabs/Paper admin monolith; mixing TG grid into persona thread |
 
+## Project ask-all (Phase Project)
+
+**Job:** One question to every persona of a project; compare answers side by side. Same ask-all chrome as TG — different persona source. Not a shared multi-user thread.
+
+| Rule | Value |
+|------|--------|
+| Cap | `MAX_ASK_ALL_CHAT_PERSONAS = 10` (alias of TG cap; first N by list order) |
+| Persona source | All personas with `projectId === selected` (client filter of persona list) |
+| Transport | Same client fan-out as TG (`POST /api/chat/stream` per persona) |
+| Interaction / prompt | Same round grid + one-shot per round |
+| Disabled | Same as TG: voice / video / inspect / attachments / share / moodboard / history |
+| Deep-link | `/chat?projectId=` **without** `personaId` (share remains `personaId` + `projectId`) |
+| Entry | Topbar mode **Projekt** + project select; CTA from project detail → `/chat?projectId=` |
+| Persistence | Ephemeral UI rounds (not history list) for MVP |
+
+Share mode (`personaId` + `projectId`) stays persona thread — never enter project ask-all when both are set.
+
 ## Shell integration
 
 - Rail item **Chat** — path `paths.routes.chat`
@@ -82,11 +100,12 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 - Next proxy under `paths.routes.apiChat*` when browser must avoid CORS / hide keys
 - Persona context: load summary via existing persona contracts when `personaId` present
 - TG context: load detail via target-group contracts when `targetGroupId` present; members from `linkedPersonas`
+- Project ask-all: load project list for select; members = personas filtered by `projectId` (no aggregator API)
 - Fixture mode: canned transcript + fake stream for UI tests without chat-api
 
 ## Video (Tavus CVI)
 
-Persona mode only (off on public share, TG, and embed). Composer **Video** toggle starts `POST /api/chat/tavus/session` with the selected Audion `personaId`. The persona must have `tavusReplicaId` (Face / replica, e.g. `r5e781e37a8d`). The BFF creates a Tavus conversation server-side (`TAVUS_API_KEY`) and the workspace embeds `conversationUrl` in an iframe (`camera; microphone; fullscreen; display-capture`). Optional `meetingToken` is appended as `?t=`.
+Persona mode only (off on public share, TG, project ask-all, and embed). Composer **Video** toggle starts `POST /api/chat/tavus/session` with the selected Audion `personaId`. The persona must have `tavusReplicaId` (Face / replica, e.g. `r5e781e37a8d`). The BFF creates a Tavus conversation server-side (`TAVUS_API_KEY`) and the workspace embeds `conversationUrl` in an iframe (`camera; microphone; fullscreen; display-capture`). Optional `meetingToken` is appended as `?t=`.
 
 See `specs/domain/tavus-video-chat.md` · `knowledge/tavus-video-chat.md`.
 
@@ -125,8 +144,8 @@ Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenR
 - Public unauthenticated share (middleware `PUBLIC_PATHS`) — follow-on
 - Full adaptive-prompt admin / Qdrant debug panels
 - Journey-in-chat context picker (follow-on once journeys ship)
-- Persisted TG round history / multi-turn TG sessions
-- Voice / inspect / attachments in TG mode
+- Persisted TG / project ask-all round history / multi-turn ask-all sessions
+- Voice / inspect / attachments in TG or project ask-all mode
 - Guest-embed attachments
 - Legacy `.doc` / S3 blob storage
 - LLM-regenerated `ensure-chat-prompt` / Skills-as-identity
@@ -146,3 +165,5 @@ Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenR
 11. Persona chat can attach images, stream with vision, and A/B-compare exactly two images.
 12. Persona chat can attach `.docx`; text merges into the user turn; attachments survive redeploy when Postgres is configured.
 13. Adaptive system prompt includes traits/style/goals/pains; custom voice overlays without dropping the profile; chat completions pass `max_completion_tokens`.
+14. With `projectId` alone, project ask-all shows grid of project personas (≤10); CTA from project detail → `/chat?projectId=`.
+15. Project ask-all smoke: filter by `projectId` + fan-out → N cards.

@@ -88,16 +88,17 @@ Exact wire format follows chat-api; adapter lives in `apps/web/lib/chat/`.
 - Unknown roles on history load → drop or coerce to `assistant`
 - Guest/TG: reject `imageIds` / `documentIds` / `abCompare`
 
-## Target-group ask-all (client shapes)
+## Ask-all (client shapes) — TG + project
 
-Not persisted conversations — UI round state only.
+Not persisted conversations — UI round state only. Project ask-all reuses the same round/slot shapes as TG.
 
 | Type | Notes |
 |------|--------|
-| `ChatMode` | `persona` \| `target_group` |
+| `ChatMode` | `persona` \| `target_group` \| `project` |
 | `ChatTargetGroupRoundSlot` | `personaId`, `personaName`, `role`, `content`, `status` (`pending` \| `streaming` \| `complete` \| `error`), optional `error` |
 | `ChatTargetGroupRound` | `id`, `question`, `createdAt`, `slots: ChatTargetGroupRoundSlot[]` |
-| Cap | `MAX_TG_CHAT_PERSONAS = 10` (constant in app `lib/chat/tg-ask-all.ts`) |
+| Cap | `MAX_TG_CHAT_PERSONAS` / `MAX_ASK_ALL_CHAT_PERSONAS = 10` (`lib/chat/tg-ask-all.ts`) |
+| Project deep-link | `/chat?projectId=` without `personaId` (`paths.routes.chatProject`) |
 
 Send still uses per-persona `ChatSendPayload` (required `personaId`) via fan-out.
 

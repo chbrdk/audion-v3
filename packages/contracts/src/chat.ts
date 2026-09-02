@@ -101,8 +101,8 @@ export type ChatSendPayload = {
   abCompare?: boolean | null
 }
 
-/** Chat workspace scope — persona thread vs target-group ask-all. */
-export type ChatMode = 'persona' | 'target_group'
+/** Chat workspace scope — persona thread vs TG / project ask-all. */
+export type ChatMode = 'persona' | 'target_group' | 'project'
 
 export type ChatTargetGroupSlotStatus = 'pending' | 'streaming' | 'complete' | 'error'
 

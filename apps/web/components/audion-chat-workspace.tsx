@@ -10,19 +10,25 @@ import type {
   ChatShareMoodboard,
   ChatTavusSessionResponse,
   PersonaSummary,
+  ProjectSummary,
   TargetGroupDetail,
   TargetGroupSummary,
 } from '@audion-v3/contracts'
 import { Button, Field, IconMic, IconVideo, Text } from '@msqdx/ui'
 import { AppShell } from './app-shell'
 import { AudionChatPanel } from './audion-chat-panel'
+import { AudionProjectChatPanel } from './audion-project-chat-panel'
 import { AudionTargetGroupChatPanel } from './audion-target-group-chat-panel'
 import { ChatHistoryFlyout } from './chat-history-flyout'
 import { ChatMoodboardStrip } from './chat-moodboard-strip'
 import { ChatShareFlyout } from './chat-share-flyout'
 import { TavusVideoPanel } from './tavus-video-panel'
 import { Select } from '../lib/msqdx-ui-client'
-import { selectTgChatPersonas } from '../lib/chat/tg-ask-all'
+import {
+  countProjectChatPersonas,
+  selectProjectChatPersonas,
+  selectTgChatPersonas,
+} from '../lib/chat/tg-ask-all'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 
@@ -37,6 +43,8 @@ type Props = {
   moodboardTiles?: ChatShareMoodboard['tiles']
   targetGroups?: TargetGroupSummary[]
   initialTargetGroup?: TargetGroupDetail | null
+  projects?: ProjectSummary[]
+  initialProjectId?: string | null
   initialMode?: ChatMode
   /** Chrome-stripped iframe presentation. Spec: chat-embed.md */
   presentation?: 'default' | 'embed'
@@ -61,6 +69,12 @@ function iconBtnClass(active?: boolean): string {
     .join(' ')
 }
 
+function parseChatMode(value: string): ChatMode {
+  if (value === 'target_group') return 'target_group'
+  if (value === 'project') return 'project'
+  return 'persona'
+}
+
 export function AudionChatWorkspace({
   personas,
   initialPersonaId,
@@ -70,6 +84,8 @@ export function AudionChatWorkspace({
   moodboardTiles,
   targetGroups = [],
   initialTargetGroup = null,
+  projects = [],
+  initialProjectId = null,
   initialMode,
   presentation = 'default',
   guestBudget = null,
@@ -82,19 +98,24 @@ export function AudionChatWorkspace({
     () => [
       { value: 'persona', label: t('chat.modePersona') },
       { value: 'target_group', label: t('chat.modeTargetGroup') },
+      { value: 'project', label: t('chat.modeProject') },
     ],
     [t],
   )
   const embedMode = presentation === 'embed'
   const embedFullMode = embedMode && embedCapabilities === 'full'
   const [mode, setMode] = useState<ChatMode>(
-    initialMode ?? (initialTargetGroup ? 'target_group' : 'persona'),
+    initialMode ??
+      (initialTargetGroup ? 'target_group' : initialProjectId ? 'project' : 'persona'),
   )
   const [personaId, setPersonaId] = useState(
     initialPersonaId || initialConversation?.personaId || personas[0]?.id || '',
   )
   const [targetGroupId, setTargetGroupId] = useState(
     initialTargetGroup?.id || targetGroups[0]?.id || '',
+  )
+  const [projectId, setProjectId] = useState(
+    initialProjectId || projects[0]?.id || '',
   )
   const [busy, setBusy] = useState(false)
   const [modality, setModality] = useState<ChatModality>('text')
@@ -117,21 +138,35 @@ export function AudionChatWorkspace({
     [targetGroups],
   )
 
+  const projectOptions = useMemo(
+    () => projects.map((p) => ({ value: p.id, label: p.name })),
+    [projects],
+  )
+
   const persona = useMemo(
     () => personas.find((p) => p.id === personaId) ?? null,
     [personas, personaId],
   )
 
+  const selectedProject = useMemo(
+    () => projects.find((p) => p.id === projectId) ?? null,
+    [projects, projectId],
+  )
+
   const projectIdForShare = shareProjectId || persona?.projectId || null
   const tgPersonaCount = selectTgChatPersonas(initialTargetGroup?.linkedPersonas).length
+  const projectPersonaCount = selectProjectChatPersonas(personas, projectId).length
+  const projectPersonaTotal = countProjectChatPersonas(personas, projectId)
   const tgMode = !shareMode && mode === 'target_group'
+  const projectMode = !shareMode && mode === 'project'
+  const askAllMode = tgMode || projectMode
 
   const toggleModality = useCallback((next: ChatModality) => {
     setModality((prev) => (prev === next ? 'text' : next))
   }, [])
 
   useEffect(() => {
-    if (modality !== 'video' || tgMode || !personaId.trim()) {
+    if (modality !== 'video' || askAllMode || !personaId.trim()) {
       setTavusSession(null)
       return
     }
@@ -178,10 +213,10 @@ export function AudionChatWorkspace({
     return () => {
       cancelled = true
     }
-  }, [modality, personaId, shareMode, tgMode, embedFullMode])
+  }, [modality, personaId, shareMode, askAllMode, embedFullMode])
 
   function onModeChange(next: string) {
-    const nextMode = next === 'target_group' ? 'target_group' : 'persona'
+    const nextMode = parseChatMode(next)
     setMode(nextMode)
     setBusy(false)
     if (nextMode === 'target_group') {
@@ -189,6 +224,14 @@ export function AudionChatWorkspace({
       if (id) {
         setTargetGroupId(id)
         router.replace(paths.routes.chatTargetGroup(id))
+      }
+      return
+    }
+    if (nextMode === 'project') {
+      const id = projectId || projects[0]?.id
+      if (id) {
+        setProjectId(id)
+        router.replace(paths.routes.chatProject(id))
       }
       return
     }
@@ -211,8 +254,14 @@ export function AudionChatWorkspace({
     router.replace(paths.routes.chatTargetGroup(id))
   }
 
+  function onProjectChange(id: string) {
+    setProjectId(id)
+    setBusy(false)
+    router.replace(paths.routes.chatProject(id))
+  }
+
   const composerLeading =
-    tgMode || (embedMode && !embedFullMode) || (shareMode && !embedFullMode) ? null : (
+    askAllMode || (embedMode && !embedFullMode) || (shareMode && !embedFullMode) ? null : (
     <div className="audion-chat-composer-actions" role="toolbar" aria-label={t('chat.modalityAria')}>
       <Button
         type="button"
@@ -305,6 +354,31 @@ export function AudionChatWorkspace({
                   </Text>
                 ) : null}
               </>
+            ) : projectMode ? (
+              <>
+                <Field
+                  label={t('chat.fieldProject')}
+                  size="md"
+                  htmlFor="chat-project"
+                  className="audion-chat-persona-field"
+                >
+                  <Select
+                    id="chat-project"
+                    options={projectOptions}
+                    value={projectId}
+                    onChange={onProjectChange}
+                    disabled={busy || !projectOptions.length}
+                  />
+                </Field>
+                {projectId ? (
+                  <Text role="label" className="audion-tg-chat-count">
+                    {projectPersonaCount} persona{projectPersonaCount === 1 ? '' : 's'}
+                    {projectPersonaTotal > projectPersonaCount
+                      ? ` / ${projectPersonaTotal}`
+                      : ''}
+                  </Text>
+                ) : null}
+              </>
             ) : (
               <>
                 <Field
@@ -349,17 +423,19 @@ export function AudionChatWorkspace({
             ? t('chat.titleSharedChat')
             : tgMode
               ? t('chat.titleTgChat')
-              : t('chat.titleChat')}
+              : projectMode
+                ? t('chat.titleProjectChat')
+                : t('chat.titleChat')}
       </h1>
 
-      {tgMode || (embedMode && !embedFullMode) ? null : modality === 'voice' &&
+      {askAllMode || (embedMode && !embedFullMode) ? null : modality === 'voice' &&
       (!shareMode || embedFullMode) ? (
         <p className="audion-edit-lede audion-chat-modality-note" role="status">
           {t('chatExtra.voiceStub')}
         </p>
       ) : null}
 
-      {tgMode || (embedMode && !embedFullMode) ? null : modality === 'video' &&
+      {askAllMode || (embedMode && !embedFullMode) ? null : modality === 'video' &&
       (!shareMode || embedFullMode) ? (
         <div className="audion-chat-tavus" role="status">
           {tavusBusy ? <p className="audion-edit-lede">{t('chat.startingVideo')}</p> : null}
@@ -386,6 +462,13 @@ export function AudionChatWorkspace({
               ? initialTargetGroup
               : null
           }
+          onBusyChange={setBusy}
+        />
+      ) : projectMode && !embedMode ? (
+        <AudionProjectChatPanel
+          projectId={projectId || null}
+          projectName={selectedProject?.name ?? null}
+          personas={personas}
           onBusyChange={setBusy}
         />
       ) : (

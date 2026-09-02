@@ -1,12 +1,14 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
 import type {
   ProjectDetail,
   PersonaSummary,
   TargetGroupSummary,
 } from '@audion-v3/contracts'
 import { EmptyState, Text } from '@msqdx/ui'
+import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import {
   ProjectPersonaList,
@@ -60,6 +62,28 @@ export function ProjectDetailPanel({
 
   return (
     <article className="panel briefing-detail audion-magazine">
+      <div className="audion-magazine-topbar ds-motion-reveal">
+        <p className="briefing-nav signal-nav">
+          <Link href={paths.routes.projects}>{t('nav.projects')}</Link>
+          <span className="briefing-nav-sep" aria-hidden>
+            ·
+          </span>
+          <span data-status={project.status} className="audion-magazine-status">
+            {project.status}
+          </span>
+        </p>
+        <div className="audion-magazine-topbar-actions">
+          {personas.length > 0 ? (
+            <Link
+              href={paths.routes.chatProject(project.id)}
+              className="audion-link audion-magazine-ask-all"
+            >
+              {t('detail.project.askAll')}
+            </Link>
+          ) : null}
+        </div>
+      </div>
+
       <header className="signal-hero briefing-hero audion-magazine-hero audion-magazine-hero--text ds-motion-reveal">
         <div className="audion-magazine-hero-copy">
           <Text role="label" className="briefing-eyebrow">

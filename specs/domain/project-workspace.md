@@ -30,7 +30,7 @@ Magazine-style project workspace: browse projects, read company context, manage 
 - **AI actions band** (Wave 1 stub): Suggest TGs · Suggest personas · Start research · Generate journey — see `knowledge/ai-workflows.md`
 - **Audience band** (`.audion-project-split`): Target groups | Personas at **50 / 50**; compact lists with inline rename / **delete** / add (hard delete via `DELETE /api/personas|target-groups/[id]`). **Add target group** / **Add persona** rows are always visible (not hover-only); empty lists still show the add row under the empty state.
 - **Project knowledge** dossier: `@msqdx/ui` **Accordion** (`.ds-accordion`) of `knowledgeChapters` + TipTap WYSIWYG panel content. `SectionChrome` count with `metaTone="accent"`. Legacy `companyContext` → single Brief chapter when chapters empty.
-- Topbar: edit + **Archive** (Collection lifecycle via `POST /api/projects/:id/archive`) — not hard-delete
+- Topbar: edit + **Archive** (Collection lifecycle via `POST /api/projects/:id/archive`) — not hard-delete; when the project has personas, **Ask all personas** → `/chat?projectId=` (project ask-all; see `chat-workspace.md`)
 - Edit dialog status: `draft` | `published` only — use Archive CTA for Collection archive (not status select)
 
 ## Archive semantics

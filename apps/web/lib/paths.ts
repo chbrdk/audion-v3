@@ -1,7 +1,7 @@
 /** Central path and shell configuration for AUDION v3 web app. */
 
 import { buildChatHref, type ChatPrefillContext } from './chat/prefill'
-import { buildChatTargetGroupHref } from './chat/tg-ask-all'
+import { buildChatProjectHref, buildChatTargetGroupHref } from './chat/tg-ask-all'
 import {
   buildChatConversationHref,
   buildChatEmbedHref,
@@ -268,6 +268,8 @@ export const paths = {
     chatPersona: (personaId: string) => buildChatPersonaHref(personaId),
     /** Target-group ask-all: /chat?targetGroupId= */
     chatTargetGroup: (targetGroupId: string) => buildChatTargetGroupHref(targetGroupId),
+    /** Project ask-all: /chat?projectId= (no personaId — share uses both). */
+    chatProject: (projectId: string) => buildChatProjectHref(projectId),
     /** Public share: /chat?personaId=&projectId= */
     chatShare: (params: ChatShareParams) => buildChatShareHref(params),
     /** Embed iframe: /chat/embed?personaId=&projectId=&embed=1 */
