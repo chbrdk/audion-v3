@@ -24,17 +24,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Pin a commit (not floating `main`) so Coolify cannot reuse a stale `ds` layer
 # that predates ChatOverlay — and so builds stay reproducible.
 # Bump MSQDX_UI_REF whenever audion barrels need a newer primitive from chbrdk/msqdx-ui.
+# Prefer codeload tarball over `git fetch` — Coolify build hosts sometimes fail nested
+# git clones against GitHub (exit 128) even when the repo is public.
 FROM base AS ds
-ARG MSQDX_UI_REPO=https://github.com/chbrdk/msqdx-ui.git
-# msqdx-ui origin/main @ 2026-08-27 (BrandCorner launcher, AppShell 24px, MarkdownProse, …)
 ARG MSQDX_UI_REF=68879023dd999226908c61d720a81cc9e798b2dc
-RUN git init /workspace/msqdx-ui \
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /workspace/msqdx-ui \
+    && curl -fsSL "https://codeload.github.com/chbrdk/msqdx-ui/tar.gz/${MSQDX_UI_REF}" \
+      | tar -xz -C /workspace/msqdx-ui --strip-components=1 \
+    && test -f /workspace/msqdx-ui/package.json \
+    && printf 'node-linker=hoisted\n' > /workspace/msqdx-ui/.npmrc \
     && cd /workspace/msqdx-ui \
-    && git remote add origin "${MSQDX_UI_REPO}" \
-    && git fetch --depth 1 origin "${MSQDX_UI_REF}" \
-    && git checkout --force FETCH_HEAD \
-    && test "$(git rev-parse HEAD)" = "${MSQDX_UI_REF}" \
-    && printf 'node-linker=hoisted\n' > .npmrc \
     && pnpm install --frozen-lockfile \
     && pnpm build \
     # Drop install trees before COPY — full node_modules OOMs Coolify (exit 255).
