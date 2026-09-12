@@ -7,6 +7,7 @@ import { storeResearchLatest } from './fixtures/research-runs'
 import {
   distillResearchBrief,
   fetchCollectionKnowledgePack,
+  markKnowledgeFacetFreshness,
   publishResearchBriefToPack,
 } from './plexon-knowledge-pack'
 import { resolveKnowledgeChapters } from './project-knowledge'
@@ -96,14 +97,21 @@ export async function publishProjectResearchBrief(opts: {
 
   const pack = await fetchCollectionKnowledgePack(platformProjectId)
   if (!pack) {
-    return soft
-      ? { ok: false, status: 502, error: 'pack_unavailable', skipped: true }
-      : {
-          ok: false,
-          status: 502,
-          error: 'pack_unavailable',
-          detail: 'Could not load Collection knowledge pack',
-        }
+    if (soft) {
+      void markKnowledgeFacetFreshness({
+        platformProjectId,
+        facetId: 'research_brief',
+        freshness: 'publish_failed',
+        note: 'audion soft-skip:pack_unavailable',
+      })
+      return { ok: false, status: 502, error: 'pack_unavailable', skipped: true }
+    }
+    return {
+      ok: false,
+      status: 502,
+      error: 'pack_unavailable',
+      detail: 'Could not load Collection knowledge pack',
+    }
   }
 
   const published = await publishResearchBriefToPack({
@@ -113,6 +121,14 @@ export async function publishProjectResearchBrief(opts: {
     runId: data.sourceRunId,
   })
   if (!published.ok) {
+    if (soft) {
+      void markKnowledgeFacetFreshness({
+        platformProjectId,
+        facetId: 'research_brief',
+        freshness: 'publish_failed',
+        note: `audion soft-skip:publish_failed:${published.error}`,
+      })
+    }
     return {
       ok: false,
       status: published.status >= 400 ? published.status : 502,
