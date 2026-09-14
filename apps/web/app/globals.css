@@ -262,8 +262,8 @@ main { min-height: 100vh; }
   justify-content: flex-end;
   gap: var(--space-3);
   padding: clamp(3.5rem, 8vw, 5.5rem) 1.25rem 1.15rem;
-  border-radius: 0;
-  background: transparent;
+  border-radius: var(--radius-tile, 0.85rem);
+  background: color-mix(in oklab, var(--surface-2, var(--surface, #151515)) 88%, transparent);
   overflow: hidden;
   transition:
     border-color var(--motion-hover, 160ms) ease,
