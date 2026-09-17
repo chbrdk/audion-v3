@@ -14,7 +14,7 @@ import {
   storeTargetGroupForPersona,
   storeTargetGroupList,
 } from '../../../../../../lib/fixtures/target-group-store'
-import { storeJourneyList } from '../../../../../../lib/fixtures/journey-store'
+import { storeJourneyList, storeJourneyDetail } from '../../../../../../lib/fixtures/journey-store'
 import { storeUxStudyList } from '../../../../../../lib/fixtures/ux-study-store'
 
 function jsonWithContract(body: unknown, init?: ResponseInit) {
@@ -67,16 +67,63 @@ export async function GET(
 
   const personaCatalog = await Promise.all(personas)
 
-  const journeys = (await storeJourneyList()).items
-    .filter((j) => j.projectId === project.id)
-    .map((j) => ({
-      id: j.id,
-      name: j.name,
-      status: j.status,
-      journeyType: j.journeyType,
-      phaseCount: j.phaseCount,
-      targetGroupName: j.targetGroupName ?? null,
-    }))
+  const journeys = (await storeJourneyList()).items.filter((j) => j.projectId === project.id)
+
+  const journeyCatalog = journeys.map((j) => ({
+    id: j.id,
+    name: j.name,
+    status: j.status,
+    journeyType: j.journeyType,
+    phaseCount: j.phaseCount,
+    targetGroupName: j.targetGroupName ?? null,
+    updatedAt: j.updatedAt ?? null,
+  }))
+
+  const journeyPhases: Array<{
+    journeyId: string
+    journeyName: string
+    phaseId: string
+    phaseName: string
+    phaseOrder: number
+    elementCount: number
+    summary: string
+  }> = []
+  const journeyElementRollup: Array<{
+    journeyId: string
+    journeyName: string
+    kind: string
+    count: number
+  }> = []
+
+  const JOURNEY_DETAIL_LIMIT = 12
+  for (const j of journeys.slice(0, JOURNEY_DETAIL_LIMIT)) {
+    const detail = await storeJourneyDetail(j.id)
+    if (!detail) continue
+    for (const phase of detail.phases ?? []) {
+      if (journeyPhases.length < 80) {
+        journeyPhases.push({
+          journeyId: detail.id,
+          journeyName: detail.name,
+          phaseId: phase.id,
+          phaseName: phase.name,
+          phaseOrder: phase.order,
+          elementCount: phase.elements?.length ?? 0,
+          summary: phase.summary ?? '',
+        })
+      }
+      const kindCounts = new Map<string, number>()
+      for (const el of phase.elements ?? []) {
+        kindCounts.set(el.kind, (kindCounts.get(el.kind) ?? 0) + 1)
+      }
+      for (const [kind, count] of kindCounts) {
+        const existing = journeyElementRollup.find(
+          (r) => r.journeyId === detail.id && r.kind === kind,
+        )
+        if (existing) existing.count += count
+        else journeyElementRollup.push({ journeyId: detail.id, journeyName: detail.name, kind, count })
+      }
+    }
+  }
 
   const studies = (await storeUxStudyList())
     .items.filter((s) => s.projectId === project.id)
@@ -92,12 +139,14 @@ export async function GET(
     externalProjectId: project.id,
     personaCount: personaCatalog.length,
     targetGroupCount: targetGroups.length,
-    journeyCount: journeys.length,
+    journeyCount: journeyCatalog.length,
     studyCount: studies.length,
     targetGroups,
     personas: personaCatalog,
-    journeys,
+    journeys: journeyCatalog,
     studies,
+    journeyPhases,
+    journeyElementRollup,
     platformProjectId: platformProjectId.trim(),
   })
 }

@@ -167,6 +167,8 @@ describe('provisioning routes', () => {
       personas: Array<{ id: string; name: string; role: string; status: string; targetGroupId: string | null }>
       journeys: Array<{ id: string; name: string; status: string; journeyType: string; phaseCount: number }>
       studies: Array<{ id: string; name: string; status: string; waveCount: number }>
+      journeyPhases: Array<{ journeyId: string; phaseId: string; elementCount: number }>
+      journeyElementRollup: Array<{ journeyId: string; kind: string; count: number }>
     }
     expect(body.externalProjectId).toBe('proj-audion-core')
     expect(body.targetGroupCount).toBeGreaterThan(0)
@@ -177,6 +179,8 @@ describe('provisioning routes', () => {
     expect(body.personas).toHaveLength(body.personaCount)
     expect(body.journeys).toHaveLength(body.journeyCount)
     expect(body.studies).toHaveLength(body.studyCount)
+    expect(body.journeyPhases.length).toBeGreaterThan(0)
+    expect(body.journeyElementRollup.length).toBeGreaterThan(0)
     expect(body.targetGroups[0]).toMatchObject({
       id: expect.any(String),
       name: expect.any(String),
@@ -202,6 +206,16 @@ describe('provisioning routes', () => {
       name: expect.any(String),
       status: expect.any(String),
       waveCount: expect.any(Number),
+    })
+    expect(body.journeyPhases[0]).toMatchObject({
+      journeyId: expect.any(String),
+      phaseId: expect.any(String),
+      elementCount: expect.any(Number),
+    })
+    expect(body.journeyElementRollup[0]).toMatchObject({
+      journeyId: expect.any(String),
+      kind: expect.any(String),
+      count: expect.any(Number),
     })
   })
 })

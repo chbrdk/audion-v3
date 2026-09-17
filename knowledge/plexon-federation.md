@@ -66,7 +66,7 @@ Idempotent when already bound.
 - Settings Account band — profile + logout
 - `PUT /api/platform/provisioning/users/[id]`
 - `PUT /api/platform/provisioning/projects/[id]`
-- `GET /api/platform/provisioning/projects/[id]` — Plexon Collection dashboard summary (service secret + `X-Plexon-User-Id`)
+- `GET /api/platform/provisioning/projects/[id]` — Plexon Collection dashboard summary (service secret + `X-Plexon-User-Id`); METRON suite sync distillate: catalogs + `journeyPhases` / `journeyElementRollup`
 
 ### Project summary contract (`GET …/projects/[id]`)
 
