@@ -11,6 +11,7 @@ import {
 import {
   allowPersonaFixtureFallback,
   getPersonaBackendBase,
+  isPlexonAuthConfigured,
   shouldUsePersonaFixturesOnly,
 } from './runtime-config'
 
@@ -119,42 +120,67 @@ async function fetchJson(url: string): Promise<Response> {
 }
 
 export async function fetchTargetGroupList(): Promise<TargetGroupListResult> {
+  let result: TargetGroupListResult
   if (shouldUsePersonaFixturesOnly()) {
-    return { ...(await storeTargetGroupList()), origin: 'fixtures' }
-  }
-  try {
-    const base = getPersonaBackendBase({ preferPublic: false })
-    const response = await fetchJson(`${base}/target-groups?page=1&page_size=50`)
-    if (!response.ok) throw new Error(`Target group list failed: ${response.status}`)
-    const json = (await response.json()) as { items?: unknown[]; total?: number; page?: number; page_size?: number }
-    const items = Array.isArray(json.items)
-      ? json.items.map(normalizeTargetGroupSummary).filter((i): i is TargetGroupSummary => Boolean(i))
-      : []
-    return {
-      items,
-      total: typeof json.total === 'number' ? json.total : items.length,
-      page: typeof json.page === 'number' ? json.page : 1,
-      pageSize: typeof json.page_size === 'number' ? json.page_size : 50,
-      origin: 'api',
+    result = { ...(await storeTargetGroupList()), origin: 'fixtures' }
+  } else {
+    try {
+      const base = getPersonaBackendBase({ preferPublic: false })
+      const response = await fetchJson(`${base}/target-groups?page=1&page_size=50`)
+      if (!response.ok) throw new Error(`Target group list failed: ${response.status}`)
+      const json = (await response.json()) as { items?: unknown[]; total?: number; page?: number; page_size?: number }
+      const items = Array.isArray(json.items)
+        ? json.items.map(normalizeTargetGroupSummary).filter((i): i is TargetGroupSummary => Boolean(i))
+        : []
+      result = {
+        items,
+        total: typeof json.total === 'number' ? json.total : items.length,
+        page: typeof json.page === 'number' ? json.page : 1,
+        pageSize: typeof json.page_size === 'number' ? json.page_size : 50,
+        origin: 'api',
+      }
+    } catch (error) {
+      if (!allowPersonaFixtureFallback()) throw error
+      result = { ...(await storeTargetGroupList()), origin: 'fixtures' }
     }
-  } catch (error) {
-    if (!allowPersonaFixtureFallback()) throw error
-    return { ...(await storeTargetGroupList()), origin: 'fixtures' }
   }
+
+  if (isPlexonAuthConfigured()) {
+    const { resolveViewerId, filterByParentProjectForViewer } = await import('./project-access')
+    const viewerId = await resolveViewerId()
+    const items = await filterByParentProjectForViewer(result.items, viewerId)
+    return { ...result, items, total: items.length }
+  }
+  return result
+}
+
+async function gateTargetGroupDetail(
+  targetGroup: TargetGroupDetail | null,
+  origin: TargetGroupDataOrigin,
+): Promise<TargetGroupDetailResult> {
+  if (!targetGroup || !isPlexonAuthConfigured()) {
+    return { targetGroup, origin }
+  }
+  const { resolveViewerId, viewerCanAccessParentProject } = await import('./project-access')
+  const viewerId = await resolveViewerId()
+  if (!(await viewerCanAccessParentProject(targetGroup, viewerId))) {
+    return { targetGroup: null, origin }
+  }
+  return { targetGroup, origin }
 }
 
 export async function fetchTargetGroupDetail(id: string): Promise<TargetGroupDetailResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { targetGroup: await storeTargetGroupDetail(id), origin: 'fixtures' }
+    return gateTargetGroupDetail(await storeTargetGroupDetail(id), 'fixtures')
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
     const response = await fetchJson(`${base}/target-groups/${id}`)
-    if (response.status === 404) return { targetGroup: null, origin: 'api' }
+    if (response.status === 404) return gateTargetGroupDetail(null, 'api')
     if (!response.ok) throw new Error(`Target group detail failed: ${response.status}`)
-    return { targetGroup: normalizeTargetGroupDetail(await response.json()), origin: 'api' }
+    return gateTargetGroupDetail(normalizeTargetGroupDetail(await response.json()), 'api')
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { targetGroup: await storeTargetGroupDetail(id), origin: 'fixtures' }
+    return gateTargetGroupDetail(await storeTargetGroupDetail(id), 'fixtures')
   }
 }

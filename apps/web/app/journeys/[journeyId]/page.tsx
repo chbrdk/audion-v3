@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation'
 import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../../components/app-shell'
 import { JourneyDetailPanel } from '../../../components/journey-detail-panel'
@@ -11,6 +12,7 @@ export default async function JourneyDetailPage({
   const { journeyId } = await params
   try {
     const result = await fetchJourneyDetail(journeyId)
+    if (!result.journey) notFound()
     return (
       <AppShell>
         <JourneyDetailPanel journey={result.journey} />

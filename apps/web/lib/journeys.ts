@@ -11,6 +11,7 @@ import { storeJourneyDetail, storeJourneyList } from './fixtures/journey-store'
 import {
   allowPersonaFixtureFallback,
   getPersonaBackendBase,
+  isPlexonAuthConfigured,
   shouldUsePersonaFixturesOnly,
 } from './runtime-config'
 
@@ -162,47 +163,72 @@ async function fetchJson(url: string): Promise<Response> {
 }
 
 export async function fetchJourneyList(): Promise<JourneyListResult> {
+  let result: JourneyListResult
   if (shouldUsePersonaFixturesOnly()) {
-    return { ...(await storeJourneyList()), origin: 'fixtures' }
-  }
-  try {
-    const base = getPersonaBackendBase({ preferPublic: false })
-    const response = await fetchJson(`${base}/journeys?page=1&page_size=50`)
-    if (!response.ok) throw new Error(`Journey list failed: ${response.status}`)
-    const json = (await response.json()) as {
-      items?: unknown[]
-      total?: number
-      page?: number
-      page_size?: number
+    result = { ...(await storeJourneyList()), origin: 'fixtures' }
+  } else {
+    try {
+      const base = getPersonaBackendBase({ preferPublic: false })
+      const response = await fetchJson(`${base}/journeys?page=1&page_size=50`)
+      if (!response.ok) throw new Error(`Journey list failed: ${response.status}`)
+      const json = (await response.json()) as {
+        items?: unknown[]
+        total?: number
+        page?: number
+        page_size?: number
+      }
+      const items = Array.isArray(json.items)
+        ? json.items.map(normalizeJourneySummary).filter((i): i is JourneySummary => Boolean(i))
+        : []
+      result = {
+        items,
+        total: typeof json.total === 'number' ? json.total : items.length,
+        page: typeof json.page === 'number' ? json.page : 1,
+        pageSize: typeof json.page_size === 'number' ? json.page_size : 50,
+        origin: 'api',
+      }
+    } catch (error) {
+      if (!allowPersonaFixtureFallback()) throw error
+      result = { ...(await storeJourneyList()), origin: 'fixtures' }
     }
-    const items = Array.isArray(json.items)
-      ? json.items.map(normalizeJourneySummary).filter((i): i is JourneySummary => Boolean(i))
-      : []
-    return {
-      items,
-      total: typeof json.total === 'number' ? json.total : items.length,
-      page: typeof json.page === 'number' ? json.page : 1,
-      pageSize: typeof json.page_size === 'number' ? json.page_size : 50,
-      origin: 'api',
-    }
-  } catch (error) {
-    if (!allowPersonaFixtureFallback()) throw error
-    return { ...(await storeJourneyList()), origin: 'fixtures' }
   }
+
+  if (isPlexonAuthConfigured()) {
+    const { resolveViewerId, filterByParentProjectForViewer } = await import('./project-access')
+    const viewerId = await resolveViewerId()
+    const items = await filterByParentProjectForViewer(result.items, viewerId)
+    return { ...result, items, total: items.length }
+  }
+  return result
+}
+
+async function gateJourneyDetail(
+  journey: JourneyDetail | null,
+  origin: JourneyDataOrigin,
+): Promise<JourneyDetailResult> {
+  if (!journey || !isPlexonAuthConfigured()) {
+    return { journey, origin }
+  }
+  const { resolveViewerId, viewerCanAccessParentProject } = await import('./project-access')
+  const viewerId = await resolveViewerId()
+  if (!(await viewerCanAccessParentProject(journey, viewerId))) {
+    return { journey: null, origin }
+  }
+  return { journey, origin }
 }
 
 export async function fetchJourneyDetail(id: string): Promise<JourneyDetailResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { journey: await storeJourneyDetail(id), origin: 'fixtures' }
+    return gateJourneyDetail(await storeJourneyDetail(id), 'fixtures')
   }
   try {
     const base = getPersonaBackendBase({ preferPublic: false })
     const response = await fetchJson(`${base}/journeys/${id}`)
-    if (response.status === 404) return { journey: null, origin: 'api' }
+    if (response.status === 404) return gateJourneyDetail(null, 'api')
     if (!response.ok) throw new Error(`Journey detail failed: ${response.status}`)
-    return { journey: normalizeJourneyDetail(await response.json()), origin: 'api' }
+    return gateJourneyDetail(normalizeJourneyDetail(await response.json()), 'api')
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { journey: await storeJourneyDetail(id), origin: 'fixtures' }
+    return gateJourneyDetail(await storeJourneyDetail(id), 'fixtures')
   }
 }

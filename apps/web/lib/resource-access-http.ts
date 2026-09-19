@@ -105,3 +105,31 @@ export async function requirePersonaAccess(
   }
   return requireProjectAccess(request, projectId)
 }
+
+/** Journey inherits Access Model B from its parent project. */
+export async function requireJourneyAccess(
+  request: Request,
+  journeyId: string,
+): Promise<ViewerOk | ViewerDenied> {
+  const gate = await requireViewer(request)
+  if (!gate.ok) return gate
+
+  const { storeJourneyDetail } = await import('./fixtures/journey-store')
+  const journey = await storeJourneyDetail(journeyId)
+  if (!journey) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'not_found' }, { status: 404 }),
+    }
+  }
+  if (!isPlexonAuthConfigured()) return gate
+
+  const projectId = journey.projectId?.trim()
+  if (!projectId) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'forbidden' }, { status: 403 }),
+    }
+  }
+  return requireProjectAccess(request, projectId)
+}

@@ -37,7 +37,7 @@
 - Target group API routes: `/api/target-groups` (`GET` list by `project_id`, `POST`) · `/api/target-groups/[targetGroupId]` · knowledge nested routes — Access Model B via `lib/resource-access-http.ts` (machine Bearer + `X-Plexon-User-Id`)
 - Plexon assistant base: Coolify `AUDION_API_URL=https://audion-v3.projects-a.plygrnd.tech/api` (not FastAPI)
 - Journey routes: `/journeys`, `/journeys/[journeyId]` (`paths.routes.journeys*`)
-- Journey API routes: `/api/journeys`, `/api/journeys/[journeyId]`
+- Journey API routes: `/api/journeys`, `/api/journeys/[journeyId]` — Access Model B via `requireJourneyAccess` / `filterByParentProjectForViewer`
 - Journey fixtures/store: `apps/web/lib/fixtures/journeys.ts` · `journey-store.ts`
 - Journey lib: `apps/web/lib/journeys.ts`
 - UX Study routes: `/studies`, `/studies/[studyId]`, `/studies/[studyId]/waves/[waveId]` (`paths.routes.studies*`)

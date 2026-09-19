@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation'
 import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../../components/app-shell'
 import { TargetGroupDetailPanel } from '../../../components/target-group-detail-panel'
@@ -12,7 +13,8 @@ export default async function TargetGroupDetailPage({
   const { targetGroupId } = await params
   try {
     const result = await fetchTargetGroupDetail(targetGroupId)
-    const projectId = result.targetGroup?.projectId?.trim() || null
+    if (!result.targetGroup) notFound()
+    const projectId = result.targetGroup.projectId?.trim() || null
     const projectResult = projectId ? await fetchProjectDetail(projectId) : null
     const project =
       projectResult?.project != null

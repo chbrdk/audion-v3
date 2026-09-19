@@ -123,15 +123,15 @@ export async function viewerCanAccessProject(
   return accessible.has(project.platformProjectId)
 }
 
-/** Filter personas whose parent project the viewer can access. */
-export async function filterPersonasForViewer<T extends { projectId?: string | null }>(
-  personas: T[],
+/** Filter resources whose parent project the viewer can access. */
+export async function filterByParentProjectForViewer<T extends { projectId?: string | null }>(
+  resources: T[],
   viewerId: string | null,
 ): Promise<T[]> {
-  if (!isPlexonAuthConfigured()) return personas
+  if (!isPlexonAuthConfigured()) return resources
   if (!viewerId) return []
   const projectIds = [
-    ...new Set(personas.map((p) => p.projectId?.trim()).filter(Boolean) as string[]),
+    ...new Set(resources.map((p) => p.projectId?.trim()).filter(Boolean) as string[]),
   ]
   const { storeProjectDetail } = await import('./fixtures/project-store')
   const allowed = new Set<string>()
@@ -143,23 +143,32 @@ export async function filterPersonasForViewer<T extends { projectId?: string | n
       }
     }),
   )
-  return personas.filter((p) => {
+  return resources.filter((p) => {
     const pid = p.projectId?.trim()
     return Boolean(pid && allowed.has(pid))
   })
 }
 
-/** SSR / helper: can the viewer open this persona (by parent project)? */
-export async function viewerCanAccessPersona(
-  persona: { projectId?: string | null },
+/** @deprecated Prefer filterByParentProjectForViewer — same behavior. */
+export const filterPersonasForViewer = filterByParentProjectForViewer
+
+/** @deprecated Prefer filterByParentProjectForViewer — same behavior. */
+export const filterJourneysForViewer = filterByParentProjectForViewer
+
+/** SSR / helper: can the viewer open a project-scoped resource? */
+export async function viewerCanAccessParentProject(
+  resource: { projectId?: string | null },
   viewerId: string | null,
 ): Promise<boolean> {
   if (!isPlexonAuthConfigured()) return true
   if (!viewerId) return false
-  const projectId = persona.projectId?.trim()
+  const projectId = resource.projectId?.trim()
   if (!projectId) return false
   const { storeProjectDetail } = await import('./fixtures/project-store')
   const project = await storeProjectDetail(projectId)
   if (!project) return false
   return viewerCanAccessProject(project, viewerId)
 }
+
+/** @deprecated Prefer viewerCanAccessParentProject. */
+export const viewerCanAccessPersona = viewerCanAccessParentProject
