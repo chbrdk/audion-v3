@@ -19,8 +19,16 @@ export type ProjectAccessFields = {
 
 const ACCESSIBLE_COLLECTIONS_MAX_PAGES = 40
 
-export async function resolveViewerId(explicit?: string | null): Promise<string | null> {
+export async function resolveViewerId(
+  explicit?: string | null,
+  request?: Request | null,
+): Promise<string | null> {
   if (explicit?.trim()) return explicit.trim()
+  if (request) {
+    const { getRequestUser } = await import('./auth-api-token')
+    const fromReq = await getRequestUser(request)
+    if (fromReq?.id) return fromReq.id
+  }
   const session = await auth()
   return session?.user?.id?.trim() || null
 }

@@ -8,14 +8,21 @@ import {
   storeProjectDetail,
 } from '../../../../lib/fixtures/project-store'
 import { viewerCanAccessProject } from '../../../../lib/project-access'
+import { isPlexonAuthConfigured } from '../../../../lib/runtime-config'
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ projectId: string }> },
 ) {
   const { projectId } = await context.params
   const project = await storeProjectDetail(projectId)
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const { getRequestUser } = await import('../../../../lib/auth-api-token')
+  const viewer = await getRequestUser(request)
+  if (isPlexonAuthConfigured() && !(await viewerCanAccessProject(project, viewer?.id ?? null))) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
   return NextResponse.json(project)
 }
 

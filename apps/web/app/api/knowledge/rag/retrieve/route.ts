@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import type { KnowledgeRagRetrievePayload } from '@audion-v3/contracts'
-import { auth } from '../../../../../auth'
 import { retrieveKnowledgeSources } from '../../../../../lib/knowledge/rag/store'
 import { isPlexonAuthConfigured } from '../../../../../lib/runtime-config'
 
 export async function POST(request: Request) {
   if (isPlexonAuthConfigured()) {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const { getRequestUser } = await import('../../../../../lib/auth-api-token')
+    const viewer = await getRequestUser(request)
+    if (!viewer?.id) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
   }
