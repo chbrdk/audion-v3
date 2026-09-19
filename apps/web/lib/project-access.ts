@@ -1,6 +1,6 @@
 /**
  * Access model B: capability project lists for a Plexon user.
- * Prefer live Plexon accessible-collections; fall back to local ownerPlexonUserId.
+ * Prefer live Plexon accessible-collections (paged); fall back to local ownerPlexonUserId.
  */
 
 import { auth } from '../auth'
@@ -17,34 +17,63 @@ export type ProjectAccessFields = {
   ownerPlexonUserId?: string | null
 }
 
+const ACCESSIBLE_COLLECTIONS_MAX_PAGES = 40
+
 export async function resolveViewerId(explicit?: string | null): Promise<string | null> {
   if (explicit?.trim()) return explicit.trim()
   const session = await auth()
   return session?.user?.id?.trim() || null
 }
 
+/**
+ * Fetch Collection ids the user may see from Plexon.
+ * Pages through `nextCursor` so visibility is not truncated at 50.
+ */
 export async function fetchAccessiblePlatformProjectIds(
   plexonUserId: string,
 ): Promise<Set<string> | null> {
   if (!isPlexonAuthConfigured()) return null
   const base = getPlexonAuthUrl().replace(/\/$/, '')
   const secret = getPlexonServiceSecret()
-  const url = `${base}${paths.plexonAccessibleCollectionsPath}`
+  const ids = new Set<string>()
+  let cursor: string | null = null
+  let pages = 0
+
   try {
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-Plexon-User-Id': plexonUserId,
-        ...getPlexonContractHeaders(secret),
-      },
-      cache: 'no-store',
-    })
-    if (!res.ok) return null
-    const data = (await res.json()) as { items?: Array<{ id?: string }> }
-    const ids = new Set<string>()
-    for (const item of data.items ?? []) {
-      if (typeof item.id === 'string' && item.id.trim()) ids.add(item.id.trim())
-    }
+    do {
+      pages += 1
+      const url = new URL(`${base}${paths.plexonAccessibleCollectionsPath}`)
+      url.searchParams.set('limit', '100')
+      if (cursor) url.searchParams.set('cursor', cursor)
+
+      const res = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'X-Plexon-User-Id': plexonUserId,
+          ...getPlexonContractHeaders(secret),
+        },
+        cache: 'no-store',
+      })
+      if (!res.ok) return null
+      const data = (await res.json()) as {
+        items?: Array<{ id?: string }>
+        nextCursor?: string | null
+        truncated?: boolean
+      }
+      for (const item of data.items ?? []) {
+        if (typeof item.id === 'string' && item.id.trim()) ids.add(item.id.trim())
+      }
+      const next = data.nextCursor?.trim() || null
+      if (data.truncated && next) {
+        cursor = next
+      } else {
+        cursor = null
+      }
+      if (pages >= ACCESSIBLE_COLLECTIONS_MAX_PAGES && cursor) {
+        break
+      }
+    } while (cursor)
+
     return ids
   } catch {
     return null
