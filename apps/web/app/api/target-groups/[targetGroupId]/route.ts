@@ -5,12 +5,15 @@ import {
   storePatchTargetGroup,
   storeTargetGroupDetail,
 } from '../../../../lib/fixtures/target-group-store'
+import { requireTargetGroupAccess } from '../../../../lib/resource-access-http'
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ targetGroupId: string }> },
 ) {
   const { targetGroupId } = await context.params
+  const access = await requireTargetGroupAccess(request, targetGroupId)
+  if (!access.ok) return access.response
   const targetGroup = await storeTargetGroupDetail(targetGroupId)
   if (!targetGroup) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(targetGroup)
@@ -21,6 +24,8 @@ export async function PATCH(
   context: { params: Promise<{ targetGroupId: string }> },
 ) {
   const { targetGroupId } = await context.params
+  const access = await requireTargetGroupAccess(request, targetGroupId)
+  if (!access.ok) return access.response
   const body = (await request.json()) as Partial<TargetGroupWritePayload>
   const targetGroup = await storePatchTargetGroup(targetGroupId, body)
   if (!targetGroup) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -28,10 +33,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ targetGroupId: string }> },
 ) {
   const { targetGroupId } = await context.params
+  const access = await requireTargetGroupAccess(request, targetGroupId)
+  if (!access.ok) return access.response
   const ok = await storeDeleteTargetGroup(targetGroupId)
   if (!ok) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return new NextResponse(null, { status: 204 })

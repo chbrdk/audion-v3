@@ -5,11 +5,14 @@ import {
   storePatchTargetGroup,
   storeTargetGroupDetail,
 } from '../../../../../../lib/fixtures/target-group-store'
+import { requireTargetGroupAccess } from '../../../../../../lib/resource-access-http'
 
 type Params = { params: Promise<{ targetGroupId: string; entryId: string }> }
 
 export async function PUT(request: Request, { params }: Params) {
   const { targetGroupId, entryId } = await params
+  const access = await requireTargetGroupAccess(request, targetGroupId)
+  if (!access.ok) return access.response
   const tg = await storeTargetGroupDetail(targetGroupId)
   if (!tg) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const current = tg.knowledgeEntries.find((e) => e.id === entryId)
@@ -36,8 +39,10 @@ export async function PUT(request: Request, { params }: Params) {
   return NextResponse.json(entry)
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: Params) {
   const { targetGroupId, entryId } = await params
+  const access = await requireTargetGroupAccess(request, targetGroupId)
+  if (!access.ok) return access.response
   const tg = await storeTargetGroupDetail(targetGroupId)
   if (!tg) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (!tg.knowledgeEntries.some((e) => e.id === entryId)) {

@@ -34,7 +34,8 @@
 - Target group fixtures: `apps/web/lib/fixtures/target-groups.ts`
 - Target group fixture store: `apps/web/lib/fixtures/target-group-store.ts`
 - Target group routes: `/target-groups`, `/target-groups/[targetGroupId]`
-- Target group API routes: `/api/target-groups`, `/api/target-groups/[targetGroupId]` (`POST`/`PATCH`/`DELETE`)
+- Target group API routes: `/api/target-groups` (`GET` list by `project_id`, `POST`) · `/api/target-groups/[targetGroupId]` · knowledge nested routes — Access Model B via `lib/resource-access-http.ts` (machine Bearer + `X-Plexon-User-Id`)
+- Plexon assistant base: Coolify `AUDION_API_URL=https://audion-v3.projects-a.plygrnd.tech/api` (not FastAPI)
 - Journey routes: `/journeys`, `/journeys/[journeyId]` (`paths.routes.journeys*`)
 - Journey API routes: `/api/journeys`, `/api/journeys/[journeyId]`
 - Journey fixtures/store: `apps/web/lib/fixtures/journeys.ts` · `journey-store.ts`

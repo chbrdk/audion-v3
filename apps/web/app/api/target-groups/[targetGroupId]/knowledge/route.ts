@@ -5,11 +5,14 @@ import {
   storePatchTargetGroup,
   storeTargetGroupDetail,
 } from '../../../../../lib/fixtures/target-group-store'
+import { requireTargetGroupAccess } from '../../../../../lib/resource-access-http'
 
 type Params = { params: Promise<{ targetGroupId: string }> }
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { targetGroupId } = await params
+  const access = await requireTargetGroupAccess(request, targetGroupId)
+  if (!access.ok) return access.response
   const tg = await storeTargetGroupDetail(targetGroupId)
   if (!tg) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ items: tg.knowledgeEntries, total: tg.knowledgeEntries.length })
@@ -17,6 +20,8 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const { targetGroupId } = await params
+  const access = await requireTargetGroupAccess(request, targetGroupId)
+  if (!access.ok) return access.response
   const tg = await storeTargetGroupDetail(targetGroupId)
   if (!tg) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const body = (await request.json()) as KnowledgeEntryWrite

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { auth } from '../../../../../../auth'
 import { extractFileForKnowledge } from '../../../../../../lib/knowledge/docx-to-knowledge'
 import { createKnowledgeEntry } from '../../../../../../lib/knowledge-entries'
 import {
@@ -10,19 +9,15 @@ import {
   storePatchTargetGroup,
   storeTargetGroupDetail,
 } from '../../../../../../lib/fixtures/target-group-store'
-import { isPlexonAuthConfigured } from '../../../../../../lib/runtime-config'
+import { requireTargetGroupAccess } from '../../../../../../lib/resource-access-http'
 
 type Params = { params: Promise<{ targetGroupId: string }> }
 
 export async function POST(request: Request, { params }: Params) {
-  if (isPlexonAuthConfigured()) {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-  }
-
   const { targetGroupId } = await params
+  const access = await requireTargetGroupAccess(request, targetGroupId)
+  if (!access.ok) return access.response
+
   const tg = await storeTargetGroupDetail(targetGroupId)
   if (!tg) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
