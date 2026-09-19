@@ -210,6 +210,12 @@ export const paths = {
     projectDetail: (id: string) => `/projects/${id}`,
     apiProjects: '/api/projects',
     apiProjectDetail: (id: string) => `/api/projects/${id}`,
+    apiProjectMembers: (id: string) => `/api/projects/${encodeURIComponent(id)}/members`,
+    apiProjectMember: (id: string, userId: string) =>
+      `/api/projects/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`,
+    apiProjectInvites: (id: string) => `/api/projects/${encodeURIComponent(id)}/invites`,
+    apiProjectSyncCollectionMembers: (id: string) =>
+      `/api/projects/${encodeURIComponent(id)}/sync-collection-members`,
     apiProjectArchive: (id: string) => `/api/projects/${id}/archive`,
     apiProjectKnowledgeUpload: (id: string) => `/api/projects/${id}/knowledge/upload`,
     /** Register existing project on Plexon Collection (audion-project-origin). */
@@ -464,6 +470,13 @@ export const paths = {
   /** Service: Collection lifecycle (archive / restore). */
   plexonProvisioningProjectPath: (platformProjectId: string) =>
     `/api/platform/provisioning/projects/${encodeURIComponent(platformProjectId)}`,
+  /** Service: Collection members roster (Access Model B). */
+  plexonProvisioningCollectionMembersPath: (platformProjectId: string) =>
+    `/api/platform/provisioning/collections/${encodeURIComponent(platformProjectId)}/members`,
+  plexonProvisioningCollectionMemberPath: (platformProjectId: string, userId: string) =>
+    `/api/platform/provisioning/collections/${encodeURIComponent(platformProjectId)}/members/${encodeURIComponent(userId)}`,
+  plexonProvisioningCollectionInvitesPath: (platformProjectId: string) =>
+    `/api/platform/provisioning/collections/${encodeURIComponent(platformProjectId)}/invites`,
 }
 
 /** Resolve a persona portrait path from the central avatar base. */

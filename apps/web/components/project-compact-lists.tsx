@@ -426,51 +426,140 @@ export function ProjectTargetGroupList({
 export function ProjectTeamList({
   projectId,
   members,
+  platformProjectId,
 }: {
   projectId: string
   members: ProjectMember[]
+  platformProjectId?: string | null
 }) {
   const t = useT()
   const router = useRouter()
-  const active = members.filter((m) => m.status !== 'removed')
+  const [rows, setRows] = useState(() =>
+    members
+      .filter((m) => m.status !== 'removed')
+      .map((m) => ({
+        id: m.id,
+        name: m.email,
+        meta: `${m.role} · ${m.status}`,
+      })),
+  )
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
+  const [banner, setBanner] = useState<string | null>(null)
 
-  async function persistMembers(nextActive: ProjectMember[]) {
-    const byId = new Map<string, ProjectMember>()
-    for (const m of members) {
-      if (!nextActive.some((n) => n.id === m.id)) {
-        byId.set(m.id, { ...m, status: 'removed' })
-      }
+  async function reload() {
+    const res = await fetch(paths.routes.apiProjectMembers(projectId), { cache: 'no-store' })
+    if (!res.ok) return
+    const body = (await res.json()) as {
+      items?: Array<{ id: string; email: string; role: string; status: string }>
     }
-    for (const m of nextActive) byId.set(m.id, m)
-    await patchJson(paths.routes.apiProjectDetail(projectId), {
-      members: [...byId.values()],
+    setRows(
+      (body.items ?? []).map((m) => ({
+        id: m.id,
+        name: m.email,
+        meta: `${m.role} · ${m.status}`,
+      })),
+    )
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      // Additive migrate once when Collection is bound — never overwrites Plexon.
+      if (platformProjectId) {
+        await fetch(paths.routes.apiProjectSyncCollectionMembers(projectId), { method: 'POST' })
+      }
+      if (cancelled) return
+      await reload()
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount + projectId
+  }, [projectId, platformProjectId])
+
+  async function createInviteLink() {
+    setBanner(null)
+    setInviteUrl(null)
+    const res = await fetch(paths.routes.apiProjectInvites(projectId), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ role: 'member' }),
     })
-    router.refresh()
+    const body = (await res.json().catch(() => ({}))) as {
+      inviteUrl?: string
+      error?: string
+    }
+    if (!res.ok) {
+      setBanner(body.error || `Invite failed (${res.status})`)
+      return
+    }
+    const url = body.inviteUrl ?? ''
+    setInviteUrl(url)
+    if (url && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url)
+      setBanner('Invite link copied')
+    }
   }
 
   return (
-    <CompactEditableList
-      title={t('detail.project.team')}
-      singular="member"
-      rows={toMemberRows(active)}
-      empty="No members yet."
-      draftMeta="member · invited"
-      addLabel="Add member"
-      onRename={async (id, email) => {
-        await persistMembers(active.map((m) => (m.id === id ? { ...m, email } : m)))
-      }}
-      onRemove={async (id) => {
-        await persistMembers(active.filter((m) => m.id !== id))
-      }}
-      onCreate={async (email) => {
-        const member: ProjectMember = {
-          id: `mem-${Date.now().toString(36)}`,
-          email,
-          role: 'member',
-          status: 'invited',
+    <>
+      <CompactEditableList
+        title={t('detail.project.team')}
+        singular="member"
+        rows={rows}
+        empty="No members yet."
+        draftMeta="member · invited"
+        addLabel="Add member"
+        createSlot={
+          platformProjectId ? (
+            <Button type="button" size="sm" variant="ghost" onClick={() => void createInviteLink()}>
+              Invite link
+            </Button>
+          ) : null
         }
-        await persistMembers([...active, member])
-      }}
-    />
+        onRename={async () => {
+          /* email rename not supported on Plexon roster */
+        }}
+        onRemove={async (id) => {
+          const res = await fetch(paths.routes.apiProjectMember(projectId, id), {
+            method: 'DELETE',
+          })
+          if (!res.ok && res.status !== 404) {
+            const err = (await res.json().catch(() => null)) as { error?: string } | null
+            throw new Error(err?.error || `Remove failed (${res.status})`)
+          }
+          await reload()
+          router.refresh()
+        }}
+        onCreate={async (email) => {
+          const res = await fetch(paths.routes.apiProjectMembers(projectId), {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ email, role: 'member' }),
+          })
+          const body = (await res.json().catch(() => ({}))) as { error?: string }
+          if (!res.ok) {
+            if (body.error === 'user_not_found' || body.error === 'wrong_company') {
+              throw new Error(
+                'User not in company — use Invite link so they can accept after signing in.',
+              )
+            }
+            throw new Error(body.error || `Add failed (${res.status})`)
+          }
+          await reload()
+          router.refresh()
+        }}
+      />
+      {banner ? (
+        <p className="audion-magazine-deck" role="status">
+          {banner}
+        </p>
+      ) : null}
+      {inviteUrl ? (
+        <p className="audion-magazine-deck">
+          <a href={inviteUrl}>{inviteUrl}</a>
+        </p>
+      ) : null}
+    </>
   )
 }

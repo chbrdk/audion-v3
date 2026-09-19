@@ -134,7 +134,11 @@ export function ProjectDetailPanel({
           )}
         </div>
         <aside className="audion-project-intro-team">
-          <ProjectTeamList projectId={project.id} members={members} />
+          <ProjectTeamList
+            projectId={project.id}
+            members={members}
+            platformProjectId={project.platformProjectId}
+          />
         </aside>
       </div>
 
