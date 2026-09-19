@@ -25,6 +25,7 @@ const requiredSpecs = [
   'knowledge/tavus-video-chat.md',
   'specs/domain/project-workspace.md',
   'specs/domain/project-fields.md',
+  'specs/domain/access-model-b-visibility.md',
   'specs/domain/knowledge-pack-publish.md',
   'specs/domain/edit-dialogs.md',
   'specs/api/personas.md',

@@ -14,6 +14,7 @@ import { storePersonaDetail, storePersonaList } from './fixtures/persona-store'
 import {
   allowPersonaFixtureFallback,
   getPersonaBackendBase,
+  isPlexonAuthConfigured,
   shouldUsePersonaFixturesOnly,
 } from './runtime-config'
 
@@ -258,39 +259,63 @@ async function fetchJson(url: string): Promise<Response> {
 }
 
 export async function fetchPersonaList(): Promise<PersonaListResult> {
+  let result: PersonaListResult
   if (shouldUsePersonaFixturesOnly()) {
-    return { ...(await storePersonaList()), origin: 'fixtures' }
+    result = { ...(await storePersonaList()), origin: 'fixtures' }
+  } else {
+    try {
+      const base = getPersonaBackendBase({ preferPublic: false })
+      const response = await fetchJson(`${base}/personas?page=1&page_size=50`)
+      if (!response.ok) throw new Error(`Persona list failed: ${response.status}`)
+      const json = (await response.json()) as {
+        items?: unknown[]
+        total?: number
+        page?: number
+        page_size?: number
+      }
+      const items = Array.isArray(json.items)
+        ? json.items.map(normalizePersonaSummary).filter((item): item is PersonaSummary => Boolean(item))
+        : []
+      result = {
+        items,
+        total: typeof json.total === 'number' ? json.total : items.length,
+        page: typeof json.page === 'number' ? json.page : 1,
+        pageSize: typeof json.page_size === 'number' ? json.page_size : 50,
+        origin: 'api',
+      }
+    } catch (error) {
+      if (!allowPersonaFixtureFallback()) throw error
+      result = { ...(await storePersonaList()), origin: 'fixtures' }
+    }
   }
 
-  try {
-    const base = getPersonaBackendBase({ preferPublic: false })
-    const response = await fetchJson(`${base}/personas?page=1&page_size=50`)
-    if (!response.ok) throw new Error(`Persona list failed: ${response.status}`)
-    const json = (await response.json()) as {
-      items?: unknown[]
-      total?: number
-      page?: number
-      page_size?: number
-    }
-    const items = Array.isArray(json.items)
-      ? json.items.map(normalizePersonaSummary).filter((item): item is PersonaSummary => Boolean(item))
-      : []
-    return {
-      items,
-      total: typeof json.total === 'number' ? json.total : items.length,
-      page: typeof json.page === 'number' ? json.page : 1,
-      pageSize: typeof json.page_size === 'number' ? json.page_size : 50,
-      origin: 'api',
-    }
-  } catch (error) {
-    if (!allowPersonaFixtureFallback()) throw error
-    return { ...(await storePersonaList()), origin: 'fixtures' }
+  if (isPlexonAuthConfigured()) {
+    const { resolveViewerId, filterPersonasForViewer } = await import('./project-access')
+    const viewerId = await resolveViewerId()
+    const items = await filterPersonasForViewer(result.items, viewerId)
+    return { ...result, items, total: items.length }
   }
+  return result
+}
+
+async function gatePersonaDetail(
+  persona: PersonaDetail | null,
+  origin: PersonaDataOrigin,
+): Promise<PersonaDetailResult> {
+  if (!persona || !isPlexonAuthConfigured()) {
+    return { persona, origin }
+  }
+  const { resolveViewerId, viewerCanAccessPersona } = await import('./project-access')
+  const viewerId = await resolveViewerId()
+  if (!(await viewerCanAccessPersona(persona, viewerId))) {
+    return { persona: null, origin }
+  }
+  return { persona, origin }
 }
 
 export async function fetchPersonaDetail(personaId: string): Promise<PersonaDetailResult> {
   if (shouldUsePersonaFixturesOnly()) {
-    return { persona: await storePersonaDetail(personaId), origin: 'fixtures' }
+    return gatePersonaDetail(await storePersonaDetail(personaId), 'fixtures')
   }
 
   try {
@@ -298,12 +323,12 @@ export async function fetchPersonaDetail(personaId: string): Promise<PersonaDeta
     const response = await fetchJson(`${base}/personas/${personaId}`)
     if (response.status === 404) {
       const local = await storePersonaDetail(personaId)
-      return { persona: local, origin: local ? 'fixtures' : 'api' }
+      return gatePersonaDetail(local, local ? 'fixtures' : 'api')
     }
     if (!response.ok) throw new Error(`Persona detail failed: ${response.status}`)
-    return { persona: normalizePersonaDetail(await response.json()), origin: 'api' }
+    return gatePersonaDetail(normalizePersonaDetail(await response.json()), 'api')
   } catch (error) {
     if (!allowPersonaFixtureFallback()) throw error
-    return { persona: await storePersonaDetail(personaId), origin: 'fixtures' }
+    return gatePersonaDetail(await storePersonaDetail(personaId), 'fixtures')
   }
 }

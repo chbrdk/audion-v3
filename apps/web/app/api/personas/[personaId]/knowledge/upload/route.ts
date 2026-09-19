@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { auth } from '../../../../../../auth'
 import { extractFileForKnowledge } from '../../../../../../lib/knowledge/docx-to-knowledge'
 import { createKnowledgeEntry } from '../../../../../../lib/knowledge-entries'
 import {
@@ -7,19 +6,15 @@ import {
   scheduleKnowledgeEntryRagSync,
 } from '../../../../../../lib/knowledge/rag/sync'
 import { storePatchPersona, storePersonaDetail } from '../../../../../../lib/fixtures/persona-store'
-import { isPlexonAuthConfigured } from '../../../../../../lib/runtime-config'
+import { requirePersonaAccess } from '../../../../../../lib/resource-access-http'
 
 type Params = { params: Promise<{ personaId: string }> }
 
 export async function POST(request: Request, { params }: Params) {
-  if (isPlexonAuthConfigured()) {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-  }
-
   const { personaId } = await params
+  const access = await requirePersonaAccess(request, personaId)
+  if (!access.ok) return access.response
+
   const persona = await storePersonaDetail(personaId)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 

@@ -30,7 +30,7 @@
 - Runtime config helper: `apps/web/lib/runtime-config.ts`
 - Persona fixtures: `apps/web/lib/fixtures/personas.ts`
 - Persona fixture store: `apps/web/lib/fixtures/persona-store.ts`
-- Persona API routes: `/api/personas`, `/api/personas/[personaId]` (`GET` list via store/API · `POST`/`PATCH`/`DELETE` on detail)
+- Persona API routes: `/api/personas`, `/api/personas/[personaId]` (`GET`/`POST`/`PATCH`/`DELETE`) — Access Model B via `requirePersonaAccess` / `filterPersonasForViewer` (`specs/domain/access-model-b-visibility.md`)
 - Target group fixtures: `apps/web/lib/fixtures/target-groups.ts`
 - Target group fixture store: `apps/web/lib/fixtures/target-group-store.ts`
 - Target group routes: `/target-groups`, `/target-groups/[targetGroupId]`

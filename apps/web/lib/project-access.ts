@@ -122,3 +122,44 @@ export async function viewerCanAccessProject(
   if (!accessible) return false
   return accessible.has(project.platformProjectId)
 }
+
+/** Filter personas whose parent project the viewer can access. */
+export async function filterPersonasForViewer<T extends { projectId?: string | null }>(
+  personas: T[],
+  viewerId: string | null,
+): Promise<T[]> {
+  if (!isPlexonAuthConfigured()) return personas
+  if (!viewerId) return []
+  const projectIds = [
+    ...new Set(personas.map((p) => p.projectId?.trim()).filter(Boolean) as string[]),
+  ]
+  const { storeProjectDetail } = await import('./fixtures/project-store')
+  const allowed = new Set<string>()
+  await Promise.all(
+    projectIds.map(async (id) => {
+      const project = await storeProjectDetail(id)
+      if (project && (await viewerCanAccessProject(project, viewerId))) {
+        allowed.add(id)
+      }
+    }),
+  )
+  return personas.filter((p) => {
+    const pid = p.projectId?.trim()
+    return Boolean(pid && allowed.has(pid))
+  })
+}
+
+/** SSR / helper: can the viewer open this persona (by parent project)? */
+export async function viewerCanAccessPersona(
+  persona: { projectId?: string | null },
+  viewerId: string | null,
+): Promise<boolean> {
+  if (!isPlexonAuthConfigured()) return true
+  if (!viewerId) return false
+  const projectId = persona.projectId?.trim()
+  if (!projectId) return false
+  const { storeProjectDetail } = await import('./fixtures/project-store')
+  const project = await storeProjectDetail(projectId)
+  if (!project) return false
+  return viewerCanAccessProject(project, viewerId)
+}

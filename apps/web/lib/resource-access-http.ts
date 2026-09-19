@@ -1,10 +1,11 @@
 /**
  * Access Model B gates for assistant / machine clients on AUDION resources.
- * Spec: plexon-v3/specs/domain/assistant-actor-identity.md
+ * Spec: specs/domain/access-model-b-visibility.md · plexon-v3/specs/domain/assistant-actor-identity.md
  */
 
 import { NextResponse } from 'next/server'
 import { getRequestUser } from './auth-api-token'
+import { storePersonaDetail } from './fixtures/persona-store'
 import { storeProjectDetail } from './fixtures/project-store'
 import { storeTargetGroupDetail } from './fixtures/target-group-store'
 import { viewerCanAccessProject } from './project-access'
@@ -69,6 +70,33 @@ export async function requireTargetGroupAccess(
   if (!isPlexonAuthConfigured()) return gate
 
   const projectId = tg.projectId?.trim()
+  if (!projectId) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'forbidden' }, { status: 403 }),
+    }
+  }
+  return requireProjectAccess(request, projectId)
+}
+
+/** Persona inherits Access Model B from its parent project. */
+export async function requirePersonaAccess(
+  request: Request,
+  personaId: string,
+): Promise<ViewerOk | ViewerDenied> {
+  const gate = await requireViewer(request)
+  if (!gate.ok) return gate
+
+  const persona = await storePersonaDetail(personaId)
+  if (!persona) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'not_found' }, { status: 404 }),
+    }
+  }
+  if (!isPlexonAuthConfigured()) return gate
+
+  const projectId = persona.projectId?.trim()
   if (!projectId) {
     return {
       ok: false,

@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server'
 import type { KnowledgeEntryWrite } from '@audion-v3/contracts'
 import { createKnowledgeEntry } from '../../../../../lib/knowledge-entries'
 import { storePatchPersona, storePersonaDetail } from '../../../../../lib/fixtures/persona-store'
+import { requirePersonaAccess } from '../../../../../lib/resource-access-http'
 
 type Params = { params: Promise<{ personaId: string }> }
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { personaId } = await params
+  const access = await requirePersonaAccess(request, personaId)
+  if (!access.ok) return access.response
   const persona = await storePersonaDetail(personaId)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({
@@ -17,6 +20,8 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const { personaId } = await params
+  const access = await requirePersonaAccess(request, personaId)
+  if (!access.ok) return access.response
   const persona = await storePersonaDetail(personaId)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const body = (await request.json()) as KnowledgeEntryWrite

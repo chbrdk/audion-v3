@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server'
 import type { KnowledgeEntryWrite } from '@audion-v3/contracts'
 import { updateKnowledgeEntry } from '../../../../../../lib/knowledge-entries'
 import { storePatchPersona, storePersonaDetail } from '../../../../../../lib/fixtures/persona-store'
+import { requirePersonaAccess } from '../../../../../../lib/resource-access-http'
 
 type Params = { params: Promise<{ personaId: string; entryId: string }> }
 
 export async function PUT(request: Request, { params }: Params) {
   const { personaId, entryId } = await params
+  const access = await requirePersonaAccess(request, personaId)
+  if (!access.ok) return access.response
   const persona = await storePersonaDetail(personaId)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const current = persona.knowledgeEntries.find((e) => e.id === entryId)
@@ -33,8 +36,10 @@ export async function PUT(request: Request, { params }: Params) {
   return NextResponse.json(entry)
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: Params) {
   const { personaId, entryId } = await params
+  const access = await requirePersonaAccess(request, personaId)
+  if (!access.ok) return access.response
   const persona = await storePersonaDetail(personaId)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (!persona.knowledgeEntries.some((e) => e.id === entryId)) {

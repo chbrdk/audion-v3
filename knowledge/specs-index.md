@@ -27,6 +27,7 @@
 | Tavus video chat | `specs/domain/tavus-video-chat.md` |
 | Project workspace | `specs/domain/project-workspace.md` |
 | Project fields | `specs/domain/project-fields.md` |
+| Access Model B visibility | `specs/domain/access-model-b-visibility.md` |
 | Knowledge Pack publish (→ Plexon Collection) | `specs/domain/knowledge-pack-publish.md` |
 | Settings | `specs/domain/settings.md` |
 | Edit dialogs | `specs/domain/edit-dialogs.md` |

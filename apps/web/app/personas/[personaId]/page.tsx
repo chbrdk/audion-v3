@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation'
 import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../../components/app-shell'
 import { PersonaDetailPanel } from '../../../components/persona-detail-panel'
@@ -11,6 +12,7 @@ export default async function PersonaDetailPage({
   const { personaId } = await params
   try {
     const detailResult = await fetchPersonaDetail(personaId)
+    if (!detailResult.persona) notFound()
     return (
       <AppShell>
         <PersonaDetailPanel persona={detailResult.persona} />
