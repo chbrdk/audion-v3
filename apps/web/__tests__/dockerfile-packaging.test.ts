@@ -16,11 +16,12 @@ describe('Dockerfile Coolify packaging', () => {
     expect(df).toContain('audion-v3.projects-a.plygrnd.tech')
     expect(df).toContain('msqdx-ui')
     expect(df).toContain('MSQDX_UI_REF=')
-    expect(df).toMatch(/git fetch --depth 1 origin "\$\{MSQDX_UI_REF\}"/)
+    expect(df).toContain('codeload.github.com/chbrdk/msqdx-ui')
     expect(df).toContain('node-linker=hoisted')
     expect(df).toContain('ChatOverlay.tsx')
     expect(df).toContain('EXPOSE 3000')
     expect(df).toContain('docker-entrypoint.sh')
+    expect(df).toContain('test:persona-chat')
     expect(df).toMatch(/find \. -type d -name node_modules/)
     expect(df).toMatch(
       /ln -s \/workspace\/audion-v3\/node_modules \/workspace\/msqdx-ui\/node_modules/,

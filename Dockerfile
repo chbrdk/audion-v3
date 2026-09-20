@@ -68,6 +68,9 @@ RUN test -d /workspace/msqdx-ui/packages/ui/src \
     && ln -s /workspace/audion-v3/node_modules /workspace/msqdx-ui/node_modules \
     && test -d /workspace/msqdx-ui/node_modules/@types/react
 
+# Fail the image if persona-chat humanize / eval / new-persona quality gate regresses.
+RUN npm run test:persona-chat
+
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--max-old-space-size=6144
 RUN npm run build \

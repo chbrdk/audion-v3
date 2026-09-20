@@ -43,10 +43,11 @@ All enabled checks must pass. Failures include `id` + evidence snippet for ops.
 
 ## Runtime
 
-- **CI:** vitest on scorers + golden replies (no network).
-- **Staging:** `AUDION_API_TOKEN=… node scripts/eval-persona-chat.mjs` → `.tmp/persona-chat-eval/latest.json`.
+- **Deploy gate (automatic):** `npm run test:persona-chat` in the Dockerfile before `next build` — humanize/eval/new-persona quality tests. See `knowledge/persona-chat-quality-gate.md`.
+- **CI local:** same script without Docker.
+- **Staging live (ops):** `AUDION_API_TOKEN=… node scripts/eval-persona-chat.mjs` → `.tmp/persona-chat-eval/latest.json`.
 
-Default persona/project: env `EVAL_PERSONA_ID` / `EVAL_PROJECT_ID`, else first available from chat history / documented staging persona.
+New personas do **not** need a manual eval: create seeds the natural-voice overlay and every chat turn rebuilds the adaptive humanize stack from magazine fields.
 
 ## Acceptance
 
@@ -56,3 +57,4 @@ Default persona/project: env `EVAL_PERSONA_ID` / `EVAL_PROJECT_ID`, else first a
 4. Live script documents env keys in `knowledge/paths.md` and writes JSON under `.tmp/`.
 5. Adaptive chat few-shots are bilingual (`detectChatLocale`) so EN evals are not DE-biased.
 6. Human spot-check notes live in `knowledge/persona-chat-spot-check-2026-09-20.md`.
+7. Deploy gate: `npm run test:persona-chat` in Dockerfile; new-persona quality-gate test proves create inherits humanize stack (`knowledge/persona-chat-quality-gate.md`).

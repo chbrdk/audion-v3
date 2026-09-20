@@ -8,6 +8,7 @@
   "scripts": {
     "build": "npm run build -w @audion-v3/contracts && npm run build -w web",
     "test": "npm run test -w web",
+    "test:persona-chat": "npm run test -w web -- persona-chat-eval persona-chat-quality-gate adaptive-persona-chat-prompt humanize-reply persona-natural-voice-seed",
     "typecheck": "npm run typecheck -w web",
     "db:push": "npm run db:push -w web"
   },
