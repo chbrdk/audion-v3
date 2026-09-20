@@ -9,6 +9,10 @@ describe('Dockerfile Coolify packaging', () => {
   it('ships Dockerfile and dockerignore at repo root', () => {
     expect(existsSync(resolve(repoRoot, 'Dockerfile'))).toBe(true)
     expect(existsSync(resolve(repoRoot, '.dockerignore'))).toBe(true)
+    const ignore = readFileSync(resolve(repoRoot, '.dockerignore'), 'utf8')
+    // Persona-chat deploy gate needs vitest files in the build context.
+    expect(ignore).not.toMatch(/^apps\/web\/__tests__$/m)
+    expect(ignore).not.toMatch(/^apps\/web\/vitest\.config\.ts$/m)
   })
 
   it('documents staging domain and clones msqdx-ui', () => {

@@ -14,10 +14,8 @@ coverage
 !.env.example
 .DS_Store
 **/*.tsbuildinfo
-apps/web/test
-apps/web/__tests__
-apps/web/vitest.config.ts
-apps/web/test.setup.ts
+# Keep apps/web/__tests__ + vitest config in the image context —
+# Dockerfile runs `npm run test:persona-chat` as a deploy quality gate.
 knowledge
 specs
 .cursor

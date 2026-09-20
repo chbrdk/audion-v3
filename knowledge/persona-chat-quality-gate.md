@@ -27,5 +27,5 @@ AUDION_API_TOKEN=audion_… \
 ## Paths
 
 - Gate tests: `apps/web/__tests__/persona-chat-quality-gate.test.ts` · `persona-chat-eval.test.ts` · `adaptive-persona-chat-prompt.test.ts` · `humanize-reply.test.ts` · `persona-natural-voice-seed.test.ts`
-- Dockerfile runs: `npm run test:persona-chat` before `npm run build`
+- Dockerfile runs: `npm run test:persona-chat` before `npm run build` (`.dockerignore` must not exclude `__tests__` / vitest config)
 - Spec: `specs/domain/persona-chat-eval.md`
