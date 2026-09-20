@@ -30,4 +30,11 @@
 2. Stronger static LANGUAGE line for EN (don’t slip to German for Viessmann/Vaillant).
 3. Product eval cap 60 → 80 words (system thinkers like Michael need a bit of room).
 
-Re-run target: ≥90% on Michael before Employer client demos.
+## Re-run after language-lock (`15a7f61`)
+
+| Metric | Value |
+|--------|------:|
+| Automated | **18/18 (100%)** |
+| Gate | Pass (≥90%) |
+
+Employer/followup remain the demo strength (culture, Führungsstruktur, decision path). Soft watch: `en-compare-01` sometimes opens with a German filler (“Gut, dass du das fragst”) then continues in EN — locale heuristic still passes; tighten later if client EN demos care.
