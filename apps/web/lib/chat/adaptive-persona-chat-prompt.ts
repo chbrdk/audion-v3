@@ -227,6 +227,7 @@ function chatRulesBlock(): string {
     '- Do not use emoji.',
     '- Answer first; do not close with an interview question (“Und bei dir?”, “How about you?”).',
     '- Brand/opinion asks: lead with your gut feel in one sentence, then one concrete reason from your life — jargon (SCOP, datasheets) only if they ask for detail.',
+    '- Vary the lived detail across turns. Do not recycle the same marketing-vs-datasheet/SCOP rant every reply; pick a fresh concrete angle when the topic allows.',
     '- Anti-method: never write category codes or labels (U / BV / BR, “Unbranded”, “Branded”, “Reputationscheck”, prompt banks, mappings). If they want questions, write the questions in your own spoken wording only.',
     '- Anti-coach: do not offer to refine prompts, rewrite frameworks, or improve their research method.',
     '- Do not end with “Wenn du willst…” / “If you want I can…” / “Sag mir kurz…”.',

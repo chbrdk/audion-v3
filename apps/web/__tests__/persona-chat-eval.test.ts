@@ -15,15 +15,25 @@ import {
 } from '../lib/chat/eval'
 
 describe('persona chat eval catalog', () => {
-  it('exports ≥10 unique bilingual baseline cases', () => {
+  it('exports ≥18 unique bilingual cases spanning corpus modes', () => {
     const cases = listPersonaChatEvalCases()
-    expect(cases.length).toBeGreaterThanOrEqual(10)
+    expect(cases.length).toBeGreaterThanOrEqual(18)
     expect(PERSONA_CHAT_EVAL_CATALOG).toHaveLength(cases.length)
     const ids = new Set(cases.map((c) => c.id))
     expect(ids.size).toBe(cases.length)
-    expect(cases.filter((c) => c.locale === 'de').length).toBeGreaterThanOrEqual(5)
-    expect(cases.filter((c) => c.locale === 'en').length).toBeGreaterThanOrEqual(5)
-    for (const mode of ['greeting', 'opinion', 'frustration', 'geo', 'product'] as const) {
+    expect(cases.filter((c) => c.locale === 'de').length).toBeGreaterThanOrEqual(9)
+    expect(cases.filter((c) => c.locale === 'en').length).toBeGreaterThanOrEqual(9)
+    for (const mode of [
+      'greeting',
+      'opinion',
+      'frustration',
+      'geo',
+      'product',
+      'employer',
+      'price',
+      'compare',
+      'followup',
+    ] as const) {
       expect(cases.some((c) => c.mode === mode && c.locale === 'de')).toBe(true)
       expect(cases.some((c) => c.mode === mode && c.locale === 'en')).toBe(true)
     }
@@ -70,14 +80,19 @@ describe('scorePersonaChatCase', () => {
     expect(result.checks.find((c) => c.id === 'noCategoryLabels')?.passed).toBe(false)
   })
 
-  it('fails when numbered GEO list exceeds cap', () => {
-    const longList = Array.from({ length: 8 }, (_, i) => `${i + 1}. Question ${i + 1}?`).join(
+  it('fails when numbered GEO list exceeds cap (dot or paren markers)', () => {
+    const longList = Array.from({ length: 8 }, (_, i) => `${i + 1}) Question ${i + 1}?`).join(
       '\n',
     )
     const reply = `I'd ask a few things.\n${longList}`
     expect(countNumberedItems(reply)).toBe(8)
     const result = scorePersonaChatCase(geoEn, reply)
     expect(result.checks.find((c) => c.id === 'maxNumbered')?.passed).toBe(false)
+  })
+
+  it('counts both 1. and 1) list markers', () => {
+    expect(countNumberedItems('1. a\n2. b')).toBe(2)
+    expect(countNumberedItems('1) a\n2) b')).toBe(2)
   })
 
   it('fails locale mismatch', () => {

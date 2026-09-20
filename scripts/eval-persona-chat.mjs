@@ -67,7 +67,7 @@ function countWords(text) {
 }
 
 function countNumberedItems(text) {
-  return (String(text || '').match(/^\s*\d+\.\s+/gm) || []).length
+  return (String(text || '').match(/^\s*\d+[.)]\s+/gm) || []).length
 }
 
 function detectReplyLocale(text) {

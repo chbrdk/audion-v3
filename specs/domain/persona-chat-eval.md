@@ -23,7 +23,7 @@ Each case:
 {
   id: string
   locale: 'de' | 'en'
-  mode: 'greeting' | 'opinion' | 'frustration' | 'geo' | 'product'
+  mode: 'greeting' | 'opinion' | 'frustration' | 'geo' | 'product' | 'employer' | 'price' | 'compare' | 'followup'
   prompt: string
   expectations: {
     maxWords: number
@@ -34,7 +34,7 @@ Each case:
 }
 ```
 
-Baseline: **5 modes × 2 locales = 10 cases** in `catalog.ts`. New markets/modes = append cases.
+Baseline: **9 modes × 2 locales = 18 cases** in `catalog.json` (v1.1 corpus expansion). New markets/modes = append cases.
 
 ## Scoring
 
@@ -50,8 +50,9 @@ Default persona/project: env `EVAL_PERSONA_ID` / `EVAL_PROJECT_ID`, else first a
 
 ## Acceptance
 
-1. Catalog exports ≥10 bilingual cases with unique ids.
-2. Scorers are locale-aware for interview/coach forbid lists.
+1. Catalog exports ≥18 bilingual cases with unique ids (corpus modes included).
+2. Scorers are locale-aware for interview/coach forbid lists; `maxNumbered` accepts `1.` and `1)`.
 3. Unit tests cover pass and fail goldens per major check.
 4. Live script documents env keys in `knowledge/paths.md` and writes JSON under `.tmp/`.
 5. Adaptive chat few-shots are bilingual (`detectChatLocale`) so EN evals are not DE-biased.
+6. Human spot-check notes live in `knowledge/persona-chat-spot-check-2026-09-20.md`.

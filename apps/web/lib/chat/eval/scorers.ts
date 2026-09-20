@@ -39,7 +39,8 @@ export function countWords(text: string): number {
 }
 
 export function countNumberedItems(text: string): number {
-  return (String(text || '').match(/^\s*\d+\.\s+/gm) || []).length
+  // Accept "1. " and "1) " (models vary list markers by locale).
+  return (String(text || '').match(/^\s*\d+[.)]\s+/gm) || []).length
 }
 
 /** Lightweight locale heuristic for reply language. */

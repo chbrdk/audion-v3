@@ -1,5 +1,5 @@
 /**
- * Baseline bilingual persona-chat eval catalog (5 modes × 2 locales).
+ * Baseline bilingual persona-chat eval catalog (9 modes × 2 locales).
  * Append cases in catalog.json to scale — do not hardcode mode logic in scorers.
  * Spec: specs/domain/persona-chat-eval.md
  */

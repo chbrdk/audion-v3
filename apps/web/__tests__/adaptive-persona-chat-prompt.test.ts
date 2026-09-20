@@ -43,6 +43,7 @@ describe('buildAdaptivePersonaChatSystemPrompt', () => {
     expect(prompt).toMatch(/natural conversation/i)
     expect(prompt).toMatch(/Anti-method/i)
     expect(prompt).toMatch(/Anti-coach/i)
+    expect(prompt).toMatch(/Vary the lived detail/i)
     expect(prompt).toMatch(/No ### headings/i)
     expect(prompt).toContain(VOICE_EXAMPLES_HEADING)
     expect(prompt).toMatch(/User: hey wie geht/i)

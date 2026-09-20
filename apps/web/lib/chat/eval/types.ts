@@ -8,6 +8,10 @@ export type ChatEvalMode =
   | 'frustration'
   | 'geo'
   | 'product'
+  | 'employer'
+  | 'price'
+  | 'compare'
+  | 'followup'
 
 export type ChatEvalForbid =
   | 'emoji'

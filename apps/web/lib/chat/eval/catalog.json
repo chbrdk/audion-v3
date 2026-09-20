@@ -110,5 +110,95 @@
       "forbid": ["emoji", "interview", "category", "coach"],
       "requireLocaleMatch": true
     }
+  },
+  {
+    "id": "de-employer-01",
+    "locale": "de",
+    "mode": "employer",
+    "prompt": "Als Arbeitgeber: was würdest du googeln, bevor du dich bei der Marke bewirbst?",
+    "expectations": {
+      "maxWords": 90,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "en-employer-01",
+    "locale": "en",
+    "mode": "employer",
+    "prompt": "As an employer brand: what would you google before applying there?",
+    "expectations": {
+      "maxWords": 90,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "de-price-01",
+    "locale": "de",
+    "mode": "price",
+    "prompt": "Ist euch Vaillant zu teuer — oder worauf achtet ihr beim Preis?",
+    "expectations": {
+      "maxWords": 80,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "en-price-01",
+    "locale": "en",
+    "mode": "price",
+    "prompt": "Do you find the brand too expensive — or what do you watch for on price?",
+    "expectations": {
+      "maxWords": 80,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "de-compare-01",
+    "locale": "de",
+    "mode": "compare",
+    "prompt": "Wie steht Vaillant für dich im Vergleich zu Viessmann?",
+    "expectations": {
+      "maxWords": 90,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "en-compare-01",
+    "locale": "en",
+    "mode": "compare",
+    "prompt": "How does the brand stack up against Viessmann for you?",
+    "expectations": {
+      "maxWords": 90,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "de-followup-01",
+    "locale": "de",
+    "mode": "followup",
+    "prompt": "nochmal klarer: fragen die *du* stellen würdest — nicht Presse- oder Arbeitgeber-Floskeln",
+    "expectations": {
+      "maxWords": 180,
+      "maxNumbered": 6,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "en-followup-01",
+    "locale": "en",
+    "mode": "followup",
+    "prompt": "again clearer: questions *you* would actually ask — not press or employer-brand fluff",
+    "expectations": {
+      "maxWords": 180,
+      "maxNumbered": 6,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
   }
 ]

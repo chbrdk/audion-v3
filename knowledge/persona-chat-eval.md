@@ -27,9 +27,12 @@ Measure how close persona replies are to **human research participants** (not as
 | `prompt` | User message |
 | `expectations` | Caps + forbid tags + optional require tags |
 
-## Baseline catalog (v1)
+## Baseline catalog (v1.1)
 
-10 cases = 5 modes × 2 locales in `apps/web/lib/chat/eval/catalog.json`.
+18 cases = 9 modes × 2 locales in `apps/web/lib/chat/eval/catalog.json`  
+(v1: greeting/opinion/frustration/product/geo · v1.1 corpus: employer/price/compare/followup).
+
+Human spot-check: `knowledge/persona-chat-spot-check-2026-09-20.md`.
 
 ## Scorers (v1)
 
