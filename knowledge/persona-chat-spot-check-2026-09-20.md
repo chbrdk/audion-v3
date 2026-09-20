@@ -31,6 +31,6 @@ Surface humanization works (no residue, locale OK, chat-length). **Human-likenes
 2. **Numbered list forms** — count `1.` and `1)` in `maxNumbered` (EN GEO used parens).
 3. **Corpus coverage** — Vaillant GEO follow-ups (“fragen die *du* stellen würdest”), Employer, Price, Competitor compare were missing from v1 catalog → v1.1 cases.
 
-## Next human review
+## Follow-up (v1.1 · `0a78e32`)
 
-Re-spot-check after catalog v1.1 live run; sample one Employer persona (e.g. Michael Sander) separately from Lisa product voice.
+Live catalog **18/18** pass after employer/price/compare/followup + monotony rule. Employer/price answers show clearer facet variety (Kununu/Systemkosten) vs product/opinion still SCOP-heavy — expected for Lisa Neubau; sample Employer persona next for client demos.
