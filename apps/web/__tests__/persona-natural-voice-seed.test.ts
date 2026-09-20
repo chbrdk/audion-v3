@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_NATURAL_VOICE_OVERLAY,
   resetPersonaPromptsStore,
@@ -9,7 +9,13 @@ import {
 
 describe('storeSeedDefaultNaturalVoice', () => {
   beforeEach(() => {
+    // Deploy/CI may inject DATABASE_URL; these tests assert the in-memory path.
+    vi.stubEnv('DATABASE_URL', '')
     resetPersonaPromptsStore()
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   it('seeds the natural-voice overlay when missing', async () => {

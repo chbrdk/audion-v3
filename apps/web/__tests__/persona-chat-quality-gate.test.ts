@@ -2,7 +2,7 @@
  * Quality gate: newly created personas inherit the same human chat stack.
  * Spec: specs/domain/persona-chat-eval.md · knowledge/persona-chat-quality-gate.md
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ADAPTIVE_CHAT_RULES_HEADING,
   LANGUAGE_TURN_HEADING,
@@ -20,6 +20,7 @@ import { resetPersonaStore, storeCreatePersona } from '../lib/fixtures/persona-s
 
 describe('persona chat quality gate (new personas)', () => {
   beforeEach(() => {
+    vi.stubEnv('DATABASE_URL', '')
     resetPersonaStore()
     resetPersonaPromptsStore()
   })

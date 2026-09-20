@@ -26,6 +26,7 @@ describe('Dockerfile Coolify packaging', () => {
     expect(df).toContain('EXPOSE 3000')
     expect(df).toContain('docker-entrypoint.sh')
     expect(df).toContain('test:persona-chat')
+    expect(df).toMatch(/DATABASE_URL= npm run test:persona-chat/)
     expect(df).toMatch(/find \. -type d -name node_modules/)
     expect(df).toMatch(
       /ln -s \/workspace\/audion-v3\/node_modules \/workspace\/msqdx-ui\/node_modules/,

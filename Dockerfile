@@ -69,7 +69,8 @@ RUN test -d /workspace/msqdx-ui/packages/ui/src \
     && test -d /workspace/msqdx-ui/node_modules/@types/react
 
 # Fail the image if persona-chat humanize / eval / new-persona quality gate regresses.
-RUN npm run test:persona-chat
+# Clear DATABASE_URL so fixture stores stay in-memory (Coolify injects DB as build ARG).
+RUN DATABASE_URL= npm run test:persona-chat
 
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--max-old-space-size=6144
