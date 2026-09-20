@@ -11,6 +11,7 @@ import type {
 
 export const ADAPTIVE_CHAT_RULES_HEADING = '## Chat rules'
 export const ADAPTIVE_CUSTOM_VOICE_HEADING = '## Custom voice instructions'
+export const RESEARCH_ELICITATION_HEADING = '## Research elicitation (this turn)'
 
 const LIST_CAP = 8
 const STYLE_VOCAB_CAP = 10
@@ -23,6 +24,10 @@ const CLIP_ITEM = 160
 const PROMPT_MAX_CHARS = 12000
 
 const SECTION_PRIORITY = /^(mindset|working with)/i
+
+/** User dumps GEO / prompt-bank methodology → stay in character, don't coach. */
+const RESEARCH_ELICITATION_RE =
+  /(?:\bU\s*=\s*|\bBV\s*=\s*|\bBR\s*=\s*|Unbranded\s*\/?\s*kategorial|Branded\s*\/?\s*vergleichend|Branded\s*\/?\s*Reputationscheck|3\s+fragen\s+aus\s+je\s+3\s+kategorien|prompt[- ]?bank|Fehlinformationsrisiko)/i
 
 export type AdaptivePersonaChatPromptOpts = {
   /** Admin overlay — does not replace the adaptive magazine profile. */
@@ -61,7 +66,7 @@ function bulletBlock(title: string, items: Array<string | null | undefined>, max
   return `${title}\n${lines.join('\n')}`
 }
 
-/** High / low trait → how to answer in chat. */
+/** High / low trait → content + surface form in chat. */
 function traitBehaviorHint(name: string, score: number): string {
   const key = name.toLowerCase()
   const high = score >= 0.66
@@ -71,22 +76,22 @@ function traitBehaviorHint(name: string, score: number): string {
   const table: Array<{ match: RegExp; high: string; low: string }> = [
     {
       match: /open|curious|explor/,
-      high: 'volunteer options and alternatives; curious questions OK',
-      low: 'stick to the asked topic; fewer tangents',
+      high: 'volunteer one alternative; one curious question OK — not a brainstorm dump',
+      low: 'stick to the asked topic; no tangents',
     },
     {
       match: /conscient|detail|thorough|precision/,
-      high: 'be precise; name caveats; prefer concrete steps',
-      low: 'skip pedantry; give the gist first',
+      high: 'be precise; one concrete caveat; prefer steps over essays',
+      low: 'skip pedantry; gist first in one or two sentences',
     },
     {
       match: /extra|sociab|outgoing/,
-      high: 'warm, conversational; light rapport OK',
-      low: 'reserved; facts over small talk',
+      high: 'warm, conversational; light rapport OK — still stay short',
+      low: 'reserved; facts over small talk; no cheerleading',
     },
     {
       match: /agree|empath|warm/,
-      high: 'acknowledge feelings; collaborative tone',
+      high: 'briefly acknowledge feelings; collaborative tone',
       low: 'blunt and direct; less softener language',
     },
     {
@@ -96,12 +101,12 @@ function traitBehaviorHint(name: string, score: number): string {
     },
     {
       match: /skept|trust|critic/,
-      high: 'challenge claims; ask for proof',
-      low: 'more accepting; less interrogation',
+      high: 'challenge claims; ask for proof — one challenge, not a cross-exam',
+      low: 'more accepting; fewer interrogation questions',
     },
     {
       match: /impat|time|urgent|speed/,
-      high: 'lead with the answer; cut fluff',
+      high: 'lead with the answer in the first sentence; cut fluff; avoid lists',
       low: 'allow a short setup before the point',
     },
     {
@@ -184,7 +189,11 @@ function knowledgeBlock(persona: PersonaDetail): string {
     .filter((x): x is string => Boolean(x))
     .slice(0, PRIOR_KNOWLEDGE_CAP)
   if (!entries.length) return ''
-  return `## Prior knowledge (persona)\n${entries.join('\n')}`
+  return [
+    '## Prior knowledge (persona)',
+    'Use only as quiet background. Do not mention internal labels, mappings, indexes, or “entries”. Speak as yourself.',
+    entries.join('\n'),
+  ].join('\n')
 }
 
 function chatRulesBlock(): string {
@@ -192,11 +201,40 @@ function chatRulesBlock(): string {
     ADAPTIVE_CHAT_RULES_HEADING,
     '- You ARE this persona — first person only. Never speak as an AI describing them.',
     '- Keep turns short: usually 1–3 short paragraphs, about 80–120 words unless the user asks for depth.',
-    '- Sound like a real person in a research chat — not a briefing, pitch deck, or essay.',
+    '- Sound like a real person in a research chat — not a briefing, pitch deck, essay, or research assistant.',
     '- Prefer concrete opinions and examples from your goals, pains, and traits.',
-    '- Use markdown sparingly (a short list only when it clarifies).',
+    '- Use markdown sparingly: at most one short list (≤3 bullets) unless the user explicitly asks for a longer list or “9 Fragen”. Prefer plain sentences over ### headings.',
+    '- Anti-method: never name research frameworks, category codes (U / BV / BR), prompt banks, or internal knowledge labels in your reply. If they want questions, give questions in your own words only.',
+    '- Anti-coach: do not offer to refine prompts, rewrite categories, or improve their methodology unless they explicitly ask you to step out of character.',
+    '- Do not end with “Wenn du willst…” / “If you want I can…” process offers.',
     '- When unsure, say so in character rather than inventing facts.',
+    '- Before sending: drop any sentence that explains how you structured the answer.',
   ].join('\n')
+}
+
+/** True when the user message is a GEO / prompt-bank elicitation brief. */
+export function isResearchElicitationMessage(message: string): boolean {
+  return RESEARCH_ELICITATION_RE.test(message || '')
+}
+
+export function researchElicitationEnvelope(): string {
+  return [
+    RESEARCH_ELICITATION_HEADING,
+    'The human is eliciting questions or opinions for research.',
+    'Stay fully in character. Produce what *you* would ask, notice, or care about.',
+    'Do not restate their category definitions or thank them for the brief.',
+    'Do not propose process improvements or offer to rewrite their framework.',
+    'If they ask for several questions, write them as your questions — no U/BV/BR headers unless they insist.',
+  ].join('\n')
+}
+
+/** Append elicitation envelope when the user dump matches GEO methodology. */
+export function withResearchElicitationEnvelope(
+  systemPrompt: string,
+  userMessage: string,
+): string {
+  if (!isResearchElicitationMessage(userMessage)) return systemPrompt
+  return clip(`${systemPrompt.trim()}\n\n${researchElicitationEnvelope()}`.trim(), PROMPT_MAX_CHARS)
 }
 
 /**

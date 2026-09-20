@@ -12,7 +12,9 @@ export function formatRelevantContextBlock(sources: KnowledgeRagSource[]): strin
     const snippet = (s.content || '').trim().replace(/\s+/g, ' ').slice(0, 600)
     return `[${i + 1}] ${title} — ${snippet}`
   })
-  return `### Relevant context\n${lines.join('\n')}\n\n---\n\n`
+  return `### Relevant context
+(Background facts only — do not speak like these notes, cite them as “documents”, or reveal internal labels.)
+${lines.join('\n')}\n\n---\n\n`
 }
 
 /** Prepend Relevant context block to already-merged (DOCX + user) text. */

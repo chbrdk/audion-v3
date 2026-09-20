@@ -12,10 +12,15 @@ Thin `persona.chat_system_default` (name/role/bio/values only) made chat too gen
 1. Embodiment + identity  
 2. Adaptive profile (traits w/ scores, style, goals, pains, journey dos/donts, sections, capped knowledge)  
 3. Optional **custom voice** overlay (Settings persona prompt)  
-4. Short-turn chat rules  
-5. URL tooling append in `native-stream`
+4. Short-turn chat rules (**anti-method / anti-coach / list budget**)  
+5. Per-turn **research elicitation envelope** when user dumps GEO U/BV/BR briefs (`withResearchElicitationEnvelope` in `native-stream`)  
+6. URL tooling append in `native-stream`
 
 `max_completion_tokens`: `paths.chatCompletionMaxTokens` (default **500**), env `AI_CHAT_MAX_TOKENS` (newer OpenAI models reject legacy `max_tokens`).
+
+## Humanize playbook
+
+`knowledge/persona-chat-humanize-2026-09-20.md` — surface form without dropping magazine traits.
 
 ## Custom voice
 

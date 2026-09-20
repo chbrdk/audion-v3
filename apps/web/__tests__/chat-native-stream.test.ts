@@ -10,6 +10,7 @@ vi.mock('../lib/ai/client', () => ({
     chat: { completions: { create: createMock } },
   }),
   getAiOpenAiModel: () => 'gpt-test',
+  getChatCompletionMaxTokens: () => 500,
   toAiNativeError: (error: unknown, fallback: string) => ({
     error: fallback,
     status: 502,
@@ -83,5 +84,23 @@ describe('native chat stream', () => {
     expect(payload.messages.some((m) => m.content.includes('First question'))).toBe(true)
     expect(payload.messages.at(-1)?.role).toBe('user')
     expect(payload.messages.at(-1)?.content).toContain('Follow-up about the CTA')
+  })
+
+  it('appends research elicitation envelope on GEO brief turns', async () => {
+    for await (const _event of nativeChatStreamEvents({
+      personaId: DEMO_PERSONAS[0]!.id,
+      message:
+        'Hi, 3 fragen aus je 3 kategorien. U = Unbranded/kategorial BV = Branded/vergleichend BR = Branded/Reputationscheck',
+    })) {
+      /* drain */
+    }
+    expect(createMock).toHaveBeenCalled()
+    const payload = createMock.mock.calls[0]?.[0] as {
+      messages: Array<{ role: string; content: string }>
+    }
+    const system = payload.messages.find((m) => m.role === 'system')
+    expect(system?.content).toMatch(/Research elicitation/i)
+    expect(system?.content).toMatch(/Stay fully in character/i)
+    expect(system?.content).toMatch(/no U\/BV\/BR headers unless they insist/i)
   })
 })

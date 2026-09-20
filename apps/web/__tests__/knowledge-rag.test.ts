@@ -40,6 +40,7 @@ describe('knowledge rag merge order', () => {
       },
     ])
     expect(merged.indexOf('### Relevant context')).toBe(0)
+    expect(merged).toMatch(/Background facts only/i)
     expect(merged.indexOf('### Attached document')).toBeGreaterThan(
       merged.indexOf('### Relevant context'),
     )

@@ -12,6 +12,7 @@ import {
 } from '../fixtures/chat-store'
 import { maybeProposeInspectWebsite } from '../fixtures/chat-share'
 import { abCompareSystemInstruction, shouldEnableAbCompare } from './ab-compare'
+import { withResearchElicitationEnvelope } from './adaptive-persona-chat-prompt'
 import { resolveChatDocuments } from './document-upload-store'
 import { resolveChatImages } from './image-upload-store'
 import { mergeUserMessageWithDocuments } from './merge-documents'
@@ -32,6 +33,7 @@ async function systemPromptForPersona(
   abCompare: boolean,
 ): Promise<string> {
   let base = await resolvePersonaSystemPrompt(personaId)
+  base = withResearchElicitationEnvelope(base, message)
   if (abCompare) {
     base = `${base}\n\n${abCompareSystemInstruction()}`
   }
