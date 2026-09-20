@@ -329,8 +329,8 @@ function fewShotBlock(traits: Record<string, number>, locale: ChatLocale): strin
 
 function localeInstruction(locale: ChatLocale): string {
   return locale === 'en'
-    ? 'LANGUAGE: Reply in natural English. Mirror the user’s language; do not slip into German.'
-    : 'LANGUAGE: Reply in natural German. Mirror the user’s language; do not slip into English unless they write in English.'
+    ? 'LANGUAGE (critical): Reply entirely in natural English. Mirror the user’s language; never slip into German — even if the brand or competitors are German names.'
+    : 'LANGUAGE (critical): Reply entirely in natural German. Mirror the user’s language; do not slip into English unless they write in English.'
 }
 
 /** True when the user message is a GEO / prompt-bank elicitation brief. */
@@ -372,9 +372,26 @@ export function greetingTurnEnvelope(): string {
   ].join('\n')
 }
 
+export const LANGUAGE_TURN_HEADING = '## Language (this turn)'
+
+export function languageTurnEnvelope(locale: ChatLocale): string {
+  return locale === 'en'
+    ? [
+        LANGUAGE_TURN_HEADING,
+        'The user wrote in English. Reply entirely in English this turn.',
+        'Do not switch to German mid-reply. Brand names (Vaillant, Viessmann) stay as-is.',
+      ].join('\n')
+    : [
+        LANGUAGE_TURN_HEADING,
+        'The user wrote in German. Reply entirely in German this turn.',
+        'Do not switch to English mid-reply unless they did.',
+      ].join('\n')
+}
+
 /**
  * Append per-turn envelopes. Greeting wins over elicitation when both match
  * (elicitation briefs are never short greetings in practice).
+ * Always append a language lock from the latest user message.
  */
 export function withTurnEnvelopes(systemPrompt: string, userMessage: string): string {
   const parts = [systemPrompt.trim()]
@@ -383,6 +400,7 @@ export function withTurnEnvelopes(systemPrompt: string, userMessage: string): st
   } else if (isResearchElicitationMessage(userMessage)) {
     parts.push(researchElicitationEnvelope())
   }
+  parts.push(languageTurnEnvelope(detectChatLocale(userMessage)))
   return clip(parts.filter(Boolean).join('\n\n'), PROMPT_MAX_CHARS)
 }
 

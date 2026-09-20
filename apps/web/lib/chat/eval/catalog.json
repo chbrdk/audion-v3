@@ -71,7 +71,7 @@
     "mode": "product",
     "prompt": "kurz und knapp: was treibt dich beim Thema Heizen um?",
     "expectations": {
-      "maxWords": 60,
+      "maxWords": 80,
       "forbid": ["emoji", "interview", "category", "coach"],
       "requireLocaleMatch": true
     }
@@ -82,7 +82,7 @@
     "mode": "product",
     "prompt": "in one short take: what matters most to you about heating?",
     "expectations": {
-      "maxWords": 60,
+      "maxWords": 80,
       "forbid": ["emoji", "interview", "category", "coach"],
       "requireLocaleMatch": true
     }

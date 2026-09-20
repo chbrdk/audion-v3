@@ -129,6 +129,7 @@ Each native chat turn resolves a **deterministic adaptive system prompt** from t
 | Chat rules | **Natural dialogue first:** short spoken turns (~40–90 words); plain sentences; no emoji; no trailing interview closers; anti-method / anti-coach |
 | Voice examples | 2 few-shot turns from dominant trait lane (impatient / skeptical / warm / balanced), **locale-matched** via `detectChatLocale` (DE/EN) |
 | Greeting envelope | Short social openers → 1–2 sentences, no product dump |
+| Language envelope | Per-turn DE/EN lock from `detectChatLocale` (survives German brand names) |
 | Research-elicitation envelope | Secondary GEO briefs; no category labels |
 | Soft post-filter | `humanizePersonaReply` strips emoji, category labels, coach offers, trailing “Und bei dir?” (greetings buffered so UI matches) |
 | Completions | Default **280** tokens; greeting **≤120**; elicitation **320** |

@@ -4,6 +4,7 @@ import {
   ADAPTIVE_CHAT_RULES_HEADING,
   ADAPTIVE_CUSTOM_VOICE_HEADING,
   GREETING_TURN_HEADING,
+  LANGUAGE_TURN_HEADING,
   RESEARCH_ELICITATION_HEADING,
   VOICE_EXAMPLES_HEADING,
   buildAdaptivePersonaChatSystemPrompt,
@@ -128,12 +129,30 @@ describe('turn envelopes', () => {
     expect(greeted).toContain('You ARE Alex Morgan')
     expect(greeted).toContain(GREETING_TURN_HEADING)
     expect(greeted).not.toContain(RESEARCH_ELICITATION_HEADING)
+    expect(greeted).toContain(LANGUAGE_TURN_HEADING)
 
     const withEnvelope = withTurnEnvelopes(base, geoBrief)
     expect(withEnvelope).toContain(RESEARCH_ELICITATION_HEADING)
     expect(withEnvelope).toMatch(/Natural dialogue rules still win/i)
     expect(withEnvelope).toMatch(/no category names/i)
-    expect(withTurnEnvelopes(base, 'Kurze Meinung zu Heizen?')).toBe(base)
+
+    const opinion = withTurnEnvelopes(base, 'Kurze Meinung zu Heizen?')
+    expect(opinion).toContain('You ARE Alex Morgan')
+    expect(opinion).toContain(LANGUAGE_TURN_HEADING)
+    expect(opinion).toMatch(/entirely in German/i)
+    expect(opinion).not.toContain(GREETING_TURN_HEADING)
+    expect(opinion).not.toContain(RESEARCH_ELICITATION_HEADING)
+  })
+
+  it('locks English on EN compare prompts with German brand names', () => {
+    const base = buildAdaptivePersonaChatSystemPrompt(clonePersona('persona-alex-morgan'))
+    const locked = withTurnEnvelopes(
+      base,
+      'How does the brand stack up against Viessmann for you?',
+    )
+    expect(detectChatLocale('How does the brand stack up against Viessmann for you?')).toBe('en')
+    expect(locked).toMatch(/entirely in English/i)
+    expect(locked).not.toMatch(/entirely in German this turn/i)
   })
 
   it('picks impatient few-shots when impatience trait is high', () => {
@@ -152,7 +171,7 @@ describe('turn envelopes', () => {
     })
     expect(prompt).toMatch(/impatient, en/)
     expect(prompt).toMatch(/Short on time/i)
-    expect(prompt).toMatch(/Reply in natural English/i)
+    expect(prompt).toMatch(/Reply entirely in natural English/i)
     expect(prompt).not.toMatch(/wenig Zeit/i)
   })
 
