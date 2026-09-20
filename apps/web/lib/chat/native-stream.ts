@@ -12,7 +12,7 @@ import {
 } from '../fixtures/chat-store'
 import { maybeProposeInspectWebsite } from '../fixtures/chat-share'
 import { abCompareSystemInstruction, shouldEnableAbCompare } from './ab-compare'
-import { withResearchElicitationEnvelope } from './adaptive-persona-chat-prompt'
+import { withResearchElicitationEnvelope, isResearchElicitationMessage } from './adaptive-persona-chat-prompt'
 import { resolveChatDocuments } from './document-upload-store'
 import { resolveChatImages } from './image-upload-store'
 import { mergeUserMessageWithDocuments } from './merge-documents'
@@ -194,6 +194,7 @@ export async function* nativeChatStreamEvents(
   }
 
   try {
+    const elicitation = isResearchElicitationMessage(message)
     const client = createOpenAiClient()
     const stream = await client.chat.completions.create({
       model: getAiOpenAiModel(),
@@ -206,8 +207,8 @@ export async function* nativeChatStreamEvents(
         images,
         abCompare,
       ),
-      temperature: 0.7,
-      max_completion_tokens: getChatCompletionMaxTokens(),
+      temperature: elicitation ? 0.7 : 0.85,
+      max_completion_tokens: getChatCompletionMaxTokens({ elicitation }),
     })
 
     let full = ''

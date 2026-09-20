@@ -35,10 +35,11 @@ describe('buildAdaptivePersonaChatSystemPrompt', () => {
     expect(prompt).toMatch(/Scattered research notes/i)
     expect(prompt).toContain('Mindset')
     expect(prompt).toContain(ADAPTIVE_CHAT_RULES_HEADING)
-    expect(prompt).toMatch(/80–120 words/)
+    expect(prompt).toMatch(/40–90 words/)
+    expect(prompt).toMatch(/natural conversation/i)
     expect(prompt).toMatch(/Anti-method/i)
     expect(prompt).toMatch(/Anti-coach/i)
-    expect(prompt).toMatch(/≤3 bullets/)
+    expect(prompt).toMatch(/No ### headings/i)
   })
 
   it('maps high impatience traits to lead-with-answer surface form', () => {
@@ -113,7 +114,8 @@ describe('research elicitation envelope', () => {
     expect(withEnvelope).toContain('You ARE Alex Morgan')
     expect(withEnvelope).toContain(ADAPTIVE_CHAT_RULES_HEADING)
     expect(withEnvelope).toContain(RESEARCH_ELICITATION_HEADING)
-    expect(withEnvelope).toMatch(/Stay fully in character/i)
+    expect(withEnvelope).toMatch(/Natural dialogue rules still win/i)
+    expect(withEnvelope).toMatch(/no category names/i)
     expect(withResearchElicitationEnvelope(base, 'Kurze Meinung zu Heizen?')).toBe(base)
   })
 })
@@ -134,6 +136,7 @@ describe('getChatCompletionMaxTokens', () => {
     const prev = process.env[paths.envAiChatMaxTokens]
     delete process.env[paths.envAiChatMaxTokens]
     expect(getChatCompletionMaxTokens()).toBe(paths.chatCompletionMaxTokens)
+    expect(getChatCompletionMaxTokens({ elicitation: true })).toBe(paths.chatElicitationMaxTokens)
     if (prev !== undefined) process.env[paths.envAiChatMaxTokens] = prev
   })
 })

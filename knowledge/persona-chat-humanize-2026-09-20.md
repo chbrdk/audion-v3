@@ -5,8 +5,11 @@
 
 ## Status
 
-**Implemented 2026-09-20** in adaptive prompt + native stream (see acceptance #16 in `specs/domain/chat-workspace.md`).
+**Implemented 2026-09-20** (v1) + **dialogue-first tighten** same day: natural conversation rules, default token cap 280, elicitation secondary without category labels (`specs/domain/chat-workspace.md` acceptance #16).
 
+## Priority
+
+**Natural dialogue > GEO prompt-bank compliance.** Traits/goals/pains stay; delivery must feel like a person chatting.
 ## Where to change (priority order)
 
 Do **not** start with model fine-tuning. Personality SSOT is already magazine → adaptive prompt.

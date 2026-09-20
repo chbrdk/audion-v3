@@ -179,7 +179,9 @@ export const paths = {
   /** Cheap default for chat/assist — override via AI_OPENAI_MODEL */
   aiOpenAiModel: 'gpt-5.4-nano',
   /** Native persona chat completion cap — override via AI_CHAT_MAX_TOKENS */
-  chatCompletionMaxTokens: 500,
+  chatCompletionMaxTokens: 280,
+  /** Higher cap only when the user turn is a GEO / prompt-bank elicitation brief. */
+  chatElicitationMaxTokens: 420,
   envAiChatMaxTokens: 'AI_CHAT_MAX_TOKENS',
   /** UX Journey Agent OpenAI — default gpt-5.6-luna; override via UX_JOURNEY_OPENAI_MODEL */
   uxJourneyOpenAiModel: 'gpt-5.6-luna',

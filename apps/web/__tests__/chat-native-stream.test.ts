@@ -10,7 +10,8 @@ vi.mock('../lib/ai/client', () => ({
     chat: { completions: { create: createMock } },
   }),
   getAiOpenAiModel: () => 'gpt-test',
-  getChatCompletionMaxTokens: () => 500,
+  getChatCompletionMaxTokens: (opts?: { elicitation?: boolean }) =>
+    opts?.elicitation ? 420 : 280,
   toAiNativeError: (error: unknown, fallback: string) => ({
     error: fallback,
     status: 502,
@@ -100,7 +101,31 @@ describe('native chat stream', () => {
     }
     const system = payload.messages.find((m) => m.role === 'system')
     expect(system?.content).toMatch(/Research elicitation/i)
-    expect(system?.content).toMatch(/Stay fully in character/i)
-    expect(system?.content).toMatch(/no U\/BV\/BR headers unless they insist/i)
+    expect(system?.content).toMatch(/Natural dialogue rules still win/i)
+    expect(system?.content).toMatch(/no category names/i)
+    const call = createMock.mock.calls[0]?.[0] as {
+      temperature: number
+      max_completion_tokens: number
+    }
+    expect(call.temperature).toBe(0.7)
+    expect(call.max_completion_tokens).toBe(420)
+  })
+
+  it('keeps natural-dialogue completion knobs on ordinary turns', async () => {
+    for await (const _event of nativeChatStreamEvents({
+      personaId: DEMO_PERSONAS[0]!.id,
+      message: 'hey wie geht es dir?',
+    })) {
+      /* drain */
+    }
+    const call = createMock.mock.calls[0]?.[0] as {
+      temperature: number
+      max_completion_tokens: number
+      messages: Array<{ role: string; content: string }>
+    }
+    expect(call.temperature).toBe(0.85)
+    expect(call.max_completion_tokens).toBe(280)
+    const system = call.messages.find((m) => m.role === 'system')
+    expect(system?.content).not.toMatch(/Research elicitation/i)
   })
 })

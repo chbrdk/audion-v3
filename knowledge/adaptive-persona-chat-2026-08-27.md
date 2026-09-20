@@ -16,11 +16,11 @@ Thin `persona.chat_system_default` (name/role/bio/values only) made chat too gen
 5. Per-turn **research elicitation envelope** when user dumps GEO U/BV/BR briefs (`withResearchElicitationEnvelope` in `native-stream`)  
 6. URL tooling append in `native-stream`
 
-`max_completion_tokens`: `paths.chatCompletionMaxTokens` (default **500**), env `AI_CHAT_MAX_TOKENS` (newer OpenAI models reject legacy `max_tokens`).
+`max_completion_tokens`: `paths.chatCompletionMaxTokens` (default **280**), elicitation turns `paths.chatElicitationMaxTokens` (**420**), env `AI_CHAT_MAX_TOKENS` overrides both. Newer OpenAI models reject legacy `max_tokens`.
 
 ## Humanize playbook
 
-`knowledge/persona-chat-humanize-2026-09-20.md` — surface form without dropping magazine traits.
+`knowledge/persona-chat-humanize-2026-09-20.md` — **natural dialogue first**; GEO elicitation secondary; surface form without dropping magazine traits.
 
 ## Custom voice
 
