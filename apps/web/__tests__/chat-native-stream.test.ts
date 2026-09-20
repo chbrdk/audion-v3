@@ -97,24 +97,21 @@ describe('native chat stream', () => {
     }
     expect(createMock).toHaveBeenCalled()
     const payload = createMock.mock.calls[0]?.[0] as {
+      temperature: number
+      max_completion_tokens: number
       messages: Array<{ role: string; content: string }>
     }
     const system = payload.messages.find((m) => m.role === 'system')
     expect(system?.content).toMatch(/Research elicitation/i)
     expect(system?.content).toMatch(/Natural dialogue rules still win/i)
-    expect(system?.content).toMatch(/no category names/i)
-    const call = createMock.mock.calls[0]?.[0] as {
-      temperature: number
-      max_completion_tokens: number
-    }
-    expect(call.temperature).toBe(0.7)
-    expect(call.max_completion_tokens).toBe(420)
+    expect(payload.temperature).toBe(0.7)
+    expect(payload.max_completion_tokens).toBe(420)
   })
 
   it('keeps natural-dialogue completion knobs on ordinary turns', async () => {
     for await (const _event of nativeChatStreamEvents({
       personaId: DEMO_PERSONAS[0]!.id,
-      message: 'hey wie geht es dir?',
+      message: 'Was hältst du von der Marke?',
     })) {
       /* drain */
     }
@@ -127,5 +124,30 @@ describe('native chat stream', () => {
     expect(call.max_completion_tokens).toBe(280)
     const system = call.messages.find((m) => m.role === 'system')
     expect(system?.content).not.toMatch(/Research elicitation/i)
+    expect(system?.content).not.toMatch(/Greeting turn/i)
+  })
+
+  it('buffers greeting turns with greeting envelope and tight token cap', async () => {
+    const events = []
+    for await (const event of nativeChatStreamEvents({
+      personaId: DEMO_PERSONAS[0]!.id,
+      message: 'hey wie geht’s?',
+    })) {
+      events.push(event)
+    }
+    const call = createMock.mock.calls[0]?.[0] as {
+      temperature: number
+      max_completion_tokens: number
+      messages: Array<{ role: string; content: string }>
+    }
+    expect(call.temperature).toBe(0.9)
+    expect(call.max_completion_tokens).toBe(120)
+    const system = call.messages.find((m) => m.role === 'system')
+    expect(system?.content).toMatch(/Greeting turn/i)
+    const deltas = events.filter((e) => e.type === 'delta')
+    expect(deltas.length).toBe(1)
+    if (deltas[0]?.type === 'delta') {
+      expect(deltas[0].text).toBe('Hello world')
+    }
   })
 })

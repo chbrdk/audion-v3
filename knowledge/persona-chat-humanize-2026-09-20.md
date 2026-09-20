@@ -5,11 +5,17 @@
 
 ## Status
 
-**Implemented 2026-09-20** (v1) + **dialogue-first tighten** same day: natural conversation rules, default token cap 280, elicitation secondary without category labels (`specs/domain/chat-workspace.md` acceptance #16).
+**Implemented 2026-09-20** + dialogue-first tighten + **v2 tweaks:** soft post-filter, greeting envelope, trait few-shots (`specs/domain/chat-workspace.md` #16).
 
 ## Priority
 
 **Natural dialogue > GEO prompt-bank compliance.** Traits/goals/pains stay; delivery must feel like a person chatting.
+
+### v2 levers (shipped)
+
+1. Soft post-filter — `apps/web/lib/chat/humanize-reply.ts`
+2. Greeting envelope — short socials, buffered stream so UI matches filter
+3. Voice few-shots — dominant trait lane in adaptive system prompt
 ## Where to change (priority order)
 
 Do **not** start with model fine-tuning. Personality SSOT is already magazine → adaptive prompt.

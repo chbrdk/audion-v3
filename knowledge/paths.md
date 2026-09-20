@@ -113,7 +113,7 @@
 - Guest chat budgets: `apps/web/lib/chat/guest-budget.ts` — `GUEST_CHAT_MAX_USER_TURNS=5`, `GUEST_CHAT_MAX_CHARS=800`, `GUEST_CHAT_TTL_MS=30m` · cookie `audion_guest_chat` · gate unauthenticated `POST /api/chat/stream`
 - Chat API proxies: `/api/chat/stream`, `/api/chat/images/upload`, `/api/chat/documents/upload`, `/api/chat/conversations`, `/api/chat/conversations/[id]`
 - Persona chat corpus export (staging dump + analysis): `scripts/export-persona-chats.mjs` · env `AUDION_API_TOKEN` + optional `AUDION_V3_BASE_URL` · out `.tmp/persona-chats/` · summary `knowledge/persona-chat-corpus-analysis.md`
-- Humanize persona replies without dropping traits: `knowledge/persona-chat-humanize-2026-09-20.md` (rules → task envelope → trait surface form → custom voice; not model FT first)
+- Humanize persona replies without dropping traits: `knowledge/persona-chat-humanize-2026-09-20.md` · soft filter `apps/web/lib/chat/humanize-reply.ts` · greeting/few-shot/elicitation in `adaptive-persona-chat-prompt.ts`
 - Coolify REST env ops (MCP hides values; REST `/applications/{uuid}/envs` returns them): `knowledge/coolify-rest-env-ops-2026-09-20.md`
   - Nested under `app/api/chat/*` → import fixtures via `../../../../lib/fixtures/chat-store` (four levels up)
   - Image attachments: `paths.routes.apiChatImagesUpload` · durable Postgres `chat_images` (memory fallback) · Spec `specs/domain/chat-image-attachments.md`

@@ -126,14 +126,17 @@ Each native chat turn resolves a **deterministic adaptive system prompt** from t
 | Identity / embodiment | First-person “you ARE this persona” |
 | Adaptive profile | Always built from current persona store/DB |
 | Custom voice (optional) | Admin overlay from persona-prompts store — **does not replace** the adaptive profile |
-| Chat rules | **Natural dialogue first:** short spoken turns (~40–90 words default); plain sentences; sparse markdown; anti-method / anti-coach; no category labels even as bold section titles |
-| Research-elicitation envelope | Secondary: when user dumps GEO methodology, stay in character; questions as spoken lines **without** U/BV/BR (or “Unbranded…”) labels; do not sacrifice conversational voice |
-| Completions | `max_completion_tokens` default **280** (`paths.chatCompletionMaxTokens`); elicitation turns may use a higher cap in `native-stream` |
+| Chat rules | **Natural dialogue first:** short spoken turns (~40–90 words); plain sentences; no emoji; no trailing interview closers; anti-method / anti-coach |
+| Voice examples | 2 few-shot turns from dominant trait lane (impatient / skeptical / warm / balanced) |
+| Greeting envelope | Short social openers → 1–2 sentences, no product dump |
+| Research-elicitation envelope | Secondary GEO briefs; no category labels |
+| Soft post-filter | `humanizePersonaReply` strips emoji, category labels, coach offers, trailing “Und bei dir?” (greetings buffered so UI matches) |
+| Completions | Default **280** tokens; greeting **≤120**; elicitation **420** |
 | Tooling | URL / inspect hints appended in `native-stream` |
 
-Assembly: `apps/web/lib/chat/adaptive-persona-chat-prompt.ts` · resolve: `resolvePersonaSystemPrompt` · stream: `native-stream.ts` with `max_completion_tokens` (`paths.chatCompletionMaxTokens`, default 280; elicitation override `paths.chatElicitationMaxTokens`).
+Assembly: `apps/web/lib/chat/adaptive-persona-chat-prompt.ts` · `humanize-reply.ts` · `native-stream.ts`.
 
-**Priority:** Natural dialogue > GEO prompt-bank compliance. Humanize playbook: `knowledge/persona-chat-humanize-2026-09-20.md`.
+**Priority:** Natural dialogue > GEO. Playbook: `knowledge/persona-chat-humanize-2026-09-20.md`.
 
 Custom voice is edited under Settings → Prompts (persona band). Preview of what the model sees is `resolvedSystemPrompt` on the detail API.
 
@@ -171,4 +174,4 @@ Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenR
 13. Adaptive system prompt includes traits/style/goals/pains; custom voice overlays without dropping the profile; chat completions pass `max_completion_tokens`.
 14. With `projectId` alone, project ask-all shows grid of project personas (≤10); CTA from project detail → `/chat?projectId=`.
 15. Project ask-all smoke: filter by `projectId` + fan-out → N cards.
-16. Chat rules prioritize natural dialogue (short spoken turns, no method labels); GEO elicitation envelope is secondary and must not introduce category headers; default completion cap is `paths.chatCompletionMaxTokens`.
+16. Natural dialogue first: voice few-shots, greeting envelope, soft post-filter (`humanizePersonaReply`), and secondary GEO elicitation without category headers.

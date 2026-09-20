@@ -3,11 +3,14 @@ import type { PersonaDetail } from '@audion-v3/contracts'
 import {
   ADAPTIVE_CHAT_RULES_HEADING,
   ADAPTIVE_CUSTOM_VOICE_HEADING,
+  GREETING_TURN_HEADING,
   RESEARCH_ELICITATION_HEADING,
+  VOICE_EXAMPLES_HEADING,
   buildAdaptivePersonaChatSystemPrompt,
+  isGreetingMessage,
   isResearchElicitationMessage,
   previewAdaptivePromptWithVoice,
-  withResearchElicitationEnvelope,
+  withTurnEnvelopes,
 } from '../lib/chat/adaptive-persona-chat-prompt'
 import { DEMO_PERSONAS } from '../lib/fixtures/personas'
 import { getChatCompletionMaxTokens } from '../lib/ai/client'
@@ -40,6 +43,8 @@ describe('buildAdaptivePersonaChatSystemPrompt', () => {
     expect(prompt).toMatch(/Anti-method/i)
     expect(prompt).toMatch(/Anti-coach/i)
     expect(prompt).toMatch(/No ### headings/i)
+    expect(prompt).toContain(VOICE_EXAMPLES_HEADING)
+    expect(prompt).toMatch(/User: hey wie geht/i)
   })
 
   it('maps high impatience traits to lead-with-answer surface form', () => {
@@ -98,7 +103,7 @@ describe('buildAdaptivePersonaChatSystemPrompt', () => {
   })
 })
 
-describe('research elicitation envelope', () => {
+describe('turn envelopes', () => {
   const geoBrief =
     'Hi Michael, ich möchte dass du mir 3 fragen aus je 3 kategorien gibts. U = Unbranded/kategorial BV = Branded/vergleichend BR = Branded/Reputationscheck Fehlinformationsrisiko'
 
@@ -108,15 +113,33 @@ describe('research elicitation envelope', () => {
     expect(isResearchElicitationMessage('Was denkst du über Wärmepumpen?')).toBe(false)
   })
 
-  it('appends envelope only for elicitation messages without dropping base prompt', () => {
+  it('detects short greetings', () => {
+    expect(isGreetingMessage('hey wie geht es euch?')).toBe(true)
+    expect(isGreetingMessage('Hallo!')).toBe(true)
+    expect(isGreetingMessage('Was hältst du von Vaillant?')).toBe(false)
+    expect(isGreetingMessage(geoBrief)).toBe(false)
+  })
+
+  it('appends greeting or elicitation envelope without dropping base prompt', () => {
     const base = buildAdaptivePersonaChatSystemPrompt(clonePersona('persona-alex-morgan'))
-    const withEnvelope = withResearchElicitationEnvelope(base, geoBrief)
-    expect(withEnvelope).toContain('You ARE Alex Morgan')
-    expect(withEnvelope).toContain(ADAPTIVE_CHAT_RULES_HEADING)
+    const greeted = withTurnEnvelopes(base, 'hey wie geht’s?')
+    expect(greeted).toContain('You ARE Alex Morgan')
+    expect(greeted).toContain(GREETING_TURN_HEADING)
+    expect(greeted).not.toContain(RESEARCH_ELICITATION_HEADING)
+
+    const withEnvelope = withTurnEnvelopes(base, geoBrief)
     expect(withEnvelope).toContain(RESEARCH_ELICITATION_HEADING)
     expect(withEnvelope).toMatch(/Natural dialogue rules still win/i)
     expect(withEnvelope).toMatch(/no category names/i)
-    expect(withResearchElicitationEnvelope(base, 'Kurze Meinung zu Heizen?')).toBe(base)
+    expect(withTurnEnvelopes(base, 'Kurze Meinung zu Heizen?')).toBe(base)
+  })
+
+  it('picks impatient few-shots when impatience trait is high', () => {
+    const persona = clonePersona('persona-alex-morgan')
+    persona.traits = { Impatience: 0.95, Analytical: 0.4 }
+    const prompt = buildAdaptivePersonaChatSystemPrompt(persona)
+    expect(prompt).toMatch(/impatient/)
+    expect(prompt).toMatch(/wenig Zeit/i)
   })
 })
 

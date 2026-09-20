@@ -12,6 +12,8 @@ import type {
 export const ADAPTIVE_CHAT_RULES_HEADING = '## Chat rules'
 export const ADAPTIVE_CUSTOM_VOICE_HEADING = '## Custom voice instructions'
 export const RESEARCH_ELICITATION_HEADING = '## Research elicitation (this turn)'
+export const GREETING_TURN_HEADING = '## Greeting turn'
+export const VOICE_EXAMPLES_HEADING = '## Voice examples (match this brevity)'
 
 const LIST_CAP = 8
 const STYLE_VOCAB_CAP = 10
@@ -28,6 +30,11 @@ const SECTION_PRIORITY = /^(mindset|working with)/i
 /** User dumps GEO / prompt-bank methodology → stay in character, don't coach. */
 const RESEARCH_ELICITATION_RE =
   /(?:\bU\s*=\s*|\bBV\s*=\s*|\bBR\s*=\s*|Unbranded\s*\/?\s*kategorial|Branded\s*\/?\s*vergleichend|Branded\s*\/?\s*Reputationscheck|3\s+fragen\s+aus\s+je\s+3\s+kategorien|prompt[- ]?bank|Fehlinformationsrisiko)/i
+
+/** Short social openers — keep reply tiny, no product dump. */
+const GREETING_RE =
+  /^\s*(?:hey|hi|hallo|servus|moin|hola|guten\s+(?:tag|morgen|abend)|wie\s+geht(?:'s|s| es)(?:\s+\S+)?|how\s+are\s+you(?:\s+doing)?|what'?s\s+up)(?:[\s!,.?]|$)/i
+
 
 export type AdaptivePersonaChatPromptOpts = {
   /** Admin overlay — does not replace the adaptive magazine profile. */
@@ -204,8 +211,8 @@ function chatRulesBlock(): string {
     '- Default length: 2–5 short sentences (~40–90 words). Only go longer if the user clearly asks for depth, a list, or many questions.',
     '- Talk like chat/SMS between adults: contractions OK, incomplete thoughts OK, one concrete opinion or example from your life. No briefing tone.',
     '- Prefer plain text. No ### headings. No bold section titles. At most one short list (≤3 lines) and only if it truly helps.',
-    '- Do not use emoji unless your communication style clearly calls for it.',
-    '- Answer first; at most one short follow-up question — do not interview the user.',
+    '- Do not use emoji.',
+    '- Answer first; do not close with an interview question (“Und bei dir?”, “How about you?”).',
     '- Anti-method: never write category codes or labels (U / BV / BR, “Unbranded”, “Branded”, “Reputationscheck”, prompt banks, mappings). If they want questions, write the questions in your own spoken wording only.',
     '- Anti-coach: do not offer to refine prompts, rewrite frameworks, or improve their research method.',
     '- Do not end with “Wenn du willst…” / “If you want I can…” / “Sag mir kurz…”.',
@@ -214,9 +221,66 @@ function chatRulesBlock(): string {
   ].join('\n')
 }
 
+type VoiceLane = 'impatient' | 'skeptical' | 'warm' | 'balanced'
+
+function dominantVoiceLane(traits: Record<string, number>): VoiceLane {
+  let impatient = 0
+  let skeptical = 0
+  let warm = 0
+  for (const [name, raw] of Object.entries(traits)) {
+    const score = clamp01(typeof raw === 'number' && Number.isFinite(raw) ? raw : 0)
+    const key = name.toLowerCase()
+    if (/impat|time|urgent|speed/.test(key) && score >= 0.66) impatient = Math.max(impatient, score)
+    if (/skept|trust|critic|neuro|anx/.test(key) && score >= 0.66) {
+      skeptical = Math.max(skeptical, score)
+    }
+    if (/agree|empath|warm|extra|sociab/.test(key) && score >= 0.66) {
+      warm = Math.max(warm, score)
+    }
+  }
+  const ranked: Array<[VoiceLane, number]> = [
+    ['impatient', impatient],
+    ['skeptical', skeptical],
+    ['warm', warm],
+  ]
+  ranked.sort((a, b) => b[1] - a[1])
+  return ranked[0]![1] >= 0.66 ? ranked[0]![0] : 'balanced'
+}
+
+function fewShotBlock(traits: Record<string, number>): string {
+  const lane = dominantVoiceLane(traits)
+  const sets: Record<VoiceLane, string[]> = {
+    impatient: [
+      'User: hey wie geht’s?\nYou: Passt soweit. Hab gerade wenig Zeit — schieß los.',
+      'User: Was hältst du von der Marke?\nYou: Solide Technik, wenn der Einbau stimmt. Broschürenzahlen interessieren mich nicht.',
+    ],
+    skeptical: [
+      'User: hey wie geht’s?\nYou: Ganz ok. Gerade wieder was, das zu glatt klingt — bin vorsichtig.',
+      'User: Was hältst du von der Marke?\nYou: Kann passen. Ich will Zahlen am Betriebspunkt sehen, nicht den Werbespruch.',
+    ],
+    warm: [
+      'User: hey wie geht’s?\nYou: Mir geht’s gut, danke. Gerade eher ruhig unterwegs.',
+      'User: Was hältst du von der Marke?\nYou: Ich mag, wenn’s ehrlich und alltagstauglich ist — dann bleib ich eher dabei.',
+    ],
+    balanced: [
+      'User: hey wie geht’s?\nYou: Ganz gut. Hab gerade das Thema im Hinterkopf, sonst läuft’s.',
+      'User: Was hältst du von der Marke?\nYou: Kommt drauf an. Technik und Service müssen stimmen — Marketing allein reicht nicht.',
+    ],
+  }
+  return `${VOICE_EXAMPLES_HEADING}\nMatch this length and tone (${lane}):\n\n${sets[lane].join('\n\n')}`
+}
+
 /** True when the user message is a GEO / prompt-bank elicitation brief. */
 export function isResearchElicitationMessage(message: string): boolean {
   return RESEARCH_ELICITATION_RE.test(message || '')
+}
+
+/** True when the user message is a short social greeting. */
+export function isGreetingMessage(message: string): boolean {
+  const trimmed = (message || '').trim()
+  if (!trimmed || trimmed.length > 80) return false
+  if (isResearchElicitationMessage(trimmed)) return false
+  return GREETING_RE.test(trimmed)
 }
 
 export function researchElicitationEnvelope(): string {
@@ -230,13 +294,36 @@ export function researchElicitationEnvelope(): string {
   ].join('\n')
 }
 
-/** Append elicitation envelope when the user dump matches GEO methodology. */
+export function greetingTurnEnvelope(): string {
+  return [
+    GREETING_TURN_HEADING,
+    'This is small talk only.',
+    'Reply in 1–2 short sentences (~15–40 words).',
+    'No product specs, SCOP, datasheets, deep brand analysis, or project jargon unless they ask.',
+    'No emoji. Do not end with “Und bei dir?” / “How about you?”.',
+  ].join('\n')
+}
+
+/**
+ * Append per-turn envelopes. Greeting wins over elicitation when both match
+ * (elicitation briefs are never short greetings in practice).
+ */
+export function withTurnEnvelopes(systemPrompt: string, userMessage: string): string {
+  const parts = [systemPrompt.trim()]
+  if (isGreetingMessage(userMessage)) {
+    parts.push(greetingTurnEnvelope())
+  } else if (isResearchElicitationMessage(userMessage)) {
+    parts.push(researchElicitationEnvelope())
+  }
+  return clip(parts.filter(Boolean).join('\n\n'), PROMPT_MAX_CHARS)
+}
+
+/** @deprecated use withTurnEnvelopes */
 export function withResearchElicitationEnvelope(
   systemPrompt: string,
   userMessage: string,
 ): string {
-  if (!isResearchElicitationMessage(userMessage)) return systemPrompt
-  return clip(`${systemPrompt.trim()}\n\n${researchElicitationEnvelope()}`.trim(), PROMPT_MAX_CHARS)
+  return withTurnEnvelopes(systemPrompt, userMessage)
 }
 
 /**
@@ -317,6 +404,7 @@ export function buildAdaptivePersonaChatSystemPrompt(
     sectionBlock(persona.sections ?? []),
     knowledgeBlock(persona),
     customVoice ? `${ADAPTIVE_CUSTOM_VOICE_HEADING}\n${clip(customVoice, 2000)}` : '',
+    fewShotBlock(persona.traits ?? {}),
     opts?.locale?.trim() ? `Respond in a way natural for locale hint: ${opts.locale.trim()}.` : '',
     chatRulesBlock(),
   ].filter(Boolean)

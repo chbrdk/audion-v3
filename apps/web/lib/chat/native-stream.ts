@@ -12,7 +12,12 @@ import {
 } from '../fixtures/chat-store'
 import { maybeProposeInspectWebsite } from '../fixtures/chat-share'
 import { abCompareSystemInstruction, shouldEnableAbCompare } from './ab-compare'
-import { withResearchElicitationEnvelope, isResearchElicitationMessage } from './adaptive-persona-chat-prompt'
+import {
+  isGreetingMessage,
+  isResearchElicitationMessage,
+  withTurnEnvelopes,
+} from './adaptive-persona-chat-prompt'
+import { humanizePersonaReply } from './humanize-reply'
 import { resolveChatDocuments } from './document-upload-store'
 import { resolveChatImages } from './image-upload-store'
 import { mergeUserMessageWithDocuments } from './merge-documents'
@@ -33,7 +38,7 @@ async function systemPromptForPersona(
   abCompare: boolean,
 ): Promise<string> {
   let base = await resolvePersonaSystemPrompt(personaId)
-  base = withResearchElicitationEnvelope(base, message)
+  base = withTurnEnvelopes(base, message)
   if (abCompare) {
     base = `${base}\n\n${abCompareSystemInstruction()}`
   }
@@ -195,6 +200,7 @@ export async function* nativeChatStreamEvents(
 
   try {
     const elicitation = isResearchElicitationMessage(message)
+    const greeting = isGreetingMessage(message)
     const client = createOpenAiClient()
     const stream = await client.chat.completions.create({
       model: getAiOpenAiModel(),
@@ -207,17 +213,30 @@ export async function* nativeChatStreamEvents(
         images,
         abCompare,
       ),
-      temperature: elicitation ? 0.7 : 0.85,
-      max_completion_tokens: getChatCompletionMaxTokens({ elicitation }),
+      temperature: elicitation ? 0.7 : greeting ? 0.9 : 0.85,
+      max_completion_tokens: greeting
+        ? Math.min(120, getChatCompletionMaxTokens())
+        : getChatCompletionMaxTokens({ elicitation }),
     })
 
     let full = ''
-    for await (const chunk of stream) {
-      const text = chunk.choices[0]?.delta?.content
-      if (text) {
-        full += text
-        yield { type: 'delta', text }
+    if (greeting) {
+      // Buffer so soft-filter matches what the user sees (short turns only).
+      for await (const chunk of stream) {
+        const text = chunk.choices[0]?.delta?.content
+        if (text) full += text
       }
+      full = humanizePersonaReply(full)
+      if (full) yield { type: 'delta', text: full }
+    } else {
+      for await (const chunk of stream) {
+        const text = chunk.choices[0]?.delta?.content
+        if (text) {
+          full += text
+          yield { type: 'delta', text }
+        }
+      }
+      full = humanizePersonaReply(full)
     }
 
     const detail = await storeChatConversationDetail(turn.conversationId)
