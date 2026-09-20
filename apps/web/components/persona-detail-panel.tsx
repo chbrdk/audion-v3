@@ -71,8 +71,8 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
           <PersonaLocalizedHeroCopy persona={persona} />
           <Button
             href={paths.routes.chatPersona(persona.id)}
-            variant="primary"
-            size="lg"
+            variant="subtle"
+            size="md"
             className="audion-magazine-hero-cta"
             icon={<NavIconChat />}
             data-testid="persona-chat-now"

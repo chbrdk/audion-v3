@@ -488,9 +488,8 @@ main { min-height: 100vh; }
 }
 
 .audion-magazine-hero-cta {
-  margin: 0.85rem 0 0.65rem;
+  margin: 0.55rem 0 0.45rem;
   justify-self: start;
-  min-width: 10.5rem;
 }
 
 /* Entity edit/delete — bottom-right inside hero copy (not a page footer) */

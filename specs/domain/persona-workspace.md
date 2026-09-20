@@ -32,7 +32,7 @@ Browse personas as a magazine index, read a full-width profile article, and crea
 - Goals / Frustrations: `PersonaEditableList` — click row → inline input (Enter/blur save, Esc cancel); section “+” adds; delete icon confirms via `Dialog`; PATCH `{ [field]: nextItems }` to `paths.routes.apiPersonaDetail(id)`
 - Channels: `PersonaChannelBubbles` — monochrome bubbles; click / right-click opens icon-picker context menu (`CHANNEL_PICKER_OPTIONS`); PATCH `{ channels }`
 - Topbar: breadcrumb (workflow CTAs when present); **edit / template icons** in `.audion-magazine-hero-actions` (hero bottom-right) — profile fields only in the dialog
-- **Chat now** — prominent `@msqdx/ui` `Button` (primary) in `.audion-magazine-hero-copy` → `paths.routes.chatPersona(id)` (`/chat?personaId=`)
+- **Chat now** — `@msqdx/ui` `Button` (subtle, md) in `.audion-magazine-hero-copy` → `paths.routes.chatPersona(id)` (`/chat?personaId=`)
 - Modes: `edit` · `create` · `template` (copy fields → new draft; template keeps list arrays from source)
 
 ## Edit dialog
