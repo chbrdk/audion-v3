@@ -141,6 +141,23 @@ describe('turn envelopes', () => {
     expect(prompt).toMatch(/impatient/)
     expect(prompt).toMatch(/wenig Zeit/i)
   })
+
+  it('hard-wires communication style as mandatory', () => {
+    const persona = clonePersona('persona-alex-morgan')
+    const prompt = buildAdaptivePersonaChatSystemPrompt(persona)
+    expect(prompt).toMatch(/REQUIRED: mirror this speaking style/i)
+    expect(prompt).toMatch(/Sentence shape \(follow\)/i)
+  })
+
+  it('limits elicitation default to six questions', () => {
+    const base = buildAdaptivePersonaChatSystemPrompt(clonePersona('persona-alex-morgan'))
+    const env = withTurnEnvelopes(
+      base,
+      'U = Unbranded/kategorial BV = Branded BR = Reputationscheck Fehlinformationsrisiko',
+    )
+    expect(env).toMatch(/at most 6 short questions/i)
+    expect(env).toMatch(/≤1 sentence/i)
+  })
 })
 
 describe('previewAdaptivePromptWithVoice', () => {

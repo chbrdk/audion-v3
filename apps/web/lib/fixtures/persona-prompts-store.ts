@@ -15,6 +15,13 @@ import { storePersonaDetail, storePersonaList } from './persona-store'
 
 export const PERSONA_CHAT_PROMPT_VERSION = '2026-08-adaptive-v1'
 
+/** Seeded custom-voice overlay on persona create — does not replace adaptive magazine profile. */
+export const DEFAULT_NATURAL_VOICE_OVERLAY = [
+  'Speak like a real person in a short chat.',
+  'No emoji. No interview closers (“Und bei dir?”).',
+  'No research-framework labels. Prefer plain sentences over lists.',
+].join(' ')
+
 export type PersonaPromptRecord = {
   personaId: string
   systemPrompt: string
@@ -85,6 +92,21 @@ export async function storeUpsertPersonaPrompt(
   }
   store().byPersonaId.set(personaId, next)
   return next
+}
+
+export async function storeSeedDefaultNaturalVoice(
+  personaId: string,
+): Promise<PersonaPromptRecord | null> {
+  const existing = await storeGetPersonaPromptRecord(personaId)
+  if (existing?.systemPrompt?.trim()) return existing
+  try {
+    return await storeUpsertPersonaPrompt(personaId, {
+      systemPrompt: DEFAULT_NATURAL_VOICE_OVERLAY,
+      templateVersion: PERSONA_CHAT_PROMPT_VERSION,
+    })
+  } catch {
+    return null
+  }
 }
 
 export async function storeDeletePersonaPrompt(personaId: string): Promise<boolean> {

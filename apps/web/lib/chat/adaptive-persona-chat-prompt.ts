@@ -144,16 +144,24 @@ function traitBlock(traits: Record<string, number>): string {
 
 function styleRules(style: PersonaCommunicationStyle | null | undefined): string {
   if (!style) return ''
-  const bits: string[] = []
+  const bits: string[] = [
+    '- REQUIRED: mirror this speaking style in every reply. Do not flatten into generic assistant prose.',
+  ]
   if (style.sentenceStructure?.trim()) {
-    bits.push(`- Sentence structure: ${clip(style.sentenceStructure, 180)}`)
+    bits.push(
+      `- Sentence shape (follow): ${clip(style.sentenceStructure, 180)}`,
+    )
   }
   if (style.vocabulary?.length) {
     const words = style.vocabulary
       .map((w) => w.trim())
       .filter(Boolean)
       .slice(0, STYLE_VOCAB_CAP)
-    if (words.length) bits.push(`- Signature vocabulary: ${words.join(', ')}`)
+    if (words.length) {
+      bits.push(
+        `- Signature words (prefer when natural): ${words.join(', ')}`,
+      )
+    }
   }
   if (typeof style.skepticismLevel === 'number' && Number.isFinite(style.skepticismLevel)) {
     const s = clamp01(style.skepticismLevel)
@@ -162,7 +170,7 @@ function styleRules(style: PersonaCommunicationStyle | null | undefined): string
     else if (s <= 0.34) rule = 'low skepticism — more trusting, fewer challenges'
     bits.push(`- Skepticism ${s.toFixed(2)}: ${rule}`)
   }
-  if (!bits.length) return ''
+  if (bits.length <= 1) return ''
   return `## How you talk\n${bits.join('\n')}`
 }
 
@@ -213,6 +221,7 @@ function chatRulesBlock(): string {
     '- Prefer plain text. No ### headings. No bold section titles. At most one short list (≤3 lines) and only if it truly helps.',
     '- Do not use emoji.',
     '- Answer first; do not close with an interview question (“Und bei dir?”, “How about you?”).',
+    '- Brand/opinion asks: lead with your gut feel in one sentence, then one concrete reason from your life — jargon (SCOP, datasheets) only if they ask for detail.',
     '- Anti-method: never write category codes or labels (U / BV / BR, “Unbranded”, “Branded”, “Reputationscheck”, prompt banks, mappings). If they want questions, write the questions in your own spoken wording only.',
     '- Anti-coach: do not offer to refine prompts, rewrite frameworks, or improve their research method.',
     '- Do not end with “Wenn du willst…” / “If you want I can…” / “Sag mir kurz…”.',
@@ -288,10 +297,15 @@ export function researchElicitationEnvelope(): string {
     RESEARCH_ELICITATION_HEADING,
     'Secondary task: the human wants questions or opinions for research.',
     'Natural dialogue rules still win — stay fully in character.',
-    'Give what *you* would actually ask or notice, as plain numbered lines (1. 2. 3. …) with no category names or section titles.',
-    'If they ask for nine questions, you may list up to nine short questions — still no U/BV/BR or “Unbranded/Branded” labels.',
-    'One short spoken lead-in (≤2 sentences), then the questions. No thanks-for-the-brief, no process coaching.',
+    'One short spoken lead-in (≤1 sentence), then plain numbered questions — no category names or section titles.',
+    'Default: at most 6 short questions. Only if they explicitly ask for 9 / nine / “je 3”, you may give up to 9.',
+    'Still no U/BV/BR or “Unbranded/Branded” labels. No thanks-for-the-brief, no process coaching.',
   ].join('\n')
+}
+
+/** Detect explicit ask for a full 9-question bank (vs default max 6). */
+export function wantsNineElicitationQuestions(message: string): boolean {
+  return /(?:\b9\b|\bneun\b|je\s*3|insgesamt\s*9|9\s*Fragen)/i.test(message || '')
 }
 
 export function greetingTurnEnvelope(): string {

@@ -131,7 +131,8 @@ Each native chat turn resolves a **deterministic adaptive system prompt** from t
 | Greeting envelope | Short social openers → 1–2 sentences, no product dump |
 | Research-elicitation envelope | Secondary GEO briefs; no category labels |
 | Soft post-filter | `humanizePersonaReply` strips emoji, category labels, coach offers, trailing “Und bei dir?” (greetings buffered so UI matches) |
-| Completions | Default **280** tokens; greeting **≤120**; elicitation **420** |
+| Completions | Default **280** tokens; greeting **≤120**; elicitation **320** |
+| Custom voice seed | New personas get `DEFAULT_NATURAL_VOICE_OVERLAY` on create (overlay only) |
 | Tooling | URL / inspect hints appended in `native-stream` |
 
 Assembly: `apps/web/lib/chat/adaptive-persona-chat-prompt.ts` · `humanize-reply.ts` · `native-stream.ts`.

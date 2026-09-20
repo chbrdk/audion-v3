@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { PersonaWritePayload } from '@audion-v3/contracts'
 import { storeCreatePersona } from '../../../lib/fixtures/persona-store'
+import { storeSeedDefaultNaturalVoice } from '../../../lib/fixtures/persona-prompts-store'
 import { requireProjectAccess, requireViewer } from '../../../lib/resource-access-http'
 import { isPlexonAuthConfigured } from '../../../lib/runtime-config'
 import { syncPersonaTavusPal } from '../../../lib/tavus/sync'
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
     projectId: projectId || body.projectId,
     role: body.role?.trim() || 'Persona',
   })
+  await storeSeedDefaultNaturalVoice(persona.id)
   const synced = await syncPersonaTavusPal(persona)
   return NextResponse.json(synced.persona, { status: 201 })
 }

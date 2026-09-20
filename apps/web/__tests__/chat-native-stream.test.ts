@@ -11,7 +11,7 @@ vi.mock('../lib/ai/client', () => ({
   }),
   getAiOpenAiModel: () => 'gpt-test',
   getChatCompletionMaxTokens: (opts?: { elicitation?: boolean }) =>
-    opts?.elicitation ? 420 : 280,
+    opts?.elicitation ? 320 : 280,
   toAiNativeError: (error: unknown, fallback: string) => ({
     error: fallback,
     status: 502,
@@ -105,7 +105,7 @@ describe('native chat stream', () => {
     expect(system?.content).toMatch(/Research elicitation/i)
     expect(system?.content).toMatch(/Natural dialogue rules still win/i)
     expect(payload.temperature).toBe(0.7)
-    expect(payload.max_completion_tokens).toBe(420)
+    expect(payload.max_completion_tokens).toBe(320)
   })
 
   it('keeps natural-dialogue completion knobs on ordinary turns', async () => {

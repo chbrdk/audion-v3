@@ -16,6 +16,12 @@
 1. Soft post-filter — `apps/web/lib/chat/humanize-reply.ts`
 2. Greeting envelope — short socials, buffered stream so UI matches filter
 3. Voice few-shots — dominant trait lane in adaptive system prompt
+
+### v3 levers (shipped)
+
+4. Hard-wired `How you talk` (mandatory sentence shape + vocab)
+5. Default natural-voice overlay seeded on persona create
+6. GEO elicitation: ≤1 sentence lead-in, default max 6 questions, token cap 320
 ## Where to change (priority order)
 
 Do **not** start with model fine-tuning. Personality SSOT is already magazine → adaptive prompt.
