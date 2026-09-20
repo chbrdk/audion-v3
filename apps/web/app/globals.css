@@ -487,6 +487,12 @@ main { min-height: 100vh; }
   padding-right: 2.75rem; /* room for corner edit cluster */
 }
 
+.audion-magazine-hero-cta {
+  margin: 0.85rem 0 0.65rem;
+  justify-self: start;
+  min-width: 10.5rem;
+}
+
 /* Entity edit/delete — bottom-right inside hero copy (not a page footer) */
 .audion-magazine-hero-actions {
   position: absolute;

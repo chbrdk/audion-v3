@@ -576,7 +576,8 @@
       "emptyValues": "No values yet.",
       "emptyGoals": "No goals yet.",
       "emptyFrustrations": "No frustrations yet.",
-      "documents": "Documents & knowledge"
+      "documents": "Documents & knowledge",
+      "chatNow": "Chat now"
     },
     "project": {
       "eyebrow": "Project",

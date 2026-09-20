@@ -2,7 +2,7 @@
 
 import React from 'react'
 import type { PersonaDetail } from '@audion-v3/contracts'
-import { EmptyState, Text } from '@msqdx/ui'
+import { Button, EmptyState, IconChat, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { PersonaDetailActions } from './persona-actions'
@@ -68,6 +68,16 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
             {persona.name}
           </Text>
           <PersonaLocalizedHeroCopy persona={persona} />
+          <Button
+            href={paths.routes.chatPersona(persona.id)}
+            variant="primary"
+            size="lg"
+            className="audion-magazine-hero-cta"
+            icon={<IconChat />}
+            data-testid="persona-chat-now"
+          >
+            {t('detail.persona.chatNow')}
+          </Button>
           <ul className="geo-places audion-magazine-facets" aria-label="Persona attributes">
             {persona.location ? (
               <FacetTile

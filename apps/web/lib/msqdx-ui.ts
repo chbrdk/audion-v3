@@ -92,6 +92,7 @@ export {
   IconMic,
   IconVideo,
   IconSend,
+  IconChat,
 } from '../../../../msqdx-ui/packages/ui/src/components/icons'
 export { FlowBoardStage } from '../../../../msqdx-ui/packages/ui/src/components/FlowBoardStage'
 export type { FlowBoardStageProps } from '../../../../msqdx-ui/packages/ui/src/components/FlowBoardStage'

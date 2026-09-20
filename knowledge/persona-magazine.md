@@ -11,7 +11,7 @@ AUDION persona UI should read like ECHON briefing/signal magazine pages — not 
 ## Detail (`/personas/[id]`)
 
 1. Magazine topbar — edit actions only (right); no briefing-nav crumbs / no shell page-lead  
-2. Compact hero grid: **editable portrait** (URL + AI generate) | title + ECHON `geo-places` gradient facet tiles (location, age, gender, attention, archetype, status)  
+2. Compact hero grid: **editable portrait** (URL + AI generate) | title + **Chat now** (`@msqdx/ui` Button → `paths.routes.chatPersona`) + ECHON `geo-places` gradient facet tiles (location, age, gender, attention, archetype, status)  
 3. Soft lede (bio)  
 4. Body bands (magazine, not v2 glass):
    - Traits — editable meters (label + score 0–100)
