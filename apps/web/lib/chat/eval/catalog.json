@@ -1,0 +1,114 @@
+[
+  {
+    "id": "de-greeting-01",
+    "locale": "de",
+    "mode": "greeting",
+    "prompt": "hey wie geht es euch?",
+    "expectations": {
+      "maxWords": 45,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "en-greeting-01",
+    "locale": "en",
+    "mode": "greeting",
+    "prompt": "hey how are you?",
+    "expectations": {
+      "maxWords": 45,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "de-opinion-01",
+    "locale": "de",
+    "mode": "opinion",
+    "prompt": "Was hältst du von Vaillant?",
+    "expectations": {
+      "maxWords": 90,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "en-opinion-01",
+    "locale": "en",
+    "mode": "opinion",
+    "prompt": "What do you think of the brand?",
+    "expectations": {
+      "maxWords": 90,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "de-frustration-01",
+    "locale": "de",
+    "mode": "frustration",
+    "prompt": "Was nervt dich am meisten, wenn du dich informierst?",
+    "expectations": {
+      "maxWords": 90,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "en-frustration-01",
+    "locale": "en",
+    "mode": "frustration",
+    "prompt": "What frustrates you most when you research this?",
+    "expectations": {
+      "maxWords": 90,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "de-product-01",
+    "locale": "de",
+    "mode": "product",
+    "prompt": "kurz und knapp: was treibt dich beim Thema Heizen um?",
+    "expectations": {
+      "maxWords": 60,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "en-product-01",
+    "locale": "en",
+    "mode": "product",
+    "prompt": "in one short take: what matters most to you about heating?",
+    "expectations": {
+      "maxWords": 60,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "de-geo-01",
+    "locale": "de",
+    "mode": "geo",
+    "prompt": "U = Unbranded/kategorial BV = Branded/vergleichend BR = Branded/Reputationscheck Fehlinformationsrisiko — gib mir Fragen die du stellen würdest",
+    "expectations": {
+      "maxWords": 220,
+      "maxNumbered": 6,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  },
+  {
+    "id": "en-geo-01",
+    "locale": "en",
+    "mode": "geo",
+    "prompt": "U = unbranded/category BV = branded/compare BR = branded/reputation risk — give me questions you would actually ask",
+    "expectations": {
+      "maxWords": 220,
+      "maxNumbered": 6,
+      "forbid": ["emoji", "interview", "category", "coach"],
+      "requireLocaleMatch": true
+    }
+  }
+]

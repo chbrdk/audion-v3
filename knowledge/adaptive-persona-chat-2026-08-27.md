@@ -12,15 +12,20 @@ Thin `persona.chat_system_default` (name/role/bio/values only) made chat too gen
 1. Embodiment + identity  
 2. Adaptive profile (traits w/ scores, style, goals, pains, journey dos/donts, sections, capped knowledge)  
 3. Optional **custom voice** overlay (Settings persona prompt)  
-4. Short-turn chat rules (**anti-method / anti-coach / list budget**)  
-5. Per-turn **research elicitation envelope** when user dumps GEO U/BV/BR briefs (`withResearchElicitationEnvelope` in `native-stream`)  
-6. URL tooling append in `native-stream`
+4. **Locale-matched voice few-shots** (`detectChatLocale` from latest user message; DE default)  
+5. Short-turn chat rules (**anti-method / anti-coach / list budget**) + explicit LANGUAGE line  
+6. Per-turn **greeting / research elicitation envelopes** (`withTurnEnvelopes` in `native-stream`)  
+7. URL tooling append in `native-stream`
 
 `max_completion_tokens`: `paths.chatCompletionMaxTokens` (default **280**), elicitation turns `paths.chatElicitationMaxTokens` (**320**), env `AI_CHAT_MAX_TOKENS` overrides both. Newer OpenAI models reject legacy `max_tokens`.
 
 ## Humanize playbook
 
 `knowledge/persona-chat-humanize-2026-09-20.md` — **natural dialogue first**; GEO elicitation secondary; surface form without dropping magazine traits.
+
+## Eval gate
+
+`knowledge/persona-chat-eval.md` — bilingual DE/EN catalog + deterministic scorers; live `scripts/eval-persona-chat.mjs`.
 
 ## Custom voice
 

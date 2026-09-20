@@ -54,8 +54,11 @@ export function resetPersonaPromptsStore(): void {
 /**
  * Adaptive default from full PersonaDetail (traits, style, goals, …).
  */
-export function generateDefaultPersonaSystemPrompt(persona: PersonaDetail): string {
-  return buildAdaptivePersonaChatSystemPrompt(persona)
+export function generateDefaultPersonaSystemPrompt(
+  persona: PersonaDetail,
+  opts?: { locale?: string; message?: string | null },
+): string {
+  return buildAdaptivePersonaChatSystemPrompt(persona, opts)
 }
 
 export async function storeGetPersonaPromptRecord(
@@ -145,7 +148,10 @@ export async function storeListPersonaPromptSummaries(): Promise<
 }
 
 /** Resolved system prompt for native chat: adaptive profile + optional custom voice. */
-export async function resolvePersonaSystemPrompt(personaId: string): Promise<string> {
+export async function resolvePersonaSystemPrompt(
+  personaId: string,
+  opts?: { locale?: string; message?: string | null },
+): Promise<string> {
   const persona = await storePersonaDetail(personaId)
   if (!persona) {
     return 'You are a helpful audience research assistant speaking as a persona.'
@@ -153,5 +159,7 @@ export async function resolvePersonaSystemPrompt(personaId: string): Promise<str
   const custom = await storeGetPersonaPromptRecord(personaId)
   return buildAdaptivePersonaChatSystemPrompt(persona, {
     customVoice: custom?.systemPrompt,
+    locale: opts?.locale,
+    message: opts?.message,
   })
 }

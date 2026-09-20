@@ -7,6 +7,7 @@ import {
   RESEARCH_ELICITATION_HEADING,
   VOICE_EXAMPLES_HEADING,
   buildAdaptivePersonaChatSystemPrompt,
+  detectChatLocale,
   isGreetingMessage,
   isResearchElicitationMessage,
   previewAdaptivePromptWithVoice,
@@ -140,6 +141,24 @@ describe('turn envelopes', () => {
     const prompt = buildAdaptivePersonaChatSystemPrompt(persona)
     expect(prompt).toMatch(/impatient/)
     expect(prompt).toMatch(/wenig Zeit/i)
+  })
+
+  it('switches voice few-shots to English when message is EN', () => {
+    const persona = clonePersona('persona-alex-morgan')
+    persona.traits = { Impatience: 0.95 }
+    const prompt = buildAdaptivePersonaChatSystemPrompt(persona, {
+      message: 'hey how are you?',
+    })
+    expect(prompt).toMatch(/impatient, en/)
+    expect(prompt).toMatch(/Short on time/i)
+    expect(prompt).toMatch(/Reply in natural English/i)
+    expect(prompt).not.toMatch(/wenig Zeit/i)
+  })
+
+  it('detectChatLocale prefers EN signals and explicit hint', () => {
+    expect(detectChatLocale('hey how are you?')).toBe('en')
+    expect(detectChatLocale('Was hältst du von Vaillant?')).toBe('de')
+    expect(detectChatLocale('mixed', 'en-US')).toBe('en')
   })
 
   it('hard-wires communication style as mandatory', () => {

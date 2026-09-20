@@ -127,7 +127,7 @@ Each native chat turn resolves a **deterministic adaptive system prompt** from t
 | Adaptive profile | Always built from current persona store/DB |
 | Custom voice (optional) | Admin overlay from persona-prompts store — **does not replace** the adaptive profile |
 | Chat rules | **Natural dialogue first:** short spoken turns (~40–90 words); plain sentences; no emoji; no trailing interview closers; anti-method / anti-coach |
-| Voice examples | 2 few-shot turns from dominant trait lane (impatient / skeptical / warm / balanced) |
+| Voice examples | 2 few-shot turns from dominant trait lane (impatient / skeptical / warm / balanced), **locale-matched** via `detectChatLocale` (DE/EN) |
 | Greeting envelope | Short social openers → 1–2 sentences, no product dump |
 | Research-elicitation envelope | Secondary GEO briefs; no category labels |
 | Soft post-filter | `humanizePersonaReply` strips emoji, category labels, coach offers, trailing “Und bei dir?” (greetings buffered so UI matches) |
@@ -176,3 +176,4 @@ Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenR
 14. With `projectId` alone, project ask-all shows grid of project personas (≤10); CTA from project detail → `/chat?projectId=`.
 15. Project ask-all smoke: filter by `projectId` + fan-out → N cards.
 16. Natural dialogue first: voice few-shots, greeting envelope, soft post-filter (`humanizePersonaReply`), and secondary GEO elicitation without category headers.
+17. Bilingual human-likeness eval: catalog ≥10 DE/EN cases; scorers + live runner (`specs/domain/persona-chat-eval.md`).

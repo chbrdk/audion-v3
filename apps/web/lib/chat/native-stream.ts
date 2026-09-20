@@ -37,7 +37,7 @@ async function systemPromptForPersona(
   message: string,
   abCompare: boolean,
 ): Promise<string> {
-  let base = await resolvePersonaSystemPrompt(personaId)
+  let base = await resolvePersonaSystemPrompt(personaId, { message })
   base = withTurnEnvelopes(base, message)
   if (abCompare) {
     base = `${base}\n\n${abCompareSystemInstruction()}`

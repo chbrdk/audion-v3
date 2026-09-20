@@ -36,10 +36,15 @@ const GREETING_RE =
   /^\s*(?:hey|hi|hallo|servus|moin|hola|guten\s+(?:tag|morgen|abend)|wie\s+geht(?:'s|s| es)(?:\s+\S+)?|how\s+are\s+you(?:\s+doing)?|what'?s\s+up)(?:[\s!,.?]|$)/i
 
 
+export type ChatLocale = 'de' | 'en'
+
 export type AdaptivePersonaChatPromptOpts = {
   /** Admin overlay — does not replace the adaptive magazine profile. */
   customVoice?: string | null
+  /** Explicit locale; when omitted, inferred from `message` (default de). */
   locale?: string
+  /** Latest user message — used for locale detection when `locale` unset. */
+  message?: string | null
 }
 
 function clamp01(n: number): number {
@@ -232,6 +237,26 @@ function chatRulesBlock(): string {
 
 type VoiceLane = 'impatient' | 'skeptical' | 'warm' | 'balanced'
 
+const DE_LOCALE_SIGNAL =
+  /[äöüÄÖÜß]|\b(ich|und|nicht|das|die|der|ist|mit|für|auch|noch|wenn|aber|oder|eine|einen|wie|geht|hältst|nervt|gib|fragen|würdest)\b/gi
+const EN_LOCALE_SIGNAL =
+  /\b(the|and|you|what|how|are|that|with|for|this|have|would|about|from|not|but|hey|think|frustrates|give|questions|actually)\b/gi
+
+/**
+ * Detect reply language from the latest user message.
+ * Defaults to `de` when signals tie (corpus + DE enterprise demos).
+ */
+export function detectChatLocale(message?: string | null, hint?: string | null): ChatLocale {
+  const normalized = (hint || '').trim().toLowerCase()
+  if (normalized.startsWith('en')) return 'en'
+  if (normalized.startsWith('de')) return 'de'
+  const t = String(message || '')
+  if (!t.trim()) return 'de'
+  const de = (t.match(DE_LOCALE_SIGNAL) || []).length
+  const en = (t.match(EN_LOCALE_SIGNAL) || []).length
+  return en > de ? 'en' : 'de'
+}
+
 function dominantVoiceLane(traits: Record<string, number>): VoiceLane {
   let impatient = 0
   let skeptical = 0
@@ -256,9 +281,8 @@ function dominantVoiceLane(traits: Record<string, number>): VoiceLane {
   return ranked[0]![1] >= 0.66 ? ranked[0]![0] : 'balanced'
 }
 
-function fewShotBlock(traits: Record<string, number>): string {
-  const lane = dominantVoiceLane(traits)
-  const sets: Record<VoiceLane, string[]> = {
+const FEW_SHOTS: Record<ChatLocale, Record<VoiceLane, string[]>> = {
+  de: {
     impatient: [
       'User: hey wie geht’s?\nYou: Passt soweit. Hab gerade wenig Zeit — schieß los.',
       'User: Was hältst du von der Marke?\nYou: Solide Technik, wenn der Einbau stimmt. Broschürenzahlen interessieren mich nicht.',
@@ -275,8 +299,37 @@ function fewShotBlock(traits: Record<string, number>): string {
       'User: hey wie geht’s?\nYou: Ganz gut. Hab gerade das Thema im Hinterkopf, sonst läuft’s.',
       'User: Was hältst du von der Marke?\nYou: Kommt drauf an. Technik und Service müssen stimmen — Marketing allein reicht nicht.',
     ],
-  }
-  return `${VOICE_EXAMPLES_HEADING}\nMatch this length and tone (${lane}):\n\n${sets[lane].join('\n\n')}`
+  },
+  en: {
+    impatient: [
+      "User: hey how are you?\nYou: Fine. Short on time — go ahead.",
+      "User: What do you think of the brand?\nYou: Solid kit if the install is right. Brochure numbers don't move me.",
+    ],
+    skeptical: [
+      "User: hey how are you?\nYou: Okay. Just saw something that sounded too smooth — I'm careful.",
+      "User: What do you think of the brand?\nYou: Maybe. I want numbers at the operating point, not the slogan.",
+    ],
+    warm: [
+      "User: hey how are you?\nYou: Doing well, thanks. Pretty quiet day.",
+      "User: What do you think of the brand?\nYou: I stick with brands that feel honest and everyday-usable.",
+    ],
+    balanced: [
+      "User: hey how are you?\nYou: Pretty good. Got this topic on my mind, otherwise fine.",
+      "User: What do you think of the brand?\nYou: Depends. Tech and service have to hold up — marketing alone isn't enough.",
+    ],
+  },
+}
+
+function fewShotBlock(traits: Record<string, number>, locale: ChatLocale): string {
+  const lane = dominantVoiceLane(traits)
+  const examples = FEW_SHOTS[locale][lane]
+  return `${VOICE_EXAMPLES_HEADING}\nMatch this length and tone (${lane}, ${locale}):\n\n${examples.join('\n\n')}`
+}
+
+function localeInstruction(locale: ChatLocale): string {
+  return locale === 'en'
+    ? 'LANGUAGE: Reply in natural English. Mirror the user’s language; do not slip into German.'
+    : 'LANGUAGE: Reply in natural German. Mirror the user’s language; do not slip into English unless they write in English.'
 }
 
 /** True when the user message is a GEO / prompt-bank elicitation brief. */
@@ -386,6 +439,7 @@ export function buildAdaptivePersonaChatSystemPrompt(
 
   const jb = persona.journeyBehavior
   const customVoice = (opts?.customVoice || '').trim()
+  const locale = detectChatLocale(opts?.message, opts?.locale)
 
   const sections = [
     `You ARE ${name}, ${role}. Stay in first person as this person for the whole chat. You are not an AI describing them.`,
@@ -418,8 +472,8 @@ export function buildAdaptivePersonaChatSystemPrompt(
     sectionBlock(persona.sections ?? []),
     knowledgeBlock(persona),
     customVoice ? `${ADAPTIVE_CUSTOM_VOICE_HEADING}\n${clip(customVoice, 2000)}` : '',
-    fewShotBlock(persona.traits ?? {}),
-    opts?.locale?.trim() ? `Respond in a way natural for locale hint: ${opts.locale.trim()}.` : '',
+    fewShotBlock(persona.traits ?? {}, locale),
+    localeInstruction(locale),
     chatRulesBlock(),
   ].filter(Boolean)
 

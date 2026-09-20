@@ -5,7 +5,7 @@
 
 ## Status
 
-**Implemented 2026-09-20** + dialogue-first tighten + **v2 tweaks:** soft post-filter, greeting envelope, trait few-shots (`specs/domain/chat-workspace.md` #16).
+**Implemented 2026-09-20** + dialogue-first tighten + **v2 tweaks:** soft post-filter, greeting envelope, trait few-shots (`specs/domain/chat-workspace.md` #16) + **bilingual eval** (`specs/domain/persona-chat-eval.md`).
 
 ## Priority
 
@@ -22,6 +22,8 @@
 4. Hard-wired `How you talk` (mandatory sentence shape + vocab)
 5. Default natural-voice overlay seeded on persona create
 6. GEO elicitation: ≤1 sentence lead-in, default max 6 questions, token cap 320
+7. Bilingual few-shots + `detectChatLocale` (DE/EN) so EN chats are not DE-biased
+8. Enterprise eval catalog + scorers + live staging runner (`knowledge/persona-chat-eval.md`)
 ## Where to change (priority order)
 
 Do **not** start with model fine-tuning. Personality SSOT is already magazine → adaptive prompt.
