@@ -2,9 +2,10 @@
 
 import React from 'react'
 import type { PersonaDetail } from '@audion-v3/contracts'
-import { Button, EmptyState, IconChat, Text } from '@msqdx/ui'
+import { Button, EmptyState, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
+import { NavIconChat } from './nav-icons'
 import { PersonaDetailActions } from './persona-actions'
 import { PersonaChannelBubbles } from './persona-channel-bubbles'
 import { PersonaEditableCommunication } from './persona-editable-communication'
@@ -73,7 +74,7 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
             variant="primary"
             size="lg"
             className="audion-magazine-hero-cta"
-            icon={<IconChat />}
+            icon={<NavIconChat />}
             data-testid="persona-chat-now"
           >
             {t('detail.persona.chatNow')}
