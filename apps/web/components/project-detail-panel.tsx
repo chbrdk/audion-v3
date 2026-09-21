@@ -7,9 +7,10 @@ import type {
   PersonaSummary,
   TargetGroupSummary,
 } from '@audion-v3/contracts'
-import { EmptyState, Text } from '@msqdx/ui'
+import { Button, EmptyState, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
+import { NavIconChat } from './nav-icons'
 import {
   ProjectPersonaList,
   ProjectTargetGroupList,
@@ -74,12 +75,16 @@ export function ProjectDetailPanel({
         </p>
         <div className="audion-magazine-topbar-actions">
           {personas.length > 0 ? (
-            <Link
+            <Button
               href={paths.routes.chatProject(project.id)}
-              className="audion-link audion-magazine-ask-all"
+              variant="subtle"
+              size="sm"
+              className="audion-magazine-ask-all"
+              icon={<NavIconChat />}
+              data-testid="project-ask-all"
             >
               {t('detail.project.askAll')}
-            </Link>
+            </Button>
           ) : null}
         </div>
       </div>

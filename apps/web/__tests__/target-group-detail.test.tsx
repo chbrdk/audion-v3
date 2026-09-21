@@ -40,13 +40,15 @@ describe('TargetGroupDetailPanel hero', () => {
     expect(link).toHaveAttribute('href', paths.routes.projectDetail('proj-audion-core'))
   })
 
-  it('links Ask all personas to TG chat', () => {
+  it('links Ask all personas to TG chat as a subtle button', () => {
     render(<TargetGroupDetailPanel targetGroup={DEMO_TARGET_GROUPS[0]!} />)
     const link = screen.getByRole('link', { name: /Ask all personas/i })
     expect(link).toHaveAttribute(
       'href',
       paths.routes.chatTargetGroup(DEMO_TARGET_GROUPS[0]!.id),
     )
+    expect(link).toHaveClass('audion-magazine-ask-all')
+    expect(link.className).toMatch(/ds-btn/)
   })
 })
 

@@ -3,9 +3,10 @@
 import React from 'react'
 import Link from 'next/link'
 import type { TargetGroupDetail } from '@audion-v3/contracts'
-import { EmptyState, Text } from '@msqdx/ui'
+import { Button, EmptyState, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
+import { NavIconChat } from './nav-icons'
 import { TargetGroupDetailActions } from './target-group-edit-dialog'
 import { GeneratePersonasAiButton } from './ai-workflow-actions'
 import { ResourceKnowledgeDossier } from './resource-knowledge-dossier'
@@ -80,12 +81,16 @@ export function TargetGroupDetailPanel({
         </p>
         <div className="audion-magazine-topbar-actions">
           {targetGroup.linkedPersonas.length > 0 ? (
-            <Link
+            <Button
               href={paths.routes.chatTargetGroup(targetGroup.id)}
-              className="audion-link audion-magazine-ask-all"
+              variant="subtle"
+              size="sm"
+              className="audion-magazine-ask-all"
+              icon={<NavIconChat />}
+              data-testid="tg-ask-all"
             >
               {t('detail.targetGroup.askAll')}
-            </Link>
+            </Button>
           ) : null}
           <GeneratePersonasAiButton
             targetGroupId={targetGroup.id}
