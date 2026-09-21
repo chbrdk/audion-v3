@@ -22,3 +22,7 @@ Access Model B membership for a federated project lives in Plexon (`user_platfor
 - No overwrite of existing Plexon roles on migrate or re-add.
 - Creator immutable on Plexon.
 - Unbound / `plx-local-*` projects stay on local members UI only.
+
+## Mail
+
+Outbound team/auth mail is **Plexon-only** — do not add `SMTP_*` here. When Plexon P1 lands, add-by-email (`status: added`) and invite `toEmail` are sent from the control plane. Spec: `plexon-v3/specs/domain/transactional-email.md` · `plexon-v3/knowledge/transactional-email.md`.
