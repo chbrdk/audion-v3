@@ -58,12 +58,15 @@ export async function POST(request: Request) {
   const gate = await requireViewer(request)
   if (!gate.ok) return gate.response
 
-  const body = (await request.json()) as TargetGroupWritePayload
+  const body = (await request.json()) as TargetGroupWritePayload & { project_id?: string }
   if (!body?.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
 
-  const projectId = typeof body.projectId === 'string' ? body.projectId.trim() : ''
+  // Accept camelCase (contracts) and snake_case (Plexon EQC / FastAPI-era clients).
+  const projectId =
+    (typeof body.projectId === 'string' ? body.projectId.trim() : '') ||
+    (typeof body.project_id === 'string' ? body.project_id.trim() : '')
   if (isPlexonAuthConfigured()) {
     if (!projectId) {
       return NextResponse.json({ error: 'project_id_required' }, { status: 400 })
@@ -74,7 +77,7 @@ export async function POST(request: Request) {
 
   const targetGroup = await storeCreateTargetGroup({
     ...body,
-    projectId: projectId || body.projectId,
+    projectId: projectId || body.projectId || null,
     segment: body.segment?.trim() || 'Segment',
   })
   return NextResponse.json(targetGroup, { status: 201 })
