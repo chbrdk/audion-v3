@@ -16,8 +16,10 @@ export async function POST(request: Request) {
   }
 
   const session = await auth()
+  const { getRequestUser } = await import('../../../lib/auth-api-token')
+  const actor = await getRequestUser(request)
   const ownerEmail = session?.user?.email || undefined
-  const ownerPlexonUserId = session?.user?.id || null
+  const ownerPlexonUserId = session?.user?.id || actor?.id || null
 
   let platformCompanyId: string | null = null
   if (ownerPlexonUserId && isPlexonAuthConfigured()) {
