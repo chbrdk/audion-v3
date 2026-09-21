@@ -23,7 +23,7 @@ export async function POST(
     return NextResponse.json({ error: 'collection_required' }, { status: 400 })
   }
 
-  let body: { role?: unknown } = {}
+  let body: { role?: unknown; toEmail?: unknown } = {}
   try {
     body = (await request.json()) as typeof body
   } catch {
@@ -31,10 +31,14 @@ export async function POST(
   }
   const role = body.role === 'admin' ? 'admin' : 'member'
 
+  const toEmail =
+    typeof body.toEmail === 'string' && body.toEmail.trim() ? body.toEmail.trim() : undefined
+
   const result = await createCollectionInviteOnPlexon({
     platformProjectId: project.platformProjectId!,
     plexonUserId: viewerId,
     role,
+    ...(toEmail ? { toEmail } : {}),
   })
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status })

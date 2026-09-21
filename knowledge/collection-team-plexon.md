@@ -13,7 +13,7 @@ Access Model B membership for a federated project lives in Plexon (`user_platfor
 |--------|------|
 | List team | `GET /api/projects/:id/members` → Plexon `GET …/collections/:ppid/members` + merge residual local |
 | Add by email | `POST /api/projects/:id/members` → Plexon POST members (additive) |
-| Invite link | `POST /api/projects/:id/invites` → Plexon invites |
+| Invite link | `POST /api/projects/:id/invites` → Plexon invites (`toEmail` when draft email is set) |
 | Migrate local | `POST /api/projects/:id/sync-collection-members` — additive only (`migrated` / `already_member` / `user_not_found`) |
 | Revoke | `DELETE /api/projects/:id/members/:userId` |
 
@@ -25,4 +25,4 @@ Access Model B membership for a federated project lives in Plexon (`user_platfor
 
 ## Mail
 
-Outbound team/auth mail is **Plexon-only** — do not add `SMTP_*` here. When Plexon P1 lands, add-by-email (`status: added`) and invite `toEmail` are sent from the control plane. Spec: `plexon-v3/specs/domain/transactional-email.md` · `plexon-v3/knowledge/transactional-email.md`.
+Outbound team/auth mail is **Plexon-only** — do not add `SMTP_*` here. Team Invite forwards draft email as `toEmail`; Plexon sends `collection_invite`. Member add triggers `collection_member_added` on `status: added`. Spec: `plexon-v3/specs/domain/transactional-email.md` · `plexon-v3/knowledge/transactional-email.md`.

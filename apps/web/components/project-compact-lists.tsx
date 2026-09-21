@@ -82,6 +82,7 @@ function CompactEditableList({
   rows,
   empty,
   createSlot,
+  footExtra,
   draftMeta,
   addLabel,
   onRename,
@@ -93,6 +94,8 @@ function CompactEditableList({
   rows: CompactRow[]
   empty: React.ReactNode
   createSlot?: React.ReactNode
+  /** Secondary foot action (e.g. Invite) — receives current draft when editing. */
+  footExtra?: React.ReactNode | ((ctx: { draft: string }) => React.ReactNode)
   draftMeta?: string
   addLabel?: string
   onRename: (id: string, name: string) => Promise<void>
@@ -211,7 +214,9 @@ function CompactEditableList({
 
   const deleteLabel = deleteId ? localRows.find((r) => r.id === deleteId)?.name ?? singular : ''
   const nextNum = String(localRows.length + 1).padStart(2, '0')
-  const showAddFoot = Boolean(createSlot || onCreate)
+  const showAddFoot = Boolean(createSlot || onCreate || footExtra)
+  const resolvedFootExtra =
+    typeof footExtra === 'function' ? footExtra({ draft }) : footExtra
 
   return (
     <Panel className="stage-panel audion-magazine-band audion-editable-list audion-project-compact-list">
@@ -300,22 +305,24 @@ function CompactEditableList({
       {showAddFoot ? (
         <div className="audion-editable-list-foot">
           <div className="audion-editable-list-foot-inner">
-            {createSlot ?? (
-              <button
-                type="button"
-                className="audion-editable-list-add-row"
-                aria-label={`Add ${singular}`}
-                disabled={saving || editingId != null}
-                onClick={handleAddDraft}
-              >
-                <span className="audion-magazine-list-num" aria-hidden>
-                  {nextNum}
-                </span>
-                <span className="audion-editable-list-add-label">
-                  {addLabel ?? `Add ${singular}`}
-                </span>
-              </button>
-            )}
+            {createSlot ??
+              (onCreate ? (
+                <button
+                  type="button"
+                  className="audion-editable-list-add-row"
+                  aria-label={`Add ${singular}`}
+                  disabled={saving || editingId != null}
+                  onClick={handleAddDraft}
+                >
+                  <span className="audion-magazine-list-num" aria-hidden>
+                    {nextNum}
+                  </span>
+                  <span className="audion-editable-list-add-label">
+                    {addLabel ?? `Add ${singular}`}
+                  </span>
+                </button>
+              ) : null)}
+            {resolvedFootExtra}
           </div>
         </div>
       ) : null}
@@ -477,16 +484,20 @@ export function ProjectTeamList({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount + projectId
   }, [projectId, platformProjectId])
 
-  async function createInviteLink() {
+  async function createInviteLink(toEmail?: string) {
     setBanner(null)
     setInviteUrl(null)
     const res = await fetch(paths.routes.apiProjectInvites(projectId), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ role: 'member' }),
+      body: JSON.stringify({
+        role: 'member',
+        ...(toEmail?.trim() ? { toEmail: toEmail.trim() } : {}),
+      }),
     })
     const body = (await res.json().catch(() => ({}))) as {
       inviteUrl?: string
+      emailedTo?: string
       error?: string
     }
     if (!res.ok) {
@@ -495,6 +506,10 @@ export function ProjectTeamList({
     }
     const url = body.inviteUrl ?? ''
     setInviteUrl(url)
+    if (body.emailedTo) {
+      setBanner(`Invite emailed to ${body.emailedTo}`)
+      return
+    }
     if (url && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(url)
       setBanner('Invite link copied')
@@ -510,12 +525,19 @@ export function ProjectTeamList({
         empty="No members yet."
         draftMeta="member · invited"
         addLabel="Add member"
-        createSlot={
-          platformProjectId ? (
-            <Button type="button" size="sm" variant="ghost" onClick={() => void createInviteLink()}>
-              Invite link
-            </Button>
-          ) : null
+        footExtra={
+          platformProjectId
+            ? ({ draft: draftEmail }) => (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => void createInviteLink(draftEmail)}
+                >
+                  Invite link
+                </Button>
+              )
+            : null
         }
         onRename={async () => {
           /* email rename not supported on Plexon roster */
@@ -541,7 +563,7 @@ export function ProjectTeamList({
           if (!res.ok) {
             if (body.error === 'user_not_found' || body.error === 'wrong_company') {
               throw new Error(
-                'User not in company — use Invite link so they can accept after signing in.',
+                'User not in company — use Invite link (with this email in the draft) so they can accept after signing in.',
               )
             }
             throw new Error(body.error || `Add failed (${res.status})`)
