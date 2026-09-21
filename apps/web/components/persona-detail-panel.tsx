@@ -65,20 +65,22 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
           <Text role="label" className="briefing-eyebrow">
             {t('detail.persona.eyebrow')}
           </Text>
-          <Text role="headline" as="h2" className="signal-title">
-            {persona.name}
-          </Text>
+          <div className="audion-magazine-hero-title-row">
+            <Text role="headline" as="h2" className="signal-title">
+              {persona.name}
+            </Text>
+            <Button
+              href={paths.routes.chatPersona(persona.id)}
+              variant="subtle"
+              size="sm"
+              className="audion-magazine-hero-cta"
+              icon={<NavIconChat />}
+              data-testid="persona-chat-now"
+            >
+              {t('detail.persona.chatNow')}
+            </Button>
+          </div>
           <PersonaLocalizedHeroCopy persona={persona} />
-          <Button
-            href={paths.routes.chatPersona(persona.id)}
-            variant="subtle"
-            size="md"
-            className="audion-magazine-hero-cta"
-            icon={<NavIconChat />}
-            data-testid="persona-chat-now"
-          >
-            {t('detail.persona.chatNow')}
-          </Button>
           <ul className="geo-places audion-magazine-facets" aria-label="Persona attributes">
             {persona.location ? (
               <FacetTile

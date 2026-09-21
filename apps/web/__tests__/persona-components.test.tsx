@@ -168,11 +168,15 @@ describe('persona workspace components', () => {
     expect(container.querySelector('.briefing-nav')).toBeNull()
   })
 
-  it('links Chat now to persona chat', () => {
-    renderWithPrefs(<PersonaDetailPanel persona={detail} />)
+  it('links Chat now to persona chat beside the title', () => {
+    const { container } = renderWithPrefs(<PersonaDetailPanel persona={detail} />)
     const link = screen.getByRole('link', { name: /Chat now/i })
     expect(link).toHaveAttribute('href', paths.routes.chatPersona(detail.id))
     expect(link).toHaveClass('audion-magazine-hero-cta')
+    expect(container.querySelector('.audion-magazine-hero-title-row .signal-title')).toBeTruthy()
+    expect(container.querySelector('.audion-magazine-hero-title-row .audion-magazine-hero-cta')).toBe(
+      link,
+    )
   })
 
   it('renders quiet reading magazine for long-form content', () => {

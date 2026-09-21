@@ -487,9 +487,23 @@ main { min-height: 100vh; }
   padding-right: 2.75rem; /* room for corner edit cluster */
 }
 
+.audion-magazine-hero-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 0.75rem);
+  min-width: 0;
+}
+
+.audion-magazine-hero-title-row .signal-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .audion-magazine-hero-cta {
-  margin: 0.55rem 0 0.45rem;
-  justify-self: start;
+  margin: 0;
+  flex: 0 0 auto;
+  align-self: center;
 }
 
 /* Entity edit/delete — bottom-right inside hero copy (not a page footer) */
