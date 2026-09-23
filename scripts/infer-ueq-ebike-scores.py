@@ -193,15 +193,15 @@ th{{background:#f5f7fa}}
 def main() -> int:
     env = {**load_dotenv(ROOT / "services/ux-journey-agent/.env.local"), **os.environ}
     api_key = env.get("OPENAI_API_KEY", "").strip()
-    # Prefer UEQ_INFER_MODEL → UX_JOURNEY_OPENAI_MODEL → gpt-5.6-luna (never gpt-4o*).
+    # Prefer UEQ_INFER_MODEL → UX_JOURNEY_OPENAI_MODEL → gpt-6-luna (never gpt-4o*).
     model = (
         env.get("UEQ_INFER_MODEL")
         or env.get("UX_JOURNEY_OPENAI_MODEL")
-        or "gpt-5.6-luna"
+        or "gpt-6-luna"
     ).strip()
     if model.startswith("gpt-4o") and "tts" not in model:
-        print(f"WARN: refusing chat model {model!r}; using gpt-5.6-luna", file=sys.stderr)
-        model = "gpt-5.6-luna"
+        print(f"WARN: refusing chat model {model!r}; using gpt-6-luna", file=sys.stderr)
+        model = "gpt-6-luna"
     if not api_key:
         print("FATAL: OPENAI_API_KEY missing", file=sys.stderr)
         return 1

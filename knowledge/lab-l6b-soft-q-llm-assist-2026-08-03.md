@@ -15,7 +15,7 @@ Refine Soft-Q **rationales** (and nudge values ±1) from Think-Alouds via OpenAI
 ```bash
 export AUDION_SOFT_Q_LLM_ASSIST=1
 export OPENAI_API_KEY=…
-# model: AI_OPENAI_MODEL or paths.aiOpenAiModel (gpt-5.4-nano)
+# model: AI_OPENAI_MODEL or paths.aiOpenAiModel (gpt-6-luna)
 ```
 
 Default in code: **off** — Evaluate stays deterministic/fast.

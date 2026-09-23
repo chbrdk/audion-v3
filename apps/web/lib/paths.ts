@@ -176,15 +176,15 @@ export const paths = {
   chatApiInternalUrl: 'http://chat-api:8001',
   /** Native AI runtime: stub | native | auto (auto = native when OPENAI_API_KEY set) */
   aiRuntime: 'auto' as const,
-  /** Cheap default for chat/assist — override via AI_OPENAI_MODEL */
-  aiOpenAiModel: 'gpt-5.4-nano',
+  /** Default for chat/assist — override via AI_OPENAI_MODEL */
+  aiOpenAiModel: 'gpt-6-luna',
   /** Native persona chat completion cap — override via AI_CHAT_MAX_TOKENS */
   chatCompletionMaxTokens: 280,
   /** Higher cap only when the user turn is a GEO / prompt-bank elicitation brief. */
   chatElicitationMaxTokens: 320,
   envAiChatMaxTokens: 'AI_CHAT_MAX_TOKENS',
-  /** UX Journey Agent OpenAI — default gpt-5.6-luna; override via UX_JOURNEY_OPENAI_MODEL */
-  uxJourneyOpenAiModel: 'gpt-5.6-luna',
+  /** UX Journey Agent OpenAI — default gpt-6-luna; override via UX_JOURNEY_OPENAI_MODEL */
+  uxJourneyOpenAiModel: 'gpt-6-luna',
   /** Vision detail for per-step screenshots — override via UX_JOURNEY_VISION_DETAIL */
   uxJourneyVisionDetail: 'high',
   /** Persona avatar + moodboard Images API — OpenAI / OpenRouter (`openai/…`). */

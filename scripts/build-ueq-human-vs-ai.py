@@ -87,7 +87,7 @@ def render_html(report: dict) -> str:
     ai_model = (
         report.get("meta", {}).get("ai_model")
         or report.get("ai_meta", {}).get("model")
-        or "gpt-5.6-luna"
+        or "gpt-6-luna"
     )
     ai_model_esc = html_mod.escape(str(ai_model))
     rows = ""
@@ -183,7 +183,7 @@ def main() -> None:
             "human_source": HUMAN_PDF,
             "ai_source": str(AI_JSON.relative_to(ROOT)),
             "ai_run_count": ai["meta"]["run_count"],
-            "ai_model": ai["meta"].get("model") or "gpt-5.6-luna",
+            "ai_model": ai["meta"].get("model") or "gpt-6-luna",
             "scale": "UEQ -3..+3",
         },
         "human": HUMAN,
@@ -191,7 +191,7 @@ def main() -> None:
             "overall_raw_1_7": ai_dims["weighted_mean"],
             "dimensions_raw_1_7": {k: ai_dims[k] for k, _ in DIMENSIONS},
             "method": ai["meta"]["method"],
-            "meta": {"model": ai["meta"].get("model") or "gpt-5.6-luna"},
+            "meta": {"model": ai["meta"].get("model") or "gpt-6-luna"},
         },
         "comparison": {
             "overall": {

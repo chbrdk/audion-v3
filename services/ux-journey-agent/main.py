@@ -141,7 +141,7 @@ def _vision_detail_level() -> str:
 
 
 def _openai_model_id() -> str:
-    return (os.environ.get("UX_JOURNEY_OPENAI_MODEL") or "gpt-5.6-luna").strip() or "gpt-5.6-luna"
+    return (os.environ.get("UX_JOURNEY_OPENAI_MODEL") or "gpt-6-luna").strip() or "gpt-6-luna"
 
 
 # ---------------------------------------------------------------------------
@@ -259,8 +259,8 @@ def _build_openai_llm():
         from audion_agent import ChatOpenAI
     except ImportError:
         from audion_agent.llm.openai import ChatOpenAI
-    # Default: gpt-5.6-luna (Lab A/B 2026-08-03). Override via UX_JOURNEY_OPENAI_MODEL
-    # (e.g. gpt-5.4-mini / gpt-5.6-luna) if AgentOutput validation gets flaky —
+    # Default: gpt-6-luna. Override via UX_JOURNEY_OPENAI_MODEL
+    # (e.g. gpt-5.4-mini / gpt-6-luna) if AgentOutput validation gets flaky —
     # GPT-5.4 family has occasionally emitted trailing braces that Pydantic rejects.
     return ChatOpenAI(
         model=_openai_model_id(),

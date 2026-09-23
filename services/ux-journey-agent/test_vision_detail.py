@@ -22,4 +22,4 @@ def test_vision_detail_accepts_auto_low_high(monkeypatch):
 
 def test_openai_model_default_luna(monkeypatch):
     monkeypatch.delenv("UX_JOURNEY_OPENAI_MODEL", raising=False)
-    assert ux_main._openai_model_id() == "gpt-5.6-luna"
+    assert ux_main._openai_model_id() == "gpt-6-luna"

@@ -106,7 +106,7 @@ For tasks that ask the persona to **find a destination via the UI** (start on ho
 | `UX_JOURNEY_VISION_DETAIL` | `high` | Passed to Agent as `vision_detail_level` (`auto` \| `low` \| `high`) |
 | `use_vision` | always `True` | Screenshots included in every LLM step |
 
-Chat LLM for the agent remains `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-5.6-luna`**). Do not use `gpt-4o` / `gpt-4o-mini` for agent or post-hoc UEQ inference.
+Chat LLM for the agent remains `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-6-luna`**). Do not use `gpt-4o` / `gpt-4o-mini` for agent or post-hoc UEQ inference.
 
 ## Step payload
 

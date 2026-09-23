@@ -53,7 +53,7 @@ COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
 ENV PORT=8320
-ENV UX_JOURNEY_OPENAI_MODEL=gpt-5.6-luna
+ENV UX_JOURNEY_OPENAI_MODEL=gpt-6-luna
 ENV UX_JOURNEY_VISION_DETAIL=high
 EXPOSE 8320
 

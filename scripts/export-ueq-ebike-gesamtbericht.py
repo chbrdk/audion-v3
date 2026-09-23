@@ -119,7 +119,7 @@ def build_html_fixed(ha: dict, bench: dict, voices: dict) -> str:
     ai_proxy_model = esc(
         bench.get("meta", {}).get("model")
         or ha.get("meta", {}).get("ai_model")
-        or "gpt-5.6-luna"
+        or "gpt-6-luna"
     )
 
     return f"""<!doctype html><html lang="de"><head><meta charset="utf-8"/>

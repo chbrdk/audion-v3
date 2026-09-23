@@ -30,7 +30,7 @@ describe('settings-admin providers', () => {
     expect(data.chatNative).toBe(true)
     const openai = data.providers.find((p) => p.id === 'openai')
     expect(openai?.configured).toBe(true)
-    expect(openai?.model).toBe('gpt-5.4-nano')
+    expect(openai?.model).toBe('gpt-6-luna')
   })
 
   it('respects AI_OPENAI_MODEL override', () => {

@@ -6,7 +6,7 @@
 
 | Lever | Choice |
 |-------|--------|
-| Live agent model | Keep **`gpt-5.6-luna`** (`UX_JOURNEY_OPENAI_MODEL`) |
+| Live agent model | Keep **`gpt-6-luna`** (`UX_JOURNEY_OPENAI_MODEL`) |
 | GPT-4o | Removed from first-party chat/infer defaults (TTS `gpt-4o-mini-tts` unchanged) |
 | Vision | `use_vision=True` + **`UX_JOURNEY_VISION_DETAIL=high`** (was implicit `auto`) |
 | Mega-menu | Prompt + path-finding: screenshot Ground Truth → hover/look → target |
@@ -51,7 +51,7 @@ Compare `goal_ok` + `nav_hover` share vs. baseline via fail-bucket script.
 
 App `audion-v3-ux-journey-agent` (`lfv0921nlqzl0qow9xse4it4`):
 
-- `UX_JOURNEY_OPENAI_MODEL=gpt-5.6-luna` (env key already set)
+- `UX_JOURNEY_OPENAI_MODEL=gpt-6-luna` (env key already set)
 - `UX_JOURNEY_VISION_DETAIL=high` (Dockerfile bake; Coolify override optional)
 - After **push + redeploy**, `/health` must show `openaiModel` + `visionDetailLevel`
 - Smoke protocol: `knowledge/lab-staging-smoke-luna-vision-2026-08-20.md`

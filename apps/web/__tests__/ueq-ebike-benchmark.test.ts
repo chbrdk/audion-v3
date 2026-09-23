@@ -39,7 +39,7 @@ describe('UEQ eBike benchmark artifacts', () => {
   it('infer script defaults to luna not gpt-4o', () => {
     const script = path.join(root, 'scripts/infer-ueq-ebike-scores.py')
     const src = fs.readFileSync(script, 'utf8')
-    expect(src).toContain('gpt-5.6-luna')
+    expect(src).toContain('gpt-6-luna')
     expect(src).not.toMatch(/["']gpt-4o-mini["']/)
   })
 

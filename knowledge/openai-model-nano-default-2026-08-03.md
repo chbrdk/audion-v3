@@ -1,7 +1,7 @@
-# OpenAI chat default = gpt-5.4-nano (cost)
+# OpenAI chat default = gpt-6-luna (cost)
 
 **Date:** 2026-08-03  
-**Model id:** `gpt-5.4-nano` ([OpenAI docs](https://developers.openai.com/api/docs/models/gpt-5.4-nano))
+**Model id:** `gpt-6-luna` ([OpenAI docs](https://developers.openai.com/api/docs/models/gpt-6-luna))
 
 ## Why
 
@@ -11,8 +11,8 @@ Lab + native AI burned significant OpenAI quota on larger models (`gpt-5.4-mini`
 
 | Surface | Knob | Default |
 |---------|------|---------|
-| Web chat / assist | `paths.aiOpenAiModel` / `AI_OPENAI_MODEL` | `gpt-5.4-nano` |
-| UX Journey Agent (primary or fallback) | `UX_JOURNEY_OPENAI_MODEL` | `gpt-5.4-nano` |
+| Web chat / assist | `paths.aiOpenAiModel` / `AI_OPENAI_MODEL` | `gpt-6-luna` |
+| UX Journey Agent (primary or fallback) | `UX_JOURNEY_OPENAI_MODEL` | `gpt-6-luna` |
 | Local lab serve | `scripts/local-lab-agent-serve.sh` | same |
 | Agent Docker image | `ENV UX_JOURNEY_OPENAI_MODEL` | same |
 
