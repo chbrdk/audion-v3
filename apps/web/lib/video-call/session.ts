@@ -92,7 +92,7 @@ async function createBeySession(
     }
     if (error instanceof BeyApiError) {
       return {
-        error: error.message,
+        error: error.detail ? `${error.message}: ${error.detail}` : error.message,
         status: error.status,
         code: error.code,
         detail: error.detail,

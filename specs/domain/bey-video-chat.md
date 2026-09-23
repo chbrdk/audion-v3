@@ -37,8 +37,8 @@ Do **not** create a new agent on every video click when `beyAgentId` exists.
 
 1. Load persona; sync agent; require `beyAgentId` (after sync) — else **400** `BEY_AVATAR_MISSING` / `BEY_AGENT_MISSING`.
 2. Require `BEY_API_KEY` — else **503**.
-3. Prefer `POST {BEY_API_BASE}/v1/livekit-rooms` with `{ agent_id, tags: { audion_persona_id, audion_prefix } }` (Growth+). On **201**, return media `{ kind: 'livekit', url: livekit_url, token: livekit_token }` and `conversationId` = room/conversation `id`.
-4. On **403** plan upgrade (LiveKit rooms not on plan): fall back to iframe media `{ kind: 'iframe', url: https://bey.chat/{agentId} }` with `conversationId` null. Documented in knowledge.
+3. Prefer `POST {BEY_API_BASE}/v1/calls` (LiveKit credentials; Growth+). Docs may still list `/v1/livekit-rooms` as alias — client tries both. On **201**, return media `{ kind: 'livekit', url: livekit_url, token: livekit_token }` and `conversationId` = call/conversation `id`.
+4. On **403** plan upgrade (programmatic calls / LiveKit not on plan): fall back to iframe media `{ kind: 'iframe', url: https://bey.chat/{agentId} }` with `conversationId` null. Documented in knowledge.
 5. On **429** concurrency: return 429 with human-readable detail (operator ends other sessions in Studio).
 6. Never return a stub conversation URL.
 

@@ -134,24 +134,34 @@ export async function createBeyLiveKitRoom(input: {
   if (!agentId) {
     throw new BeyApiError('beyAgentId required', 400, undefined, 'BEY_AGENT_MISSING')
   }
-  const response = await beyFetch('POST', paths.beyLivekitRoomsPath, {
+  const body = {
     agent_id: agentId,
     user_name: input.userName?.trim() || undefined,
     tags: {
       audion_persona_id: input.personaId.slice(0, 100),
       audion: '1',
     },
-  })
+  }
+  // Live API: POST /v1/calls. Docs still mention /v1/livekit-rooms as alias — try both.
+  let response = await beyFetch('POST', paths.beyLivekitRoomsPath, body)
+  if (response.status === 404 && paths.beyLivekitRoomsPath !== '/v1/livekit-rooms') {
+    response = await beyFetch('POST', '/v1/livekit-rooms', body)
+  }
   if (!response.ok) {
     const detail = await readDetail(response)
+    const planGated =
+      response.status === 403 ||
+      /growth plan|upgrade your plan|bey\.chat\//i.test(detail)
     const code =
-      response.status === 403
+      planGated
         ? 'BEY_LIVEKIT_PLAN'
         : response.status === 429
           ? 'BEY_CONCURRENCY'
           : undefined
     throw new BeyApiError(
-      'Beyond Presence LiveKit room failed',
+      planGated
+        ? 'Beyond Presence LiveKit requires Growth plan; using bey.chat embed'
+        : 'Beyond Presence LiveKit room failed',
       response.status >= 400 && response.status < 600 ? response.status : 502,
       detail,
       code,

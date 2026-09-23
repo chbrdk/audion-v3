@@ -86,7 +86,7 @@ describe('specs inventory', () => {
     expect(paths.envTavusApiKey).toBe('TAVUS_API_KEY')
     expect(paths.envBeyApiKey).toBe('BEY_API_KEY')
     expect(paths.beyAgentsPath).toBe('/v1/agents')
-    expect(paths.beyLivekitRoomsPath).toBe('/v1/livekit-rooms')
+    expect(paths.beyLivekitRoomsPath).toBe('/v1/calls')
     expect(paths.tavusConversationsPath).toBe('/v2/conversations')
   })
 })

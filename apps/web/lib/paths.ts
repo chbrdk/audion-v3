@@ -420,7 +420,8 @@ export const paths = {
   envBeyApiBase: 'BEY_API_BASE',
   beyApiDefaultBase: 'https://api.bey.dev',
   beyAgentsPath: '/v1/agents',
-  beyLivekitRoomsPath: '/v1/livekit-rooms',
+  /** Managed Agent call + LiveKit credentials (Growth+). Docs alias: livekit-rooms. */
+  beyLivekitRoomsPath: '/v1/calls',
   beyChatEmbedBase: 'https://bey.chat',
   beyAgentSystemPromptMaxChars: 4000,
   beyMaxSessionLengthMinutes: 30,
