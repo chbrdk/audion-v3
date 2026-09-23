@@ -15,6 +15,7 @@ import {
   toAiNativeError,
   type AiNativeError,
 } from './client'
+import { withOpenAiChatTemperature } from './openai-sampling'
 
 export type AssistResult =
   | { ok: true; text: string; json: unknown; suggestions: AiSuggestionItem[] }
@@ -110,14 +111,15 @@ export async function runAssist(
   try {
     const client = createOpenAiClient()
     const { system, user } = renderTemplate(template, vars)
+    const model = getAiOpenAiModel()
     const completion = await client.chat.completions.create({
-      model: getAiOpenAiModel(),
+      model,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
       ],
       ...(template.json ? { response_format: { type: 'json_object' as const } } : {}),
-      temperature: 0.7,
+      ...withOpenAiChatTemperature(0.7, model),
     })
     const text = completion.choices[0]?.message?.content?.trim() || ''
     const json = template.json ? extractJson(text) : null

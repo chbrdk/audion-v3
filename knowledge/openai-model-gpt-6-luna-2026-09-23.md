@@ -24,3 +24,8 @@ Runtime env wins over image defaults:
 - `audion-v3-ux-journey-agent` → `UX_JOURNEY_OPENAI_MODEL=gpt-6-luna`
 
 Redeploy both after changing baked Dockerfile / code defaults.
+
+## Sampling caveat (web chat)
+
+`gpt-6-luna` rejects non-default `temperature` (`400 … Only the default (1) value is supported`).
+Native chat / assist / Soft-Q omit `temperature` via `lib/ai/openai-sampling.ts` when the model does not allow custom sampling.

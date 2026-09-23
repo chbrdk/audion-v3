@@ -14,6 +14,7 @@ import {
   getAiOpenAiModel,
   hasOpenAiApiKey,
 } from './ai/client'
+import { withOpenAiChatTemperature } from './ai/openai-sampling'
 import { paths } from './paths'
 import type { SoftQDraft } from './soft-q-draft'
 
@@ -122,7 +123,7 @@ async function defaultCompleteJson(args: {
       { role: 'user', content: args.user },
     ],
     response_format: { type: 'json_object' },
-    temperature: 0.2,
+    ...withOpenAiChatTemperature(0.2, args.model),
   })
   const text = completion.choices[0]?.message?.content?.trim() || ''
   return extractJson(text)

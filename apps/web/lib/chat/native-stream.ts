@@ -5,6 +5,7 @@
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import type { ChatSendPayload, ChatStreamEvent } from '@audion-v3/contracts'
 import { createOpenAiClient, getAiOpenAiModel, getChatCompletionMaxTokens, toAiNativeError } from '../ai/client'
+import { withOpenAiChatTemperature } from '../ai/openai-sampling'
 import {
   storeChatAppendAssistant,
   storeChatBeginUserTurn,
@@ -201,9 +202,11 @@ export async function* nativeChatStreamEvents(
   try {
     const elicitation = isResearchElicitationMessage(message)
     const greeting = isGreetingMessage(message)
+    const model = getAiOpenAiModel()
+    const preferredTemp = elicitation ? 0.7 : greeting ? 0.9 : 0.85
     const client = createOpenAiClient()
     const stream = await client.chat.completions.create({
-      model: getAiOpenAiModel(),
+      model,
       stream: true,
       messages: await buildOpenAiMessages(
         payload.personaId,
@@ -213,7 +216,7 @@ export async function* nativeChatStreamEvents(
         images,
         abCompare,
       ),
-      temperature: elicitation ? 0.7 : greeting ? 0.9 : 0.85,
+      ...withOpenAiChatTemperature(preferredTemp, model),
       max_completion_tokens: greeting
         ? Math.min(120, getChatCompletionMaxTokens())
         : getChatCompletionMaxTokens({ elicitation }),
