@@ -4,6 +4,7 @@
  */
 
 import type { TargetGroupDetail } from '@audion-v3/contracts'
+import { slugifyName } from '../entity-slug'
 import {
   VAILLANT_GROUP_ALL_MAFO_TARGET_GROUPS,
   VAILLANT_GROUP_AUDION_PROJECT_ID,
@@ -35,6 +36,7 @@ async function seedToDetail(seed: VaillantGroupTargetGroupSeed): Promise<TargetG
   const now = new Date().toISOString()
   return {
     id: seed.id,
+    slug: slugifyName(seed.name) || seed.id,
     name: seed.name,
     segment: seed.segmentKey,
     description: seed.description,

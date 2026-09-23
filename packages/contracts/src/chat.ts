@@ -142,6 +142,7 @@ export type ChatShareMoodboard = {
 
 export type ChatSharePersona = {
   id: string
+  slug: string
   name: string
   role: string
   projectId: string | null

@@ -39,6 +39,7 @@ export function storeSharePersona(
   }
   return {
     id: persona.id,
+    slug: persona.slug,
     name: persona.name,
     role: persona.role,
     projectId: persona.projectId,

@@ -5,6 +5,7 @@
  */
 
 import type { PersonaDetail } from '@audion-v3/contracts'
+import { slugifyName } from '../entity-slug'
 
 export const VAILLANT_GROUP_PLATFORM_PROJECT_ID =
   'f3d27e9f-d14c-4880-82be-3ca31c051173' as const
@@ -75,6 +76,7 @@ function basePersona(
 ): PersonaDetail {
   return {
     id,
+    slug: slugifyName(name) || id,
     name,
     role,
     projectId: VAILLANT_GROUP_AUDION_PROJECT_ID,
@@ -107,6 +109,9 @@ function basePersona(
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    videoCallProvider: null,
+    beyAvatarId: null,
+    beyAgentId: null,
     goals: goals.map((label, priority) => ({ label, priority })),
     frustrations: frustrations.map((label) => ({ label, evidenceCount: 0 })),
     channels: [],

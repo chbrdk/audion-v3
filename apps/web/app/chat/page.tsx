@@ -56,6 +56,7 @@ export default async function ChatPage({
       const personas: PersonaSummary[] = [
         {
           id: shared.id,
+          slug: shared.slug,
           name: shared.name,
           role: shared.role,
           projectId: shared.projectId,

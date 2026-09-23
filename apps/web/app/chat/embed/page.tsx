@@ -58,6 +58,7 @@ export default async function ChatEmbedPage({
   const personas: PersonaSummary[] = [
     {
       id: shared.id,
+      slug: shared.slug,
       name: shared.name,
       role: shared.role,
       projectId: shared.projectId,

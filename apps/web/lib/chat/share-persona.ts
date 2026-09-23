@@ -8,6 +8,7 @@ import type { ChatSharePersona } from '@audion-v3/contracts'
 import { storePersonaDetail } from '../fixtures/persona-store'
 import { fetchPersonaApi } from '../persona-api-proxy'
 import { shouldUsePersonaFixturesOnly } from '../runtime-config'
+import { slugifyName } from '../entity-slug'
 
 export type SharePersonaResult = ChatSharePersona | { error: string; status: number }
 
@@ -27,6 +28,7 @@ function mapPersonaDetailToShare(
   }
   return {
     id: persona.id,
+    slug: persona.slug,
     name: persona.name,
     role: persona.role,
     projectId: persona.projectId,
@@ -52,6 +54,10 @@ function mapPublicPersonaJson(
 
   return {
     id: String(json.id ?? personaId),
+    slug:
+      (typeof json.slug === 'string' && json.slug.trim()) ||
+      slugifyName(String(json.name ?? 'Persona')) ||
+      String(json.id ?? personaId),
     name: String(json.name ?? 'Persona'),
     role: String(json.role ?? json.headline ?? ''),
     projectId: mappedProjectId,
