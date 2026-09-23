@@ -8,7 +8,7 @@ import type {
   ChatMode,
   ChatModality,
   ChatShareMoodboard,
-  ChatTavusSessionResponse,
+  ChatVideoSessionResponse,
   PersonaSummary,
   ProjectSummary,
   TargetGroupDetail,
@@ -22,7 +22,7 @@ import { AudionTargetGroupChatPanel } from './audion-target-group-chat-panel'
 import { ChatHistoryFlyout } from './chat-history-flyout'
 import { ChatMoodboardStrip } from './chat-moodboard-strip'
 import { ChatShareFlyout } from './chat-share-flyout'
-import { TavusVideoPanel } from './tavus-video-panel'
+import { VideoCallPanel } from './video-call-panel'
 import { Select } from '../lib/msqdx-ui-client'
 import {
   countProjectChatPersonas,
@@ -119,14 +119,10 @@ export function AudionChatWorkspace({
   )
   const [busy, setBusy] = useState(false)
   const [modality, setModality] = useState<ChatModality>('text')
-  const [tavusSession, setTavusSession] = useState<{
-    conversationUrl: string
-    conversationId: string | null
-    meetingToken: string | null
-  } | null>(null)
-  const [tavusError, setTavusError] = useState<string | null>(null)
-  const [tavusErrorCode, setTavusErrorCode] = useState<string | null>(null)
-  const [tavusBusy, setTavusBusy] = useState(false)
+  const [videoSession, setVideoSession] = useState<ChatVideoSessionResponse | null>(null)
+  const [videoError, setVideoError] = useState<string | null>(null)
+  const [videoErrorCode, setVideoErrorCode] = useState<string | null>(null)
+  const [videoBusy, setVideoBusy] = useState(false)
 
   const personaOptions = useMemo(
     () => personas.map((p) => ({ value: p.id, label: `${p.name} · ${p.role}` })),
@@ -167,46 +163,48 @@ export function AudionChatWorkspace({
 
   useEffect(() => {
     if (modality !== 'video' || askAllMode || !personaId.trim()) {
-      setTavusSession(null)
+      setVideoSession(null)
       return
     }
     if (shareMode && !embedFullMode) {
-      setTavusSession(null)
+      setVideoSession(null)
       return
     }
     let cancelled = false
     async function start() {
-      setTavusBusy(true)
-      setTavusError(null)
-      setTavusErrorCode(null)
+      setVideoBusy(true)
+      setVideoError(null)
+      setVideoErrorCode(null)
       try {
-        const res = await fetch(paths.routes.apiChatTavusSession, {
+        const res = await fetch(paths.routes.apiChatVideoSession, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ personaId }),
         })
         const data = (await res.json().catch(() => null)) as
-          | (ChatTavusSessionResponse & { error?: string; code?: string })
+          | (ChatVideoSessionResponse & { error?: string; code?: string })
           | null
         if (!res.ok) {
-          if (!cancelled) setTavusErrorCode(data?.code ?? null)
-          throw new Error(data?.error || 'Tavus session failed')
+          if (!cancelled) setVideoErrorCode(data?.code ?? null)
+          throw new Error(data?.error || 'Video session failed')
         }
-        if (!data?.conversationUrl) throw new Error('Tavus returned no conversation URL')
+        if (!data?.media) throw new Error('Video session returned no media')
         if (!cancelled) {
-          setTavusSession({
-            conversationUrl: data.conversationUrl,
+          setVideoSession({
+            stubbed: false,
+            provider: data.provider,
+            personaId: data.personaId,
             conversationId: data.conversationId ?? null,
-            meetingToken: data.meetingToken,
+            media: data.media,
           })
         }
       } catch (e) {
         if (!cancelled) {
-          setTavusSession(null)
-          setTavusError(e instanceof Error ? e.message : 'Tavus failed')
+          setVideoSession(null)
+          setVideoError(e instanceof Error ? e.message : 'Video failed')
         }
       } finally {
-        if (!cancelled) setTavusBusy(false)
+        if (!cancelled) setVideoBusy(false)
       }
     }
     void start()
@@ -280,9 +278,9 @@ export function AudionChatWorkspace({
         size="sm"
         className={iconBtnClass(modality === 'video')}
         icon={<IconVideo />}
-        aria-label={tavusBusy ? t('chat.startingVideo') : t('chat.video')}
+        aria-label={videoBusy ? t('chat.startingVideo') : t('chat.video')}
         aria-pressed={modality === 'video'}
-        disabled={busy || tavusBusy}
+        disabled={busy || videoBusy}
         onClick={() => toggleModality('video')}
       />
     </div>
@@ -438,9 +436,13 @@ export function AudionChatWorkspace({
       {askAllMode || (embedMode && !embedFullMode) ? null : modality === 'video' &&
       (!shareMode || embedFullMode) ? (
         <div className="audion-chat-tavus" role="status">
-          {tavusBusy ? <p className="audion-edit-lede">{t('chat.startingVideo')}</p> : null}
-          {tavusError ? <p className="audion-edit-error">{tavusError}</p> : null}
-          {tavusErrorCode === 'TAVUS_REPLICA_MISSING' && personaId ? (
+          {videoBusy ? <p className="audion-edit-lede">{t('chat.startingVideo')}</p> : null}
+          {videoError ? <p className="audion-edit-error">{videoError}</p> : null}
+          {(videoErrorCode === 'TAVUS_REPLICA_MISSING' ||
+            videoErrorCode === 'BEY_AVATAR_MISSING' ||
+            videoErrorCode === 'BEY_AGENT_MISSING' ||
+            videoErrorCode === 'VIDEO_PROVIDER_UNCONFIGURED') &&
+          personaId ? (
             <p className="audion-edit-lede">
               <Link href={paths.routes.personaDetail(personaId)} className="audion-link">
                 {t('chatExtra.openPersonaProfile')}
@@ -449,8 +451,15 @@ export function AudionChatWorkspace({
               {t('chatExtra.tavusReplicaHint')}
             </p>
           ) : null}
-          {tavusSession ? (
-            <TavusVideoPanel session={tavusSession} personaName={persona?.name} />
+          {videoSession ? (
+            <VideoCallPanel
+              session={{
+                provider: videoSession.provider,
+                conversationId: videoSession.conversationId,
+                media: videoSession.media,
+              }}
+              personaName={persona?.name}
+            />
           ) : null}
         </div>
       ) : null}

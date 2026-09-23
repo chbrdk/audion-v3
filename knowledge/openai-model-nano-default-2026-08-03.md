@@ -16,7 +16,7 @@ Lab + native AI burned significant OpenAI quota on larger models (`gpt-5.4-mini`
 | Local lab serve | `scripts/local-lab-agent-serve.sh` | same |
 | Agent Docker image | `ENV UX_JOURNEY_OPENAI_MODEL` | same |
 
-Image gen stays on `paths.aiOpenAiImageModel` (`gpt-image-1-mini`) — not a chat model.
+Image gen stays on `paths.aiOpenAiImageModel` (`gpt-image-2.5-sunburst`) — not a chat model.
 
 ## Ops
 

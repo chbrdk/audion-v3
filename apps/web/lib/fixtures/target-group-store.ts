@@ -8,6 +8,7 @@ import type {
   TargetGroupList,
   TargetGroupWritePayload,
 } from '@audion-v3/contracts'
+import { allocateUniqueSlug, ensureEntitySlug, slugifyName } from '../entity-slug'
 import { isProjectsDatabaseConfigured } from '../db/config'
 import { DEMO_TARGET_GROUPS } from './target-groups'
 import { storePersonaDetail } from './persona-store'
@@ -24,12 +25,12 @@ export function resetTargetGroupStore(): void {
 }
 
 function withCounts(group: TargetGroupDetail): TargetGroupDetail {
-  return {
+  return ensureEntitySlug({
     ...group,
     personaCount: group.linkedPersonas.length,
     knowledgeEntries: group.knowledgeEntries ?? [],
     documents: group.documents ?? [],
-  }
+  })
 }
 
 async function resolveLinked(
@@ -43,6 +44,7 @@ async function resolveLinked(
       if (!persona) return null
       return {
         id: persona.id,
+        slug: persona.slug,
         name: persona.name,
         role: persona.role,
         status: persona.status,
@@ -56,14 +58,16 @@ async function resolveLinked(
 function memoryTargetGroupList(): TargetGroupList {
   const items = groups.map((g) => {
     const detail = withCounts(g)
-    const { linkedPersonas: _lp, ...summary } = detail
+    const { linkedPersonas: _lp, knowledgeEntries: _ke, documents: _docs, ...summary } = detail
     return summary
   })
   return { items, total: items.length, page: 1, pageSize: 50 }
 }
 
 function memoryTargetGroupDetail(id: string): TargetGroupDetail | null {
-  const found = groups.find((g) => g.id === id)
+  const found = groups.find(
+    (g) => g.id === id || g.slug === id || ensureEntitySlug(g).slug === id,
+  )
   return found ? withCounts(found) : null
 }
 
@@ -72,17 +76,26 @@ function memoryTargetGroupForPersona(personaId: string): TargetGroupDetail | nul
   return found ? withCounts(found) : null
 }
 
+function takenMemoryTgSlugs(excludeId?: string): string[] {
+  return groups
+    .filter((g) => !(excludeId && g.id === excludeId))
+    .map((g) => ensureEntitySlug(g).slug)
+}
+
 async function memoryCreateTargetGroup(payload: TargetGroupWritePayload): Promise<TargetGroupDetail> {
-  const id = `tg-${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'new'}-${Date.now().toString(36)}`
+  const id = `tg-${slugifyName(payload.name)}-${Date.now().toString(36)}`
+  const projectId = payload.projectId ?? null
+  const slug = allocateUniqueSlug(payload.name, takenMemoryTgSlugs())
   const linkedPersonas = await resolveLinked(payload.linkedPersonaIds, [])
   const created: TargetGroupDetail = withCounts({
     id,
+    slug,
     name: payload.name.trim(),
     segment: payload.segment.trim() || 'Segment',
     description: payload.description ?? null,
     status: payload.status ?? 'draft',
     personaCount: linkedPersonas.length,
-    projectId: payload.projectId ?? null,
+    projectId,
     updatedAt: new Date().toISOString(),
     linkedPersonas,
     knowledgeEntries: payload.knowledgeEntries ?? [],
@@ -96,17 +109,27 @@ async function memoryPatchTargetGroup(
   id: string,
   payload: Partial<TargetGroupWritePayload>,
 ): Promise<TargetGroupDetail | null> {
-  const index = groups.findIndex((g) => g.id === id)
+  const current = memoryTargetGroupDetail(id)
+  if (!current) return null
+  const index = groups.findIndex((g) => g.id === current.id)
   if (index < 0) return null
-  const current = groups[index]!
   const linkedPersonas = await resolveLinked(payload.linkedPersonaIds, current.linkedPersonas)
+  const nextName = payload.name?.trim() ?? current.name
+  const nameChanged = Boolean(payload.name?.trim() && payload.name.trim() !== current.name)
+  const nextProjectId =
+    payload.projectId !== undefined ? payload.projectId : current.projectId
+  const slug =
+    nameChanged || !current.slug?.trim()
+      ? allocateUniqueSlug(nextName, takenMemoryTgSlugs(current.id), current.slug)
+      : current.slug
   const next = withCounts({
     ...current,
-    name: payload.name?.trim() ?? current.name,
+    slug,
+    name: nextName,
     segment: payload.segment?.trim() ?? current.segment,
     description: payload.description !== undefined ? payload.description : current.description,
     status: payload.status ?? current.status,
-    projectId: payload.projectId !== undefined ? payload.projectId : current.projectId,
+    projectId: nextProjectId,
     linkedPersonas,
     knowledgeEntries:
       payload.knowledgeEntries !== undefined

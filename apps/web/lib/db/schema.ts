@@ -55,6 +55,8 @@ export type ProjectInsert = typeof projects.$inferInsert
 /** Persona list columns + jsonb payload for detail-only fields. */
 export const personas = pgTable('personas', {
   id: text('id').primaryKey(),
+  /** Magazine URL key — mutable on rename. Spec: entity-url-slugs.md */
+  slug: text('slug'),
   name: text('name').notNull(),
   role: text('role').notNull().default('Persona'),
   projectId: text('project_id'),
@@ -72,6 +74,8 @@ export type PersonaInsert = typeof personas.$inferInsert
 
 export const targetGroups = pgTable('target_groups', {
   id: text('id').primaryKey(),
+  /** Magazine URL key — mutable on rename. Spec: entity-url-slugs.md */
+  slug: text('slug'),
   name: text('name').notNull(),
   segment: text('segment').notNull().default('Segment'),
   description: text('description'),

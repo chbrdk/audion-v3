@@ -8,10 +8,12 @@ import type {
   PersonaList,
   PersonaWritePayload,
 } from '@audion-v3/contracts'
+import { allocateUniqueSlug, ensureEntitySlug, slugifyName } from '../entity-slug'
 import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from '../persona-coerce'
 import { normalizePersonaSections } from '../persona-notes'
 import { isProjectsDatabaseConfigured } from '../db/config'
 import { parseTavusLanguage } from '../tavus/language'
+import { parseVideoCallProvider } from '../video-call/provider'
 import { DEMO_PERSONAS } from './personas'
 
 async function dbApi() {
@@ -52,10 +54,14 @@ const DETAIL_ONLY_KEYS = [
   'tavusReplicaId',
   'tavusPersonaId',
   'tavusLanguage',
+  'videoCallProvider',
+  'beyAvatarId',
+  'beyAgentId',
 ] as const
 
 function toSummary(persona: PersonaDetail) {
-  const summary = { ...persona }
+  const withSlug = ensureEntitySlug(persona)
+  const summary = { ...withSlug }
   for (const key of DETAIL_ONLY_KEYS) {
     delete (summary as Record<string, unknown>)[key]
   }
@@ -82,6 +88,9 @@ function emptyDefaults(): Pick<
   | 'tavusReplicaId'
   | 'tavusPersonaId'
   | 'tavusLanguage'
+  | 'videoCallProvider'
+  | 'beyAvatarId'
+  | 'beyAgentId'
 > {
   return {
     gender: null,
@@ -102,6 +111,9 @@ function emptyDefaults(): Pick<
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    videoCallProvider: null,
+    beyAvatarId: null,
+    beyAgentId: null,
   }
 }
 
@@ -119,9 +131,9 @@ function memoryPersonaList(): PersonaList {
 }
 
 function memoryPersonaDetail(id: string): PersonaDetail | null {
-  const found = personas.find((p) => p.id === id)
+  const found = personas.find((p) => p.id === id || p.slug === id || ensureEntitySlug(p).slug === id)
   if (!found) return null
-  return {
+  return ensureEntitySlug({
     ...found,
     profileDe: found.profileDe ?? null,
     headlineDe: found.headlineDe ?? null,
@@ -131,16 +143,28 @@ function memoryPersonaDetail(id: string): PersonaDetail | null {
     tavusReplicaId: found.tavusReplicaId ?? null,
     tavusPersonaId: found.tavusPersonaId ?? null,
     tavusLanguage: found.tavusLanguage ?? null,
-  }
+    videoCallProvider: found.videoCallProvider ?? null,
+    beyAvatarId: found.beyAvatarId ?? null,
+    beyAgentId: found.beyAgentId ?? null,
+  })
+}
+
+function takenMemoryPersonaSlugs(excludeId?: string): string[] {
+  return personas
+    .filter((p) => !(excludeId && p.id === excludeId))
+    .map((p) => ensureEntitySlug(p).slug)
 }
 
 function memoryCreatePersona(payload: PersonaWritePayload): PersonaDetail {
-  const id = `persona-${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'new'}-${Date.now().toString(36)}`
-  const created: PersonaDetail = {
+  const id = `persona-${slugifyName(payload.name)}-${Date.now().toString(36)}`
+  const projectId = payload.projectId ?? null
+  const slug = allocateUniqueSlug(payload.name, takenMemoryPersonaSlugs())
+  const created: PersonaDetail = ensureEntitySlug({
     id,
+    slug,
     name: payload.name.trim(),
     role: payload.role.trim() || 'Persona',
-    projectId: payload.projectId ?? null,
+    projectId,
     status: payload.status ?? 'draft',
     archetype: payload.archetype ?? null,
     updatedAt: new Date().toISOString(),
@@ -176,22 +200,35 @@ function memoryCreatePersona(payload: PersonaWritePayload): PersonaDetail {
     tavusReplicaId: payload.tavusReplicaId?.trim() ? payload.tavusReplicaId.trim() : null,
     tavusPersonaId: payload.tavusPersonaId?.trim() ? payload.tavusPersonaId.trim() : null,
     tavusLanguage: parseTavusLanguage(payload.tavusLanguage),
-  }
+    videoCallProvider: parseVideoCallProvider(payload.videoCallProvider),
+    beyAvatarId: payload.beyAvatarId?.trim() ? payload.beyAvatarId.trim() : null,
+    beyAgentId: payload.beyAgentId?.trim() ? payload.beyAgentId.trim() : null,
+  })
   personas = [created, ...personas]
   return created
 }
 
 function memoryPatchPersona(id: string, payload: Partial<PersonaWritePayload>): PersonaDetail | null {
-  const index = personas.findIndex((p) => p.id === id)
+  const current = memoryPersonaDetail(id)
+  if (!current) return null
+  const index = personas.findIndex((p) => p.id === current.id)
   if (index < 0) return null
-  const current = personas[index]!
-  const next: PersonaDetail = {
+  const nextName = payload.name?.trim() ?? current.name
+  const nameChanged = Boolean(payload.name?.trim() && payload.name.trim() !== current.name)
+  const nextProjectId =
+    payload.projectId !== undefined ? payload.projectId : current.projectId
+  const slug =
+    nameChanged || !current.slug?.trim()
+      ? allocateUniqueSlug(nextName, takenMemoryPersonaSlugs(current.id), current.slug)
+      : current.slug
+  const next: PersonaDetail = ensureEntitySlug({
     ...current,
-    name: payload.name?.trim() ?? current.name,
+    slug,
+    name: nextName,
     role: payload.role?.trim() ?? current.role,
     status: payload.status ?? current.status,
     archetype: payload.archetype !== undefined ? payload.archetype : current.archetype,
-    projectId: payload.projectId !== undefined ? payload.projectId : current.projectId,
+    projectId: nextProjectId,
     age: payload.age !== undefined ? payload.age : current.age,
     location: payload.location !== undefined ? payload.location : current.location,
     bio: payload.bio !== undefined ? payload.bio : current.bio,
@@ -251,6 +288,22 @@ function memoryPatchPersona(id: string, payload: Partial<PersonaWritePayload>): 
       payload.tavusLanguage !== undefined
         ? parseTavusLanguage(payload.tavusLanguage)
         : current.tavusLanguage ?? null,
+    videoCallProvider:
+      payload.videoCallProvider !== undefined
+        ? parseVideoCallProvider(payload.videoCallProvider)
+        : current.videoCallProvider ?? null,
+    beyAvatarId:
+      payload.beyAvatarId !== undefined
+        ? payload.beyAvatarId?.trim()
+          ? payload.beyAvatarId.trim()
+          : null
+        : current.beyAvatarId ?? null,
+    beyAgentId:
+      payload.beyAgentId !== undefined
+        ? payload.beyAgentId?.trim()
+          ? payload.beyAgentId.trim()
+          : null
+        : current.beyAgentId ?? null,
     avatarUrl:
       payload.avatarUrl !== undefined
         ? payload.avatarUrl?.trim()
@@ -258,7 +311,7 @@ function memoryPatchPersona(id: string, payload: Partial<PersonaWritePayload>): 
           : null
         : current.avatarUrl,
     updatedAt: new Date().toISOString(),
-  }
+  })
   personas = [...personas.slice(0, index), next, ...personas.slice(index + 1)]
   return next
 }
@@ -293,27 +346,27 @@ export async function storePatchPersona(
 ): Promise<PersonaDetail | null> {
   if (isProjectsDatabaseConfigured()) {
     const db = await dbApi()
-    const existing = await db.dbPersonaDetail(id)
-    if (!existing) return null
     return db.dbPatchPersona(id, payload)
   }
   return memoryPatchPersona(id, payload)
 }
 
 export async function storeDeletePersona(id: string): Promise<boolean> {
+  const resolved = await storePersonaDetail(id)
+  const canonicalId = resolved?.id ?? id
   const { unlinkPersonaFromAllTargetGroups } = await import('./target-group-store')
-  await unlinkPersonaFromAllTargetGroups(id)
+  await unlinkPersonaFromAllTargetGroups(canonicalId)
   try {
     const { storeDeletePersonaPrompt } = await import('./persona-prompts-store')
-    await storeDeletePersonaPrompt(id)
+    await storeDeletePersonaPrompt(canonicalId)
   } catch {
     /* prompt table optional */
   }
   if (isProjectsDatabaseConfigured()) {
     const db = await dbApi()
-    return db.dbDeletePersona(id)
+    return db.dbDeletePersona(canonicalId)
   }
   const before = personas.length
-  personas = personas.filter((p) => p.id !== id)
+  personas = personas.filter((p) => p.id !== canonicalId)
   return personas.length < before
 }

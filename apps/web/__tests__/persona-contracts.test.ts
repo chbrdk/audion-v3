@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   resetPersonaStore,
   storeCreatePersona,
@@ -35,10 +35,15 @@ import {
   normalizeJourneySummary,
 } from '../lib/journeys'
 
+beforeEach(() => {
+  vi.stubEnv('DATABASE_URL', '')
+})
+
 afterEach(() => {
   resetPersonaStore()
   resetTargetGroupStore()
   resetJourneyStore()
+  vi.unstubAllEnvs()
 })
 
 describe('persona contracts', () => {
@@ -52,6 +57,7 @@ describe('persona contracts', () => {
       }),
     ).toEqual({
       id: 'persona-1',
+      slug: 'alex-morgan',
       name: 'Alex Morgan',
       role: 'Product Lead',
       projectId: null,
@@ -138,6 +144,9 @@ describe('persona contracts', () => {
     expect(detail?.tavusReplicaId).toBeNull()
     expect(detail?.tavusPersonaId).toBeNull()
     expect(detail?.tavusLanguage).toBeNull()
+    expect(detail?.beyAvatarId).toBeNull()
+    expect(detail?.beyAgentId).toBeNull()
+    expect(detail?.videoCallProvider).toBeNull()
   })
 
   it('normalizes Tavus replica and PAL ids from snake_case aliases', async () => {
@@ -152,6 +161,20 @@ describe('persona contracts', () => {
     expect(detail?.tavusReplicaId).toBe('r5e781e37a8d')
     expect(detail?.tavusPersonaId).toBe('pcb7a34da5fe')
     expect(detail?.tavusLanguage).toBe('de')
+  })
+
+  it('normalizes Beyond Presence avatar/agent and video provider', async () => {
+    const detail = normalizePersonaDetail({
+      id: 'persona-bey',
+      name: 'Bey Persona',
+      role: 'Tester',
+      bey_avatar_id: '01234567-89ab-4def-8123-456789abcdef',
+      bey_agent_id: 'agent-abc',
+      video_call_provider: 'bey',
+    })
+    expect(detail?.beyAvatarId).toBe('01234567-89ab-4def-8123-456789abcdef')
+    expect(detail?.beyAgentId).toBe('agent-abc')
+    expect(detail?.videoCallProvider).toBe('bey')
   })
 
   it('does not treat Audion persona_id as a Tavus PAL id', async () => {
@@ -201,6 +224,27 @@ describe('persona contracts', () => {
     const cleared = await storePatchPersona(created.id, { tavusReplicaId: '  ', tavusPersonaId: '' })
     expect(cleared?.tavusReplicaId).toBeNull()
     expect(cleared?.tavusPersonaId).toBeNull()
+  })
+
+  it('patches Beyond Presence avatar/agent and video provider', async () => {
+    const created = await storeCreatePersona({ name: 'Bey Face', role: 'Avatar' })
+    expect(created.beyAvatarId).toBeNull()
+    const patched = await storePatchPersona(created.id, {
+      beyAvatarId: '01234567-89ab-4def-8123-456789abcdef',
+      beyAgentId: 'agent-1',
+      videoCallProvider: 'bey',
+    })
+    expect(patched?.beyAvatarId).toBe('01234567-89ab-4def-8123-456789abcdef')
+    expect(patched?.beyAgentId).toBe('agent-1')
+    expect(patched?.videoCallProvider).toBe('bey')
+    const cleared = await storePatchPersona(created.id, {
+      beyAvatarId: '  ',
+      beyAgentId: '',
+      videoCallProvider: null,
+    })
+    expect(cleared?.beyAvatarId).toBeNull()
+    expect(cleared?.beyAgentId).toBeNull()
+    expect(cleared?.videoCallProvider).toBeNull()
   })
 
   it('replaces goals frustrations and channels via partial patch', async () => {

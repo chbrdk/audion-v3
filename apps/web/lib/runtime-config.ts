@@ -141,3 +141,21 @@ export function getTavusApiBase(): string {
 export function isTavusConfigured(): boolean {
   return Boolean(getTavusApiKey())
 }
+
+export function getBeyApiKey(): string {
+  return process.env[paths.envBeyApiKey]?.trim() || ''
+}
+
+export function getBeyApiBase(): string {
+  return process.env[paths.envBeyApiBase]?.trim() || paths.beyApiDefaultBase
+}
+
+export function isBeyConfigured(): boolean {
+  return Boolean(getBeyApiKey())
+}
+
+/** Tie-break when both video providers are ready. Spec: video-call-providers.md */
+export function getVideoCallProviderDefault(): 'tavus' | 'bey' {
+  const raw = process.env[paths.envVideoCallProviderDefault]?.trim().toLowerCase()
+  return raw === 'bey' ? 'bey' : 'tavus'
+}

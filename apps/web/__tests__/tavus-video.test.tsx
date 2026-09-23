@@ -1,5 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DELETE, POST } from '../app/api/chat/tavus/session/route'
 import { TavusVideoPanel } from '../components/tavus-video-panel'
 import {
@@ -19,10 +19,15 @@ import {
 } from '../lib/tavus/client'
 import { tavusEmbedUrl } from '../lib/tavus/ids'
 
+beforeEach(() => {
+  vi.stubEnv('DATABASE_URL', '')
+})
+
 afterEach(() => {
   cleanup()
   resetPersonaStore()
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   delete process.env[paths.envTavusApiKey]
   delete process.env[paths.envTavusApiBase]
 })

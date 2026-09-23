@@ -31,6 +31,7 @@
 1. Never create users in AUDION — login via `POST {PLEXON_AUTH_URL}/api/auth/validate-credentials`.
 2. Domain CRUD writes fixtures only.
 3. On project create (session + Plexon configured): `POST …/api/platform/provisioning/audion-project-origin`; store returned IDs on the fixture project. Failures are logged; create still succeeds.
+4. Already-bound sync (`syncProjectToPlexon` when `platformProjectId` set): re-POST origin with `platformProjectId` so Plexon heals a null `audion` binding (asymmetric link). See Plexon `knowledge/audion-binding-heal.md`.
 4. Inbound `PUT /api/platform/provisioning/{users,projects}/[id]` require `X-Service-Secret` + matching contract version. Project upsert `status: archived` hides mirrors from default project lists; restore to non-archived maps archived → `published`.
 5. No shared cookie with Plexon.
 

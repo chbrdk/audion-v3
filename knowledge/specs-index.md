@@ -25,6 +25,9 @@
 | Chat document attachments | `specs/domain/chat-document-attachments.md` |
 | Chat / project knowledge RAG | `specs/domain/chat-knowledge-rag.md` |
 | Tavus video chat | `specs/domain/tavus-video-chat.md` |
+| Video call providers | `specs/domain/video-call-providers.md` |
+| Beyond Presence video | `specs/domain/bey-video-chat.md` |
+| Chat video session API | `specs/api/chat-video-session.md` |
 | Project workspace | `specs/domain/project-workspace.md` |
 | Project fields | `specs/domain/project-fields.md` |
 | Access Model B visibility | `specs/domain/access-model-b-visibility.md` |
@@ -81,6 +84,7 @@ Project research SSE polish: `knowledge/project-research-sse-2026.md`
 TG + persona knowledge / profile_de: `knowledge/tg-persona-knowledge-profile-de-2026.md`  
 Chat modalities (share / moodboard / inspect / convert / Tavus): `knowledge/chat-modalities-2026.md`  
 Tavus CVI: `knowledge/tavus-video-chat.md`  
+Beyond Presence / multi-provider video: `knowledge/bey-video-chat.md`
 Scenario packs (EBM Leitfaden → Study/Wave): `knowledge/scenario-packs.md`  
 Canonical URLs/paths: see `knowledge/paths.md`.  
 Collection Knowledge Pack (Plexon SoT): `plexon-v3/specs/domain/collection-knowledge-pack.md` · Audion publish: `specs/domain/knowledge-pack-publish.md`.

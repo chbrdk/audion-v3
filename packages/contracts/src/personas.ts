@@ -2,6 +2,8 @@ export type PersonaStatus = 'draft' | 'ready' | 'archived'
 
 export type PersonaSummary = {
   id: string
+  /** Magazine URL key — updates when name changes. Spec: entity-url-slugs.md */
+  slug: string
   name: string
   role: string
   projectId: string | null
@@ -126,12 +128,18 @@ export type PersonaDetail = PersonaSummary & {
   journeyBehavior: PersonaJourneyBehavior | null
   knowledgeEntries: import('./knowledge-entries').KnowledgeEntry[]
   documents: import('./knowledge-entries').DocumentSource[]
-  /** Tavus Face / replica id (e.g. r5e781e37a8d). Required for video chat. */
+  /** Tavus Face / replica id (e.g. r5e781e37a8d). Required for Tavus video. */
   tavusReplicaId: string | null
   /** Optional Tavus PAL / persona id. */
   tavusPersonaId: string | null
-  /** Spoken CVI language. `de` / `en`; null infers from magazine bio. */
+  /** Spoken video language. `de` / `en`; null infers from magazine bio. Shared by Tavus + BEY. */
   tavusLanguage: 'de' | 'en' | null
+  /** Explicit video provider; null = auto-resolve. Spec: video-call-providers.md */
+  videoCallProvider: 'tavus' | 'bey' | null
+  /** Beyond Presence avatar id (Managed Agent look). Spec: bey-video-chat.md */
+  beyAvatarId: string | null
+  /** Beyond Presence Managed Agent id (synced from magazine). */
+  beyAgentId: string | null
 }
 
 /** Create / PATCH body — magazine edit wave */
@@ -174,4 +182,7 @@ export type PersonaWritePayload = {
   tavusReplicaId?: string | null
   tavusPersonaId?: string | null
   tavusLanguage?: 'de' | 'en' | null
+  videoCallProvider?: 'tavus' | 'bey' | null
+  beyAvatarId?: string | null
+  beyAgentId?: string | null
 }

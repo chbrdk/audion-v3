@@ -34,7 +34,7 @@ function toPersonaRows(items: PersonaSummary[]): CompactRow[] {
     id: p.id,
     name: p.name,
     meta: `${p.role}${p.archetype ? ` · ${p.archetype}` : ''} · ${p.status}`,
-    href: paths.routes.personaDetail(p.id),
+    href: paths.routes.personaDetailEntity(p),
   }))
 }
 
@@ -43,7 +43,7 @@ function toGroupRows(items: TargetGroupSummary[]): CompactRow[] {
     id: g.id,
     name: g.name,
     meta: `${g.segment} · ${g.personaCount} persona${g.personaCount === 1 ? '' : 's'} · ${g.status}`,
-    href: paths.routes.targetGroupDetail(g.id),
+    href: paths.routes.targetGroupDetailEntity(g),
   }))
 }
 

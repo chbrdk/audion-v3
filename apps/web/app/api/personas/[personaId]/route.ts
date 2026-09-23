@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { PersonaWritePayload } from '@audion-v3/contracts'
 import { storeDeletePersona, storePatchPersona, storePersonaDetail } from '../../../../lib/fixtures/persona-store'
 import { requirePersonaAccess } from '../../../../lib/resource-access-http'
+import { syncPersonaBeyAgent } from '../../../../lib/bey/sync'
 import { syncPersonaTavusPal } from '../../../../lib/tavus/sync'
 
 export async function GET(
@@ -26,8 +27,9 @@ export async function PATCH(
   const body = (await request.json()) as Partial<PersonaWritePayload>
   const persona = await storePatchPersona(personaId, body)
   if (!persona) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  const synced = await syncPersonaTavusPal(persona)
-  return NextResponse.json(synced.persona)
+  const tavus = await syncPersonaTavusPal(persona)
+  const bey = await syncPersonaBeyAgent(tavus.persona)
+  return NextResponse.json(bey.persona)
 }
 
 export async function DELETE(

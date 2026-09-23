@@ -1,8 +1,9 @@
 # Persona Workspace
 
 **Status:** Accepted — 2026-07-29  
-**Routes:** `/personas`, `/personas/[personaId]`  
-**Contracts:** `packages/contracts/src/personas.ts`  
+**Routes:** `/personas`, `/personas/[personaId]` (param = **slug**, id still resolves + redirects)  
+**Contracts:** `packages/contracts/src/personas.ts` (`slug`)  
+**Slugs:** `specs/domain/entity-url-slugs.md`  
 **Knowledge:** `knowledge/persona-magazine.md`, `knowledge/edit-wave.md`, `knowledge/paths.md`
 
 ## Purpose
@@ -24,7 +25,7 @@ Browse personas as a magazine index, read a full-width profile article, and crea
 - **Create tile** (`audion-tg-card--create`): brand-tinted dashed panel + “New persona” (cards); compact button in list mode
 - **Generate with AI tile** (Wave 1 stub → `personas/generate`; pick TG) — `knowledge/ai-workflows.md`
 - Optional filter form (`q`) — no header create button
-- Paths via `paths.routes.personas` / `personaDetail(id)`
+- Paths via `paths.routes.personas` / `personaDetail(slug)` — `id` immutable; slug updates on rename (`entity-url-slugs.md`)
 
 ## Detail composition
 

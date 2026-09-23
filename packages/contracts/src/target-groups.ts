@@ -2,6 +2,8 @@ export type TargetGroupStatus = 'active' | 'archived' | 'draft'
 
 export type TargetGroupSummary = {
   id: string
+  /** Magazine URL key — updates when name changes. Spec: entity-url-slugs.md */
+  slug: string
   name: string
   segment: string
   description: string | null
@@ -20,6 +22,7 @@ export type TargetGroupList = {
 
 export type TargetGroupLinkedPersona = {
   id: string
+  slug?: string | null
   name: string
   role: string
   status: string

@@ -4,6 +4,7 @@ import type {
   PersonaGoal,
   PersonaList,
 } from '@audion-v3/contracts'
+import { ensureEntitySlug } from '../entity-slug'
 import { personaAvatarPath, personaVisualPath } from '../paths'
 
 function goalsFromLabels(labels: string[]): PersonaGoal[] {
@@ -38,10 +39,14 @@ const EMPTY_PROFILE = {
   tavusReplicaId: null as string | null,
   tavusPersonaId: null as string | null,
   tavusLanguage: null as PersonaDetail['tavusLanguage'],
+  beyAvatarId: null as string | null,
+  beyAgentId: null as string | null,
+  videoCallProvider: null as PersonaDetail['videoCallProvider'],
 }
 
 /** Local demo personas for AUDION v3 when no API is available. */
-export const DEMO_PERSONAS: PersonaDetail[] = [
+export const DEMO_PERSONAS: PersonaDetail[] = (
+  [
   {
     id: 'persona-alex-morgan',
     name: 'Alex Morgan',
@@ -238,6 +243,9 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    beyAvatarId: null,
+    beyAgentId: null,
+    videoCallProvider: null,
   },
   {
     id: 'persona-samira-khan',
@@ -378,6 +386,9 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    beyAvatarId: null,
+    beyAgentId: null,
+    videoCallProvider: null,
     headlineDe: 'Besitzt ein eBike und prüft Upgrades für Display/Akku/Bedieneinheit',
     journeyBehavior: {
       dimensionOverrides: {
@@ -455,6 +466,9 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    beyAvatarId: null,
+    beyAgentId: null,
+    videoCallProvider: null,
     headlineDe: 'Lab: ungeduldiger Nachrüster — bricht bei Matrix-Verwirrung ab',
     journeyBehavior: {
       dimensionOverrides: {
@@ -535,6 +549,9 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    beyAvatarId: null,
+    beyAgentId: null,
+    videoCallProvider: null,
     headlineDe: 'Lab: geduldiger Prüfer — exploriert vor Abbruch',
     journeyBehavior: {
       dimensionOverrides: {
@@ -616,6 +633,9 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    beyAvatarId: null,
+    beyAgentId: null,
+    videoCallProvider: null,
     headlineDe: 'Lab: ungeduldiger Nachrüster — bricht bei Matrix-Verwirrung ab',
     journeyBehavior: {
       dimensionOverrides: {
@@ -697,6 +717,9 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    beyAvatarId: null,
+    beyAgentId: null,
+    videoCallProvider: null,
     headlineDe: 'Lab: geduldiger Prüfer — exploriert vor Abbruch',
     journeyBehavior: {
       dimensionOverrides: {
@@ -779,6 +802,9 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    beyAvatarId: null,
+    beyAgentId: null,
+    videoCallProvider: null,
     headlineDe: 'Plant eBike-Kauf in den nächsten 6 Monaten und prüft Systemkompatibilität',
     journeyBehavior: {
       dimensionOverrides: {
@@ -799,7 +825,8 @@ export const DEMO_PERSONAS: PersonaDetail[] = [
       ],
     },
   },
-]
+] as Array<Omit<PersonaDetail, 'slug'> & { slug?: string }>
+).map((p) => ensureEntitySlug(p))
 
 const DETAIL_ONLY_KEYS = new Set([
   'age',
@@ -831,6 +858,9 @@ const DETAIL_ONLY_KEYS = new Set([
   'tavusReplicaId',
   'tavusPersonaId',
   'tavusLanguage',
+  'videoCallProvider',
+  'beyAvatarId',
+  'beyAgentId',
 ])
 
 export function demoPersonaList(): PersonaList {
@@ -849,5 +879,9 @@ export function demoPersonaList(): PersonaList {
 }
 
 export function demoPersonaDetail(personaId: string): PersonaDetail | null {
-  return DEMO_PERSONAS.find((persona) => persona.id === personaId) ?? null
+  return (
+    DEMO_PERSONAS.find(
+      (persona) => persona.id === personaId || persona.slug === personaId,
+    ) ?? null
+  )
 }

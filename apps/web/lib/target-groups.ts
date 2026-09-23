@@ -36,6 +36,13 @@ export function normalizeTargetGroupSummary(raw: unknown): TargetGroupSummary | 
   if (!id || !name) return null
   return {
     id,
+    slug:
+      typeof item.slug === 'string' && item.slug.trim()
+        ? item.slug.trim()
+        : name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || id,
     name,
     segment: typeof item.segment === 'string' ? item.segment : 'Segment',
     description: typeof item.description === 'string' ? item.description : null,

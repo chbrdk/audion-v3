@@ -171,7 +171,7 @@ export function PersonaEditDialog({
         return
       }
       onClose()
-      router.push(paths.routes.personaDetail(saved.id))
+      router.push(paths.routes.personaDetailEntity(saved))
       router.refresh()
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : t('dialogs.saveFailed'))

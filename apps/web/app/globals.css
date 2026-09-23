@@ -3602,6 +3602,32 @@ main { min-height: 100vh; }
   border: 0;
 }
 
+.audion-video-call-livekit {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 24rem;
+  background: var(--color-neutral-900, #1a1a1a);
+}
+
+.audion-video-call-livekit__remote {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.audion-video-call-livekit__local {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  width: 7.5rem;
+  height: 5.5rem;
+  object-fit: cover;
+  border-radius: var(--radius-md, 0.5rem);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.35));
+  background: var(--color-neutral-800, #2a2a2a);
+}
+
 .audion-persona-tavus-fields {
   display: grid;
   gap: var(--space-3, 0.75rem);

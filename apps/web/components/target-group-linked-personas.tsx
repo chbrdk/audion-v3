@@ -114,7 +114,7 @@ export function TargetGroupLinkedPersonas({
           {personas.map((persona) => (
             <li key={persona.id}>
               <Link
-                href={paths.routes.personaDetail(persona.id)}
+                href={paths.routes.personaDetailEntity(persona)}
                 className={`audion-tg-card audion-tg-card--${persona.status}`}
               >
                 <Panel as="div" variant="card" className="audion-tg-card-panel">
@@ -139,7 +139,7 @@ export function TargetGroupLinkedPersonas({
                 {String(index + 1).padStart(2, '0')}
               </span>
               <Link
-                href={paths.routes.personaDetail(persona.id)}
+                href={paths.routes.personaDetailEntity(persona)}
                 className="audion-tg-linked-list-row"
               >
                 <span className="audion-tg-linked-list-name">{persona.name}</span>

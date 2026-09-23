@@ -62,7 +62,7 @@ export function PersonaListPanel({
           {list.items.map((item) => (
             <li key={item.id} className="audion-hub-card-with-action">
               <Link
-                href={`${paths.routes.personaDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
+                href={paths.routes.personaDetailEntity(item)}
                 className={`audion-tg-card audion-tg-card--${item.status}`}
               >
                 <Panel as="div" variant="card" className="audion-tg-card-panel">
@@ -102,7 +102,7 @@ export function PersonaListPanel({
               </span>
               <div className="audion-hub-index-list-main">
                 <Link
-                  href={`${paths.routes.personaDetail(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
+                  href={paths.routes.personaDetailEntity(item)}
                   className="audion-hub-index-list-row"
                 >
                   <span className="audion-hub-index-list-name">{item.name}</span>

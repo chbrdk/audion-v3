@@ -46,8 +46,9 @@ describe('syncProjectToPlexon', () => {
     vi.clearAllMocks()
   })
 
-  it('returns alreadyBound when platformProjectId set and schedules knowledge autosync', async () => {
+  it('alreadyBound rebinds Plexon with platformProjectId then schedules knowledge autosync', async () => {
     const { scheduleResearchBriefAutosync } = await import('../lib/knowledge-pack-autosync')
+    const { registerAudionProjectOnPlexonDetailed } = await import('../lib/plexon-project-origin')
     const project = await storeCreateProject({ name: 'Bound' })
     await storeApplyPlatformBinding(project.id, {
       platformProjectId: 'pp-existing',
@@ -59,6 +60,12 @@ describe('syncProjectToPlexon', () => {
     expect(result.alreadyBound).toBe(true)
     expect(result.platformProjectId).toBe('pp-existing')
     expect(result.knowledgeAutosyncScheduled).toBe(true)
+    expect(registerAudionProjectOnPlexonDetailed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        audionProjectId: project.id,
+        platformProjectId: 'pp-existing',
+      }),
+    )
     expect(scheduleResearchBriefAutosync).toHaveBeenCalledWith(project.id)
   })
 

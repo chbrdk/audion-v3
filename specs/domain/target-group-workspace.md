@@ -1,8 +1,9 @@
 # Target Group Workspace
 
 **Status:** Accepted — 2026-07-29  
-**Routes:** `/target-groups`, `/target-groups/[targetGroupId]`  
-**Contracts:** `packages/contracts/src/target-groups.ts`  
+**Routes:** `/target-groups`, `/target-groups/[targetGroupId]` (param = **slug**, id still resolves + redirects)  
+**Contracts:** `packages/contracts/src/target-groups.ts` (`slug`)  
+**Slugs:** `specs/domain/entity-url-slugs.md`  
 **Knowledge:** `knowledge/target-group-migration-map.md`, `knowledge/edit-wave.md`, `knowledge/paths.md`
 
 ## Purpose
@@ -24,7 +25,7 @@ Magazine-parity workspace for audience segments: browse as app cards, read a bri
 - Tall cards: large display **name** bottom-aligned, lots of top air; meta (segment · persona count · status) small underneath
 - **First tile**: create card (`audion-tg-card--create`) — dashed border, soft `--accent` wash, “New target group” (cards); compact button in list mode
 - **Second tile**: Suggest with AI (Wave 1 stub → `suggest-target-groups`)
-- Paths via `paths.routes.targetGroups` / `targetGroupDetail(id)`
+- Paths via `paths.routes.targetGroups` / `targetGroupDetail(slug)` — `id` immutable; slug updates on rename (`entity-url-slugs.md`)
 
 ## Detail composition
 

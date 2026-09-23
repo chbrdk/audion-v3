@@ -87,6 +87,9 @@ const detail: PersonaDetail = {
   tavusReplicaId: null,
   tavusPersonaId: null,
   tavusLanguage: null,
+  videoCallProvider: null,
+  beyAvatarId: null,
+  beyAgentId: null,
 }
 
 const tgList: TargetGroupList = {

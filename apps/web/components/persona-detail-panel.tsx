@@ -14,6 +14,7 @@ import { PersonaEditableResearchProfile } from './persona-editable-research-prof
 import { PersonaEditableList } from './persona-editable-list'
 import { PersonaEditableNotes } from './persona-editable-notes'
 import { PersonaEditablePortrait } from './persona-editable-portrait'
+import { PersonaEditableBey } from './persona-editable-bey'
 import { PersonaEditableTavus } from './persona-editable-tavus'
 import { PersonaEditableTraits } from './persona-editable-traits'
 import { PersonaEditableVisuals } from './persona-editable-visuals'
@@ -173,6 +174,13 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
           location={persona.location}
           headlineDe={persona.headlineDe}
           profileDe={persona.profileDe}
+        />
+
+        <PersonaEditableBey
+          personaId={persona.id}
+          beyAvatarId={persona.beyAvatarId}
+          beyAgentId={persona.beyAgentId}
+          videoCallProvider={persona.videoCallProvider}
         />
 
         <div className="signal-stage audion-magazine-stage ds-motion-reveal">

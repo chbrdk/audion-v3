@@ -187,7 +187,8 @@ export const paths = {
   uxJourneyOpenAiModel: 'gpt-5.6-luna',
   /** Vision detail for per-step screenshots — override via UX_JOURNEY_VISION_DETAIL */
   uxJourneyVisionDetail: 'high',
-  aiOpenAiImageModel: 'gpt-image-1-mini',
+  /** Persona avatar + moodboard Images API — OpenAI / OpenRouter (`openai/…`). */
+  aiOpenAiImageModel: 'gpt-image-2.5-sunburst',
   defaultDisplayName: 'AUDION',
   displayNameStorageKey: 'audion.v3.displayName',
   themeStorageKey: 'audion.v3.themePreference',
@@ -223,11 +224,16 @@ export const paths = {
     /** Register existing project on Plexon Collection (audion-project-origin). */
     apiProjectSyncPlexon: (id: string) => `/api/projects/${id}/sync-plexon`,
     personas: '/personas',
-    personaDetail: (id: string) => `/personas/${id}`,
+    personaDetail: (idOrSlug: string) => `/personas/${idOrSlug}`,
+    /** Prefer slug for magazine URLs; falls back to id. Spec: entity-url-slugs.md */
+    personaDetailEntity: (entity: { id: string; slug?: string | null }) =>
+      `/personas/${entity.slug?.trim() || entity.id}`,
     apiPersonas: '/api/personas',
     apiPersonaDetail: (id: string) => `/api/personas/${id}`,
     targetGroups: '/target-groups',
-    targetGroupDetail: (id: string) => `/target-groups/${id}`,
+    targetGroupDetail: (idOrSlug: string) => `/target-groups/${idOrSlug}`,
+    targetGroupDetailEntity: (entity: { id: string; slug?: string | null }) =>
+      `/target-groups/${entity.slug?.trim() || entity.id}`,
     apiTargetGroups: '/api/target-groups',
     apiTargetGroupDetail: (id: string) => `/api/target-groups/${id}`,
     /** PLEXON / FastAPI-compatible alias of `apiAiGeneratePersonas` (no `/ai` prefix). */
@@ -302,6 +308,7 @@ export const paths = {
       `/api/ux-journey-agent/run/${jobId}/live/stream`,
     apiUxJourneyAgentVideo: (jobId: string) => `/api/ux-journey-agent/run/${jobId}/video`,
     apiChatTavusSession: '/api/chat/tavus/session',
+    apiChatVideoSession: '/api/chat/video/session',
     apiChatVoiceStream: '/api/chat/voice/stream',
     apiChatSharePersona: (personaId: string) => `/api/share/personas/${personaId}`,
     apiChatShareMoodboard: (personaId: string) => `/api/share/personas/${personaId}/moodboard`,
@@ -408,6 +415,23 @@ export const paths = {
   tavusParticipantAbsentTimeoutSec: 90,
   tavusParticipantLeftTimeoutSec: 30,
   tavusMaxCallDurationSec: 1800,
+  /** Beyond Presence Managed Agents — specs/domain/bey-video-chat.md */
+  envBeyApiKey: 'BEY_API_KEY',
+  envBeyApiBase: 'BEY_API_BASE',
+  beyApiDefaultBase: 'https://api.bey.dev',
+  beyAgentsPath: '/v1/agents',
+  beyLivekitRoomsPath: '/v1/livekit-rooms',
+  beyChatEmbedBase: 'https://bey.chat',
+  beyAgentSystemPromptMaxChars: 4000,
+  beyMaxSessionLengthMinutes: 30,
+  envVideoCallProviderDefault: 'AUDION_VIDEO_CALL_PROVIDER',
+  videoCallProviderChoices: ['tavus', 'bey'] as const,
+  beyClientPath: 'apps/web/lib/bey/client.ts',
+  beySyncPath: 'apps/web/lib/bey/sync.ts',
+  videoCallProvidersSpecPath: 'specs/domain/video-call-providers.md',
+  beyVideoChatSpecPath: 'specs/domain/bey-video-chat.md',
+  chatVideoSessionApiSpecPath: 'specs/api/chat-video-session.md',
+  videoCallPanelPath: 'apps/web/components/video-call-panel.tsx',
   envAiRuntime: 'NEXT_AI_RUNTIME',
   envOpenAiApiKey: 'OPENAI_API_KEY',
   envOpenAiApiBaseUrl: 'OPENAI_API_BASE_URL',

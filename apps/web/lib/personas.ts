@@ -9,6 +9,8 @@ import type {
 import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from './persona-coerce'
 import { normalizePersonaSections } from './persona-notes'
 import { firstTavusId } from './tavus/ids'
+import { firstBeyId } from './bey/ids'
+import { parseVideoCallProvider } from './video-call/provider'
 import { parseTavusLanguage } from './tavus/language'
 import { storePersonaDetail, storePersonaList } from './fixtures/persona-store'
 import {
@@ -50,6 +52,13 @@ export function normalizePersonaSummary(raw: unknown): PersonaSummary | null {
             : null
   return {
     id,
+    slug:
+      typeof item.slug === 'string' && item.slug.trim()
+        ? item.slug.trim()
+        : name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || id,
     name,
     role: typeof item.role === 'string' ? item.role : typeof item.job_title === 'string' ? item.job_title : 'Persona',
     projectId: typeof item.project_id === 'string' ? item.project_id : typeof item.projectId === 'string' ? item.projectId : null,
@@ -152,6 +161,7 @@ export function normalizePersonaDetail(raw: unknown): PersonaDetail | null {
     ...item,
     id: root.id ?? item.id ?? root.persona_id ?? item.persona_id,
     name: root.name ?? item.name,
+    slug: root.slug ?? item.slug,
     role: root.role ?? item.role ?? item.job_title ?? item.headline,
     status: root.status ?? item.status,
     project_id: root.project_id ?? root.projectId ?? item.project_id ?? item.projectId,
@@ -236,6 +246,9 @@ export function normalizePersonaDetail(raw: unknown): PersonaDetail | null {
     tavusReplicaId: firstTavusId(item.tavusReplicaId, item.tavus_replica_id, item.face_id, item.replica_id),
     tavusPersonaId: firstTavusId(item.tavusPersonaId, item.tavus_persona_id, item.pal_id),
     tavusLanguage: parseTavusLanguage(item.tavusLanguage ?? item.tavus_language),
+    videoCallProvider: parseVideoCallProvider(item.videoCallProvider ?? item.video_call_provider),
+    beyAvatarId: firstBeyId(item.beyAvatarId, item.bey_avatar_id),
+    beyAgentId: firstBeyId(item.beyAgentId, item.bey_agent_id, item.agent_id),
   }
 }
 

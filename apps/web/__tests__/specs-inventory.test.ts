@@ -9,6 +9,7 @@ const requiredSpecs = [
   'specs/domain/home-magazine.md',
   'specs/domain/persona-workspace.md',
   'specs/domain/persona-fields.md',
+  'specs/domain/entity-url-slugs.md',
   'specs/domain/target-group-workspace.md',
   'specs/domain/target-group-fields.md',
   'specs/domain/journey-workspace.md',
@@ -23,6 +24,10 @@ const requiredSpecs = [
   'specs/domain/chat-embed.md',
   'specs/domain/tavus-video-chat.md',
   'knowledge/tavus-video-chat.md',
+  'specs/domain/video-call-providers.md',
+  'specs/domain/bey-video-chat.md',
+  'specs/api/chat-video-session.md',
+  'knowledge/bey-video-chat.md',
   'specs/domain/project-workspace.md',
   'specs/domain/project-fields.md',
   'specs/domain/access-model-b-visibility.md',
@@ -77,7 +82,11 @@ describe('specs inventory', () => {
     expect(paths.envChatApiInternal).toBe('NEXT_CHAT_API_INTERNAL_URL')
     expect(paths.envChatEmbedFrameAncestors).toBe('AUDION_CHAT_EMBED_FRAME_ANCESTORS')
     expect(paths.routes.apiChatTavusSession).toBe('/api/chat/tavus/session')
+    expect(paths.routes.apiChatVideoSession).toBe('/api/chat/video/session')
     expect(paths.envTavusApiKey).toBe('TAVUS_API_KEY')
+    expect(paths.envBeyApiKey).toBe('BEY_API_KEY')
+    expect(paths.beyAgentsPath).toBe('/v1/agents')
+    expect(paths.beyLivekitRoomsPath).toBe('/v1/livekit-rooms')
     expect(paths.tavusConversationsPath).toBe('/v2/conversations')
   })
 })

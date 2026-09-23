@@ -46,20 +46,6 @@ export async function syncProjectToPlexon(
     return { ok: false, status: 404, error: 'not_found', detail: 'Project not found' }
   }
 
-  if (project.platformProjectId?.trim()) {
-    // Late-bind / re-sync: push local dossier + research distillate into Collection pack.
-    scheduleResearchBriefAutosync(projectId)
-    return {
-      ok: true,
-      projectId: project.id,
-      platformProjectId: project.platformProjectId,
-      checkionProjectId: project.checkionProjectId ?? null,
-      platformCompanyId: project.platformCompanyId ?? null,
-      alreadyBound: true,
-      knowledgeAutosyncScheduled: true,
-    }
-  }
-
   const session = await auth()
   let ownerPlexonUserId =
     input.ownerPlexonUserId?.trim() ||
@@ -73,6 +59,41 @@ export async function syncProjectToPlexon(
   if (ownerPlexonUserId && !platformCompanyId) {
     const profile = await getPlexonProfile(ownerPlexonUserId)
     platformCompanyId = profile?.default_platform_company_id?.trim() || ''
+  }
+
+  if (project.platformProjectId?.trim()) {
+    // Already linked on Audion — re-assert Plexon binding (heal asymmetric null external id).
+    const rebound = await registerAudionProjectOnPlexonDetailed({
+      audionProjectId: project.id,
+      name: project.name,
+      domain: input.domain?.trim() || null,
+      ownerPlexonUserId: ownerPlexonUserId || null,
+      platformCompanyId: platformCompanyId || null,
+      platformProjectId: project.platformProjectId,
+    })
+    if (rebound && 'platformProjectId' in rebound) {
+      await storeApplyPlatformBinding(project.id, {
+        platformProjectId: rebound.platformProjectId,
+        checkionProjectId: rebound.checkionProjectId ?? project.checkionProjectId ?? null,
+        platformCompanyId: rebound.platformCompanyId ?? (platformCompanyId || null),
+        ownerPlexonUserId: rebound.ownerPlexonUserId ?? (ownerPlexonUserId || null),
+      })
+    } else if (!rebound || !('platformProjectId' in rebound)) {
+      console.warn(
+        '[AUDION-v3] alreadyBound rebind failed:',
+        rebound && 'detail' in rebound ? rebound.detail : 'no platformProjectId',
+      )
+    }
+    scheduleResearchBriefAutosync(projectId)
+    return {
+      ok: true,
+      projectId: project.id,
+      platformProjectId: project.platformProjectId,
+      checkionProjectId: project.checkionProjectId ?? null,
+      platformCompanyId: project.platformCompanyId ?? null,
+      alreadyBound: true,
+      knowledgeAutosyncScheduled: true,
+    }
   }
 
   const origin = await registerAudionProjectOnPlexonDetailed({

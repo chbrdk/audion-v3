@@ -1,8 +1,10 @@
 import type { TargetGroupDetail } from '@audion-v3/contracts'
+import { ensureEntitySlug } from '../entity-slug'
 import { personaAvatarPath } from '../paths'
 
 /** Local demo target groups — knowledge/target-group-migration-map.md */
-export const DEMO_TARGET_GROUPS: TargetGroupDetail[] = [
+export const DEMO_TARGET_GROUPS: TargetGroupDetail[] = (
+  [
   {
     id: 'tg-digital-product-leads',
     name: 'Digital Product Leads',
@@ -97,4 +99,5 @@ export const DEMO_TARGET_GROUPS: TargetGroupDetail[] = [
     knowledgeEntries: [],
     documents: [],
   },
-]
+] as Array<Omit<TargetGroupDetail, 'slug'> & { slug?: string }>
+).map((g) => ensureEntitySlug(g))

@@ -20,7 +20,7 @@
 | `OPENAI_API_KEY` | Required for native / auto-with-key |
 | `OPENAI_API_BASE_URL` | Optional |
 | `AI_OPENAI_MODEL` | Default `gpt-5.4-nano` |
-| `AI_OPENAI_IMAGE_MODEL` | Default `gpt-image-1-mini` |
+| `AI_OPENAI_IMAGE_MODEL` | Default `gpt-image-2.5-sunburst` (OpenRouter: `openai/gpt-image-2.5-sunburst`) |
 
 `auto` = native when `OPENAI_API_KEY` set, else stub.
 

@@ -4,6 +4,7 @@ import { storeCreatePersona } from '../../../lib/fixtures/persona-store'
 import { storeSeedDefaultNaturalVoice } from '../../../lib/fixtures/persona-prompts-store'
 import { requireProjectAccess, requireViewer } from '../../../lib/resource-access-http'
 import { isPlexonAuthConfigured } from '../../../lib/runtime-config'
+import { syncPersonaBeyAgent } from '../../../lib/bey/sync'
 import { syncPersonaTavusPal } from '../../../lib/tavus/sync'
 
 export async function POST(request: Request) {
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     role: body.role?.trim() || 'Persona',
   })
   await storeSeedDefaultNaturalVoice(persona.id)
-  const synced = await syncPersonaTavusPal(persona)
-  return NextResponse.json(synced.persona, { status: 201 })
+  const tavus = await syncPersonaTavusPal(persona)
+  const bey = await syncPersonaBeyAgent(tavus.persona)
+  return NextResponse.json(bey.persona, { status: 201 })
 }

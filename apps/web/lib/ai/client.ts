@@ -19,8 +19,22 @@ export function getAiOpenAiModel(): string {
   return process.env[paths.envAiOpenAiModel]?.trim() || paths.aiOpenAiModel
 }
 
+function trimEnvModelId(raw: string | undefined): string {
+  let v = (raw ?? '').trim()
+  // Coolify sometimes stores values with surrounding quotes when is_literal=true.
+  if (
+    (v.startsWith("'") && v.endsWith("'")) ||
+    (v.startsWith('"') && v.endsWith('"'))
+  ) {
+    v = v.slice(1, -1).trim()
+  }
+  return v
+}
+
 export function getAiOpenAiImageModel(): string {
-  return process.env[paths.envAiOpenAiImageModel]?.trim() || paths.aiOpenAiImageModel
+  return (
+    trimEnvModelId(process.env[paths.envAiOpenAiImageModel]) || paths.aiOpenAiImageModel
+  )
 }
 
 /** Completion token cap for native persona chat — override via AI_CHAT_MAX_TOKENS. */

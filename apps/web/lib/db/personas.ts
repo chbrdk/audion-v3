@@ -5,10 +5,13 @@ import type {
   PersonaStatus,
   PersonaWritePayload,
 } from '@audion-v3/contracts'
+import { allocateUniqueSlug, ensureEntitySlug, slugifyName } from '../entity-slug'
 import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from '../persona-coerce'
 import { normalizePersonaSections } from '../persona-notes'
 import { parseTavusLanguage } from '../tavus/language'
+import { parseVideoCallProvider } from '../video-call/provider'
 import { getDb } from './client'
+import { ensureEntitySlugSchema } from './ensure-entity-slug-schema'
 import { personas, type PersonaRow } from './schema'
 
 const DETAIL_ONLY_KEYS = [
@@ -42,6 +45,9 @@ const DETAIL_ONLY_KEYS = [
   'tavusReplicaId',
   'tavusPersonaId',
   'tavusLanguage',
+  'videoCallProvider',
+  'beyAvatarId',
+  'beyAgentId',
 ] as const
 
 function emptyDefaults(): Pick<
@@ -64,6 +70,9 @@ function emptyDefaults(): Pick<
   | 'tavusReplicaId'
   | 'tavusPersonaId'
   | 'tavusLanguage'
+  | 'videoCallProvider'
+  | 'beyAvatarId'
+  | 'beyAgentId'
 > {
   return {
     gender: null,
@@ -84,6 +93,9 @@ function emptyDefaults(): Pick<
     tavusReplicaId: null,
     tavusPersonaId: null,
     tavusLanguage: null,
+    videoCallProvider: null,
+    beyAvatarId: null,
+    beyAgentId: null,
   }
 }
 
@@ -102,8 +114,9 @@ function payloadFromDetail(detail: PersonaDetail): Record<string, unknown> {
 
 function rowToDetail(row: PersonaRow): PersonaDetail {
   const payload = (row.payload ?? {}) as Partial<PersonaDetail>
-  return {
+  return ensureEntitySlug({
     id: row.id,
+    slug: row.slug ?? null,
     name: row.name,
     role: row.role,
     projectId: row.projectId ?? null,
@@ -142,7 +155,10 @@ function rowToDetail(row: PersonaRow): PersonaDetail {
     tavusReplicaId: payload.tavusReplicaId ?? null,
     tavusPersonaId: payload.tavusPersonaId ?? null,
     tavusLanguage: parseTavusLanguage(payload.tavusLanguage),
-  }
+    videoCallProvider: parseVideoCallProvider(payload.videoCallProvider),
+    beyAvatarId: payload.beyAvatarId ?? null,
+    beyAgentId: payload.beyAgentId ?? null,
+  })
 }
 
 function toSummary(detail: PersonaDetail) {
@@ -158,6 +174,7 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
     current ??
     ({
       id: '',
+      slug: 'item',
       name: '',
       role: 'Persona',
       projectId: null,
@@ -181,11 +198,17 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
       tavusReplicaId: null,
       tavusPersonaId: null,
       tavusLanguage: null,
+      videoCallProvider: null,
+      beyAvatarId: null,
+      beyAgentId: null,
     } satisfies PersonaDetail)
+
+  const nextName = payload.name?.trim() ?? base.name
+  const nameChanged = Boolean(payload.name?.trim() && payload.name.trim() !== base.name)
 
   return {
     ...base,
-    name: payload.name?.trim() ?? base.name,
+    name: nextName,
     role: payload.role?.trim() ?? base.role,
     status: payload.status ?? base.status,
     archetype: payload.archetype !== undefined ? payload.archetype : base.archetype,
@@ -247,34 +270,68 @@ function mergeWrite(current: PersonaDetail | null, payload: Partial<PersonaWrite
       payload.tavusLanguage !== undefined
         ? parseTavusLanguage(payload.tavusLanguage)
         : base.tavusLanguage ?? null,
+    videoCallProvider:
+      payload.videoCallProvider !== undefined
+        ? parseVideoCallProvider(payload.videoCallProvider)
+        : base.videoCallProvider ?? null,
+    beyAvatarId:
+      payload.beyAvatarId !== undefined
+        ? payload.beyAvatarId?.trim()
+          ? payload.beyAvatarId.trim()
+          : null
+        : base.beyAvatarId ?? null,
+    beyAgentId:
+      payload.beyAgentId !== undefined
+        ? payload.beyAgentId?.trim()
+          ? payload.beyAgentId.trim()
+          : null
+        : base.beyAgentId ?? null,
     avatarUrl:
       payload.avatarUrl !== undefined
         ? payload.avatarUrl?.trim()
           ? payload.avatarUrl.trim()
           : null
         : base.avatarUrl,
+    /** Placeholder — callers overwrite after uniqueness check. */
+    slug: nameChanged ? slugifyName(nextName) : base.slug || slugifyName(nextName),
     updatedAt: new Date().toISOString(),
   }
 }
 
+async function takenPersonaSlugs(excludeId?: string): Promise<string[]> {
+  await ensureEntitySlugSchema()
+  const db = getDb()
+  const rows = await db.select({ id: personas.id, slug: personas.slug }).from(personas)
+  return rows
+    .filter((r) => !(excludeId && r.id === excludeId))
+    .map((r) => r.slug?.trim() || '')
+    .filter(Boolean)
+}
+
 export async function dbPersonaList(): Promise<PersonaList> {
+  await ensureEntitySlugSchema()
   const db = getDb()
   const rows = await db.select().from(personas).orderBy(desc(personas.updatedAt))
   const items = rows.map((row) => toSummary(rowToDetail(row)))
   return { items, total: items.length, page: 1, pageSize: Math.max(50, items.length) }
 }
 
-export async function dbPersonaDetail(id: string): Promise<PersonaDetail | null> {
+export async function dbPersonaDetail(ref: string): Promise<PersonaDetail | null> {
+  await ensureEntitySlugSchema()
   const db = getDb()
-  const rows = await db.select().from(personas).where(eq(personas.id, id)).limit(1)
-  const row = rows[0]
-  return row ? rowToDetail(row) : null
+  const byId = await db.select().from(personas).where(eq(personas.id, ref)).limit(1)
+  if (byId[0]) return rowToDetail(byId[0])
+  const bySlug = await db.select().from(personas).where(eq(personas.slug, ref)).limit(1)
+  return bySlug[0] ? rowToDetail(bySlug[0]) : null
 }
 
 export async function dbPersonaSummariesByIds(
   ids: string[],
-): Promise<Array<{ id: string; name: string; role: string; status: string; avatarUrl: string | null }>> {
+): Promise<
+  Array<{ id: string; slug: string; name: string; role: string; status: string; avatarUrl: string | null }>
+> {
   if (ids.length === 0) return []
+  await ensureEntitySlugSchema()
   const db = getDb()
   const rows = await db.select().from(personas).where(inArray(personas.id, ids))
   const byId = new Map(rows.map((r) => [r.id, r]))
@@ -282,18 +339,21 @@ export async function dbPersonaSummariesByIds(
     .map((id) => {
       const row = byId.get(id)
       if (!row) return null
+      const detail = rowToDetail(row)
       return {
-        id: row.id,
-        name: row.name,
-        role: row.role,
-        status: row.status,
-        avatarUrl: row.avatarUrl ?? null,
+        id: detail.id,
+        slug: detail.slug,
+        name: detail.name,
+        role: detail.role,
+        status: detail.status,
+        avatarUrl: detail.avatarUrl ?? null,
       }
     })
     .filter((p): p is NonNullable<typeof p> => Boolean(p))
 }
 
 export async function dbCountPersonasByProjectId(projectId: string): Promise<number> {
+  await ensureEntitySlugSchema()
   const db = getDb()
   const rows = await db
     .select({ n: sql<number>`count(*)::int` })
@@ -303,13 +363,17 @@ export async function dbCountPersonasByProjectId(projectId: string): Promise<num
 }
 
 export async function dbCreatePersona(payload: PersonaWritePayload): Promise<PersonaDetail> {
-  const id = `persona-${payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'new'}-${Date.now().toString(36)}`
+  await ensureEntitySlugSchema()
+  const id = `persona-${slugifyName(payload.name)}-${Date.now().toString(36)}`
+  const slug = allocateUniqueSlug(payload.name, await takenPersonaSlugs())
   const detail = mergeWrite(null, { ...payload, name: payload.name, role: payload.role || 'Persona' })
   detail.id = id
+  detail.slug = slug
   const now = new Date()
   const db = getDb()
   await db.insert(personas).values({
     id,
+    slug,
     name: detail.name,
     role: detail.role,
     projectId: detail.projectId,
@@ -324,35 +388,46 @@ export async function dbCreatePersona(payload: PersonaWritePayload): Promise<Per
 }
 
 export async function dbInsertPersonaDetail(detail: PersonaDetail): Promise<PersonaDetail> {
+  await ensureEntitySlugSchema()
+  const withSlug = ensureEntitySlug(detail)
   const now = new Date()
   const db = getDb()
   await db.insert(personas).values({
-    id: detail.id,
-    name: detail.name,
-    role: detail.role,
-    projectId: detail.projectId,
-    status: detail.status,
-    archetype: detail.archetype,
-    avatarUrl: detail.avatarUrl,
-    payload: payloadFromDetail(detail),
+    id: withSlug.id,
+    slug: withSlug.slug,
+    name: withSlug.name,
+    role: withSlug.role,
+    projectId: withSlug.projectId,
+    status: withSlug.status,
+    archetype: withSlug.archetype,
+    avatarUrl: withSlug.avatarUrl,
+    payload: payloadFromDetail(withSlug),
     updatedAt: now,
     createdAt: now,
   })
-  return { ...detail, updatedAt: now.toISOString() }
+  return { ...withSlug, updatedAt: now.toISOString() }
 }
 
 export async function dbPatchPersona(
-  id: string,
+  ref: string,
   payload: Partial<PersonaWritePayload>,
 ): Promise<PersonaDetail | null> {
-  const current = await dbPersonaDetail(id)
+  await ensureEntitySlugSchema()
+  const current = await dbPersonaDetail(ref)
   if (!current) return null
   const next = mergeWrite(current, payload)
-  next.id = id
+  next.id = current.id
+  const nameChanged = Boolean(payload.name?.trim() && payload.name.trim() !== current.name)
+  if (nameChanged || !current.slug?.trim()) {
+    next.slug = allocateUniqueSlug(next.name, await takenPersonaSlugs(current.id), current.slug)
+  } else {
+    next.slug = current.slug
+  }
   const db = getDb()
   await db
     .update(personas)
     .set({
+      slug: next.slug,
       name: next.name,
       role: next.role,
       projectId: next.projectId,
@@ -362,12 +437,18 @@ export async function dbPatchPersona(
       payload: payloadFromDetail(next),
       updatedAt: new Date(),
     })
-    .where(eq(personas.id, id))
+    .where(eq(personas.id, current.id))
   return next
 }
 
 export async function dbDeletePersona(id: string): Promise<boolean> {
+  await ensureEntitySlugSchema()
   const db = getDb()
-  const deleted = await db.delete(personas).where(eq(personas.id, id)).returning({ id: personas.id })
+  const resolved = await dbPersonaDetail(id)
+  const canonicalId = resolved?.id ?? id
+  const deleted = await db
+    .delete(personas)
+    .where(eq(personas.id, canonicalId))
+    .returning({ id: personas.id })
   return deleted.length > 0
 }

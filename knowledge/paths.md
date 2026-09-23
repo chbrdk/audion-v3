@@ -31,6 +31,7 @@
 - Persona fixtures: `apps/web/lib/fixtures/personas.ts`
 - Persona fixture store: `apps/web/lib/fixtures/persona-store.ts`
 - Persona API routes: `/api/personas`, `/api/personas/[personaId]` (`GET`/`POST`/`PATCH`/`DELETE`) — Access Model B via `requirePersonaAccess` / `filterPersonasForViewer` (`specs/domain/access-model-b-visibility.md`)
+- Persona / TG magazine URLs use **slug** (updates on rename); `id` stays immutable — `specs/domain/entity-url-slugs.md` · `lib/entity-slug.ts` · helpers `personaDetailEntity` / `targetGroupDetailEntity`
 - Target group fixtures: `apps/web/lib/fixtures/target-groups.ts`
 - Target group fixture store: `apps/web/lib/fixtures/target-group-store.ts`
 - Target group routes: `/target-groups`, `/target-groups/[targetGroupId]`
@@ -132,9 +133,12 @@
 - Chat surface (editorial open): `knowledge/chat-surface.md`
 - Chat modalities (share / moodboard / inspect / Voice·Tavus): `knowledge/chat-modalities-2026.md`
 - Tavus CVI (persona replica id + chat iframe): `knowledge/tavus-video-chat.md` · spec `specs/domain/tavus-video-chat.md`
+- Video call providers (Tavus + Beyond Presence): `knowledge/bey-video-chat.md` · specs `specs/domain/video-call-providers.md` · `specs/domain/bey-video-chat.md` · `specs/api/chat-video-session.md`
 - Tavus env: `TAVUS_API_KEY` (`paths.envTavusApiKey`) · `TAVUS_API_BASE` (`paths.envTavusApiBase`, default `paths.tavusApiDefaultBase`) · conversations `paths.tavusConversationsPath` (`/v2/conversations`) · pals `paths.tavusPalsPath` (`/v2/pals`) · end suffix `paths.tavusConversationEndSuffix` (`/end`) · name prefix `paths.tavusConversationNamePrefix` · spoken language `paths.tavusLanguageChoices` (`de`/`en`) mapped to Tavus full names in `paths.tavusLanguageNames` (`German`/`English`)
+- Beyond Presence env: `BEY_API_KEY` (`paths.envBeyApiKey`) · `BEY_API_BASE` (`paths.envBeyApiBase`, default `paths.beyApiDefaultBase` `https://api.bey.dev`) · agents `paths.beyAgentsPath` (`/v1/agents`) · LiveKit rooms `paths.beyLivekitRoomsPath` (`/v1/livekit-rooms`) · embed base `paths.beyChatEmbedBase` (`https://bey.chat`) · tie-break `AUDION_VIDEO_CALL_PROVIDER` (`paths.envVideoCallProviderDefault`, `bey`|`tavus`)
 - Chat share helper: `apps/web/lib/chat/share.ts` · `apps/web/lib/chat/share-persona.ts` · `paths.routes.chatShare` · `paths.routes.chatEmbed` · `paths.routes.chatConversation`
-- Tavus session BFF: `paths.routes.apiChatTavusSession` (`/api/chat/tavus/session`) POST create / DELETE end · client `paths.tavusClientPath` · panel `paths.tavusVideoPanelPath`
+- Tavus session BFF: `paths.routes.apiChatTavusSession` (`/api/chat/tavus/session`) POST create / DELETE end · client `paths.tavusClientPath` · panel `paths.tavusVideoPanelPath` (compat; preferred panel is `paths.videoCallPanelPath`)
+- Unified video session BFF: `paths.routes.apiChatVideoSession` (`/api/chat/video/session`) POST create / DELETE end · resolve `apps/web/lib/video-call/resolve-provider.ts` · session `apps/web/lib/video-call/session.ts` · BEY client `paths.beyClientPath` · sync `paths.beySyncPath` · panel `paths.videoCallPanelPath`
 - Chat flyouts: product share / history / moodboard compose DS `Flyout` (`knowledge/flyout-ds-2026-07-30.md`)
 - Chat workspace spec: `specs/domain/chat-workspace.md`
 - DS Flyout: `msqdx-ui/specs/domain/msqdx-ui-flyout.md` · `packages/ui/src/components/Flyout.tsx`
@@ -150,6 +154,7 @@
 - Channel icon registry: `apps/web/lib/channel-icons.tsx` (`knowledge/persona-channel-icons.md`)
 - Persona data source env: `NEXT_PERSONA_DATA_SOURCE` (`auto` | `fixtures` | `api`) — domain only; **no DEMO_* product fallback** (`allowPersonaFixtureFallback` always false; store empty until create / `reset*Store` in tests)
 - Native AI runtime: `NEXT_AI_RUNTIME` (`stub` | `native` | `auto`) · `OPENAI_API_KEY` · `AI_OPENAI_MODEL` (default **`gpt-5.4-nano`**, SoT `paths.aiOpenAiModel`) — `knowledge/ai-native-2026.md`
+- Persona avatar / moodboard Images API: `AI_OPENAI_IMAGE_MODEL` (default **`gpt-image-2.5-sunburst`**, SoT `paths.aiOpenAiImageModel`; OpenRouter slug `openai/gpt-image-2.5-sunburst`) — used by `generatePersonaAvatar` / moodboard hero tile
 - Persona chat completion cap: `AI_CHAT_MAX_TOKENS` → OpenAI `max_completion_tokens` (default **280**, SoT `paths.chatCompletionMaxTokens`; elicitation **320** via `paths.chatElicitationMaxTokens`) — adaptive prompt `knowledge/adaptive-persona-chat-2026-08-27.md` · humanize `knowledge/persona-chat-humanize-2026-09-20.md`
 - UX Journey OpenAI: `UX_JOURNEY_OPENAI_MODEL` (default **`gpt-5.6-luna`**, SoT `paths.uxJourneyOpenAiModel`) — agent `main.py` / Dockerfile / local lab serve · A/B: `knowledge/lab-ab-nano-mini-luna-2026-08-03.md`
 - UX Journey click/hover steer: `knowledge/ux-agent-click-hover-steer-2026-08-20.md` · keyword hygiene + viewport hover coords · follows `knowledge/ux-agent-luna-vision-2026-08-20.md` · hover-smoke `knowledge/ueq-ebike-runs/2026-08-20-hover-smoke/` · buckets `knowledge/ux-journey-fail-buckets-hover-smoke-2026-08-20.json` · note `knowledge/lab-staging-smoke-luna-vision-2026-08-20.md`

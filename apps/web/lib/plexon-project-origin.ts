@@ -28,6 +28,8 @@ export async function registerAudionProjectOnPlexon(params: {
   domain?: string | null
   ownerPlexonUserId?: string | null
   platformCompanyId?: string | null
+  /** When already bound — re-assert Plexon binding without minting a new Collection. */
+  platformProjectId?: string | null
 }): Promise<AudionProjectOriginResult | null> {
   const result = await registerAudionProjectOnPlexonDetailed(params)
   return result && 'platformProjectId' in result ? result : null
@@ -40,6 +42,8 @@ export async function registerAudionProjectOnPlexonDetailed(params: {
   domain?: string | null
   ownerPlexonUserId?: string | null
   platformCompanyId?: string | null
+  /** When already bound — re-assert Plexon binding without minting a new Collection. */
+  platformProjectId?: string | null
 }): Promise<AudionProjectOriginResult | AudionProjectOriginFailure | null> {
   if (!isPlexonAuthConfigured()) return null
   const base = getPlexonAuthUrl().replace(/\/$/, '')
@@ -55,6 +59,9 @@ export async function registerAudionProjectOnPlexonDetailed(params: {
   }
   if (params.platformCompanyId?.trim()) {
     body.platformCompanyId = params.platformCompanyId.trim()
+  }
+  if (params.platformProjectId?.trim()) {
+    body.platformProjectId = params.platformProjectId.trim()
   }
   try {
     const res = await fetch(url, {

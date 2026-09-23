@@ -327,3 +327,18 @@ export type ChatTavusSessionResponse = {
   conversationId: string | null
   personaId: string
 }
+
+/** Preferred multi-provider video session. Spec: specs/api/chat-video-session.md */
+export type ChatVideoCallProvider = 'tavus' | 'bey'
+
+export type ChatVideoSessionMedia =
+  | { kind: 'iframe'; url: string; token?: string | null }
+  | { kind: 'livekit'; url: string; token: string }
+
+export type ChatVideoSessionResponse = {
+  stubbed: false
+  provider: ChatVideoCallProvider
+  personaId: string
+  conversationId: string | null
+  media: ChatVideoSessionMedia
+}

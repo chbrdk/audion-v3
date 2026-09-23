@@ -130,7 +130,7 @@ export function TargetGroupEditDialog({
       }
       const saved = (await response.json()) as TargetGroupDetail
       onClose()
-      router.push(paths.routes.targetGroupDetail(saved.id))
+      router.push(paths.routes.targetGroupDetailEntity(saved))
       router.refresh()
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : t('dialogs.saveFailed'))

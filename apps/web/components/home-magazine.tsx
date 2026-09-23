@@ -218,7 +218,7 @@ export function HomeMagazine({
                 </span>
                 <div className="audion-home-recent-list__main">
                   <Link
-                    href={paths.routes.personaDetail(p.id)}
+                    href={paths.routes.personaDetailEntity(p)}
                     className="audion-home-recent-list__title"
                   >
                     {p.name}
@@ -288,7 +288,7 @@ export function HomeMagazine({
                 </span>
                 <div className="audion-home-recent-list__main">
                   <Link
-                    href={paths.routes.targetGroupDetail(g.id)}
+                    href={paths.routes.targetGroupDetailEntity(g)}
                     className="audion-home-recent-list__title"
                   >
                     {g.name}

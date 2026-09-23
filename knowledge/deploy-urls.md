@@ -60,7 +60,7 @@ UX_JOURNEY_AGENT_URL=http://audion-v3-ux-journey-agent:8320
 UX_JOURNEY_AGENT_SECRET=<shared-with-agent-service>
 # optional:
 # AI_OPENAI_MODEL=gpt-5.4-nano
-# AI_OPENAI_IMAGE_MODEL=gpt-image-1-mini
+# AI_OPENAI_IMAGE_MODEL=gpt-image-2.5-sunburst
 PORT=3000
 ```
 
