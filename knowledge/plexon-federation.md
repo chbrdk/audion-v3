@@ -67,7 +67,7 @@ Idempotent when already bound.
 - Settings Account band — profile + logout
 - `PUT /api/platform/provisioning/users/[id]`
 - `PUT /api/platform/provisioning/projects/[id]`
-- `GET /api/platform/provisioning/projects/[id]` — Plexon Collection dashboard summary (service secret + `X-Plexon-User-Id`); METRON suite sync distillate: catalogs + Wave A (`journeyPhases` / `journeyElementRollup`) + Wave B (`journeyElements` / `studyWaves`)
+- `GET /api/platform/provisioning/projects/[id]` — Plexon Collection dashboard summary (service secret + `X-Plexon-User-Id`); METRON suite sync distillate: catalogs + Wave A (`journeyPhases` / `journeyElementRollup`) + Wave B (`journeyElements` / `studyWaves`) + Wave C (`waveSoftScores` / `waveDepth`)
 
 ### Project summary contract (`GET …/projects/[id]`)
 
@@ -89,6 +89,8 @@ Resolved by `platformProjectId` (Plexon Collection id). Response includes:
 | `journeyElementRollup` | `{ journeyId, journeyName, kind, count }[]` | Wave A; kind × journey |
 | `journeyElements` | `{ journeyId, journeyName, phaseId, phaseName, phaseOrder, elementId, elementName, kind, order }[]` | Wave B; flat elements (`label` → `elementName`), cap 200 |
 | `studyWaves` | `{ studyId, studyName, waveId, waveName, status, createdAt }[]` | Wave B; from study detail (`waveKey` → `waveName`, `updatedAt` → `createdAt`), cap 80 |
+| `waveSoftScores` | `{ studyId, studyName, waveId, waveName, scoreKey, value, confidence?, scale?, basis? }[]` | Wave C; flatten `evaluation.softScores` (skip `basis` key; copy object `basis` onto rows), cap 200 |
+| `waveDepth` | `{ studyId, studyName, waveId, waveName, status, runCount, validEvidenceCount, taskCompletionRate?, validEvidenceRate?, infrastructureBlockRate?, goalReachedRateValidOnly? }[]` | Wave C; wave summary + cheap `evaluation.aggregate` rates when present, cap 80 |
 
 Deep-links (Audion app origin, not `/admin`): `/target-groups/{id}`, `/personas/{id}`, `/chat?personaId=…&projectId=…`, `/journeys/{id}`, `/studies/{id}`.
 

@@ -185,6 +185,30 @@ describe('provisioning routes', () => {
         status: string
         createdAt: string | null
       }>
+      waveSoftScores: Array<{
+        studyId: string
+        studyName: string
+        waveId: string
+        waveName: string
+        scoreKey: string
+        value: number | string | null
+        confidence?: number
+        scale?: string
+        basis?: string
+      }>
+      waveDepth: Array<{
+        studyId: string
+        studyName: string
+        waveId: string
+        waveName: string
+        status: string
+        runCount: number
+        validEvidenceCount: number
+        taskCompletionRate?: number
+        validEvidenceRate?: number
+        infrastructureBlockRate?: number
+        goalReachedRateValidOnly?: number | null
+      }>
     }
     expect(body.externalProjectId).toBe('proj-audion-core')
     expect(body.targetGroupCount).toBeGreaterThan(0)
@@ -201,6 +225,10 @@ describe('provisioning routes', () => {
     expect(body.journeyElements.length).toBeLessThanOrEqual(200)
     expect(body.studyWaves.length).toBeGreaterThan(0)
     expect(body.studyWaves.length).toBeLessThanOrEqual(80)
+    expect(body.waveSoftScores.length).toBeGreaterThan(0)
+    expect(body.waveSoftScores.length).toBeLessThanOrEqual(200)
+    expect(body.waveDepth.length).toBeGreaterThan(0)
+    expect(body.waveDepth.length).toBeLessThanOrEqual(80)
     expect(body.targetGroups[0]).toMatchObject({
       id: expect.any(String),
       name: expect.any(String),
@@ -251,6 +279,24 @@ describe('provisioning routes', () => {
       waveId: expect.any(String),
       waveName: expect.any(String),
       status: expect.any(String),
+    })
+    expect(body.waveSoftScores[0]).toMatchObject({
+      studyId: expect.any(String),
+      studyName: expect.any(String),
+      waveId: expect.any(String),
+      waveName: expect.any(String),
+      scoreKey: expect.any(String),
+      value: expect.anything(),
+    })
+    expect(body.waveSoftScores.every((r) => r.scoreKey !== 'basis')).toBe(true)
+    expect(body.waveDepth[0]).toMatchObject({
+      studyId: expect.any(String),
+      studyName: expect.any(String),
+      waveId: expect.any(String),
+      waveName: expect.any(String),
+      status: expect.any(String),
+      runCount: expect.any(Number),
+      validEvidenceCount: expect.any(Number),
     })
   })
 })

@@ -15,7 +15,11 @@ import {
   storeTargetGroupList,
 } from '../../../../../../lib/fixtures/target-group-store'
 import { storeJourneyList, storeJourneyDetail } from '../../../../../../lib/fixtures/journey-store'
-import { storeUxStudyList, storeUxStudyDetail } from '../../../../../../lib/fixtures/ux-study-store'
+import {
+  storeUxStudyList,
+  storeUxStudyDetail,
+  storeUxWaveDetail,
+} from '../../../../../../lib/fixtures/ux-study-store'
 
 function jsonWithContract(body: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers)
@@ -169,23 +173,118 @@ export async function GET(
     status: string
     createdAt: string | null
   }> = []
+  const waveSoftScores: Array<{
+    studyId: string
+    studyName: string
+    waveId: string
+    waveName: string
+    scoreKey: string
+    value: number | string | null
+    confidence?: number
+    scale?: string
+    basis?: string
+  }> = []
+  const waveDepth: Array<{
+    studyId: string
+    studyName: string
+    waveId: string
+    waveName: string
+    status: string
+    runCount: number
+    validEvidenceCount: number
+    taskCompletionRate?: number
+    validEvidenceRate?: number
+    infrastructureBlockRate?: number
+    goalReachedRateValidOnly?: number | null
+  }> = []
   const STUDY_DETAIL_LIMIT = 12
   const STUDY_WAVES_CAP = 80
+  const WAVE_SOFT_SCORES_CAP = 200
+  const WAVE_DEPTH_CAP = 80
   for (const s of studySummaries.slice(0, STUDY_DETAIL_LIMIT)) {
     const detail = await storeUxStudyDetail(s.id)
     if (!detail) continue
     for (const wave of detail.waves ?? []) {
-      if (studyWaves.length >= STUDY_WAVES_CAP) break
-      studyWaves.push({
-        studyId: detail.id,
-        studyName: detail.name,
-        waveId: wave.id,
-        waveName: wave.waveKey,
-        status: wave.status,
-        createdAt: wave.updatedAt ?? null,
-      })
+      if (studyWaves.length < STUDY_WAVES_CAP) {
+        studyWaves.push({
+          studyId: detail.id,
+          studyName: detail.name,
+          waveId: wave.id,
+          waveName: wave.waveKey,
+          status: wave.status,
+          createdAt: wave.updatedAt ?? null,
+        })
+      }
+
+      const needDepth = waveDepth.length < WAVE_DEPTH_CAP
+      const needSoft = waveSoftScores.length < WAVE_SOFT_SCORES_CAP
+      if (needDepth || needSoft) {
+        const waveDetail = await storeUxWaveDetail(detail.id, wave.id)
+        const resolved = waveDetail ?? wave
+        if (needDepth) {
+          const agg = waveDetail?.evaluation?.aggregate
+          const row: (typeof waveDepth)[number] = {
+            studyId: detail.id,
+            studyName: detail.name,
+            waveId: resolved.id,
+            waveName: resolved.waveKey,
+            status: resolved.status,
+            runCount: resolved.runCount,
+            validEvidenceCount: resolved.validEvidenceCount,
+          }
+          if (agg) {
+            row.taskCompletionRate = agg.taskCompletionRate
+            row.validEvidenceRate = agg.validEvidenceRate
+            row.infrastructureBlockRate = agg.infrastructureBlockRate
+            row.goalReachedRateValidOnly = agg.goalReachedRateValidOnly
+          }
+          waveDepth.push(row)
+        }
+        if (needSoft) {
+          const soft = waveDetail?.evaluation?.softScores
+          if (soft) {
+            const basis = typeof soft.basis === 'string' ? soft.basis : undefined
+            for (const [scoreKey, entry] of Object.entries(soft)) {
+              if (scoreKey === 'basis') continue
+              if (!entry || typeof entry !== 'object') continue
+              if (waveSoftScores.length >= WAVE_SOFT_SCORES_CAP) break
+              const block = entry as {
+                value?: number | string | null
+                confidence?: number
+                scale?: string
+              }
+              const row: (typeof waveSoftScores)[number] = {
+                studyId: detail.id,
+                studyName: detail.name,
+                waveId: resolved.id,
+                waveName: resolved.waveKey,
+                scoreKey,
+                value: block.value ?? null,
+              }
+              if (typeof block.confidence === 'number') row.confidence = block.confidence
+              if (typeof block.scale === 'string') row.scale = block.scale
+              if (basis) row.basis = basis
+              waveSoftScores.push(row)
+            }
+          }
+        }
+      }
+
+      if (
+        studyWaves.length >= STUDY_WAVES_CAP &&
+        waveDepth.length >= WAVE_DEPTH_CAP &&
+        waveSoftScores.length >= WAVE_SOFT_SCORES_CAP
+      ) {
+        break
+      }
     }
-    if (studyWaves.length >= STUDY_WAVES_CAP) break
+    if (
+      studyWaves.length >= STUDY_WAVES_CAP &&
+      waveDepth.length >= WAVE_DEPTH_CAP &&
+      waveSoftScores.length >= WAVE_SOFT_SCORES_CAP
+    ) {
+      break
+    }
   }
 
   return jsonWithContract({
@@ -202,6 +301,8 @@ export async function GET(
     journeyElementRollup,
     journeyElements,
     studyWaves,
+    waveSoftScores,
+    waveDepth,
     platformProjectId: platformProjectId.trim(),
   })
 }
