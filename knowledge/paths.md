@@ -141,6 +141,7 @@
 - Unified video session BFF: `paths.routes.apiChatVideoSession` (`/api/chat/video/session`) POST create / DELETE end · resolve `apps/web/lib/video-call/resolve-provider.ts` · session `apps/web/lib/video-call/session.ts` · BEY client `paths.beyClientPath` · sync `paths.beySyncPath` · panel `paths.videoCallPanelPath`
 - Chat flyouts: product share / history / moodboard compose DS `Flyout` (`knowledge/flyout-ds-2026-07-30.md`)
 - Chat workspace spec: `specs/domain/chat-workspace.md`
+- Stream continuity (no mid-answer remount): `knowledge/chat-stream-continuity-2026-09-24.md`
 - DS Flyout: `msqdx-ui/specs/domain/msqdx-ui-flyout.md` · `packages/ui/src/components/Flyout.tsx`
 - DS chat chrome: `msqdx-ui/specs/domain/msqdx-ui-chat-chrome.md` · `packages/ui/src/css/chat.css` (`.chat-panel-open`)
 - DS chat icons: `IconShare` · `IconHistory` · `IconMoodboard` · `IconMic` · `IconVideo` (+ `IconSend`)

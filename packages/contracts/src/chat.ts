@@ -307,6 +307,12 @@ export type ChatStreamDoneEvent = {
   type: 'done'
   conversationId: string
   messageId?: string
+  /**
+   * Final assistant text after soft post-filter.
+   * When set, the client MUST replace the streamed bubble content with this
+   * without remounting the turn (stable React key).
+   */
+  text?: string
   /** Project RAG sources used for this turn (optional). */
   sources?: KnowledgeRagSource[]
 }

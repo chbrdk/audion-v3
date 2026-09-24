@@ -345,6 +345,7 @@ export async function* storeChatFakeStream(
     type: 'done',
     conversationId: done.conversationId,
     messageId: done.messageId,
+    text: reply,
     ...(ragSources.length ? { sources: ragSources } : {}),
   }
 }

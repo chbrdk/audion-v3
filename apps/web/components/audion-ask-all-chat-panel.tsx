@@ -232,7 +232,7 @@ export function AudionAskAllChatPanel({
                   {slot.status === 'pending' || (slot.status === 'streaming' && !slot.content) ? (
                     <LoadingText>Thinking…</LoadingText>
                   ) : null}
-                  {slot.content ? <ChatAnswer answer={slot.content} /> : null}
+                  {slot.content ? <ChatAnswer answer={slot.content} animate={false} /> : null}
                   {slot.status === 'error' && slot.error ? (
                     <p className="audion-edit-error" role="alert">
                       {slot.error}

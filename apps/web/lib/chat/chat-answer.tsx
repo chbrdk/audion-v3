@@ -11,6 +11,8 @@ type Props = {
   activeN?: number | null
   citationCount?: number
   onCiteClick?: (n: number) => void
+  /** Enter motion — off for live streaming bubbles (re-entry feels like a reset). */
+  animate?: boolean
 }
 
 function renderInlines(
@@ -101,11 +103,16 @@ export function ChatAnswer({
   activeN = null,
   citationCount = 0,
   onCiteClick,
+  animate = true,
 }: Props) {
   const blocks = useMemo(() => parseChatBlocks(answer), [answer])
 
   return (
-    <div className="chat-answer reveal" role="article" aria-label="Assistant answer">
+    <div
+      className={['chat-answer', animate ? 'reveal' : undefined].filter(Boolean).join(' ')}
+      role="article"
+      aria-label="Assistant answer"
+    >
       {blocks.map((block, i) => (
         <BlockView
           key={`block-${i}`}

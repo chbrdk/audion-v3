@@ -429,4 +429,43 @@ describe('audion chat panel', () => {
     expect(screen.getByLabelText('Friction 3 of 10')).toBeInTheDocument()
     expect(screen.getByLabelText('Persona fit 6 of 10')).toBeInTheDocument()
   })
+
+  it('keeps the streaming assistant bubble stable through done (no remount / reveal)', async () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    Element.prototype.scrollTo = vi.fn() as never
+    const replaceState = vi.fn()
+    vi.stubGlobal('history', { ...window.history, replaceState })
+
+    postChatStreamMock.mockImplementation(async (_payload, onEvent) => {
+      onEvent({ type: 'delta', text: 'Hallo, ' })
+      onEvent({ type: 'delta', text: 'hier ist der Rest.' })
+      onEvent({
+        type: 'done',
+        conversationId: 'conv-stream-1',
+        messageId: 'server-msg-should-not-become-key',
+        text: 'Hallo, hier ist der Rest.',
+      })
+    })
+
+    const { container } = render(
+      <AudionChatPanel
+        personas={personas}
+        personaId="persona-alex-morgan"
+        initialConversation={null}
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText(/Message|Nachricht/i), {
+      target: { value: 'Hi' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    await screen.findByText('Hallo, hier ist der Rest.')
+    const answer = container.querySelector('.chat-turn-assistant .chat-answer')
+    expect(answer).toBeTruthy()
+    expect(answer?.classList.contains('reveal')).toBe(false)
+    // Soft-nav remount was the reset; panel must not call router.replace on done.
+    expect(routerReplaceMock).not.toHaveBeenCalled()
+    expect(replaceState).toHaveBeenCalled()
+  })
 })

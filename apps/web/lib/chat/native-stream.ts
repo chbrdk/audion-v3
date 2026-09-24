@@ -260,6 +260,7 @@ export async function* nativeChatStreamEvents(
       type: 'done',
       conversationId: done.conversationId,
       messageId: done.messageId,
+      text: full || '…',
       ...(ragSources.length ? { sources: ragSources } : {}),
     }
   } catch (error) {

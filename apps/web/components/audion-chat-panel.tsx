@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type {
   ChatConversationDetail,
@@ -140,7 +139,8 @@ function ChatTurnArticle({ turn }: { turn: ChatMessage }) {
       </span>
       {turn.role === 'assistant' ? (
         turn.content ? (
-          <ChatAnswer answer={turn.content} />
+          // No `.reveal` — enter motion on status/id changes looked like a mid-answer reset.
+          <ChatAnswer answer={turn.content} animate={false} />
         ) : (
           <LoadingText>{t('chat.thinking')}</LoadingText>
         )
@@ -168,7 +168,6 @@ export function AudionChatPanel({
   guestBudget = null,
 }: Props) {
   const t = useT()
-  const router = useRouter()
   const [conversationId, setConversationId] = useState<string | null>(
     initialConversation?.id ?? null,
   )
@@ -293,14 +292,14 @@ export function AudionChatPanel({
     if (shareProjectId) params.set('projectId', shareProjectId)
     const qs = params.toString()
     const href = qs ? `${paths.routes.chat}?${qs}` : paths.routes.chat
-    // Keep address bar in sync even when App Router soft-nav is sticky on query-only changes.
+    // Address-bar sync only — App Router `router.replace` remounts ChatPage and
+    // wipes / re-enters the live assistant bubble mid-turn.
     if (typeof window !== 'undefined') {
       const current = `${window.location.pathname}${window.location.search}`
       if (current !== href) {
         window.history.replaceState(window.history.state, '', href)
       }
     }
-    router.replace(href, { scroll: false })
   }
 
   function handleStreamEvent(streamingId: string, event: ChatStreamEvent) {
@@ -319,7 +318,8 @@ export function AudionChatPanel({
           t.id === streamingId
             ? {
                 ...t,
-                id: event.messageId || t.id,
+                // Keep `id` stable so React does not remount the bubble / replay `.reveal`.
+                content: event.text ?? t.content,
                 status: 'complete',
                 createdAt: new Date().toISOString(),
               }
