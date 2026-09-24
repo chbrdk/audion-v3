@@ -223,24 +223,14 @@ export async function* nativeChatStreamEvents(
     })
 
     let full = ''
-    if (greeting) {
-      // Buffer so soft-filter matches what the user sees (short turns only).
-      for await (const chunk of stream) {
-        const text = chunk.choices[0]?.delta?.content
-        if (text) full += text
+    for await (const chunk of stream) {
+      const text = chunk.choices[0]?.delta?.content
+      if (text) {
+        full += text
+        yield { type: 'delta', text }
       }
-      full = humanizePersonaReply(full)
-      if (full) yield { type: 'delta', text: full }
-    } else {
-      for await (const chunk of stream) {
-        const text = chunk.choices[0]?.delta?.content
-        if (text) {
-          full += text
-          yield { type: 'delta', text }
-        }
-      }
-      full = humanizePersonaReply(full)
     }
+    full = humanizePersonaReply(full)
 
     const detail = await storeChatConversationDetail(turn.conversationId)
     const proposal = maybeProposeInspectWebsite(
@@ -292,6 +282,8 @@ export function nativeChatNdjsonResponse(payload: ChatSendPayload): Response {
     headers: {
       'Content-Type': 'application/x-ndjson; charset=utf-8',
       'Cache-Control': 'no-store',
+      // Coolify/nginx must not coalesce NDJSON chunks (keeps TTFT wait → live deltas).
+      'X-Accel-Buffering': 'no',
     },
   })
 }

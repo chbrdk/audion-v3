@@ -127,7 +127,7 @@ describe('native chat stream', () => {
     expect(system?.content).not.toMatch(/Greeting turn/i)
   })
 
-  it('buffers greeting turns with greeting envelope and tight token cap', async () => {
+  it('streams greeting turns live with greeting envelope and tight token cap', async () => {
     const events = []
     for await (const event of nativeChatStreamEvents({
       personaId: DEMO_PERSONAS[0]!.id,
@@ -145,9 +145,7 @@ describe('native chat stream', () => {
     const system = call.messages.find((m) => m.role === 'system')
     expect(system?.content).toMatch(/Greeting turn/i)
     const deltas = events.filter((e) => e.type === 'delta')
-    expect(deltas.length).toBe(1)
-    if (deltas[0]?.type === 'delta') {
-      expect(deltas[0].text).toBe('Hello world')
-    }
+    expect(deltas.length).toBe(2)
+    expect(deltas.map((e) => (e.type === 'delta' ? e.text : '')).join('')).toBe('Hello world')
   })
 })

@@ -2,8 +2,9 @@
 
 import React, { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import type { ChatStreamEvent, ChatTargetGroupRound } from '@audion-v3/contracts'
-import { Alert, Button, EmptyState, Field, LoadingText, Textarea } from '@msqdx/ui'
+import { Alert, Button, EmptyState, Field, Textarea } from '@msqdx/ui'
 import { ChatAnswer } from '../lib/chat/chat-answer'
+import { ChatWritingIndicator } from '../lib/chat/chat-writing-indicator'
 import { postChatStream } from '../lib/chat/stream-client'
 import {
   createAskAllRound,
@@ -230,7 +231,7 @@ export function AudionAskAllChatPanel({
                     <span className="audion-tg-chat-slot-role">{slot.role}</span>
                   </header>
                   {slot.status === 'pending' || (slot.status === 'streaming' && !slot.content) ? (
-                    <LoadingText>Thinking…</LoadingText>
+                    <ChatWritingIndicator label="Writing…" />
                   ) : null}
                   {slot.content ? <ChatAnswer answer={slot.content} animate={false} /> : null}
                   {slot.status === 'error' && slot.error ? (

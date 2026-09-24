@@ -14,7 +14,7 @@
 ### v2 levers (shipped)
 
 1. Soft post-filter — `apps/web/lib/chat/humanize-reply.ts`
-2. Greeting envelope — short socials, buffered stream so UI matches filter
+2. Greeting envelope — short socials; live token deltas (soft filter on final `done.text`, same as other turns)
 3. Voice few-shots — dominant trait lane in adaptive system prompt
 
 ### v3 levers (shipped)

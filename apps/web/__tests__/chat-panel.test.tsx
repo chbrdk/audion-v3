@@ -436,7 +436,12 @@ describe('audion chat panel', () => {
     const replaceState = vi.fn()
     vi.stubGlobal('history', { ...window.history, replaceState })
 
+    let releaseStream: (() => void) | undefined
+    const gate = new Promise<void>((resolve) => {
+      releaseStream = resolve
+    })
     postChatStreamMock.mockImplementation(async (_payload, onEvent) => {
+      await gate
       onEvent({ type: 'delta', text: 'Hallo, ' })
       onEvent({ type: 'delta', text: 'hier ist der Rest.' })
       onEvent({
@@ -459,6 +464,11 @@ describe('audion chat panel', () => {
       target: { value: 'Hi' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    await screen.findByText(/Writing…|Schreibt…/)
+    expect(container.querySelector('.chat-thinking-live')).toBeTruthy()
+    expect(container.querySelector('.chat-thinking-dots')).toBeTruthy()
+    releaseStream?.()
 
     await screen.findByText('Hallo, hier ist der Rest.')
     const answer = container.querySelector('.chat-turn-assistant .chat-answer')

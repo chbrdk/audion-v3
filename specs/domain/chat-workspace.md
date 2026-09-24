@@ -32,7 +32,7 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 | Panel | `.chat-panel.chat-panel-open` (+ thin `.audion-chat-panel` for shell offset) |
 | Message stack | Scroll; assistant via `ChatAnswer`; user `.chat-text` display type, right-aligned |
 | Empty | `@msqdx/ui` `EmptyState` + `.chat-empty` |
-| Streaming / busy | `LoadingText`; live assistant bubble must keep a **stable React key** and must **not** remount on `done` (no `id` swap, no `router.replace` for `conversationId`, no `.reveal` re-entry) |
+| Streaming / busy | Empty assistant bubble (TTFT): `.chat-thinking-live` + writing copy; footer may keep `LoadingText`. Live bubble must keep a **stable React key** and must **not** remount on `done` (no `id` swap, no `router.replace` for `conversationId`, no `.reveal` re-entry) |
 | Errors | `Alert tone="error"` |
 | Composer | Underline `Textarea.chat-composer`; expands on hover/focus/`is-expanded`; icon send `.chat-send.chat-send-icon` |
 | Attachments | Persona only: image attach + DOCX attach; pending thumbs/chips; A/B when exactly 2 images (`chat-image-attachments.md`, `chat-document-attachments.md`) |
@@ -131,7 +131,7 @@ Each native chat turn resolves a **deterministic adaptive system prompt** from t
 | Greeting envelope | Short social openers → 1–2 sentences, no product dump |
 | Language envelope | Per-turn DE/EN lock from `detectChatLocale` (survives German brand names) |
 | Research-elicitation envelope | Secondary GEO briefs; no category labels |
-| Soft post-filter | `humanizePersonaReply` strips emoji, category labels, coach offers, trailing “Und bei dir?” (greetings buffered so UI matches) |
+| Soft post-filter | `humanizePersonaReply` strips emoji, category labels, coach offers, trailing “Und bei dir?”; applied on final text (`done.text`). All turns (incl. greetings) stream live deltas |
 | Completions | Default **280** tokens; greeting **≤120**; elicitation **320** |
 | Custom voice seed | New personas get `DEFAULT_NATURAL_VOICE_OVERLAY` on create (overlay only) |
 | Tooling | URL / inspect hints appended in `native-stream` |
@@ -177,5 +177,5 @@ Persona mode + `projectId`: durable chunks in Postgres (jsonb embeddings), OpenR
 14. With `projectId` alone, project ask-all shows grid of project personas (≤10); CTA from project detail → `/chat?projectId=`.
 15. Project ask-all smoke: filter by `projectId` + fan-out → N cards.
 16. Natural dialogue first: voice few-shots, greeting envelope, soft post-filter (`humanizePersonaReply`), and secondary GEO elicitation without category headers.
-17. Streaming continuity: assistant turn DOM identity stays stable from first delta through `done`; URL `conversationId` updates via `history.replaceState` only (no App Router soft-nav remount); soft-filtered final text arrives on `done.text` without clearing the bubble.
-17. Bilingual human-likeness eval: catalog ≥10 DE/EN cases; scorers + live runner (`specs/domain/persona-chat-eval.md`).
+17. Streaming continuity: assistant turn DOM identity stays stable from first delta through `done`; URL `conversationId` updates via `history.replaceState` only (no App Router soft-nav remount); soft-filtered final text arrives on `done.text` without clearing the bubble. Empty TTFT bubble uses `.chat-thinking-live` + writing copy; greetings stream live deltas (no buffer-then-one-shot).
+18. Bilingual human-likeness eval: catalog ≥10 DE/EN cases; scorers + live runner (`specs/domain/persona-chat-eval.md`).

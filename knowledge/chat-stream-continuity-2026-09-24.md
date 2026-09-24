@@ -15,3 +15,8 @@ Persona web chat: assistant text starts streaming, then appears to **reset / bli
 - `ChatAnswer animate={false}` in the persona chat panel (no `.reveal` on live turns).
 
 Spec: `specs/domain/chat-workspace.md` § Composition / acceptance #17.
+
+## Follow-on (2026-09-24) — stream feel / Luna TTFT
+- Greetings no longer buffer-then-one-delta; they yield live deltas like other turns.
+- Empty streaming bubble shows `.chat-thinking-live` + “Schreibt…” / “Writing…” during model TTFT (~1.5–2s on `gpt-6-luna`).
+- NDJSON response sets `X-Accel-Buffering: no` so reverse proxies do not coalesce chunks.

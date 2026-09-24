@@ -22,6 +22,7 @@ import {
   Textarea,
 } from '@msqdx/ui'
 import { ChatAnswer } from '../lib/chat/chat-answer'
+import { ChatWritingIndicator } from '../lib/chat/chat-writing-indicator'
 import { compressChatImageFile } from '../lib/chat/compress-image'
 import { toolCompleteFromInspect } from '../lib/chat/messages-column'
 import { postChatStream } from '../lib/chat/stream-client'
@@ -142,7 +143,7 @@ function ChatTurnArticle({ turn }: { turn: ChatMessage }) {
           // No `.reveal` — enter motion on status/id changes looked like a mid-answer reset.
           <ChatAnswer answer={turn.content} animate={false} />
         ) : (
-          <LoadingText>{t('chat.thinking')}</LoadingText>
+          <ChatWritingIndicator label={t('chat.writing')} />
         )
       ) : (
         <UserTurnBody
