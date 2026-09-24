@@ -67,7 +67,7 @@ Idempotent when already bound.
 - Settings Account band — profile + logout
 - `PUT /api/platform/provisioning/users/[id]`
 - `PUT /api/platform/provisioning/projects/[id]`
-- `GET /api/platform/provisioning/projects/[id]` — Plexon Collection dashboard summary (service secret + `X-Plexon-User-Id`); METRON suite sync distillate: catalogs + `journeyPhases` / `journeyElementRollup`
+- `GET /api/platform/provisioning/projects/[id]` — Plexon Collection dashboard summary (service secret + `X-Plexon-User-Id`); METRON suite sync distillate: catalogs + Wave A (`journeyPhases` / `journeyElementRollup`) + Wave B (`journeyElements` / `studyWaves`)
 
 ### Project summary contract (`GET …/projects/[id]`)
 
@@ -85,6 +85,10 @@ Resolved by `platformProjectId` (Plexon Collection id). Response includes:
 | `personas` | `{ id, name, role, status, targetGroupId? }[]` | Catalog; `targetGroupId` from linked TG when present |
 | `journeys` | `{ id, name, status, journeyType, phaseCount, targetGroupName? }[]` | Catalog |
 | `studies` | `{ id, name, status, waveCount, targetUrlKey? }[]` | Catalog |
+| `journeyPhases` | `{ journeyId, journeyName, phaseId, phaseName, phaseOrder, elementCount, summary }[]` | Wave A; detail fetch, cap 80 |
+| `journeyElementRollup` | `{ journeyId, journeyName, kind, count }[]` | Wave A; kind × journey |
+| `journeyElements` | `{ journeyId, journeyName, phaseId, phaseName, phaseOrder, elementId, elementName, kind, order }[]` | Wave B; flat elements (`label` → `elementName`), cap 200 |
+| `studyWaves` | `{ studyId, studyName, waveId, waveName, status, createdAt }[]` | Wave B; from study detail (`waveKey` → `waveName`, `updatedAt` → `createdAt`), cap 80 |
 
 Deep-links (Audion app origin, not `/admin`): `/target-groups/{id}`, `/personas/{id}`, `/chat?personaId=…&projectId=…`, `/journeys/{id}`, `/studies/{id}`.
 

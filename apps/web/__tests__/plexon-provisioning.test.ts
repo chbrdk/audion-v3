@@ -169,6 +169,22 @@ describe('provisioning routes', () => {
       studies: Array<{ id: string; name: string; status: string; waveCount: number }>
       journeyPhases: Array<{ journeyId: string; phaseId: string; elementCount: number }>
       journeyElementRollup: Array<{ journeyId: string; kind: string; count: number }>
+      journeyElements: Array<{
+        journeyId: string
+        phaseId: string
+        elementId: string
+        elementName: string
+        kind: string
+        order: number
+      }>
+      studyWaves: Array<{
+        studyId: string
+        studyName: string
+        waveId: string
+        waveName: string
+        status: string
+        createdAt: string | null
+      }>
     }
     expect(body.externalProjectId).toBe('proj-audion-core')
     expect(body.targetGroupCount).toBeGreaterThan(0)
@@ -181,6 +197,10 @@ describe('provisioning routes', () => {
     expect(body.studies).toHaveLength(body.studyCount)
     expect(body.journeyPhases.length).toBeGreaterThan(0)
     expect(body.journeyElementRollup.length).toBeGreaterThan(0)
+    expect(body.journeyElements.length).toBeGreaterThan(0)
+    expect(body.journeyElements.length).toBeLessThanOrEqual(200)
+    expect(body.studyWaves.length).toBeGreaterThan(0)
+    expect(body.studyWaves.length).toBeLessThanOrEqual(80)
     expect(body.targetGroups[0]).toMatchObject({
       id: expect.any(String),
       name: expect.any(String),
@@ -216,6 +236,21 @@ describe('provisioning routes', () => {
       journeyId: expect.any(String),
       kind: expect.any(String),
       count: expect.any(Number),
+    })
+    expect(body.journeyElements[0]).toMatchObject({
+      journeyId: expect.any(String),
+      phaseId: expect.any(String),
+      elementId: expect.any(String),
+      elementName: expect.any(String),
+      kind: expect.any(String),
+      order: expect.any(Number),
+    })
+    expect(body.studyWaves[0]).toMatchObject({
+      studyId: expect.any(String),
+      studyName: expect.any(String),
+      waveId: expect.any(String),
+      waveName: expect.any(String),
+      status: expect.any(String),
     })
   })
 })

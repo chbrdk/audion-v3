@@ -15,7 +15,7 @@ import {
   storeTargetGroupList,
 } from '../../../../../../lib/fixtures/target-group-store'
 import { storeJourneyList, storeJourneyDetail } from '../../../../../../lib/fixtures/journey-store'
-import { storeUxStudyList } from '../../../../../../lib/fixtures/ux-study-store'
+import { storeUxStudyList, storeUxStudyDetail } from '../../../../../../lib/fixtures/ux-study-store'
 
 function jsonWithContract(body: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers)
@@ -94,8 +94,20 @@ export async function GET(
     kind: string
     count: number
   }> = []
+  const journeyElements: Array<{
+    journeyId: string
+    journeyName: string
+    phaseId: string
+    phaseName: string
+    phaseOrder: number
+    elementId: string
+    elementName: string
+    kind: string
+    order: number
+  }> = []
 
   const JOURNEY_DETAIL_LIMIT = 12
+  const JOURNEY_ELEMENTS_CAP = 200
   for (const j of journeys.slice(0, JOURNEY_DETAIL_LIMIT)) {
     const detail = await storeJourneyDetail(j.id)
     if (!detail) continue
@@ -114,6 +126,19 @@ export async function GET(
       const kindCounts = new Map<string, number>()
       for (const el of phase.elements ?? []) {
         kindCounts.set(el.kind, (kindCounts.get(el.kind) ?? 0) + 1)
+        if (journeyElements.length < JOURNEY_ELEMENTS_CAP) {
+          journeyElements.push({
+            journeyId: detail.id,
+            journeyName: detail.name,
+            phaseId: phase.id,
+            phaseName: phase.name,
+            phaseOrder: phase.order,
+            elementId: el.id,
+            elementName: el.label,
+            kind: el.kind,
+            order: el.order,
+          })
+        }
       }
       for (const [kind, count] of kindCounts) {
         const existing = journeyElementRollup.find(
@@ -125,15 +150,43 @@ export async function GET(
     }
   }
 
-  const studies = (await storeUxStudyList())
-    .items.filter((s) => s.projectId === project.id)
-    .map((s) => ({
-      id: s.id,
-      name: s.name,
-      status: s.status,
-      waveCount: s.waveCount,
-      targetUrlKey: s.targetUrlKey ?? null,
-    }))
+  const studySummaries = (await storeUxStudyList()).items.filter(
+    (s) => s.projectId === project.id,
+  )
+  const studies = studySummaries.map((s) => ({
+    id: s.id,
+    name: s.name,
+    status: s.status,
+    waveCount: s.waveCount,
+    targetUrlKey: s.targetUrlKey ?? null,
+  }))
+
+  const studyWaves: Array<{
+    studyId: string
+    studyName: string
+    waveId: string
+    waveName: string
+    status: string
+    createdAt: string | null
+  }> = []
+  const STUDY_DETAIL_LIMIT = 12
+  const STUDY_WAVES_CAP = 80
+  for (const s of studySummaries.slice(0, STUDY_DETAIL_LIMIT)) {
+    const detail = await storeUxStudyDetail(s.id)
+    if (!detail) continue
+    for (const wave of detail.waves ?? []) {
+      if (studyWaves.length >= STUDY_WAVES_CAP) break
+      studyWaves.push({
+        studyId: detail.id,
+        studyName: detail.name,
+        waveId: wave.id,
+        waveName: wave.waveKey,
+        status: wave.status,
+        createdAt: wave.updatedAt ?? null,
+      })
+    }
+    if (studyWaves.length >= STUDY_WAVES_CAP) break
+  }
 
   return jsonWithContract({
     externalProjectId: project.id,
@@ -147,6 +200,8 @@ export async function GET(
     studies,
     journeyPhases,
     journeyElementRollup,
+    journeyElements,
+    studyWaves,
     platformProjectId: platformProjectId.trim(),
   })
 }
