@@ -16,6 +16,7 @@ export function scheduleNativeResearchJob(
   projectId: string,
   seedUrl: string,
   packContext?: string,
+  actorUserId?: string | null,
 ): void {
   void (async () => {
     try {
@@ -96,6 +97,36 @@ ${crawl.combinedText.slice(0, 10_000)}`,
       storeAppendResearchEvent(runId, 'summary_saved', 'Summary saved')
       const { scheduleResearchBriefAutosync } = await import('../knowledge-pack-autosync')
       scheduleResearchBriefAutosync(projectId)
+      const { storeProjectDetail } = await import('../fixtures/project-store')
+      const { paths } = await import('../paths')
+      const { runtimeConfig } = await import('../runtime-config')
+      const { scheduleSuiteAuditEvent } = await import('../plexon-suite-audit')
+      const { scheduleCollectionActivityDistillate } = await import('../plexon-collection-activity')
+      const project = await storeProjectDetail(projectId)
+      const platformProjectId = project?.platformProjectId?.trim() ?? ''
+      if (platformProjectId && !platformProjectId.startsWith('plx-local-')) {
+        const base = (process.env.NEXT_PUBLIC_AUDION_URL?.trim() || `http://localhost:${runtimeConfig.appPort}`).replace(/\/$/, '')
+        scheduleCollectionActivityDistillate({
+          platformProjectId,
+          productId: 'audion',
+          kind: 'research_run',
+          status: 'completed',
+          subjectRef: runId,
+          title: assist.data.title || 'Research summary',
+          href: `${base}${paths.routes.projectDetail(projectId)}`,
+          actorUserId: actorUserId ?? undefined,
+        })
+        if (actorUserId?.trim()) {
+          scheduleSuiteAuditEvent({
+            platformProjectId,
+            productId: 'audion',
+            action: 'run_finished',
+            actorUserId,
+            subjectRef: runId,
+            meta: { seedUrl },
+          })
+        }
+      }
     } catch (error) {
       storeFailResearchRun(
         runId,

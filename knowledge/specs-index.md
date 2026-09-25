@@ -32,6 +32,7 @@
 | Project fields | `specs/domain/project-fields.md` |
 | Access Model B visibility | `specs/domain/access-model-b-visibility.md` |
 | Knowledge Pack publish (→ Plexon Collection) | `specs/domain/knowledge-pack-publish.md` |
+| Suite Enterprise Program | `specs/domain/suite-enterprise-program.md` |
 | Settings | `specs/domain/settings.md` |
 | Edit dialogs | `specs/domain/edit-dialogs.md` |
 

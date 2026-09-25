@@ -867,6 +867,7 @@ export async function runNativeResearchStart(
   projectId: string,
   body: ResearchStartRequest,
   _authorization?: string | null,
+  actorUserId?: string | null,
 ): Promise<ResearchStartResponse | NativeError> {
   const project = await storeProjectDetail(projectId)
   if (!project) return { error: 'Project not found', status: 404 }
@@ -886,6 +887,6 @@ export async function runNativeResearchStart(
     packContext = await loadPackSeedForPlatformProject(platformProjectId)
   }
 
-  scheduleNativeResearchJob(jobId, projectId, seedUrl, packContext || undefined)
+  scheduleNativeResearchJob(jobId, projectId, seedUrl, packContext || undefined, actorUserId)
   return { ...meta, jobId, status: 'queued' }
 }
