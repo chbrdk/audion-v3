@@ -233,7 +233,13 @@ export function AudionAskAllChatPanel({
                   {slot.status === 'pending' || (slot.status === 'streaming' && !slot.content) ? (
                     <ChatWritingIndicator label="Writing…" />
                   ) : null}
-                  {slot.content ? <ChatAnswer answer={slot.content} animate={false} /> : null}
+                  {slot.content ? (
+                    <ChatAnswer
+                      answer={slot.content}
+                      animate={false}
+                      streaming={slot.status === 'streaming'}
+                    />
+                  ) : null}
                   {slot.status === 'error' && slot.error ? (
                     <p className="audion-edit-error" role="alert">
                       {slot.error}

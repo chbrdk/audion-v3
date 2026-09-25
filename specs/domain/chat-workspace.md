@@ -32,7 +32,7 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 | Panel | `.chat-panel.chat-panel-open` (+ thin `.audion-chat-panel` for shell offset) |
 | Message stack | Scroll; assistant via `ChatAnswer`; user `.chat-text` display type, right-aligned |
 | Empty | `@msqdx/ui` `EmptyState` + `.chat-empty` |
-| Streaming / busy | Empty assistant bubble (TTFT): `.chat-thinking-live` + writing copy; footer may keep `LoadingText`. Live bubble must keep a **stable React key** and must **not** remount on `done` (no `id` swap, no `router.replace` for `conversationId`, no `.reveal` re-entry) |
+| Streaming / busy | Empty assistant bubble (TTFT): `.chat-thinking-live` + writing copy; footer may keep `LoadingText`. While `status=streaming` and content non-empty: **plain pre-wrap** (no `parseChatBlocks`) so lists/headings do not jump; format on `complete`. **Stop** aborts the in-flight fetch and finalizes the bubble in place. Live bubble must keep a **stable React key** and must **not** remount on `done` (no `id` swap, no `router.replace` for `conversationId`, no `.reveal` re-entry) |
 | Errors | `Alert tone="error"` |
 | Composer | Underline `Textarea.chat-composer`; expands on hover/focus/`is-expanded`; icon send `.chat-send.chat-send-icon` |
 | Attachments | Persona only: image attach + DOCX attach; pending thumbs/chips; A/B when exactly 2 images (`chat-image-attachments.md`, `chat-document-attachments.md`) |

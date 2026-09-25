@@ -20,3 +20,7 @@ Spec: `specs/domain/chat-workspace.md` § Composition / acceptance #17.
 - Greetings no longer buffer-then-one-delta; they yield live deltas like other turns.
 - Empty streaming bubble shows `.chat-thinking-live` + “Schreibt…” / “Writing…” during model TTFT (~1.5–2s on `gpt-6-luna`).
 - NDJSON response sets `X-Accel-Buffering: no` so reverse proxies do not coalesce chunks.
+
+## Follow-on (2026-09-25) — stop + plain while streaming
+- Stop finalizes the assistant turn (`status: complete`) after abort.
+- While `status=streaming`, `ChatAnswer` renders plain pre-wrap (no `parseChatBlocks` reflow).

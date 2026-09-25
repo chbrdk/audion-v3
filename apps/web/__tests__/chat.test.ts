@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   normalizeChatMarkdown,
   parseChatBlocks,
@@ -6,12 +8,21 @@ import {
 } from '../lib/chat/format-chat-answer'
 import { resetChatStore, storeChatFakeStream, storeChatConversationList } from '../lib/fixtures/chat-store'
 
+const webRoot = join(__dirname, '..')
+
 describe('chat answer formatting', () => {
   it('parses headings, lists, and inline marks', () => {
     const blocks = parseChatBlocks('## Lead\n\n**Bold** and *em*\n\n1. One\n2. Two\n\n- A\n- B')
     expect(blocks[0]).toMatchObject({ type: 'h', level: 2 })
     expect(parseChatInlines('see [1] and [2]').some((s) => s.type === 'cite')).toBe(true)
     expect(normalizeChatMarkdown('**Title:** body').startsWith('## Title')).toBe(true)
+  })
+
+  it('keeps plain pre-wrap while streaming (no parseChatBlocks reflow)', () => {
+    const src = readFileSync(join(webRoot, 'lib/chat/chat-answer.tsx'), 'utf8')
+    expect(src).toContain('streaming = false')
+    expect(src).toContain('chat-answer-streaming')
+    expect(src).toContain("whiteSpace: 'pre-wrap'")
   })
 })
 

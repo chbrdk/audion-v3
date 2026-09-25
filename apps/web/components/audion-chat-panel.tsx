@@ -141,7 +141,12 @@ function ChatTurnArticle({ turn }: { turn: ChatMessage }) {
       {turn.role === 'assistant' ? (
         turn.content ? (
           // No `.reveal` — enter motion on status/id changes looked like a mid-answer reset.
-          <ChatAnswer answer={turn.content} animate={false} />
+          // Plain while streaming so parseChatBlocks does not reflow lists/headings each delta.
+          <ChatAnswer
+            answer={turn.content}
+            animate={false}
+            streaming={turn.status === 'streaming'}
+          />
         ) : (
           <ChatWritingIndicator label={t('chat.writing')} />
         )
@@ -553,7 +558,18 @@ export function AudionChatPanel({
         setGuestRemaining((n) => (n == null ? n : Math.max(0, n - 1)))
       }
     } catch (error) {
-      if ((error as Error).name === 'AbortError') return
+      if ((error as Error).name === 'AbortError') {
+        setTurns((prev) => {
+          const next = prev.map((t) =>
+            t.id === streamingId && t.status === 'streaming'
+              ? { ...t, status: 'complete' as const }
+              : t,
+          )
+          turnsRef.current = next
+          return next
+        })
+        return
+      }
       setErr(error instanceof Error ? error.message : 'Stream failed')
     } finally {
       setBusy(false)
@@ -645,6 +661,13 @@ export function AudionChatPanel({
 
   function onStop() {
     abortRef.current?.abort()
+    setTurns((prev) => {
+      const next = prev.map((t) =>
+        t.status === 'streaming' ? { ...t, status: 'complete' as const } : t,
+      )
+      turnsRef.current = next
+      return next
+    })
     setBusy(false)
   }
 

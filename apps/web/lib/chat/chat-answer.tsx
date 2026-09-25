@@ -13,6 +13,8 @@ type Props = {
   onCiteClick?: (n: number) => void
   /** Enter motion — off for live streaming bubbles (re-entry feels like a reset). */
   animate?: boolean
+  /** While streaming: plain pre-wrap — parseChatBlocks would reflow headings/lists each delta. */
+  streaming?: boolean
 }
 
 function renderInlines(
@@ -104,8 +106,29 @@ export function ChatAnswer({
   citationCount = 0,
   onCiteClick,
   animate = true,
+  streaming = false,
 }: Props) {
-  const blocks = useMemo(() => parseChatBlocks(answer), [answer])
+  const blocks = useMemo(
+    () => (streaming ? [] : parseChatBlocks(answer)),
+    [answer, streaming],
+  )
+
+  if (streaming) {
+    return (
+      <div
+        className={['chat-answer', 'chat-answer-streaming', animate ? 'reveal' : undefined]
+          .filter(Boolean)
+          .join(' ')}
+        role="article"
+        aria-label="Assistant answer"
+        aria-busy="true"
+      >
+        <p className="chat-answer-p" style={{ whiteSpace: 'pre-wrap' }}>
+          {answer}
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div

@@ -474,6 +474,7 @@ describe('audion chat panel', () => {
     const answer = container.querySelector('.chat-turn-assistant .chat-answer')
     expect(answer).toBeTruthy()
     expect(answer?.classList.contains('reveal')).toBe(false)
+    expect(answer?.classList.contains('chat-answer-streaming')).toBe(false)
     // Soft-nav remount was the reset; panel must not call router.replace on done.
     expect(routerReplaceMock).not.toHaveBeenCalled()
     expect(replaceState).toHaveBeenCalled()
