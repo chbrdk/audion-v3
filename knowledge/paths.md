@@ -119,7 +119,7 @@
 - Coolify REST env ops (MCP hides values; REST `/applications/{uuid}/envs` returns them): `knowledge/coolify-rest-env-ops-2026-09-20.md`
   - Nested under `app/api/chat/*` → import fixtures via `../../../../lib/fixtures/chat-store` (four levels up)
   - Image attachments: `paths.routes.apiChatImagesUpload` · durable Postgres `chat_images` (memory fallback) · Spec `specs/domain/chat-image-attachments.md`
-  - DOCX attachments: `paths.routes.apiChatDocumentsUpload` · durable `chat_documents` · Spec `specs/domain/chat-document-attachments.md`
+  - Document attachments (DOCX/PDF/PPTX/MD/TXT/XLSX): `paths.routes.apiChatDocumentsUpload` · `paths.chatDocumentUploadAccept` · durable `chat_documents` · Spec `specs/domain/chat-document-attachments.md`
   - Knowledge RAG (phase 1): OpenRouter preferred / OpenAI key fallback · jsonb embeddings + app cosine · Spec `specs/domain/chat-knowledge-rag.md` · API `specs/api/knowledge-rag.md`
     - Env: `OPENROUTER_API_KEY` (optional) · `OPENROUTER_API_BASE_URL` · `AUDION_RAG_EMBEDDING_MODEL` (default `openai/text-embedding-3-small`) · `AUDION_RAG_ENABLED` · falls back to `OPENAI_API_KEY` for `/embeddings`
     - Routes: `apiKnowledgeRagIngest` `/api/knowledge/rag/ingest` · `apiKnowledgeRagRetrieve` `/api/knowledge/rag/retrieve` · `apiKnowledgeRagDocuments` · `apiKnowledgeRagDocument`

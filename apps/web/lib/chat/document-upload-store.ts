@@ -1,5 +1,5 @@
 /**
- * Chat DOCX upload store (persona attachments).
+ * Chat document upload store (persona attachments).
  * Postgres when DATABASE_URL set; else in-memory map.
  * Spec: specs/domain/chat-document-attachments.md
  */
@@ -11,7 +11,23 @@ import {
 } from '../db/chat-attachments'
 import { isProjectsDatabaseConfigured } from '../db/config'
 import { paths } from '../paths'
+import {
+  extensionOfChatDocument,
+  type ChatDocumentExt,
+} from './document-formats'
 import { extractDocxText } from './extract-docx'
+import { extractPdfText } from './extract-pdf'
+import { extractMarkdownText, extractPlainText } from './extract-plain'
+import { extractPptxText } from './extract-pptx'
+import { extractXlsxText } from './extract-xlsx'
+import { sanitizeChatAttachmentFilename } from './sanitize-attachment-filename'
+
+export type { ChatDocumentExt } from './document-formats'
+export {
+  extensionOfChatDocument,
+  isChatDocumentFilename,
+  CHAT_DOCUMENT_UPLOAD_ACCEPT,
+} from './document-formats'
 
 export type StoredChatDocument = {
   filename: string
@@ -38,8 +54,31 @@ export function resetChatDocumentUploadStore(): void {
   store.clear()
 }
 
-function isDocxFilename(name: string): boolean {
-  return name.trim().toLowerCase().endsWith('.docx')
+async function extractByExt(
+  ext: ChatDocumentExt,
+  buffer: Buffer,
+): Promise<{ text: string; truncated: boolean }> {
+  const max = paths.chatDocumentUploadMaxChars
+  switch (ext) {
+    case '.docx':
+      return extractDocxText(buffer, max)
+    case '.pdf':
+      return extractPdfText(buffer, max)
+    case '.pptx':
+      return extractPptxText(buffer, max)
+    case '.md':
+    case '.markdown':
+      return extractMarkdownText(buffer, max)
+    case '.txt':
+      return extractPlainText(buffer, max)
+    case '.xlsx':
+    case '.xls':
+      return extractXlsxText(buffer, max)
+    default: {
+      const _exhaustive: never = ext
+      return _exhaustive
+    }
+  }
 }
 
 export type PutChatDocumentResult =
@@ -57,9 +96,21 @@ export async function putChatDocument(input: {
   buffer: Buffer
 }): Promise<PutChatDocumentResult> {
   purgeExpired()
-  const filename = input.filename.trim() || 'document.docx'
-  if (!isDocxFilename(filename)) {
-    return { ok: false, error: 'Only .docx files are supported', status: 415 }
+  if (!input.buffer?.byteLength) {
+    return { ok: false, error: 'Empty file', status: 400 }
+  }
+  const filename = sanitizeChatAttachmentFilename(
+    input.filename.trim() || 'document.docx',
+    'document.docx',
+  )
+  const ext = extensionOfChatDocument(filename)
+  if (!ext) {
+    return {
+      ok: false,
+      error:
+        'Only .docx, .pdf, .pptx, .md, .markdown, .txt, .xlsx, .xls files are supported',
+      status: 415,
+    }
   }
   if (input.buffer.byteLength > paths.chatDocumentUploadMaxBytes) {
     return { ok: false, error: 'Document exceeds max upload size', status: 413 }
@@ -67,9 +118,21 @@ export async function putChatDocument(input: {
 
   let extracted: { text: string; truncated: boolean }
   try {
-    extracted = await extractDocxText(input.buffer, paths.chatDocumentUploadMaxChars)
-  } catch {
-    return { ok: false, error: 'Failed to extract DOCX text', status: 422 }
+    extracted = await extractByExt(ext, input.buffer)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message.toLowerCase() : ''
+    if (msg.includes('password') || msg.includes('encrypted')) {
+      return {
+        ok: false,
+        error: 'Failed to extract PDF text (password-protected)',
+        status: 422,
+      }
+    }
+    return { ok: false, error: `Failed to extract ${ext} text`, status: 422 }
+  }
+
+  if (!extracted.text.trim()) {
+    return { ok: false, error: 'Document has no extractable text', status: 422 }
   }
 
   const documentId = randomUUID()
@@ -139,17 +202,18 @@ export type ResolveChatDocumentsResult =
     }
   | { ok: false; error: string }
 
-/** Resolve upload IDs in order; fails if any id is missing/expired. */
+/** Resolve upload IDs in order; fails if any id is missing/expired. Caps per turn. */
 export async function resolveChatDocuments(
   documentIds: string[],
 ): Promise<ResolveChatDocumentsResult> {
+  const ids = documentIds.slice(0, paths.chatDocumentMaxPerTurn)
   const documents: Array<{
     id: string
     filename: string
     extractedText: string
     charCount: number
   }> = []
-  for (const id of documentIds) {
+  for (const id of ids) {
     const entry = await getChatDocument(id)
     if (!entry) {
       return { ok: false, error: `Document not found or expired: ${id}` }

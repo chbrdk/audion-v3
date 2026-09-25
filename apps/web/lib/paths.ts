@@ -470,10 +470,28 @@ export const paths = {
   chatImageUploadTtlSeconds: 3600,
   chatImageCompressMaxEdgePx: 1024,
   chatImageCompressQuality: 0.7,
-  /** Chat DOCX upload — see specs/domain/chat-document-attachments.md */
+  /** Chat document upload — see specs/domain/chat-document-attachments.md */
   chatDocumentUploadMaxBytes: 15 * 1024 * 1024,
   chatDocumentUploadMaxChars: 200_000,
   chatDocumentUploadTtlSeconds: 3600,
+  chatDocumentMaxPerTurn: 4,
+  chatDocumentFilenameMaxChars: 180,
+  chatDocumentPptxMaxSlides: 80,
+  chatDocumentXlsxMaxSheets: 10,
+  chatDocumentXlsxMaxRowsPerSheet: 500,
+  chatDocumentXlsxMaxCols: 50,
+  chatDocumentUploadAccept:
+    '.docx,.pdf,.pptx,.md,.markdown,.txt,.xlsx,.xls,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/markdown,text/plain',
+  chatDocumentExtensions: [
+    '.docx',
+    '.pdf',
+    '.pptx',
+    '.md',
+    '.markdown',
+    '.txt',
+    '.xlsx',
+    '.xls',
+  ] as const,
   /** Knowledge RAG — specs/domain/chat-knowledge-rag.md */
   envOpenRouterApiKey: 'OPENROUTER_API_KEY',
   envOpenRouterApiBaseUrl: 'OPENROUTER_API_BASE_URL',

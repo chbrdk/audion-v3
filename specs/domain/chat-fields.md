@@ -28,7 +28,7 @@
 | `createdAt` | nullable ISO |
 | `status` | `complete` \| `streaming` \| `error` (client) |
 | `images` | optional `{ id, dataUrl }[]` — compressed attachments for UI history |
-| `documents` | optional `{ id, filename, charCount }[]` — DOCX chips for UI history |
+| `documents` | optional `{ id, filename, charCount }[]` — document chips for UI history (DOCX/PDF/PPTX/MD/TXT/XLSX) |
 | `abCompare` | optional bool — user requested A/B compare on this turn |
 
 ## Send payload (`ChatSendPayload`)

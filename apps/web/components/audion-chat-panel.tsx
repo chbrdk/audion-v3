@@ -32,6 +32,7 @@ import {
   parseUxStepFollowUpDisplay,
 } from '../lib/chat/ux-journey-steps'
 import { paths } from '../lib/paths'
+import { isChatDocumentFilename, CHAT_DOCUMENT_UPLOAD_ACCEPT } from '../lib/chat/document-formats'
 import { useT } from '../lib/user-prefs'
 import { ChatInspectResultMeta } from './chat-inspect-result-meta'
 import { IconPlus, IconSend } from './nav-icons'
@@ -420,14 +421,19 @@ export function AudionChatPanel({
     setAttachBusy(true)
     setComposerError(null)
     try {
-      const picked = Array.from(files)
-      const docx = picked.filter((f) => f.name.toLowerCase().endsWith('.docx'))
-      if (docx.length < picked.length) {
+      const remaining = Math.max(0, paths.chatDocumentMaxPerTurn - pendingDocuments.length)
+      if (remaining <= 0) {
+        setComposerError(t('chat.attachDocMaxReached'))
+        return
+      }
+      const picked = Array.from(files).slice(0, remaining)
+      const docs = picked.filter((f) => isChatDocumentFilename(f.name))
+      if (docs.length < picked.length) {
         setComposerError(t('chat.attachDocInvalidType'))
       }
-      if (!docx.length) return
+      if (!docs.length) return
       const uploaded: { id: string; filename: string; charCount: number }[] = []
-      for (const file of docx) {
+      for (const file of docs) {
         const form = new FormData()
         form.append('file', file)
         const res = await fetch(paths.routes.apiChatDocumentsUpload, {
@@ -449,7 +455,7 @@ export function AudionChatPanel({
           charCount: body.charCount ?? 0,
         })
       }
-      setPendingDocuments((prev) => [...prev, ...uploaded])
+      setPendingDocuments((prev) => [...prev, ...uploaded].slice(0, paths.chatDocumentMaxPerTurn))
     } catch (e) {
       setComposerError(e instanceof Error ? e.message : t('chat.attachDocUploadFailed'))
     } finally {
@@ -917,7 +923,7 @@ export function AudionChatPanel({
               <input
                 ref={docInputRef}
                 type="file"
-                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                accept={CHAT_DOCUMENT_UPLOAD_ACCEPT}
                 multiple
                 className="audion-chat-attach-input"
                 aria-hidden
@@ -931,6 +937,7 @@ export function AudionChatPanel({
                 className="audion-chat-composer-icon"
                 icon={<IconPlus size={18} />}
                 aria-label={t('chat.attach')}
+                title={t('chat.attachHint')}
                 disabled={busy || toolBusy || attachBusy}
                 onClick={() => fileInputRef.current?.click()}
               />
@@ -940,7 +947,13 @@ export function AudionChatPanel({
                 size="sm"
                 className="audion-chat-composer-icon"
                 aria-label={t('chat.attachDoc')}
-                disabled={busy || toolBusy || attachBusy}
+                title={t('chat.attachDocHint')}
+                disabled={
+                  busy ||
+                  toolBusy ||
+                  attachBusy ||
+                  pendingDocuments.length >= paths.chatDocumentMaxPerTurn
+                }
                 onClick={() => docInputRef.current?.click()}
               >
                 DOC

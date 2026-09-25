@@ -38,7 +38,7 @@ Wire names follow existing v2 proxies; confirm against live OpenAPI when impleme
 |--------|------|------|
 | `POST` | `/api/chat/stream` (`paths.routes.apiChatStream`) | Native OpenAI NDJSON stream (or fixture fake-stream) |
 | `POST` | `/api/chat/images/upload` (`paths.routes.apiChatImagesUpload`) | Durable image store → `{ imageId }` (auth; not guest) |
-| `POST` | `/api/chat/documents/upload` (`paths.routes.apiChatDocumentsUpload`) | DOCX extract + durable store → `{ documentId, filename, charCount, truncated }` |
+| `POST` | `/api/chat/documents/upload` (`paths.routes.apiChatDocumentsUpload`) | Document extract (DOCX/PDF/PPTX/MD/TXT/XLSX) + durable store → `{ documentId, filename, charCount, truncated }` |
 | `GET` | `/api/chat/conversations` | List (fixture or proxy) |
 | `GET` | `/api/chat/conversations/[id]` | Detail |
 | `POST` | `/api/chat/tavus/session` (`paths.routes.apiChatTavusSession`) | Create Tavus CVI session from persona `tavusReplicaId` (ends leftover active rooms first) |

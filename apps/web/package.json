@@ -31,7 +31,8 @@
     "pg": "^8.22.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "react-driftkit": "^0.7.3"
+    "react-driftkit": "^0.7.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.0",
