@@ -11,6 +11,7 @@ describe('audion platform assistant shell mount', () => {
     expect(shell).toContain('PlatformAssistantHost')
     expect(shell).toContain('ShellBrandCorner')
     expect(host).toContain('postPlatformAssistantTheme')
+    expect(host).toContain('embedSrcLockedRef')
     expect(host).toContain('headerActions')
     expect(paths).toContain('envPlexonPublicUrl')
     expect(paths).toContain('NEXT_PUBLIC_PLEXON_URL')
