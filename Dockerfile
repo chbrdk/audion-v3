@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Prefer codeload tarball over `git fetch` — Coolify build hosts sometimes fail nested
 # git clones against GitHub (exit 128) even when the repo is public.
 FROM base AS ds
-ARG MSQDX_UI_REF=68879023dd999226908c61d720a81cc9e798b2dc
+ARG MSQDX_UI_REF=6684945af8202fbae971da74650179861f9f1438
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /workspace/msqdx-ui \

@@ -212,9 +212,10 @@ describe('project workspace components', () => {
 
   it('renders list cards and create tile', () => {
     const { container } = render(<ProjectListPanel list={list} />)
-    expect(screen.getByText('AUDION Core')).toBeInTheDocument()
-    expect(container.querySelector('.audion-tg-card--create')).toBeTruthy()
-    expect(screen.getByRole('link', { name: /AUDION Core/i })).toHaveAttribute(
+    expect(screen.getByRole('heading', { name: 'AUDION Core' })).toBeInTheDocument()
+    expect(container.querySelector('.audion-project-hub-card--create')).toBeTruthy()
+    expect(container.querySelector('.ds-collection-hub-grid')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Open' })).toHaveAttribute(
       'href',
       paths.routes.projectDetail('proj-audion-core'),
     )

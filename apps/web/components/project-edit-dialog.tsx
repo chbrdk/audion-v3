@@ -3,9 +3,8 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ProjectDetail, ProjectStatus, ProjectWritePayload } from '@audion-v3/contracts'
-import { Button, Field, Input, Textarea, Alert } from '@msqdx/ui'
+import { Button, CollectionHubCard, Field, Input, Textarea, Alert } from '@msqdx/ui'
 import { ConfirmDialog, Dialog, Select } from '../lib/msqdx-ui-client'
-import { HubIndexCard } from '../lib/msqdx-ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { IconDelete, IconEdit } from './nav-icons'
@@ -222,11 +221,11 @@ export function ProjectCreateButton({ variant = 'card' }: { variant?: 'card' | '
   return (
     <>
       {variant === 'card' ? (
-        <HubIndexCard
+        <CollectionHubCard
           variant="create"
-          className="audion-tg-card audion-tg-card--create"
+          className="audion-project-hub-card--create"
           title={t('tiles.newProject')}
-          meta={t('tiles.newProjectMeta')}
+          hint={t('tiles.newProjectMeta')}
           onClick={() => setOpen(true)}
         />
       ) : (

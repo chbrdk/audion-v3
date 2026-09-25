@@ -76,7 +76,7 @@ describe('hub index Cards|List layout', () => {
   it('shares the preference with projects hub and right-aligns status · groups · personas', () => {
     sessionStorage.setItem(paths.hubIndexLayoutKey, 'list')
     const { container } = wrap(<ProjectListPanel list={projectList} />)
-    expect(container.querySelector('.audion-hub-index-list')).toBeTruthy()
+    expect(container.querySelector('.ds-collection-hub-list')).toBeTruthy()
     const meta = container.querySelector('.audion-hub-index-list-meta')?.textContent ?? ''
     expect(meta.indexOf('published')).toBeGreaterThanOrEqual(0)
     expect(meta.indexOf('published')).toBeLessThan(meta.search(/group/i))
