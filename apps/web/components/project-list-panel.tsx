@@ -79,7 +79,7 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
                     <Link href={detailHref(item.id)} className="ds-collection-hub-list-row__title">
                       {item.name}
                     </Link>
-                    <p className="audion-hub-index-list-meta">
+                    <p className="ds-collection-hub-list-meta">
                       <span data-status={item.status}>{item.status}</span>
                       <span aria-hidden> · </span>
                       {t(
