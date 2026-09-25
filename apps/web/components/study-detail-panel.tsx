@@ -25,7 +25,14 @@ function FacetTile({
   )
 }
 
-export function StudyDetailPanel({ study }: { study: UxStudyDetail | null }) {
+export function StudyDetailPanel({
+  study,
+  evidenceMode = 'fixture',
+}: {
+  study: UxStudyDetail | null
+  /** Live agent vs fixture when UX_JOURNEY_AGENT_URL is unset (suite UC3). */
+  evidenceMode?: 'live' | 'fixture'
+}) {
   const t = useT()
 
   if (!study) {
@@ -56,11 +63,24 @@ export function StudyDetailPanel({ study }: { study: UxStudyDetail | null }) {
           <span data-status={study.status} className="audion-magazine-status">
             {study.status}
           </span>
+          <span className="briefing-nav-sep" aria-hidden>
+            ·
+          </span>
+          <span data-testid="study-evidence-mode" data-mode={evidenceMode}>
+            {evidenceMode === 'live' ? 'Live' : 'Fixture'}
+          </span>
         </p>
         <div className="audion-magazine-topbar-actions">
           <WaveCreateButton studyId={study.id} defaultTargetUrlKey={study.targetUrlKey} />
         </div>
       </div>
+
+      {evidenceMode === 'fixture' ? (
+        <Hint data-testid="study-evidence-fixture-hint">
+          UX Journey Agent URL is not configured — runs use Fixture evidence, not Live agent
+          sessions.
+        </Hint>
+      ) : null}
 
       <header className="signal-hero briefing-hero audion-magazine-hero audion-magazine-hero--split ds-motion-reveal">
         <div className="audion-magazine-hero-copy">

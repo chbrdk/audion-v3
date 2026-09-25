@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { AppShell } from '../../../components/app-shell'
 import { StudyDetailPanel } from '../../../components/study-detail-panel'
 import { fetchUxStudyDetail } from '../../../lib/ux-studies'
+import { getUxStudyEvidenceMode } from '../../../lib/ux-journey-agent-client'
 import { paths } from '../../../lib/paths'
 
 export default async function StudyDetailPage({
@@ -23,7 +24,7 @@ export default async function StudyDetailPage({
     }
     return (
       <AppShell>
-        <StudyDetailPanel study={study} />
+        <StudyDetailPanel study={study} evidenceMode={getUxStudyEvidenceMode()} />
       </AppShell>
     )
   } catch (error) {

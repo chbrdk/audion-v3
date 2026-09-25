@@ -101,6 +101,11 @@ export function isUxJourneyAgentConfigured(): boolean {
   return Boolean(agentBase())
 }
 
+/** Live agent vs in-memory fixture evidence (suite UC3 testing). */
+export function getUxStudyEvidenceMode(): 'live' | 'fixture' {
+  return isUxJourneyAgentConfigured() ? 'live' : 'fixture'
+}
+
 function agentHeaders(extra?: HeadersInit): Headers {
   const headers = new Headers(extra)
   const secret = process.env.UX_JOURNEY_AGENT_SECRET?.trim()

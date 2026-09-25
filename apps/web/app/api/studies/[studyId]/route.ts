@@ -13,7 +13,11 @@ export async function GET(
   const { studyId } = await context.params
   const study = await storeUxStudyDetail(studyId)
   if (!study) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  return NextResponse.json(study)
+  const { getUxStudyEvidenceMode } = await import('../../../../lib/ux-journey-agent-client')
+  return NextResponse.json({
+    ...study,
+    evidenceMode: getUxStudyEvidenceMode(),
+  })
 }
 
 export async function PATCH(
