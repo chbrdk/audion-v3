@@ -57,6 +57,7 @@ import {
   normalizeDeriveFacets,
 } from './persona-agent-derive'
 import { shouldPreferAiLive, shouldRequireAiLive } from './persona-api-proxy'
+import { shadowFrictionSeverity } from './jev/hooks'
 
 export {
   AI_WORKFLOW_TARGETS,
@@ -864,6 +865,14 @@ export async function scoreValidateJourney(
           ? 'Run a short persona chat on the weakest handoff, then re-validate.'
           : 'Add a decision or handoff moment with a clear owner.',
       )
+    }
+
+    for (const fp of frictionPoints) {
+      shadowFrictionSeverity({
+        description: fp.description,
+        phase: phase.name,
+        severity: fp.severity,
+      })
     }
 
     return {

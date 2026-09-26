@@ -23,6 +23,7 @@ import {
 import { mapAgentResultToWaveRun } from './ux-wave-scorecard'
 import { deriveFlowVerdict, mergeFlowVerdictIntoWaveRun } from './ux-flow-verdict'
 import type { UxTestFlow, UxFlowCursor } from '@audion-v3/contracts'
+import { shadowInsightTriage } from './jev/hooks'
 
 export async function startUxWaveNativeOrFixture(
   studyId: string,
@@ -248,6 +249,13 @@ export async function syncUxWaveNativeOrFixture(
 
     const outcome = (assist.data.outcome || 'partial').toLowerCase()
     const ok = outcome === 'pass' || outcome === 'partial'
+    for (const f of assist.data.findings ?? []) {
+      shadowInsightTriage({
+        title: f.title,
+        detail: f.detail,
+        severity: f.severity,
+      })
+    }
     const findingParts = [
       assist.data.summary,
       ...(assist.data.findings ?? []).map(

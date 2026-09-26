@@ -33,6 +33,7 @@ const requiredSpecs = [
   'specs/domain/access-model-b-visibility.md',
   'specs/domain/knowledge-pack-publish.md',
   'specs/domain/suite-enterprise-program.md',
+  'specs/domain/jev-decisions.md',
   'specs/domain/edit-dialogs.md',
   'specs/api/personas.md',
   'specs/api/target-groups.md',

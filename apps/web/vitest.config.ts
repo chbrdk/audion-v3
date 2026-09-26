@@ -4,6 +4,7 @@ import path from 'node:path'
 export default defineConfig({
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, '.'),
       '@audion-v3/contracts': path.resolve(__dirname, '../../packages/contracts/src/index.ts'),
       '@msqdx/ui': path.resolve(__dirname, './lib/msqdx-ui.ts'),
       '@msqdx/ui-shell': path.resolve(__dirname, './lib/msqdx-ui-shell.ts'),

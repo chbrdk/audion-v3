@@ -40,6 +40,7 @@ import {
   formatUpstreamPath,
   scoreValidateJourney,
 } from './ai-workflows'
+import { shadowFrictionSeverity } from './jev/hooks'
 import { runAssist, runAssistJson } from './ai/assist'
 import {
   createOpenAiClient,
@@ -724,10 +725,18 @@ export async function runNativeValidateJourney(
           if (!quote) return phase
           const frictionPoints = [...phase.frictionPoints]
           if (quote.personaQuote || quote.friction) {
+            const severity = phase.status === 'critical' ? 'high' : 'medium'
+            const description =
+              quote.friction || `Persona chat reaction to ${phase.phaseName}`
             frictionPoints.unshift({
-              description: quote.friction || `Persona chat reaction to ${phase.phaseName}`,
-              severity: phase.status === 'critical' ? 'high' : 'medium',
+              description,
+              severity,
               personaQuote: quote.personaQuote ?? null,
+            })
+            shadowFrictionSeverity({
+              description,
+              phase: phase.phaseName,
+              severity,
             })
           }
           const recommendations = quote.recommendation
