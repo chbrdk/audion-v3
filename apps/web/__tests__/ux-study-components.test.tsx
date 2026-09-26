@@ -83,6 +83,26 @@ describe('UX study UI (magazine + DS)', () => {
     )
   })
 
+  it('labels Fixture evidence when Agent URL is missing (default evidenceMode)', async () => {
+    const study = (await storeUxStudyDetail('study-ebm-produktkombinationen'))!
+    render(<StudyDetailPanel study={study} />)
+    const mode = screen.getByTestId('study-evidence-mode')
+    expect(mode).toHaveAttribute('data-mode', 'fixture')
+    expect(mode.textContent).toMatch(/Fixture/i)
+    expect(screen.getByTestId('study-evidence-fixture-hint').textContent).toMatch(
+      /not configured|Fixture/i,
+    )
+  })
+
+  it('labels Live evidence when evidenceMode is live', async () => {
+    const study = (await storeUxStudyDetail('study-ebm-produktkombinationen'))!
+    render(<StudyDetailPanel study={study} evidenceMode="live" />)
+    const mode = screen.getByTestId('study-evidence-mode')
+    expect(mode).toHaveAttribute('data-mode', 'live')
+    expect(mode.textContent).toMatch(/^Live$/)
+    expect(screen.queryByTestId('study-evidence-fixture-hint')).toBeNull()
+  })
+
   it('renders wave detail with DS lede, start/compare, report, and F-Fragen chat', async () => {
     const study = (await storeUxStudyDetail('study-ebm-produktkombinationen'))!
     const wave = (await storeUxWaveDetail(study.id, 'wave-audion-2026-07-30-mcp'))!
