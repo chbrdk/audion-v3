@@ -21,8 +21,7 @@
 
 | Area | Notes |
 |---|---|
-| `tmp/migrate-v2-v3/` | Likely `drop_safe` if unused by CI |
-| One-off run dumps in `knowledge/` (html/pdf/json) | Orphan dumps → `drop_safe` after ref check |
+| `tmp/migrate-v2-v3/` + orphan HTML/JSON ops dumps | **dropped** 2026-09-26 (Prio 5) |
 | `scripts/migrate-project-v2-to-v3.mjs` | Drop if migration complete |
 
 ## Defer

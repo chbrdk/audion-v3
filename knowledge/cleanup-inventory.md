@@ -5,19 +5,19 @@
 **Playbook:** plexon-v3 `knowledge/suite-cleanup.md`  
 **Keep/drop backlog:** [`keep-drop-backlog.md`](keep-drop-backlog.md)
 
-Scope this pass: `tmp/migrate-v2-v3/`, v2→v3 migrate tooling, one-off knowledge run dumps (html/json), orphan ops/lab notes. No deletes in this step.
+Scope this pass: `tmp/migrate-v2-v3/`, v2→v3 migrate tooling, one-off knowledge run dumps (html/json), orphan ops/lab notes. **Sweeper Prio 5:** all listed `drop_safe` orphans purged 2026-09-26.
 
 | Path | Klasse | Nachweis | Notes |
 |---|---|---|---|
-| `tmp/migrate-v2-v3/` (`plan.json`, `id-map.json`, `v2-project.json`) | drop_safe | Kein CI/Workflow-Ref; nur Default-`OUT_DIR` in `scripts/migrate-project-v2-to-v3.mjs` + `knowledge/migrate-project-v2-to-v3.md`; keep-drop „Likely drop_safe“ | Committed Einmal-Artefakte einer Migration; nach Bedarf per Script neu erzeugbar. Nicht in `.gitignore` (im Gegensatz zu `.tmp/`). |
+| `tmp/migrate-v2-v3/` (`plan.json`, `id-map.json`, `v2-project.json`) | drop_safe **done** 2026-09-26 | Purged | Regenerierbar via `scripts/migrate-project-v2-to-v3.mjs`. |
 | `scripts/migrate-project-v2-to-v3.mjs` | keep | `knowledge/paths.md` (canonical migrate); gekoppelt an `knowledge/migrate-project-v2-to-v3.md`; keep-drop „Drop if migration complete“ → Gatekeeper | Operatives Plexon-first-Migrate-Tool; erst droppen wenn Migration abgeschlossen und Backlog aktualisiert. |
 | `knowledge/migrate-project-v2-to-v3.md` | keep | `knowledge/paths.md`; Script-Kopfkommentar | Runbook für verbleibende v2→v3 Collections; Spec-/Ops-Bezug. |
-| `knowledge/ebm-comparison-2026-08-19.json` | drop_safe | Repo-Suche: keine Imports/Pfad-Strings außer Datei selbst; kein Test/Spec | Offensichtlicher Output von `compare-ebm-evaluations.mjs`, nicht an Baseline-Test (`2026-08-04-pathfind`) gebunden. |
-| `knowledge/ebm-ai-concrete-results-2026-08-19.html` | drop_safe | Keine Code-/Test-/paths-Refs | Statischer HTML-Lauf-Dump; verweist nur auf Wave-JSONs. |
-| `knowledge/ebm-human-vs-ai-findings-2026-08-19.html` | drop_safe | Keine Repo-Refs | Orphan HTML; kein Gegenstück in `paths.md` (im Gegensatz zu PDF-Zeilen bei UEQ/BSH). |
-| `knowledge/bsh-home-concrete-results-2026-08-19.html` | drop_safe | `paths.md` nennt `.pdf`, nicht `.html`; keine HTML-Refs | Duplikat/Abweichung zur dokumentierten PDF-Artifact-Linie. |
-| `knowledge/bsh-human-vs-ai-2026-08-19.html` | drop_safe | Wie oben — canonical in paths ist `.pdf` | Gleiche BSH-Welle; HTML ohne Nachweis-Nutzung. |
-| `knowledge/ueq-ebike-*-2026-08-19.html` (Benchmark, human-vs-ai, ai-voices, gesamtbericht, concrete-results) | drop_safe | Vitest (`ueq-ebike-benchmark.test.ts`) liest **JSON**; HTML nur Script-Output (`infer-ueq-ebike-scores.py`, `build-ueq-human-vs-ai.py`, `export-ueq-ebike-*.py`) | Regenerierbare Report-HTML; JSON + `knowledge/ueq-ebike-runs/` (lokal, oft nicht committed) sind die SSOT für Repro. |
+| `knowledge/ebm-comparison-2026-08-19.json` | drop_safe **done** 2026-09-26 | Purged | Regenerierbar via `compare-ebm-evaluations.mjs`. |
+| `knowledge/ebm-ai-concrete-results-2026-08-19.html` | drop_safe **done** 2026-09-26 | Purged | Statischer HTML-Lauf-Dump. |
+| `knowledge/ebm-human-vs-ai-findings-2026-08-19.html` | drop_safe **done** 2026-09-26 | Purged | Orphan HTML. |
+| `knowledge/bsh-home-concrete-results-2026-08-19.html` | drop_safe **done** 2026-09-26 | Purged | Canonical in paths ist `.pdf`. |
+| `knowledge/bsh-human-vs-ai-2026-08-19.html` | drop_safe **done** 2026-09-26 | Purged | Gleiche BSH-Welle. |
+| `knowledge/ueq-ebike-*-2026-08-19.html` (Benchmark, human-vs-ai, ai-voices, gesamtbericht, concrete-results) | drop_safe **done** 2026-09-26 | Purged | JSON + Scripts bleiben SSOT. |
 | `knowledge/ueq-ebike-benchmark-2026-08-19.json` | keep | `apps/web/__tests__/ueq-ebike-benchmark.test.ts`; mehrere `scripts/*.py` | Contract-/Lab-Evidence; nicht mit HTML-Drops mischen. |
 | `knowledge/ueq-ebike-human-vs-ai-2026-08-19.json` | keep | Gleicher Test + `export-ueq-ebike-gesamtbericht.py` | |
 | `knowledge/ueq-ebike-ai-voices-2026-08-19.json` | keep | Test + Export-Skripte | |
@@ -25,8 +25,8 @@ Scope this pass: `tmp/migrate-v2-v3/`, v2→v3 migrate tooling, one-off knowledg
 | `knowledge/ux-journey-fail-buckets-*-2026-08-*.json` | keep | `knowledge/paths.md`, Lab-Notes (`lab-staging-smoke-luna-vision`, `ux-agent-*`); `scripts/bucket-ux-journey-fail-reasons.py` | Aggregierte Fail-Buckets; referenzieren (optionale) `knowledge/ueq-ebike-runs/` Pfade. |
 | `knowledge/ebm-produktkombinationen-evaluation-audion-2026-08-19-wave-{1,2,3}.json` | keep | Nur in orphan HTML erwähnt; unsicher → keep | EBM-Lab-Roh-Evaluierungen; behalten bis Gatekeeper klärt ob archiviert oder in pathfind-Baseline konsolidiert. |
 | `knowledge/ebm-produktkombinationen-evaluation-audion-2026-08-04-pathfind.json` | keep | `specs/domain/ebm-evaluation-export.md`, `ebm-batch-scripts.test.ts`, viele UX-Study-Tests | Baseline-Evidence — nicht droppen. |
-| `knowledge/coolify-web-deploy-fail-copy-next-2026-08-03.md` | drop_safe | Keine Repo-Refs | Einmal-Deploy-Notiz; `deploy-urls.md` verweist auf andere Coolify-Inventare. |
-| `knowledge/knowledge-sync-after-bind-2026-08-03.md` | drop_safe | Keine Repo-Refs | Orphan Ops-Notiz ohne paths/spec/test. |
+| `knowledge/coolify-web-deploy-fail-copy-next-2026-08-03.md` | drop_safe **done** 2026-09-26 | Purged | Einmal-Deploy-Notiz. |
+| `knowledge/knowledge-sync-after-bind-2026-08-03.md` | drop_safe **done** 2026-09-26 | Purged | Orphan Ops-Notiz. |
 | `knowledge/coolify-msqdx-audion-v3-2026-08-03.md` | keep | `knowledge/deploy-urls.md`, `coolify-deploy-api-2026-08-03.md` | Coolify-Inventar — Live-Deploy-Bezug. |
 | `knowledge/cloudfront-403-bosch-headless-ua-2026-08-03.md` | keep | `apps/web/lib/paths.ts`, `services/ux-journey-agent/browser_ua.py`, `main.py`, `paths.md` | Runtime-relevante UA-Dokumentation. |
 | `knowledge/flyout-ds-2026-07-30.md` | keep | `paths.md` (Chat flyouts) | DS-Migrationsnotiz mit Produktbezug. |
@@ -42,16 +42,8 @@ Scope this pass: `tmp/migrate-v2-v3/`, v2→v3 migrate tooling, one-off knowledg
 | Persona fixture path `fixtures` vs Live `api` | reshape | keep-drop backlog „Reshape“ | Env-gesteuert; Fixture-Pfad bis Live-only-Mandat behalten. |
 | Share-Links Hub writer (ephemeral chat links) | defer | keep-drop backlog „Defer“ | Bewusst später; keine Cleanup-Welle. |
 
-## Kurzliste `drop_safe` (Vorschlag für Gatekeeper)
+## Kurzliste `drop_safe` (Prio 5 Sweeper — **done** 2026-09-26)
 
-1. `tmp/migrate-v2-v3/` (gesamter Ordner)  
-2. `knowledge/ebm-comparison-2026-08-19.json`  
-3. `knowledge/ebm-ai-concrete-results-2026-08-19.html`  
-4. `knowledge/ebm-human-vs-ai-findings-2026-08-19.html`  
-5. `knowledge/bsh-home-concrete-results-2026-08-19.html`  
-6. `knowledge/bsh-human-vs-ai-2026-08-19.html`  
-7. `knowledge/ueq-ebike-*-2026-08-19.html` (alle sechs Export-HTMLs)  
-8. `knowledge/coolify-web-deploy-fail-copy-next-2026-08-03.md`  
-9. `knowledge/knowledge-sync-after-bind-2026-08-03.md`  
+Alle 9 Orphans oben als `drop_safe **done**` — keine offenen Sweeper-Ziele aus dieser Liste.
 
-**Nicht** auf die Sweeper-Liste (noch): `scripts/migrate-project-v2-to-v3.mjs` / `migrate-project-v2-to-v3.md` — erst nach expliziter „Migration complete“-Freigabe im Backlog.
+**Nicht** droppen (noch): `scripts/migrate-project-v2-to-v3.mjs` / `migrate-project-v2-to-v3.md` — erst nach expliziter „Migration complete“-Freigabe im Backlog.
