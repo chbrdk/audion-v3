@@ -179,6 +179,28 @@ export async function syncUxWaveNativeOrFixture(
             return mapped
           })(),
         )
+        if (status.status === 'complete' || status.status === 'error') {
+          try {
+            const { reportUsage, getUsageUserId } = await import('./usage-report')
+            const userId = getUsageUserId()
+            if (userId) {
+              reportUsage({
+                userId,
+                eventType: 'journey_agent',
+                rawUnits: {
+                  runs: 1,
+                  steps: steps.length,
+                  ok: status.status === 'complete',
+                  job_id: run.jobId,
+                  surface: 'ux.journey_agent',
+                },
+                idempotencyKey: `journey_agent:${run.jobId}`,
+              })
+            }
+          } catch {
+            /* never affect sync */
+          }
+        }
       } catch {
         anyRunning = true
         updated.push(run)
