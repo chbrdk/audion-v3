@@ -14,18 +14,22 @@
 | Secondary | plexon `audion-journey-outline-client.ts` `frictionSeverity` mapper |
 | Tests | `__tests__/jev-client.test.ts`, `jev-shadow-hooks.test.ts` |
 
-## Env (Coolify `audion-v3:main-app`)
+## Env (Coolify `audion-v3:main-app` · `putvwgqq1c9yb30tsqosujde`)
 
 | Key | Status |
 |-----|--------|
-| `OPENROUTER_API_KEY` | **Not present** at wave time — shadow cannot run until set |
-| `JEV_SHADOW_ENABLED` | **Not set** (requires key first) |
+| `OPENROUTER_API_KEY` | **Present** (copied from plexon donor; runtime only) |
+| `OPENROUTER_API_BASE_URL` | Set (`https://openrouter.ai`) |
+| `JEV_MODEL_ID` | Set (`typesafe/jev-1.13`) |
+| `JEV_TIMEOUT_MS` | Set (`800`) |
+| `JEV_SHADOW_ENABLED` | **Set (`1`)** — shadow on after force redeploy |
 | `JEV_ACT_*` | Unset (intentionally) |
 
-When `OPENROUTER_API_KEY` is added: set `JEV_SHADOW_ENABLED=1` only. Do **not** set Act flags.
+Shadow env enabled 2026-09-26 via Coolify API (`PATCH …/envs/bulk` from plexon `OPENROUTER_API_KEY`, then force deploy). Do **not** set Act flags.
 
 ## Residual
 
-1. Add `OPENROUTER_API_KEY` to Coolify audion-v3, then enable `JEV_SHADOW_ENABLED=1` and redeploy if Coolify requires restart for new env.
+1. ~~Add `OPENROUTER_API_KEY` + `JEV_SHADOW_ENABLED=1`~~ **Done** (Coolify + force redeploy).
 2. Act soak / flip later per plexon `knowledge/jev-flip-runbook.md`.
 3. Stub candidates still unwired: `audion.journey_gate_signal`, `audion.replan_needed`.
+4. Live `[jev-shadow]` log evidence needs traffic (friction validate / insight triage); zero lines OK until then.
