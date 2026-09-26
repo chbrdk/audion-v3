@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import type { ProjectList } from '@audion-v3/contracts'
 import {
-  Button,
+  buttonClassName,
   CardActions,
   CollectionHubCard,
   CollectionHubMetric,
@@ -55,8 +55,11 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
               }
               actions={
                 <CardActions>
-                  <Link href={detailHref(item.id)}>
-                    <Button variant="ghost">{t('common.open')}</Button>
+                  <Link
+                    href={detailHref(item.id)}
+                    className={buttonClassName({ variant: 'ghost' })}
+                  >
+                    {t('common.open')}
                   </Link>
                 </CardActions>
               }
@@ -98,10 +101,11 @@ export function ProjectListPanel({ list, query = '' }: { list: ProjectList; quer
                     </p>
                   </div>
                   <div className="ds-collection-hub-list-row__trail">
-                    <Link href={detailHref(item.id)}>
-                      <Button variant="ghost" size="sm">
-                        {t('common.open')}
-                      </Button>
+                    <Link
+                      href={detailHref(item.id)}
+                      className={buttonClassName({ variant: 'ghost', size: 'sm' })}
+                    >
+                      {t('common.open')}
                     </Link>
                   </div>
                 </li>
