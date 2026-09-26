@@ -212,3 +212,5 @@
 - DS extended: `msqdx-ui/specs/domain/msqdx-ui-extended.md`
 - BSH Hausgeräte UX evaluation (Waschmaschinen, 2026-08-19): batch `scripts/run-bsh-home-batch.sh` · raw runs `knowledge/bsh-home-runs/2026-08-19/` · AI findings `knowledge/bsh-home-concrete-results-2026-08-19.pdf` · human vs AI `knowledge/bsh-human-vs-ai-2026-08-19.pdf` · human reference (Oct 2023, n=8) `/Users/christoph.bordeck/Desktop/RESULT_TESTING.pdf` · interview guide `/Users/christoph.bordeck/Desktop/TESTING_2_human.docx`
 - UEQ+ eBike Website Benchmarking (2026-08-19): **Gesamtbericht** `knowledge/ueq-ebike-gesamtbericht-2026-08-19.pdf` · export `scripts/export-ueq-ebike-gesamtbericht.py` · source docx `/Users/christoph.bordeck/Desktop/Test_Setup_UEQ+Benchmarking_final (1).docx` · human report `/Users/christoph.bordeck/Desktop/Abschlussbericht_UEQ+_eBike_2025 (1).pdf` · plan `knowledge/ueq-ebike-test-plan-2026-08-19.md` · batch `scripts/run-ueq-ebike-batch.sh` · runs `knowledge/ueq-ebike-runs/2026-08-19/` · site `https://www.bosch-ebike.com/de/`
+
+- Jev System One (shadow stub): `specs/domain/jev-decisions.md` · follow plexon-v3/lib/jev pattern · `OPENROUTER_API_KEY` · `JEV_SHADOW_ENABLED`
