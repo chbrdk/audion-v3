@@ -16,9 +16,10 @@ import {
   type AiNativeError,
 } from './client'
 import { withOpenAiChatTemperature } from './openai-sampling'
+import { parseOpenAiUsage, reportLlmUsage, type LlmTokenUsage } from '../usage-report'
 
 export type AssistResult =
-  | { ok: true; text: string; json: unknown; suggestions: AiSuggestionItem[] }
+  | { ok: true; text: string; json: unknown; suggestions: AiSuggestionItem[]; usage: LlmTokenUsage }
   | AiNativeError
 
 function extractJson(raw: string): unknown {
@@ -123,11 +124,22 @@ export async function runAssist(
     })
     const text = completion.choices[0]?.message?.content?.trim() || ''
     const json = template.json ? extractJson(text) : null
+    const usage = parseOpenAiUsage(completion.usage, {
+      system,
+      user,
+      content: text,
+      model,
+    })
+    reportLlmUsage({
+      usage,
+      surface: `assist.${templateId}`,
+    })
     return {
       ok: true,
       text,
       json,
       suggestions: suggestionsFromJson(json ?? text, templateId.replace(/\W+/g, '-')),
+      usage,
     }
   } catch (error) {
     return toAiNativeError(error, 'Assist generation failed')

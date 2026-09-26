@@ -14,6 +14,11 @@ export type ShadowDecisionInput = {
   awaitResult?: boolean
   log?: (compare: JevShadowCompare) => void
   fetchImpl?: typeof fetch
+  /** Optional hook after compare (usage reporting). */
+  onResult?: (
+    compare: JevShadowCompare,
+    result: Awaited<ReturnType<typeof createJevDecisions>> | null,
+  ) => void
 }
 
 const defaultLog = (compare: JevShadowCompare) => {
@@ -61,6 +66,7 @@ export async function runShadowDecision(
         model: result.model,
       }
       log(compare)
+      input.onResult?.(compare, result)
       return compare
     } catch (err) {
       const compare: JevShadowCompare = {
@@ -74,6 +80,7 @@ export async function runShadowDecision(
         error: err instanceof Error ? err.message : 'unknown',
       }
       log(compare)
+      input.onResult?.(compare, null)
       return compare
     }
   }

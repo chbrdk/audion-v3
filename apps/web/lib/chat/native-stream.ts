@@ -26,8 +26,18 @@ import { extractUrlFromMessage } from './share'
 import { resolvePersonaSystemPrompt } from '../fixtures/persona-prompts-store'
 import { mergeRelevantContext } from '../knowledge/rag/merge-context'
 import { retrieveKnowledgeSources } from '../knowledge/rag/store'
+import {
+  parseOpenAiUsage,
+  reportLlmUsage,
+  reportRetrievalQuery,
+} from '../usage-report'
 
 const HISTORY_MESSAGE_LIMIT = 12
+
+export type NativeChatStreamOptions = {
+  /** Plexon billing user; guests omit → no usage events. */
+  userId?: string | null
+}
 
 type OpenAiTextPart = { type: 'text'; text: string }
 type OpenAiImagePart = { type: 'image_url'; image_url: { url: string } }
@@ -126,7 +136,9 @@ function placeholderUserContent(images: unknown[], documents: unknown[]): string
 /** Async generator of NDJSON chat events for native OpenAI streaming. */
 export async function* nativeChatStreamEvents(
   payload: ChatSendPayload,
+  options?: NativeChatStreamOptions,
 ): AsyncGenerator<ChatStreamEvent> {
+  const userId = options?.userId?.trim() || null
   const message = payload.message.trim()
   const imageIds = normalizeImageIds(payload)
   const documentIds = normalizeDocumentIds(payload)
@@ -175,6 +187,12 @@ export async function* nativeChatStreamEvents(
     const retrieved = await retrieveKnowledgeSources({ projectId, query: message })
     ragSources = retrieved.sources
     modelMessage = mergeRelevantContext(modelMessage, ragSources)
+    reportRetrievalQuery({
+      userId,
+      queries: 1,
+      projectId,
+      surface: 'chat.rag',
+    })
   }
 
   const turnPayload: ChatSendPayload = {
@@ -208,6 +226,7 @@ export async function* nativeChatStreamEvents(
     const stream = await client.chat.completions.create({
       model,
       stream: true,
+      stream_options: { include_usage: true },
       messages: await buildOpenAiMessages(
         payload.personaId,
         turn.conversationId,
@@ -223,7 +242,9 @@ export async function* nativeChatStreamEvents(
     })
 
     let full = ''
+    let streamUsage: unknown = null
     for await (const chunk of stream) {
+      if (chunk.usage) streamUsage = chunk.usage
       const text = chunk.choices[0]?.delta?.content
       if (text) {
         full += text
@@ -231,6 +252,17 @@ export async function* nativeChatStreamEvents(
       }
     }
     full = humanizePersonaReply(full)
+
+    const tokenUsage = parseOpenAiUsage(streamUsage, {
+      content: full,
+      user: modelMessage,
+      model,
+    })
+    reportLlmUsage({
+      userId,
+      usage: tokenUsage,
+      surface: 'chat.message.stream',
+    })
 
     const detail = await storeChatConversationDetail(turn.conversationId)
     const proposal = maybeProposeInspectWebsite(
@@ -259,12 +291,15 @@ export async function* nativeChatStreamEvents(
   }
 }
 
-export function nativeChatNdjsonResponse(payload: ChatSendPayload): Response {
+export function nativeChatNdjsonResponse(
+  payload: ChatSendPayload,
+  options?: NativeChatStreamOptions,
+): Response {
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder()
       try {
-        for await (const event of nativeChatStreamEvents(payload)) {
+        for await (const event of nativeChatStreamEvents(payload, options)) {
           controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
         }
       } catch (error) {

@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { KnowledgeRagRetrievePayload } from '@audion-v3/contracts'
+import { getRequestUser } from '../../../../../lib/auth-api-token'
 import { retrieveKnowledgeSources } from '../../../../../lib/knowledge/rag/store'
 import { requireProjectAccess } from '../../../../../lib/resource-access-http'
 import { isPlexonAuthConfigured } from '../../../../../lib/runtime-config'
+import { reportRetrievalQuery } from '../../../../../lib/usage-report'
 
 export async function POST(request: Request) {
   let body: KnowledgeRagRetrievePayload
@@ -27,5 +29,12 @@ export async function POST(request: Request) {
     typeof body.topK === 'number' && Number.isFinite(body.topK) ? Math.floor(body.topK) : undefined
 
   const result = await retrieveKnowledgeSources({ projectId, query, topK })
+  const viewer = await getRequestUser(request)
+  reportRetrievalQuery({
+    userId: viewer?.id,
+    queries: 1,
+    projectId,
+    surface: 'knowledge.rag.retrieve',
+  })
   return NextResponse.json(result)
 }

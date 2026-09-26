@@ -19,7 +19,6 @@ import {
   shouldUseChatFixtures,
 } from '../../../../lib/runtime-config'
 import { paths } from '../../../../lib/paths'
-import { reportUsage } from '../../../../lib/usage-report'
 
 function fixtureStream(body: ChatSendPayload): Response {
   const stream = new ReadableStream({
@@ -71,6 +70,7 @@ export async function POST(request: Request) {
 
   const session = await auth()
   const isGuest = !session?.user?.id
+  const billingUserId = session?.user?.id ?? null
 
   if (isGuest && (imageIds.length > 0 || documentIds.length > 0 || body.abCompare)) {
     return NextResponse.json(
@@ -80,19 +80,6 @@ export async function POST(request: Request) {
       },
       { status: 403 },
     )
-  }
-
-  if (session?.user?.id) {
-    reportUsage({
-      userId: session.user.id,
-      eventType: 'chat.message.stream',
-      rawUnits: {
-        persona_id: body.personaId,
-        message_chars: body.message.trim().length,
-        image_count: imageIds.length,
-        document_count: documentIds.length,
-      },
-    })
   }
 
   let guestSessionId: string | null = null
@@ -125,7 +112,7 @@ export async function POST(request: Request) {
       response = fixtureStream(body)
     } else {
       try {
-        response = nativeChatNdjsonResponse(body)
+        response = nativeChatNdjsonResponse(body, { userId: null })
       } catch (error) {
         if (shouldRequireChatLive()) {
           return NextResponse.json(
@@ -161,7 +148,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    return nativeChatNdjsonResponse(body)
+    return nativeChatNdjsonResponse(body, { userId: billingUserId })
   } catch (error) {
     if (shouldRequireChatLive()) {
       return NextResponse.json(

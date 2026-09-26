@@ -10,7 +10,7 @@
 |------|-------|------------------|
 | Users, passwords, companies, entitlements | **Plexon** | Validate + profile only |
 | Platform projects + product bindings | **Plexon** | Origin call on project create |
-| Usage ledger | **Plexon** | Thin `reportUsage` from chat stream |
+| Usage ledger | **Plexon** | `reportUsage` / `reportLlmUsage` — chat `llm_request`, RAG `retrieval_query`, assist + Jev via ALS |
 | Personas, TGs, journeys, studies | **AUDION fixtures** | Local stores when no `DATABASE_URL` |
 | Projects (list / create / Plexon provisioning) | **AUDION Postgres** | `projects` table when `DATABASE_URL` set; else in-memory fixtures |
 | Personas + target groups | **AUDION Postgres** | `personas` / `target_groups` tables when `DATABASE_URL` set; else fixtures |
@@ -100,6 +100,6 @@ Deep-links (Audion app origin, not `/admin`): `/target-groups/{id}`, `/personas/
 
 ## Later waves
 
-- Full usage coverage (AI actions)
+- **Full usage coverage (2026-09):** Chat streams report `llm_request` with provider `input_tokens`/`output_tokens` (`stream_options.include_usage`). RAG retrieve → `retrieval_query`. Assist workflows inherit billing user via ALS. Jev shadow → `llm_request` or `vendor_cost` (`cost_usd`). Never emit silent `chat.message.stream` default-10 proxies.
 - Echon / Brandion federation
 - Coolify v3 island: `PLEXON/knowledge/coolify-v3-staging-runbook.md`

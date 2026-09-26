@@ -58,6 +58,8 @@ import {
 } from './persona-agent-derive'
 import { shouldPreferAiLive, shouldRequireAiLive } from './persona-api-proxy'
 import { shadowFrictionSeverity } from './jev/hooks'
+import { getRequestUser } from './auth-api-token'
+import { runWithUsageUserId } from './usage-report'
 
 export {
   AI_WORKFLOW_TARGETS,
@@ -930,26 +932,29 @@ export async function withAiNativeOrStub<T extends { stubbed: boolean }>(
   live: (authorization: string | null) => Promise<T | AiErr>,
   stub: () => T | { error: string; status: number } | Promise<T | { error: string; status: number }>,
 ): Promise<{ ok: true; data: T } | { ok: false; error: string; status: number; detail?: string }> {
-  if (shouldPreferAiLive()) {
-    const authorization = request.headers.get('authorization')
-    const liveResult = await live(authorization)
-    if (!('error' in liveResult)) {
-      return { ok: true, data: liveResult }
-    }
-    if (shouldRequireAiLive()) {
-      return {
-        ok: false,
-        error: liveResult.error,
-        status: liveResult.status,
-        detail: liveResult.detail,
+  const viewer = await getRequestUser(request)
+  return runWithUsageUserId(viewer?.id ?? null, async () => {
+    if (shouldPreferAiLive()) {
+      const authorization = request.headers.get('authorization')
+      const liveResult = await live(authorization)
+      if (!('error' in liveResult)) {
+        return { ok: true, data: liveResult }
+      }
+      if (shouldRequireAiLive()) {
+        return {
+          ok: false,
+          error: liveResult.error,
+          status: liveResult.status,
+          detail: liveResult.detail,
+        }
       }
     }
-  }
-  const stubResult = await stub()
-  if ('error' in stubResult) {
-    return { ok: false, error: stubResult.error, status: stubResult.status }
-  }
-  return { ok: true, data: stubResult }
+    const stubResult = await stub()
+    if ('error' in stubResult) {
+      return { ok: false, error: stubResult.error, status: stubResult.status }
+    }
+    return { ok: true, data: stubResult }
+  })
 }
 
 /** @deprecated Use withAiNativeOrStub */

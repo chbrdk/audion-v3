@@ -18,6 +18,8 @@ vi.mock('../lib/runtime-config', () => ({
 
 vi.mock('../lib/usage-report', () => ({
   reportUsage: vi.fn(),
+  reportLlmUsage: vi.fn(),
+  reportRetrievalQuery: vi.fn(),
 }))
 
 describe('POST /api/chat/stream guest budget', () => {

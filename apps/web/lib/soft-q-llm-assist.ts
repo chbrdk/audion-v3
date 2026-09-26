@@ -126,6 +126,16 @@ async function defaultCompleteJson(args: {
     ...withOpenAiChatTemperature(0.2, args.model),
   })
   const text = completion.choices[0]?.message?.content?.trim() || ''
+  const { parseOpenAiUsage, reportLlmUsage } = await import('./usage-report')
+  reportLlmUsage({
+    usage: parseOpenAiUsage(completion.usage, {
+      system: args.system,
+      user: args.user,
+      content: text,
+      model: args.model,
+    }),
+    surface: 'soft_q.llm_assist',
+  })
   return extractJson(text)
 }
 

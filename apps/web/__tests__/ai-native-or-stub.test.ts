@@ -6,6 +6,10 @@ import {
   shouldRequireAiNative,
 } from '../lib/runtime-config'
 
+vi.mock('../lib/auth-api-token', () => ({
+  getRequestUser: vi.fn(async () => null),
+}))
+
 describe('NEXT_AI_RUNTIME / withAiNativeOrStub', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
