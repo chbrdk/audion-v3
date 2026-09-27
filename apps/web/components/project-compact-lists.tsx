@@ -258,6 +258,11 @@ function CompactEditableList({
                         }
                       }}
                     />
+                  ) : row.href ? (
+                    <Link href={row.href} className="audion-project-compact-link">
+                      <span className="audion-project-compact-name">{row.name}</span>
+                      <span className="audion-project-compact-meta">{row.meta}</span>
+                    </Link>
                   ) : (
                     <div className="audion-project-compact-link audion-project-compact-static">
                       <button
@@ -268,16 +273,7 @@ function CompactEditableList({
                       >
                         <span className="audion-project-compact-name">{row.name}</span>
                       </button>
-                      {row.href ? (
-                        <Link
-                          href={row.href}
-                          className="audion-project-compact-meta audion-project-compact-meta-link"
-                        >
-                          {row.meta}
-                        </Link>
-                      ) : (
-                        <span className="audion-project-compact-meta">{row.meta}</span>
-                      )}
+                      <span className="audion-project-compact-meta">{row.meta}</span>
                     </div>
                   )}
                 </div>

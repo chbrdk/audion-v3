@@ -274,7 +274,9 @@ describe('project workspace components', () => {
     expect(screen.getByText('Alex Morgan')).toBeInTheDocument()
     expect(screen.getByText('Brand buyers')).toBeInTheDocument()
     expect(container.querySelectorAll('.audion-project-compact-list')).toHaveLength(3)
-    expect(container.querySelectorAll('a.audion-project-compact-meta-link')).toHaveLength(2)
+    expect(container.querySelectorAll('a.audion-project-compact-link')).toHaveLength(2)
+    expect(screen.getByRole('link', { name: /Alex Morgan/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Brand buyers/i })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /Delete /i }).length).toBeGreaterThanOrEqual(3)
     expect(container.querySelectorAll('.audion-tg-card--create')).toHaveLength(0)
     expect(screen.getByRole('button', { name: /Add target group/i })).toBeInTheDocument()
@@ -350,13 +352,7 @@ describe('project workspace components', () => {
     vi.unstubAllGlobals()
   })
 
-  it('inline-renames a persona name via PATCH', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ id: 'persona-alex-morgan', name: 'Alex Updated' }),
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
+  it('links persona and target-group names to detail routes', () => {
     const personas = [
       {
         id: 'persona-alex-morgan',
@@ -369,26 +365,26 @@ describe('project workspace components', () => {
         updatedAt: null,
       },
     ]
-    render(<ProjectDetailPanel project={detail} personas={personas} targetGroups={[]} />)
-
-    fireEvent.click(screen.getByRole('button', { name: /Alex Morgan/i }))
-    const input = screen.getByLabelText('Edit persona') as HTMLInputElement
-    fireEvent.change(input, { target: { value: 'Alex Updated' } })
-    fireEvent.keyDown(input, { key: 'Enter' })
-
-    await vi.waitFor(() => {
-      expect(
-        fetchMock.mock.calls.some(
-          (call) => call[0] === paths.routes.apiPersonaDetail('persona-alex-morgan'),
-        ),
-      ).toBe(true)
-    })
-    const personaPatch = fetchMock.mock.calls.find(
-      (call) => call[0] === paths.routes.apiPersonaDetail('persona-alex-morgan'),
+    const targetGroups = [
+      {
+        id: 'tg-brand-buyers',
+        name: 'Brand buyers',
+        segment: 'B2B',
+        status: 'ready' as const,
+        personaCount: 1,
+        projectId: 'proj-audion-core',
+        updatedAt: null,
+      },
+    ]
+    render(
+      <ProjectDetailPanel project={detail} personas={personas} targetGroups={targetGroups} />,
     )
-    expect(JSON.parse(personaPatch?.[1]?.body as string)).toEqual({
-      name: 'Alex Updated',
-    })
-    vi.unstubAllGlobals()
+
+    const personaLink = screen.getByRole('link', { name: /Alex Morgan/i })
+    const groupLink = screen.getByRole('link', { name: /Brand buyers/i })
+    expect(personaLink).toHaveAttribute('href', paths.routes.personaDetail('persona-alex-morgan'))
+    expect(groupLink).toHaveAttribute('href', paths.routes.targetGroupDetail('tg-brand-buyers'))
+    expect(screen.queryByRole('button', { name: /Alex Morgan/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Brand buyers/i })).toBeNull()
   })
 })

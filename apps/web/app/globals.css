@@ -4172,19 +4172,18 @@ main { min-height: 100vh; }
   color: var(--muted);
 }
 
-.audion-project-compact-meta-link {
-  text-decoration: none;
+.audion-project-compact-link:hover .audion-project-compact-name,
+.audion-project-compact-link:focus-visible .audion-project-compact-name {
+  color: var(--accent);
 }
 
-.audion-project-compact-meta-link:hover,
-.audion-project-compact-meta-link:focus-visible {
+.audion-project-compact-link:hover .audion-project-compact-meta,
+.audion-project-compact-link:focus-visible .audion-project-compact-meta {
   color: var(--accent);
+}
+
+.audion-project-compact-link:focus-visible {
   outline: none;
-}
-
-.audion-project-compact-link:hover .audion-project-compact-meta:not(.audion-project-compact-meta-link),
-.audion-project-compact-link:focus-within .audion-project-compact-name {
-  color: var(--accent);
 }
 
 .audion-project-members li {
