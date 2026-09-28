@@ -1,8 +1,14 @@
 'use client'
 
-import React, { useEffect, useId, useRef, useState } from 'react'
+import React, { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import type { PersonaFrustration, PersonaGoal } from '@audion-v3/contracts'
+import type {
+  PersonaFrustration,
+  PersonaGoal,
+  PersonaJourneyBehavior,
+  PersonaMotivation,
+  PersonaSuggestField,
+} from '@audion-v3/contracts'
 import { Button, EmptyState, Panel, SectionChrome } from '@msqdx/ui'
 import { Dialog } from '../lib/msqdx-ui-client'
 import { paths } from '../lib/paths'
@@ -15,9 +21,18 @@ import { useT } from '../lib/user-prefs'
 import { IconDelete } from './nav-icons'
 import { SuggestPersonaFieldButton } from './suggest-persona-field-button'
 
-export type PersonaListField = 'goals' | 'frustrations' | 'interests' | 'values'
+export type PersonaListField =
+  | 'goals'
+  | 'frustrations'
+  | 'interests'
+  | 'values'
+  | 'motivations'
+  | 'stressTriggers'
+  | 'journeyDos'
+  | 'journeyDonts'
+  | 'journeyHeuristics'
 
-type RichItem = PersonaGoal | PersonaFrustration
+type RichItem = PersonaGoal | PersonaFrustration | PersonaMotivation
 type ListItem = RichItem | string
 
 type Props = {
@@ -27,10 +42,76 @@ type Props = {
   items: ListItem[]
   empty: string
   className?: string
+  /** Replaces the default Suggest control (e.g. Derive on Motivations). */
+  chromeAction?: ReactNode
+  /** Required when field is journeyDos / journeyDonts / journeyHeuristics. */
+  journeyBehavior?: PersonaJourneyBehavior | null
 }
 
-function isStringField(field: PersonaListField): field is 'interests' | 'values' {
-  return field === 'interests' || field === 'values'
+function isJourneyListField(
+  field: PersonaListField,
+): field is 'journeyDos' | 'journeyDonts' | 'journeyHeuristics' {
+  return field === 'journeyDos' || field === 'journeyDonts' || field === 'journeyHeuristics'
+}
+
+function journeyListKey(
+  field: 'journeyDos' | 'journeyDonts' | 'journeyHeuristics',
+): 'dos' | 'donts' | 'heuristics' {
+  if (field === 'journeyDos') return 'dos'
+  if (field === 'journeyDonts') return 'donts'
+  return 'heuristics'
+}
+
+function emptyJourneyBehavior(): PersonaJourneyBehavior {
+  return {
+    dimensionOverrides: {
+      riskAversion: 0.5,
+      timePressure: 0.5,
+      exploration: 0.5,
+      detailOrientation: 0.5,
+      trustSkepticism: 0.5,
+      accessibilityNeed: 0.5,
+    },
+    dos: [],
+    donts: [],
+    heuristics: [],
+    extraInstructions: null,
+  }
+}
+
+function normalizeJourneyBehavior(behavior: PersonaJourneyBehavior | null | undefined): PersonaJourneyBehavior {
+  const base = emptyJourneyBehavior()
+  if (!behavior) return base
+  return {
+    dimensionOverrides: {
+      ...base.dimensionOverrides,
+      ...(behavior.dimensionOverrides ?? {}),
+    },
+    dos: [...(behavior.dos ?? [])],
+    donts: [...(behavior.donts ?? [])],
+    heuristics: [...(behavior.heuristics ?? [])],
+    extraInstructions: behavior.extraInstructions ?? null,
+  }
+}
+
+function isStringField(
+  field: PersonaListField,
+): field is 'interests' | 'values' | 'stressTriggers' | 'journeyDos' | 'journeyDonts' | 'journeyHeuristics' {
+  return (
+    field === 'interests' ||
+    field === 'values' ||
+    field === 'stressTriggers' ||
+    isJourneyListField(field)
+  )
+}
+
+function isSuggestableField(field: PersonaListField): field is PersonaSuggestField {
+  return (
+    field === 'interests' ||
+    field === 'values' ||
+    field === 'goals' ||
+    field === 'frustrations'
+  )
 }
 
 function itemLabel(item: ListItem | undefined): string {
@@ -40,7 +121,9 @@ function itemLabel(item: ListItem | undefined): string {
 
 function blankItem(field: PersonaListField): ListItem {
   if (isStringField(field)) return ''
-  return field === 'goals' ? { label: '', priority: 0 } : { label: '', evidenceCount: 0 }
+  if (field === 'goals') return { label: '', priority: 0 }
+  if (field === 'motivations') return { label: '', type: null }
+  return { label: '', evidenceCount: 0 }
 }
 
 function withLabel(item: ListItem, label: string, field: PersonaListField, index: number): ListItem {
@@ -48,6 +131,10 @@ function withLabel(item: ListItem, label: string, field: PersonaListField, index
   if (field === 'goals') {
     const goal = (typeof item === 'object' ? item : null) as PersonaGoal | null
     return { label, priority: typeof goal?.priority === 'number' ? goal.priority : index }
+  }
+  if (field === 'motivations') {
+    const mot = (typeof item === 'object' ? item : null) as PersonaMotivation | null
+    return { label, type: mot?.type ?? null }
   }
   const pain = (typeof item === 'object' ? item : null) as PersonaFrustration | null
   return {
@@ -63,6 +150,8 @@ export function PersonaEditableList({
   items,
   empty,
   className,
+  chromeAction,
+  journeyBehavior,
 }: Props) {
   const t = useT()
   const router = useRouter()
@@ -76,10 +165,15 @@ export function PersonaEditableList({
   const inputRef = useRef<HTMLInputElement | null>(null)
   const skipBlurSave = useRef(false)
   const localRef = useRef(localItems)
+  const journeyRef = useRef(journeyBehavior)
 
   useEffect(() => {
     localRef.current = localItems
   }, [localItems])
+
+  useEffect(() => {
+    journeyRef.current = journeyBehavior
+  }, [journeyBehavior])
 
   useEffect(() => {
     setLocalItems(items)
@@ -98,10 +192,22 @@ export function PersonaEditableList({
     setSaving(true)
     setError(null)
     try {
+      let body: Record<string, unknown>
+      if (isJourneyListField(field)) {
+        const strings = (nextItems as string[]).map((s) => s.trim()).filter(Boolean).slice(0, 8)
+        const nextJourney = {
+          ...normalizeJourneyBehavior(journeyRef.current),
+          [journeyListKey(field)]: strings,
+        }
+        body = { journeyBehavior: nextJourney }
+        nextItems = strings
+      } else {
+        body = { [field]: nextItems }
+      }
       const response = await fetch(paths.routes.apiPersonaDetail(personaId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: nextItems }),
+        body: JSON.stringify(body),
       })
       if (!response.ok) {
         const err = (await response.json().catch(() => null)) as { error?: string } | null
@@ -186,10 +292,19 @@ export function PersonaEditableList({
   async function acceptSuggestion(title: string) {
     const current = localRef.current
     let next: ListItem[]
-    if (field === 'interests' || field === 'values') {
+    if (field === 'interests' || field === 'values' || field === 'stressTriggers' || isJourneyListField(field)) {
       next = mergeStringSuggestions(current as string[], [title])
     } else if (field === 'goals') {
       next = mergeGoalSuggestions(current as PersonaGoal[], [title])
+    } else if (field === 'motivations') {
+      const existing = current as PersonaMotivation[]
+      const labels = new Set(existing.map((m) => m.label.trim().toLowerCase()).filter(Boolean))
+      const key = title.trim().toLowerCase()
+      if (!key || labels.has(key)) {
+        next = existing
+      } else {
+        next = [...existing, { label: title.trim(), type: null }]
+      }
     } else {
       next = mergeFrustrationSuggestions(current as PersonaFrustration[], [title])
     }
@@ -204,9 +319,33 @@ export function PersonaEditableList({
       ? 'interest'
       : field === 'values'
         ? 'value'
-        : title.toLowerCase().replace(/s$/, '')
+        : field === 'stressTriggers'
+          ? 'stress trigger'
+          : field === 'motivations'
+            ? 'motivation'
+            : field === 'journeyDos'
+              ? 'do'
+              : field === 'journeyDonts'
+                ? "don't"
+                : field === 'journeyHeuristics'
+                  ? 'heuristic'
+                  : title.toLowerCase().replace(/s$/, '')
   const nextNum = String(localItems.length + 1).padStart(2, '0')
   const filledCount = localItems.filter((i) => itemLabel(i).trim()).length
+
+  const sectionAction =
+    chromeAction !== undefined ? (
+      chromeAction
+    ) : isSuggestableField(field) ? (
+      <SuggestPersonaFieldButton
+        personaId={personaId}
+        field={field}
+        disabled={saving || editingIndex != null}
+        onAccept={async (item) => {
+          await acceptSuggestion(item.title)
+        }}
+      />
+    ) : undefined
 
   return (
     <Panel
@@ -214,22 +353,7 @@ export function PersonaEditableList({
         .filter(Boolean)
         .join(' ')}
     >
-      <SectionChrome
-        quiet
-        title={title}
-        meta={`${filledCount}`}
-        as="h3"
-        action={
-          <SuggestPersonaFieldButton
-            personaId={personaId}
-            field={field}
-            disabled={saving || editingIndex != null}
-            onAccept={async (item) => {
-              await acceptSuggestion(item.title)
-            }}
-          />
-        }
-      />
+      <SectionChrome quiet title={title} meta={`${filledCount}`} as="h3" action={sectionAction} />
 
       {localItems.length ? (
         <ol className="audion-magazine-list audion-editable-list-items">

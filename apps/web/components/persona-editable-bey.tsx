@@ -7,6 +7,7 @@ import { Button, Field, Input, Panel, SectionChrome, ToggleGroup } from '@msqdx/
 import { paths } from '../lib/paths'
 import { parseVideoCallProvider } from '../lib/video-call/provider'
 import { useT } from '../lib/user-prefs'
+import { VideoAvatarPicker } from './video-avatar-picker'
 
 type Props = {
   personaId: string
@@ -32,6 +33,7 @@ export function PersonaEditableBey({
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const providerOptions = [
     { value: 'auto', label: t('personaEdit.videoProviderAuto') },
@@ -46,8 +48,12 @@ export function PersonaEditableBey({
     setError(null)
   }, [personaId, beyAvatarId, beyAgentId, videoCallProvider])
 
-  async function persist(nextProvider = provider) {
-    const nextAvatar = avatarId.trim()
+  async function persist(overrides?: {
+    avatarId?: string
+    provider?: ChatVideoCallProvider | 'auto'
+  }) {
+    const nextProvider = overrides?.provider ?? provider
+    const nextAvatar = (overrides?.avatarId ?? avatarId).trim()
     const nextAgent = agentId.trim()
     const currentAvatar = (beyAvatarId ?? '').trim()
     const currentAgent = (beyAgentId ?? '').trim()
@@ -84,6 +90,12 @@ export function PersonaEditableBey({
     }
   }
 
+  function selectAvatar(id: string | null) {
+    const next = id ?? ''
+    setAvatarId(next)
+    void persist({ avatarId: next })
+  }
+
   return (
     <Panel
       as="section"
@@ -101,35 +113,51 @@ export function PersonaEditableBey({
               const next =
                 value === 'bey' || value === 'tavus' || value === 'auto' ? value : provider
               setProvider(next)
-              void persist(next)
+              void persist({ provider: next })
             }}
           />
         </Field>
-        <Field label={t('personaEdit.beyAvatarId')} htmlFor="persona-bey-avatar" size="md">
-          <Input
-            id="persona-bey-avatar"
-            block
-            value={avatarId}
-            placeholder="01234567-89ab-…"
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(event) => setAvatarId(event.target.value)}
-            onBlur={() => void persist()}
-          />
-        </Field>
-        <Field label={t('personaEdit.beyAgentId')} htmlFor="persona-bey-agent" size="md">
-          <Input
-            id="persona-bey-agent"
-            block
-            value={agentId}
-            placeholder="agent id (auto)"
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(event) => setAgentId(event.target.value)}
-            onBlur={() => void persist()}
-          />
-        </Field>
       </div>
+      <VideoAvatarPicker
+        catalogUrl={paths.routes.apiIntegrationsBeyAvatars}
+        selectedId={avatarId.trim() || null}
+        onSelect={selectAvatar}
+        ariaLabel={t('personaEdit.beyAvatarPicker')}
+        disabled={saving}
+      />
+      <details
+        className="audion-video-avatar-advanced"
+        open={advancedOpen}
+        onToggle={(event) => setAdvancedOpen((event.target as HTMLDetailsElement).open)}
+      >
+        <summary>{t('personaEdit.avatarAdvanced')}</summary>
+        <div className="audion-persona-tavus-fields">
+          <Field label={t('personaEdit.beyAvatarId')} htmlFor="persona-bey-avatar" size="md">
+            <Input
+              id="persona-bey-avatar"
+              block
+              value={avatarId}
+              placeholder="01234567-89ab-…"
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(event) => setAvatarId(event.target.value)}
+              onBlur={() => void persist()}
+            />
+          </Field>
+          <Field label={t('personaEdit.beyAgentId')} htmlFor="persona-bey-agent" size="md">
+            <Input
+              id="persona-bey-agent"
+              block
+              value={agentId}
+              placeholder="agent id (auto)"
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(event) => setAgentId(event.target.value)}
+              onBlur={() => void persist()}
+            />
+          </Field>
+        </div>
+      </details>
       {error ? <p className="audion-edit-error">{error}</p> : null}
       <Button
         type="button"

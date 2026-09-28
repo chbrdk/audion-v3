@@ -19,6 +19,17 @@ Persona chat can start a real-time **Tavus Conversational Video Interface** call
 
 Editable on the persona magazine profile. Empty string clears to `null`.
 
+## Face catalog (magazine picker)
+
+`GET /api/integrations/tavus/faces` (`paths.routes.apiIntegrationsTavusFaces`) — auth required:
+
+1. Require session (or API token viewer) — else **401**.
+2. Require `TAVUS_API_KEY` — else **503** `TAVUS_API_KEY_MISSING`.
+3. BFF calls `GET {TAVUS_API_BASE}/v2/faces` (legacy `/v2/replicas` alias) and returns `{ items: VideoAvatarCatalogItem[], configured: true }`.
+4. Magazine picker shows thumbs + names; selecting writes `tavusReplicaId` via persona PATCH. Manual ID paste remains as advanced fallback.
+
+Never expose the API key to the browser.
+
 ## Session
 
 `POST /api/chat/tavus/session` with `{ personaId }`:
@@ -74,4 +85,4 @@ Documented in `knowledge/paths.md`. Never hardcode the base in components.
 3. Missing replica → 400 with a human-readable error; missing key → 503.
 4. Share / TG / guest embed (`embed=1`) do not start Tavus; `embed=full` may.
 5. Tests cover normalize/patch, PAL prompt/upsert, session errors, iframe embed, and `properties.language`.
-6. Persona profile can save Deutsch / English; the next video call sends Tavus `properties.language` `German` / `English`.
+7. Persona magazine Face picker loads catalog when key is set; selecting a face persists `tavusReplicaId`.

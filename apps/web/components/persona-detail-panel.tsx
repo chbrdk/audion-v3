@@ -9,9 +9,10 @@ import { NavIconChat } from './nav-icons'
 import { PersonaDetailActions } from './persona-actions'
 import { PersonaChannelBubbles } from './persona-channel-bubbles'
 import { PersonaEditableCommunication } from './persona-editable-communication'
+import { PersonaEditableEmotionalBaseline } from './persona-editable-emotional-baseline'
 import { PersonaEditableJourneyBehavior } from './persona-editable-journey-behavior'
-import { PersonaEditableResearchProfile } from './persona-editable-research-profile'
 import { PersonaEditableList } from './persona-editable-list'
+import { DerivePersonaAgentButton } from './derive-persona-agent-button'
 import { PersonaEditableNotes } from './persona-editable-notes'
 import { PersonaEditablePortrait } from './persona-editable-portrait'
 import { PersonaEditableBey } from './persona-editable-bey'
@@ -150,13 +151,54 @@ export function PersonaDetailPanel({ persona }: { persona: PersonaDetail | null 
         />
 
         <div className="signal-stage audion-magazine-stage ds-motion-reveal">
-          <PersonaEditableResearchProfile
+          <PersonaEditableList
             personaId={persona.id}
-            personaName={persona.name}
-            techLiteracy={persona.techLiteracy}
+            field="motivations"
+            title={t('personaEdit.motivations')}
+            items={persona.motivations}
+            empty={t('personaEdit.emptyMotivations')}
+            chromeAction={
+              <DerivePersonaAgentButton
+                personaId={persona.id}
+                personaName={persona.name}
+                facet="researchProfile"
+              />
+            }
+          />
+          <PersonaEditableList
+            personaId={persona.id}
+            field="stressTriggers"
+            title={t('personaEdit.stressTriggers')}
+            items={persona.stressTriggers}
+            empty={t('personaEdit.emptyStress')}
+          />
+          <PersonaEditableEmotionalBaseline
+            personaId={persona.id}
             emotionalBaseline={persona.emotionalBaseline}
-            stressTriggers={persona.stressTriggers}
-            motivations={persona.motivations}
+          />
+          <PersonaEditableList
+            personaId={persona.id}
+            field="journeyDos"
+            title={t('personaEdit.journeyDos')}
+            items={persona.journeyBehavior?.dos ?? []}
+            empty={t('personaEdit.emptyJourneyDos')}
+            journeyBehavior={persona.journeyBehavior}
+          />
+          <PersonaEditableList
+            personaId={persona.id}
+            field="journeyDonts"
+            title={t('personaEdit.journeyDonts')}
+            items={persona.journeyBehavior?.donts ?? []}
+            empty={t('personaEdit.emptyJourneyDonts')}
+            journeyBehavior={persona.journeyBehavior}
+          />
+          <PersonaEditableList
+            personaId={persona.id}
+            field="journeyHeuristics"
+            title={t('personaEdit.journeyHeuristics')}
+            items={persona.journeyBehavior?.heuristics ?? []}
+            empty={t('personaEdit.emptyJourneyHeuristics')}
+            journeyBehavior={persona.journeyBehavior}
           />
           <PersonaEditableJourneyBehavior
             personaId={persona.id}

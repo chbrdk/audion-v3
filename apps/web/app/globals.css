@@ -895,7 +895,6 @@ main { min-height: 100vh; }
   list-style: none;
   margin: var(--space-3) 0 0;
   padding: 0;
-  border-top: 1px solid var(--line);
 }
 
 .audion-magazine-list > li {
@@ -905,6 +904,10 @@ main { min-height: 100vh; }
   padding: 0.85rem 0;
   border-bottom: 1px solid var(--line);
   align-items: start;
+}
+
+.audion-magazine-list > li:first-child {
+  padding-top: 0;
 }
 
 .audion-magazine-list-num {
@@ -3633,6 +3636,114 @@ main { min-height: 100vh; }
   gap: var(--space-3, 0.75rem);
   margin: 0 0 var(--space-3, 0.75rem);
   max-width: 28rem;
+}
+
+.audion-video-avatar-picker {
+  margin: 0 0 var(--space-3, 0.75rem);
+}
+
+.audion-video-avatar-picker__status {
+  margin: 0 0 var(--space-2, 0.5rem);
+  font-size: var(--type-sm, 0.875rem);
+  color: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+
+.audion-video-avatar-picker__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.audion-video-avatar-picker__grid > li {
+  margin: 0;
+  min-width: 0;
+}
+
+.audion-video-avatar-picker__tile {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  position: relative;
+}
+
+.audion-video-avatar-picker__tile:hover:not(:disabled),
+.audion-video-avatar-picker__tile:focus-visible {
+  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+  outline: none;
+}
+
+.audion-video-avatar-picker__tile.is-selected {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.audion-video-avatar-picker__tile:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.audion-video-avatar-picker__tile img,
+.audion-video-avatar-picker__placeholder {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  object-fit: cover;
+  display: block;
+}
+
+.audion-video-avatar-picker__placeholder {
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--ink) 45%, transparent);
+  background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+}
+
+.audion-video-avatar-picker__name {
+  display: block;
+  padding: 0.35rem 0.45rem;
+  font-size: var(--type-xs, 0.75rem);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink));
+}
+
+.audion-video-avatar-picker__actions {
+  margin-top: var(--space-2, 0.5rem);
+}
+
+.audion-video-avatar-advanced {
+  margin: 0 0 var(--space-3, 0.75rem);
+  max-width: 28rem;
+}
+
+.audion-video-avatar-advanced > summary {
+  cursor: pointer;
+  font-size: var(--type-sm, 0.875rem);
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+  margin-bottom: var(--space-2, 0.5rem);
+}
+
+@media (max-width: 720px) {
+  .audion-video-avatar-picker__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .audion-chat-persona-field {

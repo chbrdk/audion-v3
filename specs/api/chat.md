@@ -43,6 +43,8 @@ Wire names follow existing v2 proxies; confirm against live OpenAPI when impleme
 | `GET` | `/api/chat/conversations/[id]` | Detail |
 | `POST` | `/api/chat/tavus/session` (`paths.routes.apiChatTavusSession`) | Create Tavus CVI session from persona `tavusReplicaId` (ends leftover active rooms first) |
 | `DELETE` | `/api/chat/tavus/session` | End a Tavus conversation `{ conversationId }` |
+| `GET` | `/api/integrations/tavus/faces` (`paths.routes.apiIntegrationsTavusFaces`) | Tavus Face catalog for magazine picker |
+| `GET` | `/api/integrations/bey/avatars` (`paths.routes.apiIntegrationsBeyAvatars`) | Beyond Presence avatar catalog for magazine picker |
 
 Stream body may include `imageIds`, `documentIds`, `abCompare` — see `specs/domain/chat-image-attachments.md` · `specs/domain/chat-document-attachments.md`.
 

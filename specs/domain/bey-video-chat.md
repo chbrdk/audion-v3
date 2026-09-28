@@ -18,6 +18,15 @@ Persona chat can start a real-time **Beyond Presence Managed Agent** call (avata
 
 Language reuses `tavusLanguage` (`de` / `en`) for spoken agent language in Phase 1 (same magazine toggle).
 
+## Avatar catalog (magazine picker)
+
+`GET /api/integrations/bey/avatars` (`paths.routes.apiIntegrationsBeyAvatars`) — auth required:
+
+1. Require session — else **401**.
+2. Require `BEY_API_KEY` — else **503** `BEY_API_KEY_MISSING`.
+3. BFF calls `GET {BEY_API_BASE}/v1/avatars` and returns `{ items: VideoAvatarCatalogItem[], configured: true }`.
+4. Magazine picker shows thumbs + names; selecting writes `beyAvatarId` via persona PATCH (agent sync unchanged). Manual UUID paste remains as advanced fallback.
+
 ## Agent sync (Audion SSOT)
 
 When `beyAvatarId` is set **and** `BEY_API_KEY` is present:
@@ -70,3 +79,4 @@ Beyond Presence documents EU data residency and GDPR options for enterprise. Ope
 3. Missing avatar/agent → 400 with `code`; missing key → 503.
 4. Guest embed / TG ask-all do not start BEY; `embed=full` may.
 5. Tests cover normalize/patch, agent upsert, session errors, panel kinds, provider resolution.
+6. Magazine Avatar picker loads catalog when key is set; selecting an avatar persists `beyAvatarId`.

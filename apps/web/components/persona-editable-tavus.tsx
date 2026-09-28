@@ -11,6 +11,7 @@ import {
   type TavusLanguageSource,
 } from '../lib/tavus/language'
 import { useT } from '../lib/user-prefs'
+import { VideoAvatarPicker } from './video-avatar-picker'
 
 type Props = {
   personaId: string
@@ -43,6 +44,7 @@ export function PersonaEditableTavus({
   const [language, setLanguage] = useState<TavusLanguageCode>(inferred)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const languageOptions = paths.tavusLanguageChoices.map((value) => ({
     value,
@@ -56,8 +58,12 @@ export function PersonaEditableTavus({
     setError(null)
   }, [personaId, tavusReplicaId, tavusPersonaId, tavusLanguage, bio, location, headlineDe, profileDe])
 
-  async function persist(nextLanguage = language) {
-    const nextReplica = replicaId.trim()
+  async function persist(overrides?: {
+    replicaId?: string
+    language?: TavusLanguageCode
+  }) {
+    const nextLanguage = overrides?.language ?? language
+    const nextReplica = (overrides?.replicaId ?? replicaId).trim()
     const nextPal = palId.trim()
     const currentReplica = (tavusReplicaId ?? '').trim()
     const currentPal = (tavusPersonaId ?? '').trim()
@@ -94,17 +100,19 @@ export function PersonaEditableTavus({
     }
   }
 
+  function selectReplica(id: string | null) {
+    const next = id ?? ''
+    setReplicaId(next)
+    void persist({ replicaId: next })
+  }
+
   return (
     <Panel
       as="section"
       className={['stage-panel', 'audion-magazine-band', className].filter(Boolean).join(' ')}
     >
       <SectionChrome quiet title={t('personaEdit.videoTavus')} />
-      <p className="audion-edit-lede">
-        Replica ID from the Tavus dashboard (starts with <code>r</code>, e.g. <code>r5e781e37a8d</code>
-        ). Required for video. Saving a replica syncs a Tavus PAL from this magazine (name, bio, goals,
-        style). PAL ID is filled in automatically; paste one only to reuse an existing PAL.
-      </p>
+      <p className="audion-edit-lede">{t('personaEdit.videoTavusLede')}</p>
       <div className="audion-persona-tavus-fields">
         <Field label={t('personaEdit.spokenLanguage')} size="md">
           <ToggleGroup
@@ -114,35 +122,51 @@ export function PersonaEditableTavus({
             onChange={(value) => {
               const next = parseTavusLanguage(value) ?? language
               setLanguage(next)
-              void persist(next)
+              void persist({ language: next })
             }}
           />
         </Field>
-        <Field label={t('personaEdit.replicaId')} htmlFor="persona-tavus-replica" size="md">
-          <Input
-            id="persona-tavus-replica"
-            block
-            value={replicaId}
-            placeholder="r5e781e37a8d"
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(event) => setReplicaId(event.target.value)}
-            onBlur={() => void persist()}
-          />
-        </Field>
-        <Field label={t('personaEdit.palId')} htmlFor="persona-tavus-pal" size="md">
-          <Input
-            id="persona-tavus-pal"
-            block
-            value={palId}
-            placeholder="p…"
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(event) => setPalId(event.target.value)}
-            onBlur={() => void persist()}
-          />
-        </Field>
       </div>
+      <VideoAvatarPicker
+        catalogUrl={paths.routes.apiIntegrationsTavusFaces}
+        selectedId={replicaId.trim() || null}
+        onSelect={selectReplica}
+        ariaLabel={t('personaEdit.tavusFacePicker')}
+        disabled={saving}
+      />
+      <details
+        className="audion-video-avatar-advanced"
+        open={advancedOpen}
+        onToggle={(event) => setAdvancedOpen((event.target as HTMLDetailsElement).open)}
+      >
+        <summary>{t('personaEdit.avatarAdvanced')}</summary>
+        <div className="audion-persona-tavus-fields">
+          <Field label={t('personaEdit.replicaId')} htmlFor="persona-tavus-replica" size="md">
+            <Input
+              id="persona-tavus-replica"
+              block
+              value={replicaId}
+              placeholder="r5e781e37a8d"
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(event) => setReplicaId(event.target.value)}
+              onBlur={() => void persist()}
+            />
+          </Field>
+          <Field label={t('personaEdit.palId')} htmlFor="persona-tavus-pal" size="md">
+            <Input
+              id="persona-tavus-pal"
+              block
+              value={palId}
+              placeholder="p…"
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(event) => setPalId(event.target.value)}
+              onBlur={() => void persist()}
+            />
+          </Field>
+        </div>
+      </details>
       {error ? <p className="audion-edit-error">{error}</p> : null}
       <Button
         type="button"

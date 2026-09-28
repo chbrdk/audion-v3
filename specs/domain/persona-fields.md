@@ -19,10 +19,10 @@
 
 - `bio`, `age`, `location`, `gender`, `attentionSpan` (nullable strings)
 - `colorPalette[]`, `mediaAffinity`, `confidence` (0..1 nullable)
-- `techLiteracy` (0..1 nullable) — digital / navigation skill
-- `emotionalBaseline` (nullable string) — default affect e.g. `cautious`, `optimistic`
-- `stressTriggers[]` — situations that raise friction
-- `motivations[]` — `{ label, type?: 'intrinsic' \| 'extrinsic' \| null }`
+- `techLiteracy` (0..1 nullable) — digital / navigation skill (**agent field**; no magazine Meter/Slider in the persona UI)
+- `emotionalBaseline` (nullable string) — default affect e.g. `cautious`, `optimistic` — magazine band (editable line)
+- `stressTriggers[]` — situations that raise friction — magazine `PersonaEditableList`
+- `motivations[]` — `{ label, type?: 'intrinsic' \| 'extrinsic' \| null }` — magazine `PersonaEditableList` (+ Derive research profile)
 - `traits` — `Record<string, number>` (0..1)
 - `interests[]`, `values[]`, `socialMediaUsage[]`
 - `communicationStyle` — `{ vocabulary[], sentenceStructure, skepticismLevel }` or null
@@ -43,7 +43,7 @@
 | Field | Notes |
 |-------|--------|
 | `dimensionOverrides` | six soft knobs 0..1 (risk, time, explore, detail, trust, a11y) |
-| `dos` / `donts` | string lists (capped when sent to agent) |
+| `dos` / `donts` / `heuristics` | string lists (capped when sent to agent); magazine `PersonaEditableList` bands |
 | `extraInstructions` | free text |
 | `heuristics` | editable soft rules; merged with runtime-derived heuristics |
 

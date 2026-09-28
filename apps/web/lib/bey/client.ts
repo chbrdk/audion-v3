@@ -6,6 +6,7 @@
 import { paths } from '../paths'
 import { getBeyApiBase, getBeyApiKey } from '../runtime-config'
 import { trimBeyId } from './ids'
+import type { VideoAvatarCatalogItem } from '@audion-v3/contracts'
 
 export class BeyApiError extends Error {
   status: number
@@ -179,4 +180,71 @@ export async function createBeyLiveKitRoom(input: {
     throw new BeyApiError('Beyond Presence LiveKit room incomplete response', 502)
   }
   return { conversationId, livekitUrl, livekitToken }
+}
+
+function pickString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return null
+}
+
+/** Normalize BEY avatar rows for the magazine picker. */
+export function normalizeBeyAvatarRow(raw: Record<string, unknown>): VideoAvatarCatalogItem | null {
+  const id = pickString(raw.id, raw.avatar_id)
+  if (!id) return null
+  const name = pickString(raw.name, raw.display_name, raw.title) ?? id
+  const previewUrl = pickString(
+    raw.thumbnail_url,
+    raw.image_url,
+    raw.preview_url,
+    raw.poster_url,
+    raw.avatar_url,
+  )
+  const status = pickString(raw.status, raw.training_status)
+  return { id, name, previewUrl, status }
+}
+
+export async function listBeyAvatars(): Promise<VideoAvatarCatalogItem[]> {
+  const rows: VideoAvatarCatalogItem[] = []
+  const seen = new Set<string>()
+  let cursor: string | null = null
+  for (let page = 0; page < 10; page += 1) {
+    const params = new URLSearchParams({
+      limit: String(paths.beyAvatarsListLimit),
+    })
+    if (cursor) params.set('cursor', cursor)
+    const response = await beyFetch('GET', `${paths.beyAvatarsPath}?${params.toString()}`)
+    if (!response.ok) {
+      throw new BeyApiError(
+        'Beyond Presence list avatars failed',
+        response.status >= 400 && response.status < 600 ? response.status : 502,
+        await readDetail(response),
+      )
+    }
+    const json = (await response.json()) as Record<string, unknown>
+    const data = Array.isArray(json.data)
+      ? json.data
+      : Array.isArray(json.items)
+        ? json.items
+        : Array.isArray(json.avatars)
+          ? json.avatars
+          : []
+    for (const item of data) {
+      if (!item || typeof item !== 'object') continue
+      const normalized = normalizeBeyAvatarRow(item as Record<string, unknown>)
+      if (!normalized || seen.has(normalized.id)) continue
+      seen.add(normalized.id)
+      rows.push(normalized)
+    }
+    const next =
+      typeof json.next_cursor === 'string'
+        ? json.next_cursor
+        : typeof json.cursor === 'string'
+          ? json.cursor
+          : null
+    if (!next || data.length === 0) break
+    cursor = next
+  }
+  return rows
 }

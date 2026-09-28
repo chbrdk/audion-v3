@@ -309,6 +309,8 @@ export const paths = {
     apiUxJourneyAgentVideo: (jobId: string) => `/api/ux-journey-agent/run/${jobId}/video`,
     apiChatTavusSession: '/api/chat/tavus/session',
     apiChatVideoSession: '/api/chat/video/session',
+    apiIntegrationsTavusFaces: '/api/integrations/tavus/faces',
+    apiIntegrationsBeyAvatars: '/api/integrations/bey/avatars',
     apiChatVoiceStream: '/api/chat/voice/stream',
     apiChatSharePersona: (personaId: string) => `/api/share/personas/${personaId}`,
     apiChatShareMoodboard: (personaId: string) => `/api/share/personas/${personaId}/moodboard`,
@@ -397,6 +399,8 @@ export const paths = {
   /** Canonical Tavus API host when TAVUS_API_BASE is unset. */
   tavusApiDefaultBase: 'https://tavusapi.com',
   tavusConversationsPath: '/v2/conversations',
+  tavusFacesPath: '/v2/faces',
+  tavusFacesListLimit: 50,
   tavusPalsPath: '/v2/pals',
   tavusPalPatchTarget: 'live',
   tavusPalPipelineMode: 'full' as const,
@@ -419,6 +423,8 @@ export const paths = {
   envBeyApiKey: 'BEY_API_KEY',
   envBeyApiBase: 'BEY_API_BASE',
   beyApiDefaultBase: 'https://api.bey.dev',
+  beyAvatarsPath: '/v1/avatars',
+  beyAvatarsListLimit: 50,
   beyAgentsPath: '/v1/agents',
   /** Managed Agent call + LiveKit credentials (Growth+). Docs alias: livekit-rooms. */
   beyLivekitRoomsPath: '/v1/calls',

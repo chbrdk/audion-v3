@@ -349,3 +349,17 @@ export type ChatVideoSessionResponse = {
   conversationId: string | null
   media: ChatVideoSessionMedia
 }
+
+/** Magazine Face/Avatar picker row from Tavus or Beyond Presence. */
+export type VideoAvatarCatalogItem = {
+  id: string
+  name: string
+  previewUrl?: string | null
+  status?: string | null
+}
+
+export type VideoAvatarCatalogResponse = {
+  configured: boolean
+  items: VideoAvatarCatalogItem[]
+  error?: string
+}
