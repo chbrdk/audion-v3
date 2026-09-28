@@ -105,7 +105,9 @@ function isStringField(
   )
 }
 
-function isSuggestableField(field: PersonaListField): field is PersonaSuggestField {
+type SuggestableListField = Extract<PersonaListField, PersonaSuggestField>
+
+function isSuggestableField(field: PersonaListField): field is SuggestableListField {
   return (
     field === 'interests' ||
     field === 'values' ||
