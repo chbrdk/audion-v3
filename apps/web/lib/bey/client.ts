@@ -7,6 +7,7 @@ import { paths } from '../paths'
 import { getBeyApiBase, getBeyApiKey } from '../runtime-config'
 import { trimBeyId } from './ids'
 import type { VideoAvatarCatalogItem } from '@audion-v3/contracts'
+import { pickPreviewString, pickVideoAvatarPreview } from '../video-avatar-preview'
 
 export class BeyApiError extends Error {
   status: number
@@ -183,10 +184,7 @@ export async function createBeyLiveKitRoom(input: {
 }
 
 function pickString(...values: unknown[]): string | null {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim()) return value.trim()
-  }
-  return null
+  return pickPreviewString(...values)
 }
 
 /** Normalize BEY avatar rows for the magazine picker. */
@@ -194,57 +192,40 @@ export function normalizeBeyAvatarRow(raw: Record<string, unknown>): VideoAvatar
   const id = pickString(raw.id, raw.avatar_id)
   if (!id) return null
   const name = pickString(raw.name, raw.display_name, raw.title) ?? id
-  const previewUrl = pickString(
-    raw.thumbnail_url,
-    raw.image_url,
-    raw.preview_url,
-    raw.poster_url,
-    raw.avatar_url,
-  )
+  const { previewUrl, previewKind } = pickVideoAvatarPreview(raw)
   const status = pickString(raw.status, raw.training_status)
-  return { id, name, previewUrl, status }
+  return { id, name, previewUrl, previewKind, status }
 }
 
 export async function listBeyAvatars(): Promise<VideoAvatarCatalogItem[]> {
   const rows: VideoAvatarCatalogItem[] = []
   const seen = new Set<string>()
-  let cursor: string | null = null
-  for (let page = 0; page < 10; page += 1) {
-    const params = new URLSearchParams({
-      limit: String(paths.beyAvatarsListLimit),
-    })
-    if (cursor) params.set('cursor', cursor)
-    const response = await beyFetch('GET', `${paths.beyAvatarsPath}?${params.toString()}`)
-    if (!response.ok) {
-      throw new BeyApiError(
-        'Beyond Presence list avatars failed',
-        response.status >= 400 && response.status < 600 ? response.status : 502,
-        await readDetail(response),
-      )
-    }
-    const json = (await response.json()) as Record<string, unknown>
-    const data = Array.isArray(json.data)
-      ? json.data
-      : Array.isArray(json.items)
-        ? json.items
-        : Array.isArray(json.avatars)
-          ? json.avatars
-          : []
-    for (const item of data) {
-      if (!item || typeof item !== 'object') continue
-      const normalized = normalizeBeyAvatarRow(item as Record<string, unknown>)
-      if (!normalized || seen.has(normalized.id)) continue
-      seen.add(normalized.id)
-      rows.push(normalized)
-    }
-    const next =
-      typeof json.next_cursor === 'string'
-        ? json.next_cursor
-        : typeof json.cursor === 'string'
-          ? json.cursor
-          : null
-    if (!next || data.length === 0) break
-    cursor = next
+  // One provider page only — magazine gallery paginates client-side (paths.videoAvatarPickerPageSize).
+  const params = new URLSearchParams({
+    limit: String(paths.beyAvatarsListLimit),
+  })
+  const response = await beyFetch('GET', `${paths.beyAvatarsPath}?${params.toString()}`)
+  if (!response.ok) {
+    throw new BeyApiError(
+      'Beyond Presence list avatars failed',
+      response.status >= 400 && response.status < 600 ? response.status : 502,
+      await readDetail(response),
+    )
+  }
+  const json = (await response.json()) as Record<string, unknown>
+  const data = Array.isArray(json.data)
+    ? json.data
+    : Array.isArray(json.items)
+      ? json.items
+      : Array.isArray(json.avatars)
+        ? json.avatars
+        : []
+  for (const item of data) {
+    if (!item || typeof item !== 'object') continue
+    const normalized = normalizeBeyAvatarRow(item as Record<string, unknown>)
+    if (!normalized || seen.has(normalized.id)) continue
+    seen.add(normalized.id)
+    rows.push(normalized)
   }
   return rows
 }

@@ -25,8 +25,8 @@ Editable on the persona magazine profile. Empty string clears to `null`.
 
 1. Require session (or API token viewer) — else **401**.
 2. Require `TAVUS_API_KEY` — else **503** `TAVUS_API_KEY_MISSING`.
-3. BFF calls `GET {TAVUS_API_BASE}/v2/faces` (legacy `/v2/replicas` alias) and returns `{ items: VideoAvatarCatalogItem[], configured: true }`.
-4. Magazine picker shows thumbs + names; selecting writes `tavusReplicaId` via persona PATCH. Manual ID paste remains as advanced fallback.
+3. BFF calls `GET {TAVUS_API_BASE}/v2/faces` once (`paths.tavusFacesListLimit`, default 40 — no multi-page crawl) and returns `{ items: VideoAvatarCatalogItem[], configured: true }`.
+4. Magazine picker shows a **paged gallery** (`paths.videoAvatarPickerPageSize`, default **10**) with prev/next. Tavus thumbs are usually `thumbnail_video_url` — render as muted looping `<video>` (still `thumbnail_image_url` when present). Selecting writes `tavusReplicaId` via persona PATCH. Manual ID paste remains as advanced fallback.
 
 Never expose the API key to the browser.
 

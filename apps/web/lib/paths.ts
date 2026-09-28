@@ -400,7 +400,10 @@ export const paths = {
   tavusApiDefaultBase: 'https://tavusapi.com',
   tavusConversationsPath: '/v2/conversations',
   tavusFacesPath: '/v2/faces',
-  tavusFacesListLimit: 50,
+  /** Single provider page for the magazine catalog (no multi-page crawl). */
+  tavusFacesListLimit: 40,
+  /** Visible tiles per gallery page in VideoAvatarPicker. */
+  videoAvatarPickerPageSize: 10,
   tavusPalsPath: '/v2/pals',
   tavusPalPatchTarget: 'live',
   tavusPalPipelineMode: 'full' as const,
@@ -424,7 +427,8 @@ export const paths = {
   envBeyApiBase: 'BEY_API_BASE',
   beyApiDefaultBase: 'https://api.bey.dev',
   beyAvatarsPath: '/v1/avatars',
-  beyAvatarsListLimit: 50,
+  /** Single provider page for the magazine catalog (no cursor crawl). */
+  beyAvatarsListLimit: 40,
   beyAgentsPath: '/v1/agents',
   /** Managed Agent call + LiveKit credentials (Growth+). Docs alias: livekit-rooms. */
   beyLivekitRoomsPath: '/v1/calls',

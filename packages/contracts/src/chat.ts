@@ -355,6 +355,8 @@ export type VideoAvatarCatalogItem = {
   id: string
   name: string
   previewUrl?: string | null
+  /** Tavus faces expose video thumbs; stills use `image`. */
+  previewKind?: 'image' | 'video' | null
   status?: string | null
 }
 

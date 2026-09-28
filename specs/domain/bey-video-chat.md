@@ -24,8 +24,8 @@ Language reuses `tavusLanguage` (`de` / `en`) for spoken agent language in Phase
 
 1. Require session — else **401**.
 2. Require `BEY_API_KEY` — else **503** `BEY_API_KEY_MISSING`.
-3. BFF calls `GET {BEY_API_BASE}/v1/avatars` and returns `{ items: VideoAvatarCatalogItem[], configured: true }`.
-4. Magazine picker shows thumbs + names; selecting writes `beyAvatarId` via persona PATCH (agent sync unchanged). Manual UUID paste remains as advanced fallback.
+3. BFF calls `GET {BEY_API_BASE}/v1/avatars` once (`paths.beyAvatarsListLimit`, default 40 — no cursor crawl) and returns `{ items: VideoAvatarCatalogItem[], configured: true }`.
+4. Magazine picker shows a **paged gallery** (`paths.videoAvatarPickerPageSize`, default **10**) with prev/next. Preview stills when the API returns image URLs (documented AvatarResponse is id/name/status only — letter placeholder otherwise). Selecting writes `beyAvatarId` via persona PATCH (agent sync unchanged). Manual UUID paste remains as advanced fallback.
 
 ## Agent sync (Audion SSOT)
 

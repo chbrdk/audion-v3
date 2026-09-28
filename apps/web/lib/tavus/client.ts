@@ -2,6 +2,7 @@ import { paths } from '../paths'
 import { getTavusApiBase, getTavusApiKey } from '../runtime-config'
 import { trimTavusId } from './ids'
 import type { VideoAvatarCatalogItem } from '@audion-v3/contracts'
+import { pickPreviewString, pickVideoAvatarPreview } from '../video-avatar-preview'
 
 export type TavusConversationPayload = {
   replica_id?: string
@@ -204,10 +205,7 @@ export async function listTavusConversations(
 }
 
 function pickString(...values: unknown[]): string | null {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim()) return value.trim()
-  }
-  return null
+  return pickPreviewString(...values)
 }
 
 /** Normalize Tavus Face / legacy replica rows for the magazine picker. */
@@ -216,45 +214,37 @@ export function normalizeTavusFaceRow(raw: Record<string, unknown>): VideoAvatar
   if (!id) return null
   const name =
     pickString(raw.face_name, raw.replica_name, raw.name, raw.model_name) ?? id
-  const previewUrl = pickString(
-    raw.thumbnail_video_url,
-    raw.thumbnail_image_url,
-    raw.image_url,
-    raw.preview_url,
-    raw.thumbnail_url,
-  )
+  const { previewUrl, previewKind } = pickVideoAvatarPreview(raw)
   const status = pickString(raw.status, raw.training_status)
-  return { id, name, previewUrl, status }
+  return { id, name, previewUrl, previewKind, status }
 }
 
 export async function listTavusFaces(apiKey = requireApiKey()): Promise<VideoAvatarCatalogItem[]> {
   const rows: VideoAvatarCatalogItem[] = []
   const seen = new Set<string>()
-  for (let page = 1; page <= 10; page += 1) {
-    const response = await fetch(tavusFacesUrl(page), {
-      method: 'GET',
-      headers: tavusHeaders(apiKey),
-      cache: 'no-store',
-    })
-    const json = await readTavusJson(response)
-    if (!response.ok) {
-      throwIfTavusFailed(response, json, 'Tavus list faces failed')
-    }
-    const data = Array.isArray(json.data)
-      ? json.data
-      : Array.isArray(json.faces)
-        ? json.faces
-        : Array.isArray(json.replicas)
-          ? json.replicas
-          : []
-    for (const item of data) {
-      if (!item || typeof item !== 'object') continue
-      const normalized = normalizeTavusFaceRow(item as Record<string, unknown>)
-      if (!normalized || seen.has(normalized.id)) continue
-      seen.add(normalized.id)
-      rows.push(normalized)
-    }
-    if (data.length < paths.tavusFacesListLimit) break
+  // One provider page only — magazine gallery paginates client-side (paths.videoAvatarPickerPageSize).
+  const response = await fetch(tavusFacesUrl(1), {
+    method: 'GET',
+    headers: tavusHeaders(apiKey),
+    cache: 'no-store',
+  })
+  const json = await readTavusJson(response)
+  if (!response.ok) {
+    throwIfTavusFailed(response, json, 'Tavus list faces failed')
+  }
+  const data = Array.isArray(json.data)
+    ? json.data
+    : Array.isArray(json.faces)
+      ? json.faces
+      : Array.isArray(json.replicas)
+        ? json.replicas
+        : []
+  for (const item of data) {
+    if (!item || typeof item !== 'object') continue
+    const normalized = normalizeTavusFaceRow(item as Record<string, unknown>)
+    if (!normalized || seen.has(normalized.id)) continue
+    seen.add(normalized.id)
+    rows.push(normalized)
   }
   return rows
 }

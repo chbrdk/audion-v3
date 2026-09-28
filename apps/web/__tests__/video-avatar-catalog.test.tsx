@@ -68,7 +68,19 @@ describe('video avatar catalog normalizers', () => {
       id: 'r111',
       name: 'Ada',
       previewUrl: 'https://cdn.example/ada.jpg',
+      previewKind: 'image',
       status: 'ready',
+    })
+    expect(
+      normalizeTavusFaceRow({
+        face_id: 'r333',
+        face_name: 'Video Face',
+        thumbnail_video_url: 'https://cdn.example/face.mp4',
+      }),
+    ).toMatchObject({
+      id: 'r333',
+      previewUrl: 'https://cdn.example/face.mp4',
+      previewKind: 'video',
     })
     expect(normalizeTavusFaceRow({ replica_id: 'r222', replica_name: 'Bea' })?.id).toBe('r222')
     expect(normalizeTavusFaceRow({ name: 'No id' })).toBeNull()
@@ -86,27 +98,41 @@ describe('video avatar catalog normalizers', () => {
       id: '01234567-89ab-4def-8123-456789abcdef',
       name: 'Studio One',
       previewUrl: 'https://cdn.example/one.jpg',
+      previewKind: 'image',
       status: 'ready',
     })
     expect(normalizeBeyAvatarRow({ avatar_id: 'av-9', display_name: 'Nine' })?.name).toBe('Nine')
     expect(normalizeBeyAvatarRow({ name: 'No id' })).toBeNull()
   })
 
-  it('lists Tavus faces across pages', async () => {
+  it('lists Tavus faces from a single provider page', async () => {
     process.env[paths.envTavusApiKey] = 'tv-test'
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
       expect(url).toContain(paths.tavusFacesPath)
-      if (url.includes('page=1')) {
-        return jsonResponse({
-          data: [{ face_id: 'r1', face_name: 'One', thumbnail_image_url: 'https://x/1.jpg' }],
-        })
-      }
-      return jsonResponse({ data: [] })
+      expect(url).toContain('page=1')
+      return jsonResponse({
+        data: [
+          {
+            face_id: 'r1',
+            face_name: 'One',
+            thumbnail_video_url: 'https://x/1.mp4',
+          },
+        ],
+      })
     })
     vi.stubGlobal('fetch', fetchMock)
     const items = await listTavusFaces()
-    expect(items).toEqual([{ id: 'r1', name: 'One', previewUrl: 'https://x/1.jpg', status: null }])
+    expect(items).toEqual([
+      {
+        id: 'r1',
+        name: 'One',
+        previewUrl: 'https://x/1.mp4',
+        previewKind: 'video',
+        status: null,
+      },
+    ])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(tavusFacesUrl(1)).toContain(`limit=${paths.tavusFacesListLimit}`)
   })
 
@@ -119,7 +145,15 @@ describe('video avatar catalog normalizers', () => {
     )
     vi.stubGlobal('fetch', fetchMock)
     const items = await listBeyAvatars()
-    expect(items).toEqual([{ id: 'av-1', name: 'Alpha', previewUrl: 'https://x/a.jpg', status: null }])
+    expect(items).toEqual([
+      {
+        id: 'av-1',
+        name: 'Alpha',
+        previewUrl: 'https://x/a.jpg',
+        previewKind: 'image',
+        status: null,
+      },
+    ])
   })
 })
 
@@ -152,7 +186,13 @@ describe('video avatar catalog BFF routes', () => {
     const body = await response.json()
     expect(body.configured).toBe(true)
     expect(body.items).toEqual([
-      { id: 'r9', name: 'Nine', previewUrl: 'https://x/9.jpg', status: null },
+      {
+        id: 'r9',
+        name: 'Nine',
+        previewUrl: 'https://x/9.jpg',
+        previewKind: 'image',
+        status: null,
+      },
     ])
   })
 
@@ -185,6 +225,39 @@ describe('video avatar catalog BFF routes', () => {
 })
 
 describe('VideoAvatarPicker + magazine bands', () => {
+  it('renders video thumbs for Tavus faces', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        jsonResponse({
+          configured: true,
+          items: [
+            {
+              id: 'r1',
+              name: 'Face One',
+              previewUrl: 'https://cdn.example/1.mp4',
+              previewKind: 'video',
+            },
+          ],
+        }),
+      ),
+    )
+    const { container } = renderWithPrefs(
+      <VideoAvatarPicker
+        catalogUrl={paths.routes.apiIntegrationsTavusFaces}
+        selectedId={null}
+        onSelect={vi.fn()}
+        ariaLabel="Faces"
+      />,
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Face One')).toBeTruthy()
+    })
+    const video = container.querySelector('video.audion-video-avatar-picker__media')
+    expect(video).toBeTruthy()
+    expect(video?.getAttribute('src')).toBe('https://cdn.example/1.mp4')
+  })
+
   it('renders catalog items and calls onSelect', async () => {
     const onSelect = vi.fn()
     const fetchMock = vi.fn(async () =>
@@ -210,6 +283,34 @@ describe('VideoAvatarPicker + magazine bands', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: /Face One/i }))
     expect(onSelect).toHaveBeenCalledWith('r1')
+  })
+
+  it('paginates the gallery to page size', async () => {
+    const items = Array.from({ length: paths.videoAvatarPickerPageSize + 2 }, (_, index) => ({
+      id: `r${index + 1}`,
+      name: `Face ${index + 1}`,
+      previewUrl: null,
+    }))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse({ configured: true, items })),
+    )
+    renderWithPrefs(
+      <VideoAvatarPicker
+        catalogUrl={paths.routes.apiIntegrationsTavusFaces}
+        selectedId={null}
+        onSelect={vi.fn()}
+        ariaLabel="Faces"
+      />,
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Face 1')).toBeTruthy()
+    })
+    expect(screen.queryByText(`Face ${paths.videoAvatarPickerPageSize + 1}`)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Next|Weiter/i }))
+    await waitFor(() => {
+      expect(screen.getByText(`Face ${paths.videoAvatarPickerPageSize + 1}`)).toBeTruthy()
+    })
   })
 
   it('patches tavusReplicaId when a Face is picked', async () => {
