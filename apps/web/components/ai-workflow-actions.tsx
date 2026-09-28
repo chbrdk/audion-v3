@@ -10,7 +10,7 @@ import type {
   SuggestPersonasResponse,
   SuggestTargetGroupsResponse,
 } from '@audion-v3/contracts'
-import { Button, Field, Input, Textarea } from '@msqdx/ui'
+import { Button, Field, Input, Panel, Text, Textarea } from '@msqdx/ui'
 import { Dialog, Select } from '../lib/msqdx-ui-client'
 import { AI_WORKFLOW_TARGETS, targetHint } from '../lib/ai-workflow-targets'
 import { paths } from '../lib/paths'
@@ -170,12 +170,14 @@ export function GeneratePersonasAiButton({
           title={hint}
           onClick={() => setOpen(true)}
         >
-          <span className="audion-tg-card-panel audion-tg-card-panel--create">
-            <span className="audion-tg-card-title">{t('tiles.aiGenerate')}</span>
+          <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
+            <Text role="headline" as="span" className="audion-tg-card-title">
+              {t('tiles.aiGenerate')}
+            </Text>
             <p className="audion-tg-card-meta">
               <span>{t('tiles.aiGeneratePersonasMeta')}</span>
             </p>
-          </span>
+          </Panel>
         </button>
       ) : (
         <AiActionButton
@@ -349,12 +351,14 @@ export function SuggestTargetGroupsAiButton({
           title={hint}
           onClick={() => setOpen(true)}
         >
-          <span className="audion-tg-card-panel audion-tg-card-panel--create">
-            <span className="audion-tg-card-title">{t('tiles.aiSuggest')}</span>
+          <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
+            <Text role="headline" as="span" className="audion-tg-card-title">
+              {t('tiles.aiSuggest')}
+            </Text>
             <p className="audion-tg-card-meta">
               <span>{t('tiles.aiSuggestTgMeta')}</span>
             </p>
-          </span>
+          </Panel>
         </button>
       ) : (
         <AiActionButton
@@ -846,12 +850,14 @@ export function GenerateJourneyAiButton({
           title={hint}
           onClick={() => setOpen(true)}
         >
-          <span className="audion-tg-card-panel audion-tg-card-panel--create">
-            <span className="audion-tg-card-title">{t('tiles.aiGenerate')}</span>
+          <Panel as="div" variant="card" className="audion-tg-card-panel audion-tg-card-panel--create">
+            <Text role="headline" as="span" className="audion-tg-card-title">
+              {t('tiles.aiGenerate')}
+            </Text>
             <p className="audion-tg-card-meta">
               <span>{t('tiles.aiGenerateJourneyMeta')}</span>
             </p>
-          </span>
+          </Panel>
         </button>
       ) : (
         <AiActionButton

@@ -237,7 +237,8 @@ main { min-height: 100vh; }
 }
 
 .audion-tg-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   min-width: 0;
   height: 100%;
@@ -250,6 +251,7 @@ main { min-height: 100vh; }
   text-decoration: none;
   cursor: pointer;
   font: inherit;
+  appearance: none;
 }
 
 .audion-tg-card:focus-visible {
@@ -260,12 +262,14 @@ main { min-height: 100vh; }
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
+.audion-tg-card-panel,
 .audion-tg-card-panel.ds-panel.module-panel {
   margin-top: 0;
   min-height: 22rem;
   height: 100%;
   min-width: 0;
   max-width: 100%;
+  width: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -282,6 +286,7 @@ main { min-height: 100vh; }
   transition: border-color var(--motion-hover, 160ms) ease;
 }
 
+.audion-tg-card-panel--create,
 .audion-tg-card-panel--create.ds-panel.module-panel {
   border-right-style: dashed;
   border-bottom-style: dashed;
