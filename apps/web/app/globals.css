@@ -216,14 +216,24 @@ main { min-height: 100vh; }
 .audion-index-facets dd[data-status='draft'] { color: var(--warn, #c9a227); }
 .audion-index-facets dd[data-status='archived'] { color: var(--muted); }
 
-/* —— Target group app cards —— */
+/* —— Audience / studies hub tiles (personas, target groups, journeys, studies) ——
+   Match CollectionHubCard: square, gapless, hairline grid. */
 .audion-tg-grid {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
-  gap: clamp(1rem, 2vw, 1.5rem);
+  gap: 0;
+  align-items: stretch;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.audion-tg-grid > li {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
 }
 
 .audion-tg-card {
@@ -247,7 +257,7 @@ main { min-height: 100vh; }
 }
 
 .audion-tg-card:focus-visible .audion-tg-card-panel {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 .audion-tg-card-panel.ds-panel.module-panel {
@@ -262,31 +272,35 @@ main { min-height: 100vh; }
   justify-content: flex-end;
   gap: var(--space-3);
   padding: clamp(3.5rem, 8vw, 5.5rem) 1.25rem 1.15rem;
-  border-radius: var(--radius-tile, 0.85rem);
-  background: color-mix(in oklab, var(--surface-2, var(--surface, #151515)) 88%, transparent);
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   overflow: hidden;
-  transition:
-    border-color var(--motion-hover, 160ms) ease,
-    background var(--motion-hover, 160ms) ease;
+  transition: border-color var(--motion-hover, 160ms) ease;
 }
 
 .audion-tg-card-panel--create.ds-panel.module-panel {
-  border-style: dashed;
+  border-right-style: dashed;
+  border-bottom-style: dashed;
   border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+  background: transparent;
 }
 
 .audion-tg-card:hover .audion-tg-card-panel,
 .audion-tg-card:focus-visible .audion-tg-card-panel {
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
-  background: color-mix(in srgb, var(--surface-2) 88%, var(--accent));
+  border-bottom-color: color-mix(in srgb, var(--accent) 70%, var(--line));
+  background: transparent;
 }
 
 .audion-tg-card--create:hover .audion-tg-card-panel--create,
 .audion-tg-card--create:focus-visible .audion-tg-card-panel--create {
-  border-style: solid;
+  border-right-style: solid;
+  border-bottom-style: solid;
   border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-  background: color-mix(in srgb, var(--accent) 18%, var(--surface-2));
+  background: transparent;
 }
 
 .audion-tg-card:hover .audion-tg-card-title {

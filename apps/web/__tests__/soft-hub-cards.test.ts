@@ -4,9 +4,13 @@ import { describe, expect, it } from 'vitest'
 
 const repoRoot = path.resolve(__dirname, '../../..')
 
-describe('soft hub cards', () => {
-  it('project cards use --radius-tile', () => {
+describe('flush hub cards', () => {
+  it('audience/study tiles match CollectionHubCard: square, gapless', () => {
     const css = readFileSync(path.join(repoRoot, 'apps/web/app/globals.css'), 'utf8')
-    expect(css).toMatch(/\.audion-tg-card-panel[\s\S]*?border-radius:\s*var\(--radius-tile/)
+    expect(css).toMatch(/\.audion-tg-grid\s*\{[\s\S]*?gap:\s*0;/)
+    expect(css).toMatch(
+      /\.audion-tg-card-panel\.ds-panel\.module-panel\s*\{[\s\S]*?border-radius:\s*0;/,
+    )
+    expect(css).not.toMatch(/\.audion-tg-card-panel[\s\S]*?border-radius:\s*var\(--radius-tile/)
   })
 })
