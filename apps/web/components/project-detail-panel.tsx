@@ -11,6 +11,7 @@ import { Button, EmptyState, Text } from '@msqdx/ui'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { NavIconChat } from './nav-icons'
+import { AssistantPageContextPublisher } from './assistant-page-context'
 import {
   ProjectPersonaList,
   ProjectTargetGroupList,
@@ -63,6 +64,7 @@ export function ProjectDetailPanel({
 
   return (
     <article className="panel briefing-detail audion-magazine">
+      <AssistantPageContextPublisher platformProjectId={project.platformProjectId} />
       <div className="audion-magazine-topbar ds-motion-reveal">
         <p className="briefing-nav signal-nav">
           <Link href={paths.routes.projects}>{t('nav.projects')}</Link>

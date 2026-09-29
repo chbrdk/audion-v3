@@ -24,6 +24,7 @@ import {
 } from './nav-icons'
 import { paths } from '../lib/paths'
 import { useUserPrefs } from '../lib/user-prefs'
+import { AssistantPageContextProvider } from './assistant-page-context'
 import { PlatformAssistantHost } from './platform-assistant-host'
 import { ShellBrandCorner } from './shell-brand-corner'
 
@@ -123,54 +124,56 @@ export function AppShell({
   )
 
   return (
-    <AppFrame
-      railEdge={railEdge}
-      style={frameStyle}
-      data-presentation={presentation}
-      rail={
-        embed ? null : (
-          <NavRail
-            dockable
-            dockStorageKey={paths.railDockStorageKey}
-            defaultDockEdge={paths.railDockEdge}
-            onDockEdgeChange={setRailEdge}
-            logo={<MsqdxLogoMark size={26} title="MSQ DX" />}
-            logoLabel={t('nav.homeAria', { brand: paths.brandLabel })}
-            linkComponent={Link}
-            items={primaryNav.map((item) => ({ ...item, active: isActive(item.href) }))}
-            footerItems={[
-              {
-                id: 'settings',
-                label: t('nav.settings'),
-                href: paths.routes.settings,
-                active: isActive(paths.routes.settings),
-                ariaLabel: t('nav.settingsAria'),
-                icon: <Avatar name={displayName} size="sm" className="rail-avatar" />,
-              },
-            ]}
-          />
-        )
-      }
-      backCorner={
-        embed ? null : (
-          <ShellBackButton label={t('nav.back')} onClick={() => router.back()} />
-        )
-      }
-      brandCorner={embed ? null : <ShellBrandCorner />}
-      topbar={
-        showTopbar ? (
-          <>
-            <div className="topbar-brand">{leading ?? null}</div>
-            <div className="topbar-right">{actions}</div>
-          </>
-        ) : undefined
-      }
-    >
-      <div className={showTopbar ? 'audion-stage' : 'audion-stage audion-stage--flush-top'}>
-        {pageLead ? <p className="audion-page-lead">{pageLead}</p> : null}
-        {children}
-      </div>
-      {embed ? null : <PlatformAssistantHost />}
-    </AppFrame>
+    <AssistantPageContextProvider>
+      <AppFrame
+        railEdge={railEdge}
+        style={frameStyle}
+        data-presentation={presentation}
+        rail={
+          embed ? null : (
+            <NavRail
+              dockable
+              dockStorageKey={paths.railDockStorageKey}
+              defaultDockEdge={paths.railDockEdge}
+              onDockEdgeChange={setRailEdge}
+              logo={<MsqdxLogoMark size={26} title="MSQ DX" />}
+              logoLabel={t('nav.homeAria', { brand: paths.brandLabel })}
+              linkComponent={Link}
+              items={primaryNav.map((item) => ({ ...item, active: isActive(item.href) }))}
+              footerItems={[
+                {
+                  id: 'settings',
+                  label: t('nav.settings'),
+                  href: paths.routes.settings,
+                  active: isActive(paths.routes.settings),
+                  ariaLabel: t('nav.settingsAria'),
+                  icon: <Avatar name={displayName} size="sm" className="rail-avatar" />,
+                },
+              ]}
+            />
+          )
+        }
+        backCorner={
+          embed ? null : (
+            <ShellBackButton label={t('nav.back')} onClick={() => router.back()} />
+          )
+        }
+        brandCorner={embed ? null : <ShellBrandCorner />}
+        topbar={
+          showTopbar ? (
+            <>
+              <div className="topbar-brand">{leading ?? null}</div>
+              <div className="topbar-right">{actions}</div>
+            </>
+          ) : undefined
+        }
+      >
+        <div className={showTopbar ? 'audion-stage' : 'audion-stage audion-stage--flush-top'}>
+          {pageLead ? <p className="audion-page-lead">{pageLead}</p> : null}
+          {children}
+        </div>
+        {embed ? null : <PlatformAssistantHost />}
+      </AppFrame>
+    </AssistantPageContextProvider>
   )
 }

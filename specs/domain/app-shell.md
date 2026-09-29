@@ -18,7 +18,7 @@
 - Settings rail footer: enabled → `paths.routes.settings`; avatar from user prefs display name
 - No MUI and no `@msqdx/react`.
 - Routes and dock keys from `paths` — never hardcode.
-- Authenticated shell MUST mount `PlatformAssistantHost` (FAB + `ChatOverlay` → Plexon `/assistant/embed`). Plexon base from runtime-config / env — never hardcode.
+- Authenticated shell MUST mount `AssistantPageContextProvider` + `PlatformAssistantHost` (FAB + `ChatOverlay` → Plexon `/assistant/embed`). Host MUST pass Collection (`platformProjectId`) when known and post live `assistant:context` (not theme-only). Project detail publishes Collection via `AssistantPageContextPublisher` from `project.platformProjectId` (real UUID only — never local Audion project id as Collection). Spec: `plexon-v3/specs/domain/assistant-page-context.md` · rollout `plexon-v3/knowledge/assistant-page-context-rollout.md`.
 - Rail **Chat** remains Audion **persona/TG** chat (`/chat`) — not the platform Assistant.
 
 ## Layout notes
