@@ -123,6 +123,10 @@ export function AudionChatWorkspace({
   const [videoError, setVideoError] = useState<string | null>(null)
   const [videoErrorCode, setVideoErrorCode] = useState<string | null>(null)
   const [videoBusy, setVideoBusy] = useState(false)
+  /** Keep last good TG detail so router.replace soft-nav does not null the ask-all panel mid-round. */
+  const [activeTargetGroup, setActiveTargetGroup] = useState<TargetGroupDetail | null>(
+    initialTargetGroup,
+  )
 
   const personaOptions = useMemo(
     () => personas.map((p) => ({ value: p.id, label: `${p.name} · ${p.role}` })),
@@ -150,12 +154,57 @@ export function AudionChatWorkspace({
   )
 
   const projectIdForShare = shareProjectId || persona?.projectId || null
-  const tgPersonaCount = selectTgChatPersonas(initialTargetGroup?.linkedPersonas).length
+  const resolvedTargetGroup =
+    activeTargetGroup && activeTargetGroup.id === targetGroupId
+      ? activeTargetGroup
+      : initialTargetGroup && initialTargetGroup.id === targetGroupId
+        ? initialTargetGroup
+        : null
+  const tgPersonaCount = selectTgChatPersonas(resolvedTargetGroup?.linkedPersonas).length
   const projectPersonaCount = selectProjectChatPersonas(personas, projectId).length
   const projectPersonaTotal = countProjectChatPersonas(personas, projectId)
   const tgMode = !shareMode && mode === 'target_group'
   const projectMode = !shareMode && mode === 'project'
   const askAllMode = tgMode || projectMode
+
+  const syncChatUrl = useCallback((href: string) => {
+    // Prefer replaceState so ask-all rounds are not wiped by App Router remount
+    // (same continuity rule as persona conversationId sync).
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      window.history.replaceState(null, '', href)
+      return
+    }
+    router.replace(href)
+  }, [router])
+
+  useEffect(() => {
+    if (initialTargetGroup) setActiveTargetGroup(initialTargetGroup)
+  }, [initialTargetGroup])
+
+  useEffect(() => {
+    const id = targetGroupId.trim()
+    if (!tgMode || !id) return
+    if (activeTargetGroup?.id === id) return
+    if (initialTargetGroup?.id === id) {
+      setActiveTargetGroup(initialTargetGroup)
+      return
+    }
+    let cancelled = false
+    async function load() {
+      try {
+        const res = await fetch(paths.routes.apiTargetGroupDetail(id), { cache: 'no-store' })
+        if (!res.ok) return
+        const data = (await res.json()) as TargetGroupDetail
+        if (!cancelled && data?.id === id) setActiveTargetGroup(data)
+      } catch {
+        /* keep previous detail */
+      }
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [tgMode, targetGroupId, activeTargetGroup?.id, initialTargetGroup])
 
   const toggleModality = useCallback((next: ChatModality) => {
     setModality((prev) => (prev === next ? 'text' : next))
@@ -221,7 +270,7 @@ export function AudionChatWorkspace({
       const id = targetGroupId || targetGroups[0]?.id
       if (id) {
         setTargetGroupId(id)
-        router.replace(paths.routes.chatTargetGroup(id))
+        syncChatUrl(paths.routes.chatTargetGroup(id))
       }
       return
     }
@@ -229,11 +278,11 @@ export function AudionChatWorkspace({
       const id = projectId || projects[0]?.id
       if (id) {
         setProjectId(id)
-        router.replace(paths.routes.chatProject(id))
+        syncChatUrl(paths.routes.chatProject(id))
       }
       return
     }
-    router.replace(personaId ? paths.routes.chatPersona(personaId) : paths.routes.chat)
+    syncChatUrl(personaId ? paths.routes.chatPersona(personaId) : paths.routes.chat)
   }
 
   function onPersonaChange(id: string) {
@@ -243,19 +292,19 @@ export function AudionChatWorkspace({
     setBusy(false)
     setModality('text')
     if (shareMode || embedMode) return
-    router.replace(paths.routes.chatPersona(next))
+    syncChatUrl(paths.routes.chatPersona(next))
   }
 
   function onTargetGroupChange(id: string) {
     setTargetGroupId(id)
     setBusy(false)
-    router.replace(paths.routes.chatTargetGroup(id))
+    syncChatUrl(paths.routes.chatTargetGroup(id))
   }
 
   function onProjectChange(id: string) {
     setProjectId(id)
     setBusy(false)
-    router.replace(paths.routes.chatProject(id))
+    syncChatUrl(paths.routes.chatProject(id))
   }
 
   const composerLeading =
@@ -346,7 +395,7 @@ export function AudionChatWorkspace({
                     disabled={busy || !tgOptions.length}
                   />
                 </Field>
-                {initialTargetGroup && targetGroupId === initialTargetGroup.id ? (
+                {resolvedTargetGroup ? (
                   <Text role="label" className="audion-tg-chat-count">
                     {tgPersonaCount} persona{tgPersonaCount === 1 ? '' : 's'}
                   </Text>
@@ -466,11 +515,7 @@ export function AudionChatWorkspace({
 
       {tgMode && !embedMode ? (
         <AudionTargetGroupChatPanel
-          targetGroup={
-            initialTargetGroup && initialTargetGroup.id === targetGroupId
-              ? initialTargetGroup
-              : null
-          }
+          targetGroup={resolvedTargetGroup}
           onBusyChange={setBusy}
         />
       ) : projectMode && !embedMode ? (

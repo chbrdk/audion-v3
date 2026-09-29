@@ -45,9 +45,10 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 | Rule | Value |
 |------|--------|
 | Cap | `MAX_TG_CHAT_PERSONAS = 10` (first N linked personas) |
-| Transport | Client fan-out: N× existing `POST /api/chat/stream` with per-persona `personaId` (no TG aggregator API) |
+| Transport | Client fan-out: N× existing `POST /api/chat/stream` with per-persona `personaId` (no TG aggregator API); concurrency capped at `ASK_ALL_STREAM_CONCURRENCY` (3) |
 | Interaction | Round-based: user question once → response **card grid**; stack further rounds |
 | Prompt | One-shot per round (no prior TG answers in stream history for MVP) |
+| Stream parity | Apply `done.text` like persona chat; finalize slots on Stop/Abort (no silent empty) |
 | Disabled in TG | Voice / video / inspect / attachments / share / moodboard |
 
 | Entry | Topbar mode **Zielgruppe** + TG select; CTA from TG detail → `/chat?targetGroupId=` |
@@ -79,8 +80,9 @@ Persona-scoped conversational surface: full-page editorial chat on DS open chrom
 |------|--------|
 | Cap | `MAX_ASK_ALL_CHAT_PERSONAS = 10` (alias of TG cap; first N by list order) |
 | Persona source | All personas with `projectId === selected` (client filter of persona list) |
-| Transport | Same client fan-out as TG (`POST /api/chat/stream` per persona) |
+| Transport | Same client fan-out as TG (`POST /api/chat/stream` per persona, concurrency 3) |
 | Interaction / prompt | Same round grid + one-shot per round |
+| Stream parity | Same as TG: `done.text` + Abort finalize |
 | Disabled | Same as TG: voice / video / inspect / attachments / share / moodboard / history |
 | Deep-link | `/chat?projectId=` **without** `personaId` (share remains `personaId` + `projectId`) |
 | Entry | Topbar mode **Projekt** + project select; CTA from project detail → `/chat?projectId=` |

@@ -7,7 +7,9 @@ import { ChatAnswer } from '../lib/chat/chat-answer'
 import { ChatWritingIndicator } from '../lib/chat/chat-writing-indicator'
 import { postChatStream } from '../lib/chat/stream-client'
 import {
+  ASK_ALL_STREAM_CONCURRENCY,
   createAskAllRound,
+  mapPool,
   MAX_ASK_ALL_CHAT_PERSONAS,
   type AskAllPersonaRef,
 } from '../lib/chat/tg-ask-all'
@@ -48,6 +50,23 @@ function patchSlot(
   })
 }
 
+function finalizeStreamingSlots(
+  rounds: ChatTargetGroupRound[],
+  roundId: string,
+): ChatTargetGroupRound[] {
+  return rounds.map((round) => {
+    if (round.id !== roundId) return round
+    return {
+      ...round,
+      slots: round.slots.map((slot) =>
+        slot.status === 'streaming' || slot.status === 'pending'
+          ? { ...slot, status: 'complete' as const }
+          : slot,
+      ),
+    }
+  })
+}
+
 export function AudionAskAllChatPanel({
   scopeKey,
   scopeName: _scopeName,
@@ -70,6 +89,7 @@ export function AudionAskAllChatPanel({
   const [composerError, setComposerError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const scopeKeyRef = useRef<string | null>(scopeKey)
 
   const capped = personas.slice(0, MAX_ASK_ALL_CHAT_PERSONAS)
   const truncated = (totalBeforeCap ?? capped.length) > MAX_ASK_ALL_CHAT_PERSONAS
@@ -79,12 +99,21 @@ export function AudionAskAllChatPanel({
   }, [busy, onBusyChange])
 
   useEffect(() => {
+    // Only wipe on a real scope change — not Strict Mode remount / identical key.
+    if (scopeKeyRef.current === scopeKey) return
+    scopeKeyRef.current = scopeKey
     setRounds([])
     setDraft('')
     setErr(null)
     abortRef.current?.abort()
     setBusy(false)
   }, [scopeKey])
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
 
   useEffect(() => {
     const el = listRef.current
@@ -114,72 +143,88 @@ export function AudionAskAllChatPanel({
     const controller = new AbortController()
     abortRef.current = controller
 
-    await Promise.all(
-      round.slots.map(async (slot) => {
-        setRounds((prev) =>
-          patchSlot(prev, round.id, slot.personaId, { status: 'streaming', content: '' }),
+    await mapPool(round.slots, ASK_ALL_STREAM_CONCURRENCY, async (slot) => {
+      setRounds((prev) =>
+        patchSlot(prev, round.id, slot.personaId, { status: 'streaming', content: '' }),
+      )
+      let content = ''
+      let terminal: 'done' | 'error' | null = null
+      try {
+        await postChatStream(
+          {
+            personaId: slot.personaId,
+            message: trimmed,
+            conversationId: null,
+            projectId,
+          },
+          (event: ChatStreamEvent) => {
+            if (event.type === 'delta' && typeof event.text === 'string') {
+              content += event.text
+              setRounds((prev) =>
+                patchSlot(prev, round.id, slot.personaId, {
+                  status: 'streaming',
+                  content,
+                }),
+              )
+            } else if (event.type === 'error') {
+              terminal = 'error'
+              setRounds((prev) =>
+                patchSlot(prev, round.id, slot.personaId, {
+                  status: 'error',
+                  error: event.message || 'Stream failed',
+                  content,
+                }),
+              )
+            } else if (event.type === 'done') {
+              terminal = 'done'
+              // Parity with persona panel: `done.text` is the filtered final answer
+              // (and the only text when the model yields an empty delta stream).
+              const finalText = event.text ?? (content || slot.content)
+              content = finalText
+              setRounds((prev) =>
+                patchSlot(prev, round.id, slot.personaId, {
+                  status: 'complete',
+                  content: finalText,
+                  error: null,
+                }),
+              )
+            }
+          },
+          controller.signal,
         )
-        let content = ''
-        try {
-          await postChatStream(
-            {
-              personaId: slot.personaId,
-              message: trimmed,
-              conversationId: null,
-              projectId,
-            },
-            (event: ChatStreamEvent) => {
-              if (event.type === 'delta' && typeof event.text === 'string') {
-                content += event.text
-                setRounds((prev) =>
-                  patchSlot(prev, round.id, slot.personaId, {
-                    status: 'streaming',
-                    content,
-                  }),
-                )
-              } else if (event.type === 'error') {
-                setRounds((prev) =>
-                  patchSlot(prev, round.id, slot.personaId, {
-                    status: 'error',
-                    error: event.message || 'Stream failed',
-                    content,
-                  }),
-                )
-              } else if (event.type === 'done') {
-                setRounds((prev) =>
-                  patchSlot(prev, round.id, slot.personaId, {
-                    status: 'complete',
-                    content: content || slot.content,
-                    error: null,
-                  }),
-                )
-              }
-            },
-            controller.signal,
-          )
-          setRounds((prev) => {
-            const current = prev
-              .find((r) => r.id === round.id)
-              ?.slots.find((s) => s.personaId === slot.personaId)
-            if (current?.status === 'error') return prev
-            return patchSlot(prev, round.id, slot.personaId, {
-              status: 'complete',
-              content: content || current?.content || '',
-              error: null,
-            })
+        if (terminal === 'error') return
+        if (terminal === 'done') return
+        setRounds((prev) => {
+          const current = prev
+            .find((r) => r.id === round.id)
+            ?.slots.find((s) => s.personaId === slot.personaId)
+          if (current?.status === 'error') return prev
+          return patchSlot(prev, round.id, slot.personaId, {
+            status: 'complete',
+            content: content || current?.content || '',
+            error: null,
           })
-        } catch (error) {
-          if ((error as Error).name === 'AbortError') return
+        })
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') {
           setRounds((prev) =>
             patchSlot(prev, round.id, slot.personaId, {
-              status: 'error',
-              error: error instanceof Error ? error.message : 'Stream failed',
+              status: 'complete',
               content,
+              error: null,
             }),
           )
+          return
         }
-      }),
-    )
+        setRounds((prev) =>
+          patchSlot(prev, round.id, slot.personaId, {
+            status: 'error',
+            error: error instanceof Error ? error.message : 'Stream failed',
+            content,
+          }),
+        )
+      }
+    })
 
     setBusy(false)
   }
@@ -197,6 +242,11 @@ export function AudionAskAllChatPanel({
 
   function onStop() {
     abortRef.current?.abort()
+    setRounds((prev) => {
+      const last = prev[prev.length - 1]
+      if (!last) return prev
+      return finalizeStreamingSlots(prev, last.id)
+    })
     setBusy(false)
   }
 

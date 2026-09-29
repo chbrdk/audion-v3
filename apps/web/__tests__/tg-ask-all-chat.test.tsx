@@ -190,6 +190,23 @@ describe('tg-ask-all helpers', () => {
     expect(buildChatProjectHref('proj-1')).toBe('/chat?projectId=proj-1')
     expect(paths.routes.chatProject('proj-1')).toBe('/chat?projectId=proj-1')
   })
+
+  it('mapPool respects concurrency while covering all items', async () => {
+    let inFlight = 0
+    let peak = 0
+    const items = [1, 2, 3, 4, 5]
+    const { mapPool, ASK_ALL_STREAM_CONCURRENCY } = await import('../lib/chat/tg-ask-all')
+    const out = await mapPool(items, ASK_ALL_STREAM_CONCURRENCY, async (n) => {
+      inFlight += 1
+      peak = Math.max(peak, inFlight)
+      await new Promise((r) => setTimeout(r, 20))
+      inFlight -= 1
+      return n * 10
+    })
+    expect(out).toEqual([10, 20, 30, 40, 50])
+    expect(peak).toBeLessThanOrEqual(ASK_ALL_STREAM_CONCURRENCY)
+    expect(peak).toBeGreaterThan(1)
+  })
 })
 
 describe('AudionTargetGroupChatPanel', () => {
@@ -221,6 +238,58 @@ describe('AudionTargetGroupChatPanel', () => {
     })
     expect(container.querySelectorAll('.audion-tg-chat-slot')).toHaveLength(2)
     expect(screen.getByText('What frustrates you?')).toBeInTheDocument()
+  })
+
+  it('applies done.text when the stream has no deltas', async () => {
+    postChatStreamMock.mockImplementation(async (payload, onEvent) => {
+      onEvent({
+        type: 'done',
+        conversationId: `c-${payload.personaId}`,
+        messageId: 'm1',
+        text: `Final from ${payload.personaId}`,
+      })
+    })
+
+    render(<AudionTargetGroupChatPanel targetGroup={targetGroup} />)
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'Quick take?' },
+    })
+    fireEvent.click(screen.getByLabelText('Send to all personas'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Final from persona-a')).toBeInTheDocument()
+      expect(screen.getByText('Final from persona-b')).toBeInTheDocument()
+    })
+  })
+
+  it('finalizes streaming slots on Stop instead of leaving blank Writing', async () => {
+    postChatStreamMock.mockImplementation(async (_payload, onEvent, signal) => {
+      onEvent({ type: 'delta', text: 'Partial…' })
+      await new Promise<void>((resolve, reject) => {
+        const onAbort = () => reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }))
+        if (signal?.aborted) {
+          onAbort()
+          return
+        }
+        signal?.addEventListener('abort', onAbort, { once: true })
+      })
+    })
+
+    const { container } = render(<AudionTargetGroupChatPanel targetGroup={targetGroup} />)
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'Stop me' },
+    })
+    fireEvent.click(screen.getByLabelText('Send to all personas'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Stop')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Stop'))
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('[data-status="streaming"]')).toHaveLength(0)
+      expect(container.querySelectorAll('[data-status="pending"]')).toHaveLength(0)
+    })
   })
 })
 
