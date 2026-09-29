@@ -184,6 +184,11 @@ export const paths = {
    */
   aiOpenAiModelChatLow: '',
   aiOpenAiModelChatHigh: '',
+  /**
+   * Vision turns (image attachments) — must be multimodal on the active transport.
+   * Override via AI_OPENAI_MODEL_CHAT_VISION. Spec: chat-image-attachments.md
+   */
+  aiOpenAiModelChatVision: 'openai/gpt-6-astra',
   /** Native persona chat completion cap — override via AI_CHAT_MAX_TOKENS */
   chatCompletionMaxTokens: 280,
   /** Higher cap only when the user turn is a GEO / prompt-bank elicitation brief. */
@@ -455,6 +460,7 @@ export const paths = {
   envAiOpenAiModel: 'AI_OPENAI_MODEL',
   envAiOpenAiModelChatLow: 'AI_OPENAI_MODEL_CHAT_LOW',
   envAiOpenAiModelChatHigh: 'AI_OPENAI_MODEL_CHAT_HIGH',
+  envAiOpenAiModelChatVision: 'AI_OPENAI_MODEL_CHAT_VISION',
   envUxJourneyOpenAiModel: 'UX_JOURNEY_OPENAI_MODEL',
   envUxJourneyVisionDetail: 'UX_JOURNEY_VISION_DETAIL',
   envAiOpenAiImageModel: 'AI_OPENAI_IMAGE_MODEL',

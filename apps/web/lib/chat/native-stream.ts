@@ -221,7 +221,10 @@ export async function* nativeChatStreamEvents(
   try {
     const elicitation = isResearchElicitationMessage(message)
     const greeting = isGreetingMessage(message)
-    const resolved = await resolvePersonaChatModel(message, { userId })
+    const resolved = await resolvePersonaChatModel(message, {
+      userId,
+      hasImages: images.length > 0,
+    })
     const model = resolved.model
     const preferredTemp = elicitation ? 0.7 : greeting ? 0.9 : 0.85
     const client = createChatCompletionClient()

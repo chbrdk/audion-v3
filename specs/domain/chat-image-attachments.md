@@ -43,6 +43,7 @@ User `ChatMessage` stores `images: { id, dataUrl }[]` (compressed thumbs for UI)
 
 - Current user turn: OpenAI multimodal content parts (`text` + `image_url`).
 - Prior history turns: **text-only** (token budget).
+- **Model:** vision allowlist via `resolvePersonaChatModel(…, { hasImages: true })` → `AI_OPENAI_MODEL_CHAT_VISION` (default `openai/gpt-6-astra`). Do not send images to text-only mid models (e.g. `qwen/qwen3-max`).
 - When `abCompare === true` and exactly two resolved images, append the A/B system instruction (below).
 - Missing/expired IDs → stream `error`.
 

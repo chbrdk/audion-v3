@@ -81,6 +81,14 @@ describe('resolvePersonaChatModel', () => {
     expect(r.source).toBe('heuristic')
   })
 
+  it('routes image turns to vision allowlist (not text-only mid)', async () => {
+    process.env.AI_OPENAI_MODEL = 'qwen/qwen3-max'
+    process.env.AI_OPENAI_MODEL_CHAT_VISION = 'openai/gpt-6-astra'
+    const r = await resolvePersonaChatModel('Was siehst du?', { hasImages: true })
+    expect(r.source).toBe('vision')
+    expect(r.model).toBe('openai/gpt-6-astra')
+  })
+
   it('env suffix still matches catalog id for future rewire', () => {
     expect(useCaseEnvSuffix(JEV_USE_CASES.audionPersonaChatModelTier)).toBe(
       'AUDION_PERSONA_CHAT_MODEL_TIER',

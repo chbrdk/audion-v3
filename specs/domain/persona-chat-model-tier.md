@@ -29,6 +29,9 @@ Greeting turns (“hey, wie geht’s?”) and deep research/elicitation turns sh
 | `mid` | `AI_OPENAI_MODEL` | `paths.aiOpenAiModel` |
 | `low` | `AI_OPENAI_MODEL_CHAT_LOW` | mid |
 | `high` | `AI_OPENAI_MODEL_CHAT_HIGH` | mid |
+| **vision** (any turn with `imageIds`) | `AI_OPENAI_MODEL_CHAT_VISION` | high → `paths.aiOpenAiModelChatVision` (`openai/gpt-6-astra`) |
+
+Text-only models such as `qwen/qwen3-max` must **not** receive `image_url` parts — OpenRouter returns `No endpoints found that support image input`. Document attachments stay text-merge on the heuristic tier (no vision override).
 
 ## Chat transport (OpenRouter)
 

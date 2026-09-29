@@ -54,22 +54,45 @@ export function modelIdForPersonaChatTier(tier: PersonaChatModelTier): string {
   return normalizeChatModelId(raw)
 }
 
+/**
+ * Multimodal turns — mid text models (e.g. qwen/qwen3-max) reject image_url on OpenRouter
+ * ("No endpoints found that support image input"). Prefer vision allowlist.
+ */
+export function modelIdForVisionChat(): string {
+  const mid = getAiOpenAiModel()
+  const raw =
+    trimModelEnv(process.env[paths.envAiOpenAiModelChatVision]) ||
+    paths.aiOpenAiModelChatVision ||
+    trimModelEnv(process.env[paths.envAiOpenAiModelChatHigh]) ||
+    paths.aiOpenAiModelChatHigh ||
+    mid
+  return normalizeChatModelId(raw)
+}
+
 export type ResolvePersonaChatModelResult = {
   tier: PersonaChatModelTier
   model: string
   /** Reserved — was Jev Act override; always false while Jev is off chat. */
   applied: boolean
-  source: 'heuristic'
+  source: 'heuristic' | 'vision'
 }
 
 /**
- * Resolve completion model from message heuristic only.
+ * Resolve completion model from message heuristic, or vision allowlist when images are attached.
  * Jev shadow/act intentionally not called on the chat path (2026-09-29).
  */
 export async function resolvePersonaChatModel(
   message: string,
-  _opts?: { fetchImpl?: typeof fetch; userId?: string | null },
+  opts?: { fetchImpl?: typeof fetch; userId?: string | null; hasImages?: boolean },
 ): Promise<ResolvePersonaChatModelResult> {
+  if (opts?.hasImages) {
+    return {
+      tier: 'high',
+      model: modelIdForVisionChat(),
+      applied: false,
+      source: 'vision',
+    }
+  }
   const tier = heuristicPersonaChatModelTier(message)
   return {
     tier,
