@@ -18,17 +18,20 @@
 |----|----------|-----------|------|
 | `audion.friction_severity` | Heuristic `high`/`medium`/`low` on journey friction points | Choice `severity` | `scoreValidateJourney` / native validate friction map |
 | `audion.insight_triage` | Heuristic `act_now`/`watch`/`noise` from finding severity | Choice `triage` | UX-study native findings assembly |
-| `audion.persona_chat_model_tier` | Greeting → `low`; research elicitation → `high`; else `mid` | Choice `tier` | `lib/chat/persona-chat-model-tier.ts` · `native-stream.ts` |
+| `audion.persona_chat_model_tier` | Greeting → `low`; research elicitation → `high`; else `mid` | Choice `tier` | **Unwired from chat** (2026-09-29) — heuristic-only in `persona-chat-model-tier.ts`; catalog id retained |
 
-### Act-apply — `audion.persona_chat_model_tier`
+### Act-apply — `audion.persona_chat_model_tier` (deferred)
 
-When `JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER=1`:
+Chat path does **not** call Jev (shadow or Act). Re-enable only after disagree soak vs heuristic; see `specs/domain/persona-chat-model-tier.md`. Former Act contract for reference:
+
+When `JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER=1` (not wired):
 
 1. Await Decisions on the chat stream path (fail-open → heuristic tier).
 2. Map Choice `low|mid|high` → OpenAI model id from **env allowlist only** (`AI_OPENAI_MODEL` mid default; `AI_OPENAI_MODEL_CHAT_LOW` / `AI_OPENAI_MODEL_CHAT_HIGH` optional).
 3. Never invent model IDs. Missing high/low env → fall back to mid (`AI_OPENAI_MODEL`).
 4. Log `[jev-act]` with `applied`, `tier`, `model`.
 5. Guest budgets / embed caps stay deterministic code (not Jev).
+6. Ask-all must resolve tier **once per round**, not per persona stream.
 
 Suite catalog SSOT: plexon-v3 `specs/domain/jev-use-case-catalog.md` · `JEV_USE_CASES`.
 

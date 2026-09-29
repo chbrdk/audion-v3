@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   heuristicPersonaChatModelTier,
   modelIdForPersonaChatTier,
@@ -45,62 +45,43 @@ describe('persona-chat-model-tier heuristic', () => {
 describe('resolvePersonaChatModel', () => {
   beforeEach(() => {
     process.env.OPENROUTER_API_KEY = 'sk-test'
-    process.env.OPENROUTER_API_BASE_URL = 'https://openrouter.test'
     process.env.AI_OPENAI_MODEL = 'gpt-mid-test'
     delete process.env.AI_OPENAI_MODEL_CHAT_LOW
     delete process.env.AI_OPENAI_MODEL_CHAT_HIGH
-    delete process.env.JEV_SHADOW_ENABLED
-    delete process.env.JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER
   })
   afterEach(() => {
     delete process.env.OPENROUTER_API_KEY
-    delete process.env.JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER
-    delete process.env.JEV_SHADOW_ENABLED
     delete process.env.AI_OPENAI_MODEL_CHAT_LOW
     delete process.env.AI_OPENAI_MODEL_CHAT_HIGH
   })
 
-  it('keeps default mid model when Act off (shadow schedule only)', async () => {
-    process.env.JEV_SHADOW_ENABLED = '1'
+  it('maps greeting to low allowlist without calling Jev', async () => {
+    process.env.AI_OPENAI_MODEL_CHAT_LOW = 'gpt-low-test'
     const r = await resolvePersonaChatModel('Hallo!')
     expect(r.tier).toBe('low')
-    // OPENROUTER_API_KEY set for Jev → chat transport normalizes bare gpt-* 
-    expect(r.model).toBe('openai/gpt-mid-test')
-    expect(r.source).toBe('default')
+    expect(r.model).toBe('openai/gpt-low-test')
+    expect(r.source).toBe('heuristic')
     expect(r.applied).toBe(false)
   })
 
-  it('applies Jev tier under Act', async () => {
-    process.env.JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER = '1'
-    process.env.AI_OPENAI_MODEL_CHAT_HIGH = 'gpt-high-test'
-    const fetchImpl = vi.fn(async () => {
-      return new Response(
-        JSON.stringify({
-          model: 'typesafe/jev-1.13',
-          answers: { tier: { type: 'choice', key: 'high' } },
-        }),
-        { status: 200 },
-      )
-    }) as unknown as typeof fetch
-
-    const r = await resolvePersonaChatModel('irgendwas', { fetchImpl })
-    expect(r.tier).toBe('high')
-    expect(r.model).toBe('openai/gpt-high-test')
-    expect(r.source).toBe('jev-act')
-    expect(r.applied).toBe(true)
-    expect(fetchImpl).toHaveBeenCalled()
-  })
-
-  it('fail-open keeps heuristic on upstream error', async () => {
-    process.env.JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER = '1'
-    const fetchImpl = vi.fn(async () => new Response('nope', { status: 500 })) as unknown as typeof fetch
-    const r = await resolvePersonaChatModel('Hey!', { fetchImpl })
-    expect(r.tier).toBe('low')
-    expect(r.model).toBe('openai/gpt-mid-test') // low env unset → mid fallback, OR-normalized
+  it('maps mid dialogue to mid model', async () => {
+    const r = await resolvePersonaChatModel('Was hältst du von der Marke?')
+    expect(r.tier).toBe('mid')
+    expect(r.model).toBe('openai/gpt-mid-test')
     expect(r.source).toBe('heuristic')
   })
 
-  it('env suffix matches catalog id', () => {
+  it('maps elicitation to high allowlist', async () => {
+    process.env.AI_OPENAI_MODEL_CHAT_HIGH = 'gpt-high-test'
+    const r = await resolvePersonaChatModel(
+      'Bitte 3 Fragen aus je 3 Kategorien: U= Unbranded / kategorial, BV=, BR= prompt-bank',
+    )
+    expect(r.tier).toBe('high')
+    expect(r.model).toBe('openai/gpt-high-test')
+    expect(r.source).toBe('heuristic')
+  })
+
+  it('env suffix still matches catalog id for future rewire', () => {
     expect(useCaseEnvSuffix(JEV_USE_CASES.audionPersonaChatModelTier)).toBe(
       'AUDION_PERSONA_CHAT_MODEL_TIER',
     )

@@ -179,7 +179,7 @@ export const paths = {
   /** Default for chat/assist — override via AI_OPENAI_MODEL (Jev tier `mid`) */
   aiOpenAiModel: 'gpt-6-luna',
   /**
-   * Optional persona-chat tier models (Jev `audion.persona_chat_model_tier`).
+   * Optional persona-chat tier models (heuristic `low`/`high`; mid = `AI_OPENAI_MODEL`).
    * Empty → fall back to `aiOpenAiModel`. Spec: specs/domain/persona-chat-model-tier.md
    */
   aiOpenAiModelChatLow: '',

@@ -80,6 +80,5 @@ Final env (non-preview):
 
 1. ~~Deploy chat OpenRouter client~~ (`hptxyyojetjczfx7nggjkz8u` / `4a6f27a`)
 2. ~~Set mid/low/high allowlist~~ (bulk + restart `a7s650kisnfys2bu5r4naeaq`)
-3. Smoke persona chat in-app (mid = Qwen Max) — OR API smoke done; UI path still optional
-4. Soak `[jev-shadow]` for `audion.persona_chat_model_tier`
-5. Flip `JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER=1`
+3. ~~Smoke persona chat in-app~~ (after `/api/v1` base fix `cbcc669`)
+4. **2026-09-29 — Jev out of chat:** `resolvePersonaChatModel` is heuristic-only (no shadow/act). Catalog id retained; do **not** flip `JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER` until a new soak shows disagree value. Friction/insight Jev unchanged.
