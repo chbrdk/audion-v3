@@ -6,7 +6,7 @@ import {
   isGreetingMessage,
   isResearchElicitationMessage,
 } from '@/lib/chat/adaptive-persona-chat-prompt'
-import { getAiOpenAiModel } from '@/lib/ai/client'
+import { getAiOpenAiModel, normalizeChatModelId } from '@/lib/ai/client'
 import {
   JEV_USE_CASES,
   PERSONA_CHAT_MODEL_TIER_OPTIONS,
@@ -42,22 +42,22 @@ export function isPersonaChatModelTier(v: unknown): v is PersonaChatModelTier {
   return typeof v === 'string' && TIER_SET.has(v)
 }
 
-/** Map tier → allowlisted model id (never invent IDs). */
+/** Map tier → allowlisted model id (never invent IDs). Normalized for chat transport. */
 export function modelIdForPersonaChatTier(tier: PersonaChatModelTier): string {
   const mid = getAiOpenAiModel()
-  if (tier === 'mid') return mid
+  let raw = mid
   if (tier === 'low') {
-    return (
+    raw =
       trimModelEnv(process.env[paths.envAiOpenAiModelChatLow]) ||
       paths.aiOpenAiModelChatLow ||
       mid
-    )
+  } else if (tier === 'high') {
+    raw =
+      trimModelEnv(process.env[paths.envAiOpenAiModelChatHigh]) ||
+      paths.aiOpenAiModelChatHigh ||
+      mid
   }
-  return (
-    trimModelEnv(process.env[paths.envAiOpenAiModelChatHigh]) ||
-    paths.aiOpenAiModelChatHigh ||
-    mid
-  )
+  return normalizeChatModelId(raw)
 }
 
 function logJevAct(payload: Record<string, unknown>): void {
@@ -105,7 +105,7 @@ export async function resolvePersonaChatModel(
     })
     return {
       tier: baseline,
-      model: getAiOpenAiModel(),
+      model: normalizeChatModelId(getAiOpenAiModel()),
       applied: false,
       source: 'default',
     }

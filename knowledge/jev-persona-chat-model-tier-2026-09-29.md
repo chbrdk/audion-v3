@@ -48,15 +48,25 @@ Chat + images still use the OpenAI SDK via `OPENAI_API_KEY` (direct `sk-proj`). 
 1. Existing `OPENAI_API_KEY` is direct OpenAI — OpenRouter would reject it.
 2. Copying `OPENROUTER_API_KEY` onto `OPENAI_API_KEY` would wipe the direct key and risk breaking image gen (`AI_OPENAI_IMAGE_MODEL=gpt-image-2.5-sunburst` bare id).
 
+## Coolify OpenRouter chat alignment (2026-09-29)
+
+Code: `createChatCompletionClient()` — persona chat uses `OPENROUTER_API_KEY` when set; images stay on Direct OpenAI.
+
+Target env (Act still `0` until soak):
+
+| Key | Value |
+|-----|-------|
+| `AI_OPENAI_MODEL` | `qwen/qwen3-max` |
+| `AI_OPENAI_MODEL_CHAT_LOW` | `qwen/qwen3.7-flash` |
+| `AI_OPENAI_MODEL_CHAT_HIGH` | `openai/gpt-6-astra` |
+| `JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER` | `0` |
+
+Requires deployed build with `createChatCompletionClient` before flipping mid to Qwen.
+
 ## Flip checklist
 
-1. ~~`JEV_SHADOW_ENABLED=1` + OpenRouter key on Coolify~~ **Done**
-2. ~~Set `AI_OPENAI_MODEL` / `CHAT_LOW` / `CHAT_HIGH` allowlist~~ **Done** (mid live=`gpt-6-luna`; low/high ready)
-3. Align chat client to OpenRouter (BASE_URL + compatible `OPENAI_API_KEY`) **before** moving mid to Qwen
-4. Soak agree/latency on `[jev-shadow]` for `audion.persona_chat_model_tier`
-5. Flip `JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER=1` only after soak + OpenRouter chat path (low Qwen needs it)
-
-## Residual risks
-
-1. **Low allowlist is OpenRouter-prefixed** (`qwen/qwen3.7-flash`) — harmless while Act=`0`; will 404 on Direct OpenAI if Act flips early.
-2. **Act stays OFF** (`0`) — do not flip without soak + OpenRouter chat path for Qwen tiers.
+1. Deploy chat OpenRouter client
+2. Set mid/low/high allowlist as above
+3. Smoke persona chat (mid = Qwen Max)
+4. Soak `[jev-shadow]` for `audion.persona_chat_model_tier`
+5. Flip `JEV_ACT_AUDION_PERSONA_CHAT_MODEL_TIER=1`

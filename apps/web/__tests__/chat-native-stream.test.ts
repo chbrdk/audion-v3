@@ -9,7 +9,11 @@ vi.mock('../lib/ai/client', () => ({
   createOpenAiClient: () => ({
     chat: { completions: { create: createMock } },
   }),
+  createChatCompletionClient: () => ({
+    chat: { completions: { create: createMock } },
+  }),
   getAiOpenAiModel: () => 'gpt-test',
+  normalizeChatModelId: (m: string) => m,
   getChatCompletionMaxTokens: (opts?: { elicitation?: boolean }) =>
     opts?.elicitation ? 320 : 280,
   toAiNativeError: (error: unknown, fallback: string) => ({

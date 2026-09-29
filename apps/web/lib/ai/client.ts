@@ -1,6 +1,7 @@
 /**
  * Native OpenAI client for audion-v3 (no V2 proxy).
  * Spec twin: knowledge/ai-native-2026.md
+ * Chat completions may use OpenRouter — specs/domain/persona-chat-model-tier.md
  */
 
 import OpenAI from 'openai'
@@ -15,8 +16,19 @@ export function getOpenAiBaseUrl(): string | undefined {
   return base || undefined
 }
 
+export function getOpenRouterApiKey(): string {
+  return process.env[paths.envOpenRouterApiKey]?.trim() || ''
+}
+
+export function getOpenRouterApiBaseUrl(): string {
+  return (
+    process.env[paths.envOpenRouterApiBaseUrl]?.trim() ||
+    paths.openRouterApiDefaultBase
+  ).replace(/\/$/, '')
+}
+
 export function getAiOpenAiModel(): string {
-  return process.env[paths.envAiOpenAiModel]?.trim() || paths.aiOpenAiModel
+  return trimEnvModelId(process.env[paths.envAiOpenAiModel]) || paths.aiOpenAiModel
 }
 
 function trimEnvModelId(raw: string | undefined): string {
@@ -52,7 +64,39 @@ export function hasOpenAiApiKey(): boolean {
   return Boolean(getOpenAiApiKey())
 }
 
-/** Create a server-side OpenAI client. Throws if key missing. */
+export function hasChatCompletionCredentials(): boolean {
+  return Boolean(getOpenRouterApiKey() || getOpenAiApiKey())
+}
+
+export type ChatCompletionTransport = 'openrouter' | 'openai'
+
+/**
+ * Prefer OpenRouter for persona chat when OR key is set (Qwen + openai/* slugs).
+ * Images/assist keep `createOpenAiClient()` on Direct OpenAI.
+ */
+export function resolveChatCompletionTransport(): ChatCompletionTransport {
+  return getOpenRouterApiKey() ? 'openrouter' : 'openai'
+}
+
+/**
+ * Normalize allowlisted model ids for the active chat transport.
+ * Bare `gpt-*` → `openai/gpt-*` on OpenRouter.
+ */
+export function normalizeChatModelId(
+  model: string,
+  transport: ChatCompletionTransport = resolveChatCompletionTransport(),
+): string {
+  const m = trimEnvModelId(model)
+  if (!m) return m
+  if (transport !== 'openrouter') return m
+  if (m.includes('/')) return m
+  if (/^gpt-/i.test(m) || /^o\d/i.test(m) || /^chatgpt-/i.test(m)) {
+    return `openai/${m}`
+  }
+  return m
+}
+
+/** Create a server-side OpenAI client (Direct OpenAI — images / assist). Throws if key missing. */
 export function createOpenAiClient(): OpenAI {
   const apiKey = getOpenAiApiKey()
   if (!apiKey) {
@@ -62,6 +106,25 @@ export function createOpenAiClient(): OpenAI {
     apiKey,
     baseURL: getOpenAiBaseUrl(),
   })
+}
+
+/**
+ * Chat completions client — OpenRouter preferred, Direct OpenAI fallback.
+ * Spec: specs/domain/persona-chat-model-tier.md § Chat transport
+ */
+export function createChatCompletionClient(): OpenAI {
+  const orKey = getOpenRouterApiKey()
+  if (orKey) {
+    return new OpenAI({
+      apiKey: orKey,
+      baseURL: getOpenRouterApiBaseUrl(),
+      defaultHeaders: {
+        'HTTP-Referer': 'https://audion.msq.dx',
+        'X-Title': paths.defaultDisplayName || 'AUDION',
+      },
+    })
+  }
+  return createOpenAiClient()
 }
 
 export type AiNativeError = { error: string; status: number; detail?: string }
