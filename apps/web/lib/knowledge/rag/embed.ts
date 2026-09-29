@@ -23,10 +23,14 @@ function getOpenRouterKey(): string {
 }
 
 function getOpenRouterBase(): string {
-  return (
+  const raw = (
     process.env[paths.envOpenRouterApiBaseUrl]?.trim() ||
     paths.openRouterApiDefaultBase
   ).replace(/\/$/, '')
+  if (!raw) return paths.openRouterApiDefaultBase
+  // Same origin-vs-/api/v1 rule as chat completions (Jev keeps bare origin).
+  if (/\/api\/v1$/i.test(raw)) return raw
+  return `${raw}/api/v1`
 }
 
 type EmbedProvider = {

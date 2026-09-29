@@ -52,6 +52,8 @@ Chat + images still use the OpenAI SDK via `OPENAI_API_KEY` (direct `sk-proj`). 
 
 Code: `createChatCompletionClient()` — persona chat uses `OPENROUTER_API_KEY` when set; images stay on Direct OpenAI.
 
+**BASE_URL split (critical):** Coolify keeps `OPENROUTER_API_BASE_URL=https://openrouter.ai` for Jev (`{base}/api/alpha/decisions`). Chat/RAG OpenAI-SDK clients must call `{origin}/api/v1` — `getOpenRouterApiBaseUrl()` appends `/api/v1` when missing. Without that, streams complete with empty content → UI shows only `…`.
+
 Sequence (order mattered): force deploy with `4a6f27a` **before** flipping mid to Qwen.
 
 | Step | Id / result |

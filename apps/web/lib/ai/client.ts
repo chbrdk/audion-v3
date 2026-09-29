@@ -20,11 +20,19 @@ export function getOpenRouterApiKey(): string {
   return process.env[paths.envOpenRouterApiKey]?.trim() || ''
 }
 
+/**
+ * OpenAI-SDK base for chat completions / embeddings.
+ * Coolify often sets `OPENROUTER_API_BASE_URL=https://openrouter.ai` for Jev
+ * (`{base}/api/alpha/decisions`). The OpenAI client needs `{origin}/api/v1`.
+ */
 export function getOpenRouterApiBaseUrl(): string {
-  return (
+  const raw = (
     process.env[paths.envOpenRouterApiBaseUrl]?.trim() ||
     paths.openRouterApiDefaultBase
   ).replace(/\/$/, '')
+  if (!raw) return paths.openRouterApiDefaultBase
+  if (/\/api\/v1$/i.test(raw)) return raw
+  return `${raw}/api/v1`
 }
 
 export function getAiOpenAiModel(): string {

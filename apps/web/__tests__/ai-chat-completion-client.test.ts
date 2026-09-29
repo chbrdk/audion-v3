@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
+  getOpenRouterApiBaseUrl,
   normalizeChatModelId,
   resolveChatCompletionTransport,
 } from '@/lib/ai/client'
@@ -27,5 +28,14 @@ describe('chat completion transport', () => {
     expect(normalizeChatModelId('gpt-6-astra', 'openrouter')).toBe('openai/gpt-6-astra')
     expect(normalizeChatModelId('qwen/qwen3-max', 'openrouter')).toBe('qwen/qwen3-max')
     expect(normalizeChatModelId('gpt-6-luna', 'openai')).toBe('gpt-6-luna')
+  })
+
+  it('normalizes Jev origin base to OpenAI /api/v1 for chat completions', () => {
+    process.env.OPENROUTER_API_BASE_URL = 'https://openrouter.ai'
+    expect(getOpenRouterApiBaseUrl()).toBe('https://openrouter.ai/api/v1')
+    process.env.OPENROUTER_API_BASE_URL = 'https://openrouter.ai/api/v1'
+    expect(getOpenRouterApiBaseUrl()).toBe('https://openrouter.ai/api/v1')
+    process.env.OPENROUTER_API_BASE_URL = 'https://openrouter.ai/api/v1/'
+    expect(getOpenRouterApiBaseUrl()).toBe('https://openrouter.ai/api/v1')
   })
 })
