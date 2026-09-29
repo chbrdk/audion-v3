@@ -176,8 +176,14 @@ export const paths = {
   chatApiInternalUrl: 'http://chat-api:8001',
   /** Native AI runtime: stub | native | auto (auto = native when OPENAI_API_KEY set) */
   aiRuntime: 'auto' as const,
-  /** Default for chat/assist — override via AI_OPENAI_MODEL */
+  /** Default for chat/assist — override via AI_OPENAI_MODEL (Jev tier `mid`) */
   aiOpenAiModel: 'gpt-6-luna',
+  /**
+   * Optional persona-chat tier models (Jev `audion.persona_chat_model_tier`).
+   * Empty → fall back to `aiOpenAiModel`. Spec: specs/domain/persona-chat-model-tier.md
+   */
+  aiOpenAiModelChatLow: '',
+  aiOpenAiModelChatHigh: '',
   /** Native persona chat completion cap — override via AI_CHAT_MAX_TOKENS */
   chatCompletionMaxTokens: 280,
   /** Higher cap only when the user turn is a GEO / prompt-bank elicitation brief. */
@@ -447,6 +453,8 @@ export const paths = {
   envOpenAiApiKey: 'OPENAI_API_KEY',
   envOpenAiApiBaseUrl: 'OPENAI_API_BASE_URL',
   envAiOpenAiModel: 'AI_OPENAI_MODEL',
+  envAiOpenAiModelChatLow: 'AI_OPENAI_MODEL_CHAT_LOW',
+  envAiOpenAiModelChatHigh: 'AI_OPENAI_MODEL_CHAT_HIGH',
   envUxJourneyOpenAiModel: 'UX_JOURNEY_OPENAI_MODEL',
   envUxJourneyVisionDetail: 'UX_JOURNEY_VISION_DETAIL',
   envAiOpenAiImageModel: 'AI_OPENAI_IMAGE_MODEL',

@@ -4,7 +4,7 @@
 
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import type { ChatSendPayload, ChatStreamEvent } from '@audion-v3/contracts'
-import { createOpenAiClient, getAiOpenAiModel, getChatCompletionMaxTokens, toAiNativeError } from '../ai/client'
+import { createOpenAiClient, getChatCompletionMaxTokens, toAiNativeError } from '../ai/client'
 import { withOpenAiChatTemperature } from '../ai/openai-sampling'
 import {
   storeChatAppendAssistant,
@@ -18,6 +18,7 @@ import {
   isResearchElicitationMessage,
   withTurnEnvelopes,
 } from './adaptive-persona-chat-prompt'
+import { resolvePersonaChatModel } from './persona-chat-model-tier'
 import { humanizePersonaReply } from './humanize-reply'
 import { resolveChatDocuments } from './document-upload-store'
 import { resolveChatImages } from './image-upload-store'
@@ -220,7 +221,8 @@ export async function* nativeChatStreamEvents(
   try {
     const elicitation = isResearchElicitationMessage(message)
     const greeting = isGreetingMessage(message)
-    const model = getAiOpenAiModel()
+    const resolved = await resolvePersonaChatModel(message, { userId })
+    const model = resolved.model
     const preferredTemp = elicitation ? 0.7 : greeting ? 0.9 : 0.85
     const client = createOpenAiClient()
     const stream = await client.chat.completions.create({
