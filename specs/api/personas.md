@@ -15,13 +15,16 @@ AUDION v3 consumes the existing AUDION backend and does not reimplement persona 
 - `POST /personas` — body `PersonaWritePayload`
 - `PATCH /personas/{personaId}` — body `Partial<PersonaWritePayload>`
 
-## Local Next (fixture writes)
+## Local Next (list + fixture writes)
 
 | Method | Path | Store |
 |--------|------|--------|
+| `GET` | `/api/personas` | `storePersonaList` + Access Model B; query `project_id`\|`projectId`, `q`\|`search`\|`name` (fuzzy name match), `page`, `page_size` |
 | `POST` | `/api/personas` (`paths.routes.apiPersonas`) | `storeCreatePersona` |
 | `PATCH` | `/api/personas/[personaId]` | `storePatchPersona`; then Tavus PAL upsert when replica + `TAVUS_API_KEY` |
 | `DELETE` | `/api/personas/[personaId]` | `storeDeletePersona` — hard delete; unlink from target groups; clear persona prompt override |
+
+**Assistant:** Plexon MCP `audion.personas_list` MUST use this GET (not FastAPI). Name lookup: `q=Markus Reinhardt` (typos like `Reinhard` still match).
 
 Seed: `apps/web/lib/fixtures/personas.ts` · store: `persona-store.ts`
 

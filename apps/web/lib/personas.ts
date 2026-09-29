@@ -7,6 +7,7 @@ import type {
   PersonaVisuals,
 } from '@audion-v3/contracts'
 import { coerceFrustrations, coerceGoals, coerceJourneyBehavior, coerceMotivations } from './persona-coerce'
+import { personaRecordMatchesQuery } from './persona-name-match'
 import { normalizePersonaSections } from './persona-notes'
 import { firstTavusId } from './tavus/ids'
 import { firstBeyId } from './bey/ids'
@@ -253,11 +254,9 @@ export function normalizePersonaDetail(raw: unknown): PersonaDetail | null {
 }
 
 export function filterPersonaList(list: PersonaList, query: string): PersonaList {
-  const q = query.trim().toLowerCase()
+  const q = query.trim()
   if (!q) return list
-  const items = list.items.filter((item) => {
-    return [item.name, item.role, item.archetype || ''].some((value) => value.toLowerCase().includes(q))
-  })
+  const items = list.items.filter((item) => personaRecordMatchesQuery(item, q))
   return { ...list, items, total: items.length }
 }
 
