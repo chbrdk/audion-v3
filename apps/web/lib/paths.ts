@@ -443,7 +443,17 @@ export const paths = {
   beyAgentsPath: '/v1/agents',
   /** Managed Agent call + LiveKit credentials (Growth+). Docs alias: livekit-rooms. */
   beyLivekitRoomsPath: '/v1/calls',
+  /** Upstream Beyond Presence chat SPA (Starter iframe). */
   beyChatEmbedBase: 'https://bey.chat',
+  /** Upstream REST host used by the bey.chat SPA (not api.bey.dev). */
+  beyChatApiBase: 'https://api.bey.chat',
+  /**
+   * Same-origin reverse proxy paths — corporate filters often block bey.chat
+   * (e.g. mis-tagged “Alt/New Age”). Spec: bey-video-chat.md § Embed proxy.
+   */
+  beyEmbedProxyPath: '/bey-embed',
+  beyApiProxyPath: '/bey-api',
+  envBeyEmbedProxy: 'AUDION_BEY_EMBED_PROXY',
   beyAgentSystemPromptMaxChars: 4000,
   beyMaxSessionLengthMinutes: 30,
   envVideoCallProviderDefault: 'AUDION_VIDEO_CALL_PROVIDER',

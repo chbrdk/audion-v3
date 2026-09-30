@@ -76,8 +76,14 @@ describe('bey agent payload', () => {
     })
   })
 
-  it('builds bey.chat embed URL', () => {
+  it('builds same-origin bey embed proxy URL by default', () => {
+    expect(beyChatEmbedUrl('agent-1')).toBe(`${paths.beyEmbedProxyPath}/agent-1`)
+  })
+
+  it('can disable proxy for direct bey.chat URLs', () => {
+    process.env[paths.envBeyEmbedProxy] = '0'
     expect(beyChatEmbedUrl('agent-1')).toBe(`${paths.beyChatEmbedBase}/agent-1`)
+    delete process.env[paths.envBeyEmbedProxy]
   })
 })
 
@@ -249,14 +255,14 @@ describe('VideoCallPanel', () => {
         session={{
           provider: 'bey',
           conversationId: null,
-          media: { kind: 'iframe', url: 'https://bey.chat/agent-1' },
+          media: { kind: 'iframe', url: '/bey-embed/agent-1' },
         }}
         personaName="Alex"
       />,
     )
     const frame = screen.getByTitle('Video call with Alex')
     expect(frame.tagName).toBe('IFRAME')
-    expect(frame.getAttribute('src')).toBe('https://bey.chat/agent-1')
+    expect(frame.getAttribute('src')).toBe('/bey-embed/agent-1')
   })
 
   it('renders empty state without media url', () => {

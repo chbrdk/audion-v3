@@ -47,9 +47,22 @@ Do **not** create a new agent on every video click when `beyAgentId` exists.
 1. Load persona; sync agent; require `beyAgentId` (after sync) — else **400** `BEY_AVATAR_MISSING` / `BEY_AGENT_MISSING`.
 2. Require `BEY_API_KEY` — else **503**.
 3. Prefer `POST {BEY_API_BASE}/v1/calls` (LiveKit credentials; Growth+). Docs may still list `/v1/livekit-rooms` as alias — client tries both. On **201**, return media `{ kind: 'livekit', url: livekit_url, token: livekit_token }` and `conversationId` = call/conversation `id`.
-4. On **403** plan upgrade (programmatic calls / LiveKit not on plan): fall back to iframe media `{ kind: 'iframe', url: https://bey.chat/{agentId} }` with `conversationId` null. Documented in knowledge.
+4. On **403** plan upgrade (programmatic calls / LiveKit not on plan): fall back to iframe media `{ kind: 'iframe', url }` with `conversationId` null. Default URL is the **same-origin embed proxy** `/bey-embed/{agentId}` (see § Embed proxy). Direct `https://bey.chat/{agentId}` only when `AUDION_BEY_EMBED_PROXY=0`.
 5. On **429** concurrency: return 429 with human-readable detail (operator ends other sessions in Studio).
 6. Never return a stub conversation URL.
+
+## Embed proxy (corporate filters)
+
+Corporate secure web gateways sometimes block `bey.chat` (mis-tagged categories). AUDION therefore reverse-proxies the Starter iframe under its own origin:
+
+| Browser path | Upstream |
+|--------------|----------|
+| `/bey-embed/*` | `https://bey.chat/*` (HTML/JS rewritten so assets + `api.bey.chat` stay same-origin) |
+| `/bey-api/*` | `https://api.bey.chat/*` |
+
+- Default **on**. Disable with `AUDION_BEY_EMBED_PROXY=0`.
+- LiveKit media still uses `*.livekit.cloud` (WebRTC cannot be HTTP-proxied). If that host is also blocked, only Growth LiveKit-from-AUDION or Tavus remain.
+- Does not expose `BEY_API_KEY`; this proxies the public chat SPA only.
 
 `DELETE /api/chat/video/session` `{ conversationId, provider?: 'bey' }`:
 
@@ -67,6 +80,7 @@ Do **not** create a new agent on every video click when `beyAgentId` exists.
 |-----|------|
 | `BEY_API_KEY` | Server-only. Header `x-api-key`. |
 | `BEY_API_BASE` | Optional; default `https://api.bey.dev`. |
+| `AUDION_BEY_EMBED_PROXY` | Optional; `0`/`false` disables same-origin `/bey-embed` + `/bey-api` proxy (default on). |
 
 ## Compliance
 

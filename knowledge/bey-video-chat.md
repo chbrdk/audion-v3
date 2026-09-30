@@ -38,7 +38,7 @@ Preferred: `POST /api/chat/video/session` (`paths.routes.apiChatVideoSession`)
 2. Resolve provider; for BEY sync Managed Agent from magazine (`syncPersonaBeyAgent` — same spoken prompt builder as Tavus PAL).
 3. `POST {BEY_API_BASE}/v1/calls` with `agent_id` → `{ id, livekit_url, livekit_token }` (Growth+). Docs alias `/v1/livekit-rooms` may 404 on current API.
 4. Return `ChatVideoSessionResponse` with `media.kind: 'livekit'`.
-5. On 403 plan gate (`BEY_LIVEKIT_PLAN`), fall back to iframe `https://bey.chat/{agentId}` (available on every plan).
+5. On 403 plan gate (`BEY_LIVEKIT_PLAN`), fall back to iframe via **same-origin proxy** `/bey-embed/{agentId}` (rewrites assets + `api.bey.chat` → `/bey-api`). Set `AUDION_BEY_EMBED_PROXY=0` for direct `https://bey.chat/{agentId}`.
 6. `DELETE` with `{ conversationId, provider: 'bey' }` — client disconnect is the end; Phase 1 has no server room-end.
 
 Compat: `POST /api/chat/tavus/session` remains Tavus-only (thin wrapper / unchanged UX for Tavus callers). Chat UI uses the unified video route + `VideoCallPanel`.
@@ -56,6 +56,7 @@ Compat: `POST /api/chat/tavus/session` remains Tavus-only (thin wrapper / unchan
 |-----|------|
 | `BEY_API_KEY` | Server-only (`paths.envBeyApiKey`) |
 | `BEY_API_BASE` | Optional; default `https://api.bey.dev` |
+| `AUDION_BEY_EMBED_PROXY` | Optional; `0`/`false` disables `/bey-embed` + `/bey-api` (default on) |
 | `AUDION_VIDEO_CALL_PROVIDER` | Tie-break when both providers ready |
 
 Never expose the key to the browser. Public share, TG ask-all, and guest `/chat/embed` do not start video (same guardrails as Tavus; `embed=full` ok).
