@@ -25,7 +25,7 @@ AUDION v3 consumes the existing AUDION backend and does not reimplement persona 
 | `DELETE` | `/api/personas/[personaId]` | `storeDeletePersona` — hard delete; unlink from target groups; clear persona prompt override |
 
 **Assistant:** Plexon MCP `audion.personas_list` MUST use this GET (not FastAPI). Name lookup: `q=Markus Reinhardt` (typos like `Reinhard` still match).  
-**Create:** MCP `audion.persona_create` may send `project_id`; Next MUST accept `project_id` **or** `projectId` (same alias as target-groups).
+**Create:** MCP `audion.persona_create` may send `project_id`; Next MUST accept `project_id` **or** `projectId` (same alias as target-groups / journeys / studies).
 
 Seed: `apps/web/lib/fixtures/personas.ts` · store: `persona-store.ts`
 

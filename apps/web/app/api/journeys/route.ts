@@ -5,12 +5,15 @@ import { requireProjectAccess, requireViewer } from '../../../lib/resource-acces
 import { isPlexonAuthConfigured } from '../../../lib/runtime-config'
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as JourneyWritePayload
+  const body = (await request.json()) as JourneyWritePayload & { project_id?: string }
   if (!body?.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
 
-  const projectId = typeof body.projectId === 'string' ? body.projectId.trim() : ''
+  // MCP / FastAPI-era: project_id; contracts: projectId (parity with personas/target-groups).
+  const projectId =
+    (typeof body.projectId === 'string' ? body.projectId.trim() : '') ||
+    (typeof body.project_id === 'string' ? body.project_id.trim() : '')
   if (isPlexonAuthConfigured()) {
     if (!projectId) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
@@ -24,7 +27,7 @@ export async function POST(request: Request) {
 
   const journey = await storeCreateJourney({
     ...body,
-    projectId: projectId || body.projectId,
+    projectId: projectId || body.projectId || null,
     journeyType: body.journeyType?.trim() || 'journey',
   })
   return NextResponse.json(journey, { status: 201 })

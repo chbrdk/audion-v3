@@ -14,10 +14,17 @@ export async function POST(request: Request) {
   if (shouldProxyUxStudiesToApi()) {
     return proxyUxStudiesRequest(request)
   }
-  const body = (await request.json()) as UxStudyWritePayload
+  const body = (await request.json()) as UxStudyWritePayload & { project_id?: string }
   if (!body?.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
-  const study = await storeCreateUxStudy(body)
+  const projectId =
+    (typeof body.projectId === 'string' ? body.projectId.trim() : '') ||
+    (typeof body.project_id === 'string' ? body.project_id.trim() : '') ||
+    null
+  const study = await storeCreateUxStudy({
+    ...body,
+    projectId: projectId || body.projectId || null,
+  })
   return NextResponse.json(study, { status: 201 })
 }

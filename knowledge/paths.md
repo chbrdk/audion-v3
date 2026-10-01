@@ -37,7 +37,7 @@
 - Target group routes: `/target-groups`, `/target-groups/[targetGroupId]`
 - Target group API routes: `/api/target-groups` (`GET` list by `project_id`, `POST`) · `/api/target-groups/[targetGroupId]` · knowledge nested routes — Access Model B via `lib/resource-access-http.ts` (machine Bearer + `X-Plexon-User-Id`)
 - Plexon assistant base: Coolify `AUDION_API_URL=https://audion-v3.projects-a.plygrnd.tech/api` (not FastAPI)
-- **AUDION MCP** (`audion-mcp` · `https://mcp-audion.projects-a.plygrnd.tech`): same `AUDION_API_URL` + same `AUDION_API_TOKEN` as plexon-v3/audion-v3, plus `PLEXON_SERVICE_SECRET`. Do **not** point MCP at FastAPI `http://api:8000` — `audion.personas_list` `q=` fuzzy search and Access Model B live on Next `/api/personas` only (`specs/api/personas.md`).
+- **AUDION MCP** (`audion-mcp` · `https://mcp-audion.projects-a.plygrnd.tech`): same `AUDION_API_URL` + same `AUDION_API_TOKEN` as plexon-v3/audion-v3, plus `PLEXON_SERVICE_SECRET`. Do **not** point MCP at FastAPI `http://api:8000` — `audion.personas_list` `q=` fuzzy search and Access Model B live on Next `/api/personas` only (`specs/api/personas.md`). Write tools normalize bodies via `AUDION-v2/mcp-server/src/mcp-json-body.ts` (`project_id`→`projectId`, strip `actorUserId`) — see `AUDION-v2/knowledge/audion-mcp-json-body-mapping.md`.
 - Journey routes: `/journeys`, `/journeys/[journeyId]` (`paths.routes.journeys*`)
 - Journey API routes: `/api/journeys`, `/api/journeys/[journeyId]` — Access Model B via `requireJourneyAccess` / `filterByParentProjectForViewer`
 - Journey fixtures/store: `apps/web/lib/fixtures/journeys.ts` · `journey-store.ts`
