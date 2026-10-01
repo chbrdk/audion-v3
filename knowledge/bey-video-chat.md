@@ -38,7 +38,7 @@ Preferred: `POST /api/chat/video/session` (`paths.routes.apiChatVideoSession`)
 2. Resolve provider; for BEY sync Managed Agent from magazine (`syncPersonaBeyAgent` — same spoken prompt builder as Tavus PAL).
 3. `POST {BEY_API_BASE}/v1/calls` with `agent_id` → `{ id, livekit_url, livekit_token }` (Growth+). Docs alias `/v1/livekit-rooms` may 404 on current API.
 4. Return `ChatVideoSessionResponse` with `media.kind: 'livekit'`.
-5. On 403 plan gate (`BEY_LIVEKIT_PLAN`), fall back to iframe via **same-origin proxy** `/bey-embed/{agentId}` (rewrites assets + `api.bey.chat` → `/bey-api`). Set `AUDION_BEY_EMBED_PROXY=0` for direct `https://bey.chat/{agentId}`.
+5. On 403 plan gate (`BEY_LIVEKIT_PLAN`), fall back to iframe via **same-origin proxy** `/bey-embed/{agentId}` (rewrites assets + `api.bey.chat` → `/bey-api`; injects React Router `basename: /bey-embed` so `/:id` resolves). Set `AUDION_BEY_EMBED_PROXY=0` for direct `https://bey.chat/{agentId}`.
 6. `DELETE` with `{ conversationId, provider: 'bey' }` — client disconnect is the end; Phase 1 has no server room-end.
 
 Compat: `POST /api/chat/tavus/session` remains Tavus-only (thin wrapper / unchanged UX for Tavus callers). Chat UI uses the unified video route + `VideoCallPanel`.

@@ -34,7 +34,8 @@ describe('bey embed proxy helpers', () => {
     expect(out).toContain('src="/bey-embed/assets/index.js"')
     expect(out).toContain('href="/bey-embed/foo"')
     expect(out).toContain('<base href="/bey-embed/"')
-    expect(out).toContain('Location.prototype')
+    expect(out).toContain('history.pushState')
+    expect(out).not.toContain('Location.prototype')
     expect(out).toContain('/bey-embed')
     expect(out).not.toContain('https://bey.chat')
   })
@@ -47,5 +48,11 @@ describe('bey embed proxy helpers', () => {
     expect(out).toContain('"/bey-embed/x"')
     expect(out).not.toContain('api.bey.chat')
     expect(out).not.toContain('https://bey.chat')
+  })
+
+  it('injects createBrowserRouter basename under the embed proxy path', () => {
+    const js = 'let ol=useMemo(()=>createBrowserRouter(getRouterData(al)),[al]);'
+    const out = rewriteBeyEmbedScript(js)
+    expect(out).toContain('createBrowserRouter(getRouterData(al),{basename:"/bey-embed"})')
   })
 })

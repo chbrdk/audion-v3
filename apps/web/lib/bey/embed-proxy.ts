@@ -35,12 +35,14 @@ export function beyChatEmbedUrl(agentId: string): string {
   return `${paths.beyChatEmbedBase.replace(/\/$/, '')}/${encodeURIComponent(id)}`
 }
 
+/**
+ * History helper only — do NOT strip location.pathname.
+ * The SPA uses createBrowserRouter without basename; we inject basename in
+ * rewriteBeyEmbedScript. Stripping pathname would break that basename match.
+ */
 export function beyEmbedPathShimScript(proxyPath = paths.beyEmbedProxyPath): string {
   const prefix = JSON.stringify(proxyPath.replace(/\/$/, ''))
-  // Bey SPA routes are `/:id` and `/agent/:id`. Under `/bey-embed/{id}` the first
-  // segment becomes "bey-embed" → "Agent Unavailable". Lie about pathname while
-  // keeping the real browser URL (and asset loads) under the proxy prefix.
-  return `<script>(function(){var P=${prefix};function strip(p){return(p===P||p.indexOf(P+"/")===0)?(p.slice(P.length)||"/"):p}function add(p){if(typeof p!=="string"||!p)return p;try{var u=new URL(p,location.origin);if(u.origin!==location.origin)return p;var path=u.pathname;if(path!==P&&path.indexOf(P+"/")!==0){u.pathname=P+(path.charAt(0)==="/"?path:"/"+path)}return u.pathname+u.search+u.hash}catch(e){return p}}var desc=Object.getOwnPropertyDescriptor(Location.prototype,"pathname");if(desc&&desc.get){Object.defineProperty(Location.prototype,"pathname",{configurable:true,enumerable:true,get:function(){return strip(desc.get.call(this))}})}var push=history.pushState.bind(history),rep=history.replaceState.bind(history);history.pushState=function(s,t,u){return push(s,t,u==null?u:add(String(u)))};history.replaceState=function(s,t,u){return rep(s,t,u==null?u:add(String(u)))};})();</script>`
+  return `<script>(function(){var P=${prefix};function add(p){if(typeof p!=="string"||!p)return p;try{var u=new URL(p,location.origin);if(u.origin!==location.origin)return p;var path=u.pathname;if(path!==P&&path.indexOf(P+"/")!==0){u.pathname=P+(path.charAt(0)==="/"?path:"/"+path)}return u.pathname+u.search+u.hash}catch(e){return p}}var push=history.pushState.bind(history),rep=history.replaceState.bind(history);history.pushState=function(s,t,u){return push(s,t,u==null?u:add(String(u)))};history.replaceState=function(s,t,u){return rep(s,t,u==null?u:add(String(u)))};})();</script>`
 }
 
 export function rewriteBeyEmbedHtml(html: string, proxyPath = paths.beyEmbedProxyPath): string {
@@ -68,12 +70,20 @@ export function rewriteBeyEmbedScript(
 ): string {
   const embed = (opts?.embedProxyPath ?? paths.beyEmbedProxyPath).replace(/\/$/, '')
   const api = (opts?.apiProxyPath ?? paths.beyApiProxyPath).replace(/\/$/, '')
+  const basenameLiteral = JSON.stringify(embed)
   let out = body
   out = out.replaceAll('https://api.bey.chat', api)
   out = out.replaceAll('https://api-staging.bey.chat', api)
   out = out.replaceAll('https://api-dev.bey.chat', api)
   out = out.replaceAll('https://bey.chat', embed)
   out = out.replaceAll('http://bey.chat', embed)
+  // Bey boots with createBrowserRouter(getRouterData(authed)) and routes `/:id`.
+  // Under /bey-embed/{id} that matches id="bey-embed" → "Agent Unavailable".
+  // Inject basename so /bey-embed/{uuid} resolves the real agent id.
+  out = out.replace(
+    /createBrowserRouter\(getRouterData\(([^)]*)\)\)/g,
+    `createBrowserRouter(getRouterData($1),{basename:${basenameLiteral}})`,
+  )
   return out
 }
 
