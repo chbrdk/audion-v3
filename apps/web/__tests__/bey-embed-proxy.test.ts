@@ -34,6 +34,8 @@ describe('bey embed proxy helpers', () => {
     expect(out).toContain('src="/bey-embed/assets/index.js"')
     expect(out).toContain('href="/bey-embed/foo"')
     expect(out).toContain('<base href="/bey-embed/"')
+    expect(out).toContain('Location.prototype')
+    expect(out).toContain('/bey-embed')
     expect(out).not.toContain('https://bey.chat')
   })
 

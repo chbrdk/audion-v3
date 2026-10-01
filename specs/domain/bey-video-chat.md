@@ -61,6 +61,7 @@ Corporate secure web gateways sometimes block `bey.chat` (mis-tagged categories)
 | `/bey-api/*` | `https://api.bey.chat/*` |
 
 - Default **on**. Disable with `AUDION_BEY_EMBED_PROXY=0`.
+- HTML injects a pathname shim so the Bey SPA (`/:id`) still resolves the agent under `/bey-embed/{id}`.
 - LiveKit media still uses `*.livekit.cloud` (WebRTC cannot be HTTP-proxied). If that host is also blocked, only Growth LiveKit-from-AUDION or Tavus remain.
 - Does not expose `BEY_API_KEY`; this proxies the public chat SPA only.
 

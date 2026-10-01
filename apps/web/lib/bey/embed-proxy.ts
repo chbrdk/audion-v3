@@ -35,6 +35,14 @@ export function beyChatEmbedUrl(agentId: string): string {
   return `${paths.beyChatEmbedBase.replace(/\/$/, '')}/${encodeURIComponent(id)}`
 }
 
+export function beyEmbedPathShimScript(proxyPath = paths.beyEmbedProxyPath): string {
+  const prefix = JSON.stringify(proxyPath.replace(/\/$/, ''))
+  // Bey SPA routes are `/:id` and `/agent/:id`. Under `/bey-embed/{id}` the first
+  // segment becomes "bey-embed" → "Agent Unavailable". Lie about pathname while
+  // keeping the real browser URL (and asset loads) under the proxy prefix.
+  return `<script>(function(){var P=${prefix};function strip(p){return(p===P||p.indexOf(P+"/")===0)?(p.slice(P.length)||"/"):p}function add(p){if(typeof p!=="string"||!p)return p;try{var u=new URL(p,location.origin);if(u.origin!==location.origin)return p;var path=u.pathname;if(path!==P&&path.indexOf(P+"/")!==0){u.pathname=P+(path.charAt(0)==="/"?path:"/"+path)}return u.pathname+u.search+u.hash}catch(e){return p}}var desc=Object.getOwnPropertyDescriptor(Location.prototype,"pathname");if(desc&&desc.get){Object.defineProperty(Location.prototype,"pathname",{configurable:true,enumerable:true,get:function(){return strip(desc.get.call(this))}})}var push=history.pushState.bind(history),rep=history.replaceState.bind(history);history.pushState=function(s,t,u){return push(s,t,u==null?u:add(String(u)))};history.replaceState=function(s,t,u){return rep(s,t,u==null?u:add(String(u)))};})();</script>`
+}
+
 export function rewriteBeyEmbedHtml(html: string, proxyPath = paths.beyEmbedProxyPath): string {
   const prefix = proxyPath.replace(/\/$/, '')
   const prefixSlash = `${prefix}/`
@@ -49,7 +57,8 @@ export function rewriteBeyEmbedHtml(html: string, proxyPath = paths.beyEmbedProx
   out = out.replaceAll('http://bey.chat/', prefixSlash)
   out = out.replaceAll('https://bey.chat', prefix)
   out = out.replaceAll('http://bey.chat', prefix)
-  out = out.replace(/<head([^>]*)>/i, `<head$1><base href="${prefixSlash}" />`)
+  const boot = beyEmbedPathShimScript(prefix)
+  out = out.replace(/<head([^>]*)>/i, `<head$1><base href="${prefixSlash}" />${boot}`)
   return out
 }
 
