@@ -20,11 +20,12 @@ AUDION v3 consumes the existing AUDION backend and does not reimplement persona 
 | Method | Path | Store |
 |--------|------|--------|
 | `GET` | `/api/personas` | `storePersonaList` + Access Model B; query `project_id`\|`projectId`, `q`\|`search`\|`name` (fuzzy name match), `page`, `page_size` |
-| `POST` | `/api/personas` (`paths.routes.apiPersonas`) | `storeCreatePersona` |
+| `POST` | `/api/personas` (`paths.routes.apiPersonas`) | `storeCreatePersona`; body `PersonaWritePayload` plus alias `project_id` (MCP/FastAPI-era) → `projectId` |
 | `PATCH` | `/api/personas/[personaId]` | `storePatchPersona`; then Tavus PAL upsert when replica + `TAVUS_API_KEY` |
 | `DELETE` | `/api/personas/[personaId]` | `storeDeletePersona` — hard delete; unlink from target groups; clear persona prompt override |
 
-**Assistant:** Plexon MCP `audion.personas_list` MUST use this GET (not FastAPI). Name lookup: `q=Markus Reinhardt` (typos like `Reinhard` still match).
+**Assistant:** Plexon MCP `audion.personas_list` MUST use this GET (not FastAPI). Name lookup: `q=Markus Reinhardt` (typos like `Reinhard` still match).  
+**Create:** MCP `audion.persona_create` may send `project_id`; Next MUST accept `project_id` **or** `projectId` (same alias as target-groups).
 
 Seed: `apps/web/lib/fixtures/personas.ts` · store: `persona-store.ts`
 

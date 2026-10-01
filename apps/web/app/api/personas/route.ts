@@ -71,12 +71,15 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as PersonaWritePayload
+  const body = (await request.json()) as PersonaWritePayload & { project_id?: string }
   if (!body?.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
 
-  const projectId = typeof body.projectId === 'string' ? body.projectId.trim() : ''
+  // MCP / FastAPI-era clients send project_id; contracts use projectId (parity with target-groups).
+  const projectId =
+    (typeof body.projectId === 'string' ? body.projectId.trim() : '') ||
+    (typeof body.project_id === 'string' ? body.project_id.trim() : '')
   if (isPlexonAuthConfigured()) {
     if (!projectId) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
@@ -90,7 +93,7 @@ export async function POST(request: Request) {
 
   const persona = await storeCreatePersona({
     ...body,
-    projectId: projectId || body.projectId,
+    projectId: projectId || body.projectId || null,
     role: body.role?.trim() || 'Persona',
   })
   await storeSeedDefaultNaturalVoice(persona.id)

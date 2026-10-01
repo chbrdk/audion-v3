@@ -44,8 +44,8 @@ vi.mock('../lib/project-access', () => ({
 
 import { getRequestUser } from '../lib/auth-api-token'
 import { storeProjectDetail } from '../lib/fixtures/project-store'
-import { storePersonaList } from '../lib/fixtures/persona-store'
-import { GET as listPersonas } from '../app/api/personas/route'
+import { storePersonaList, storeCreatePersona } from '../lib/fixtures/persona-store'
+import { GET as listPersonas, POST as createPersona } from '../app/api/personas/route'
 
 describe('GET /api/personas list + name search', () => {
   beforeEach(() => {
@@ -106,5 +106,55 @@ describe('GET /api/personas list + name search', () => {
     vi.mocked(getRequestUser).mockResolvedValue(null)
     const res = await listPersonas(new Request('http://localhost/api/personas'))
     expect(res.status).toBe(401)
+  })
+})
+
+describe('POST /api/personas project_id alias', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(storeProjectDetail).mockResolvedValue({
+      id: 'proj-mine',
+      platformProjectId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      ownerPlexonUserId: 'user-a',
+      name: 'Mine',
+    } as never)
+    vi.mocked(storeCreatePersona).mockImplementation(async (payload) => ({
+      id: 'per-new',
+      slug: 'new',
+      name: payload.name,
+      role: payload.role || 'Persona',
+      status: 'draft',
+      avatarUrl: null,
+      projectId: payload.projectId ?? null,
+    }) as never)
+  })
+
+  it('accepts MCP-style project_id (snake_case)', async () => {
+    vi.mocked(getRequestUser).mockResolvedValue({ id: 'user-a', email: 'a@example.com' } as never)
+    const res = await createPersona(
+      new Request('http://localhost/api/personas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Julia Wendt (Kopie)', project_id: 'proj-mine' }),
+      }),
+    )
+    expect(res.status).toBe(201)
+    expect(storeCreatePersona).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Julia Wendt (Kopie)', projectId: 'proj-mine' }),
+    )
+  })
+
+  it('rejects create without projectId/project_id when auth is on', async () => {
+    vi.mocked(getRequestUser).mockResolvedValue({ id: 'user-a', email: 'a@example.com' } as never)
+    const res = await createPersona(
+      new Request('http://localhost/api/personas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'No Project' }),
+      }),
+    )
+    expect(res.status).toBe(400)
+    const body = (await res.json()) as { error?: string }
+    expect(body.error).toMatch(/projectId/i)
   })
 })
