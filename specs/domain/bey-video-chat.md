@@ -57,7 +57,7 @@ Corporate secure web gateways sometimes block `bey.chat` (mis-tagged categories)
 
 | Browser path | Upstream |
 |--------------|----------|
-| `/bey-embed/*` | `https://bey.chat/*` (HTML/JS rewritten so assets + `api.bey.chat` stay same-origin) |
+| `/bey-embed/*` | `https://bey.chat/*` (HTML/JS rewritten so assets + `api.bey.chat` stay same-origin; middleware allows unauthenticated proxy so the iframe is not redirected to `/login`) |
 | `/bey-api/*` | `https://api.bey.chat/*` |
 
 - Default **on**. Disable with `AUDION_BEY_EMBED_PROXY=0`.
