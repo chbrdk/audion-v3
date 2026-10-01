@@ -55,4 +55,23 @@ describe('bey embed proxy helpers', () => {
     const out = rewriteBeyEmbedScript(js)
     expect(out).toContain('createBrowserRouter(getRouterData(al),{basename:"/bey-embed"})')
   })
+
+  it('rewrites Firebase Auth hosts onto /bey-gapi and skips unauthorized-domain', () => {
+    const js = [
+      'apiHost:`identitytoolkit.googleapis.com`,tokenApiHost:`securetoken.googleapis.com`,apiScheme:`https`',
+      'INSTALLATIONS_API_URL=`https://firebaseinstallations.googleapis.com/v1`',
+      'DYNAMIC_CONFIG_URL=`https://firebase.googleapis.com/v1alpha/projects/-/apps/{app-id}/webConfig`',
+      '_fail(Qc,`unauthorized-domain`)',
+      'getCookieConfig=()=>{let Qc=`.bey.chat`;return isDev?{name:`__session_dev`,domain:Qc}:isStaging?{name:`__session_staging`,domain:Qc}:{name:`__session`,domain:Qc}}',
+    ].join(';')
+    const out = rewriteBeyEmbedScript(js)
+    expect(out).toContain('apiHost:location.host+"/bey-gapi"+"/identitytoolkit"')
+    expect(out).toContain('tokenApiHost:location.host+"/bey-gapi"+"/securetoken"')
+    expect(out).toContain('INSTALLATIONS_API_URL=location.origin+"/bey-gapi"+"/firebaseinstallations/v1"')
+    expect(out).toContain('DYNAMIC_CONFIG_URL=location.origin+"/bey-gapi"+"/firebase/v1alpha/projects/-/apps/{app-id}/webConfig"')
+    expect(out).toContain('return')
+    expect(out).not.toContain('unauthorized-domain')
+    expect(out).toContain('getCookieConfig=()=>{let Qc=location.hostname;')
+    expect(out).not.toContain('identitytoolkit.googleapis.com')
+  })
 })

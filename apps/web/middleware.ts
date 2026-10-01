@@ -93,7 +93,9 @@ const gated = auth(async (req) => {
     pathname === paths.beyEmbedProxyPath ||
     pathname.startsWith(`${paths.beyEmbedProxyPath}/`) ||
     pathname === paths.beyApiProxyPath ||
-    pathname.startsWith(`${paths.beyApiProxyPath}/`)
+    pathname.startsWith(`${paths.beyApiProxyPath}/`) ||
+    pathname === paths.beyGapiProxyPath ||
+    pathname.startsWith(`${paths.beyGapiProxyPath}/`)
 
   if (isPublic) {
     return withEmbedHeaders(req, NextResponse.next())

@@ -59,9 +59,11 @@ Corporate secure web gateways sometimes block `bey.chat` (mis-tagged categories)
 |--------------|----------|
 | `/bey-embed/*` | `https://bey.chat/*` (HTML/JS rewritten so assets + `api.bey.chat` stay same-origin; middleware allows unauthenticated proxy so the iframe is not redirected to `/login`) |
 | `/bey-api/*` | `https://api.bey.chat/*` |
+| `/bey-gapi/{identitytoolkit\|securetoken\|firebaseinstallations\|firebase}/*` | Matching `*.googleapis.com` (server sets `Referer`/`Origin` to `https://bey.chat/` so Firebase API-key referrer allowlists accept the call) |
 
 - Default **on**. Disable with `AUDION_BEY_EMBED_PROXY=0`.
 - JS rewrite injects `createBrowserRouter(..., { basename: '/bey-embed' })` so Bey’s `/:id` routes resolve the agent under `/bey-embed/{id}` (pathname stripping breaks basename matching). HTML keeps `<base>` + history prefix helpers only.
+- JS rewrite also points Firebase Auth/Installations at `/bey-gapi`, skips `unauthorized-domain`, and scopes the session cookie to `location.hostname` (`.bey.chat` cannot be set on AUDION).
 - LiveKit media still uses `*.livekit.cloud` (WebRTC cannot be HTTP-proxied). If that host is also blocked, only Growth LiveKit-from-AUDION or Tavus remain.
 - Does not expose `BEY_API_KEY`; this proxies the public chat SPA only.
 

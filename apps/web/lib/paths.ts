@@ -453,6 +453,8 @@ export const paths = {
    */
   beyEmbedProxyPath: '/bey-embed',
   beyApiProxyPath: '/bey-api',
+  /** Firebase Auth / Installations under same origin (API key referrer allowlist is bey.chat only). */
+  beyGapiProxyPath: '/bey-gapi',
   envBeyEmbedProxy: 'AUDION_BEY_EMBED_PROXY',
   beyAgentSystemPromptMaxChars: 4000,
   beyMaxSessionLengthMinutes: 30,
