@@ -26,6 +26,7 @@ import { paths } from '../lib/paths'
 import { useUserPrefs } from '../lib/user-prefs'
 import { AssistantPageContextProvider } from './assistant-page-context'
 import { PlatformAssistantHost } from './platform-assistant-host'
+import { PlatformHelpHost } from './platform-help-host'
 import { ShellBrandCorner } from './shell-brand-corner'
 
 export function AppShell({
@@ -173,6 +174,7 @@ export function AppShell({
           {children}
         </div>
         {embed ? null : <PlatformAssistantHost />}
+        {embed ? null : <PlatformHelpHost placement="fixed" />}
       </AppFrame>
     </AssistantPageContextProvider>
   )

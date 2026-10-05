@@ -483,6 +483,9 @@ export const paths = {
   /** Space-separated origins allowed to iframe `/chat/embed` (CSP frame-ancestors). */
   envChatEmbedFrameAncestors: 'AUDION_CHAT_EMBED_FRAME_ANCESTORS',
   pathAssistantEmbed: '/assistant/embed',
+  pathHelpEmbed: '/help/embed',
+  pathHelp: '/help',
+  pathDocsPublic: '/docs',
   pathAssistantExpand: '/assistant',
   envPlexonRegisterUrl: 'NEXT_PUBLIC_PLEXON_REGISTER_URL',
   /** Demo owner/company for machine sync when no session (Coolify). */
