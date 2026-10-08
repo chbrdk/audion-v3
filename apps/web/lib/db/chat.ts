@@ -1,5 +1,6 @@
 import { desc, eq } from 'drizzle-orm'
 import type {
+  BehavioralSessionState,
   ChatConversationDetail,
   ChatConversationInspect,
   ChatConversationList,
@@ -28,16 +29,21 @@ function rowToDetail(row: ChatConversationRow): ChatConversationDetail {
     preview: row.preview ?? null,
     messages: parsed.messages,
     inspect: parsed.inspect,
+    behavioralSession: parsed.behavioralSession,
   }
 }
 
 function toSummary(c: ChatConversationDetail): ChatConversationSummary {
-  const { messages: _m, inspect: _i, ...summary } = c
+  const { messages: _m, inspect: _i, behavioralSession: _b, ...summary } = c
   return summary
 }
 
 function columnFor(conversation: ChatConversationDetail): ChatMessagesColumn {
-  return serializeChatMessagesColumn(conversation.messages, conversation.inspect ?? null)
+  return serializeChatMessagesColumn(
+    conversation.messages,
+    conversation.inspect ?? null,
+    conversation.behavioralSession ?? null,
+  )
 }
 
 async function resolvePersonaName(personaId: string): Promise<string | null> {
@@ -122,6 +128,7 @@ export async function dbChatBeginUserTurn(
       preview: content.slice(0, 80),
       messages: [userMsg],
       inspect: null,
+      behavioralSession: null,
     }
     await db.insert(chatConversations).values({
       id: conversation.id,
@@ -159,6 +166,7 @@ export async function dbChatBeginUserTurn(
 export async function dbChatAppendAssistant(
   conversationId: string,
   content: string,
+  replyRationale?: ChatMessage['replyRationale'],
 ): Promise<{ conversationId: string; messageId: string }> {
   const assistantId = `m-asst-${Date.now().toString(36)}`
   const conversation = await dbChatConversationDetail(conversationId)
@@ -172,6 +180,7 @@ export async function dbChatAppendAssistant(
     content,
     createdAt: now.toISOString(),
     status: 'complete',
+    ...(replyRationale ? { replyRationale } : {}),
   }
   const next: ChatConversationDetail = {
     ...conversation,
@@ -200,6 +209,27 @@ export async function dbChatSetInspect(
   const next: ChatConversationDetail = {
     ...conversation,
     inspect,
+    updatedAt: new Date().toISOString(),
+  }
+  const db = getDb()
+  await db
+    .update(chatConversations)
+    .set({
+      messages: columnFor(next),
+      updatedAt: new Date(),
+    })
+    .where(eq(chatConversations.id, conversationId))
+}
+
+export async function dbChatSetBehavioralSession(
+  conversationId: string,
+  behavioralSession: BehavioralSessionState | null,
+): Promise<void> {
+  const conversation = await dbChatConversationDetail(conversationId)
+  if (!conversation) return
+  const next: ChatConversationDetail = {
+    ...conversation,
+    behavioralSession,
     updatedAt: new Date().toISOString(),
   }
   const db = getDb()

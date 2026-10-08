@@ -18,10 +18,15 @@ export function StudyListPanel({
   const t = useT()
   return (
     <section className="audion-index audion-tg-index">
-      <div className="msqdx-flow-studies-actions">
+      <div className="msqdx-flow-studies-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <Link href={paths.routes.studiesFlows}>
           <Button type="button" size="sm" variant="subtle">
             {t('lists.studies.flowsCta')}
+          </Button>
+        </Link>
+        <Link href={paths.routes.studiesBehavioral}>
+          <Button type="button" size="sm" variant="subtle">
+            Behavioral gold
           </Button>
         </Link>
       </div>

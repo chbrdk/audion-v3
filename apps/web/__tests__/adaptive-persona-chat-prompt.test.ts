@@ -7,6 +7,7 @@ import {
   LANGUAGE_TURN_HEADING,
   RESEARCH_ELICITATION_HEADING,
   VOICE_EXAMPLES_HEADING,
+  BEHAVIORAL_CHAT_ENVELOPE_HEADING,
   buildAdaptivePersonaChatSystemPrompt,
   detectChatLocale,
   isGreetingMessage,
@@ -16,6 +17,8 @@ import {
 } from '../lib/chat/adaptive-persona-chat-prompt'
 import { DEMO_PERSONAS } from '../lib/fixtures/personas'
 import { getChatCompletionMaxTokens } from '../lib/ai/client'
+import { resolvePersonaChatMaxTokens } from '../lib/behavior/chat-adapter'
+import { compileBehavioralPolicy } from '../lib/behavior/compile-behavioral-policy'
 import { paths } from '../lib/paths'
 
 function clonePersona(id: string): PersonaDetail {
@@ -40,7 +43,8 @@ describe('buildAdaptivePersonaChatSystemPrompt', () => {
     expect(prompt).toMatch(/Scattered research notes/i)
     expect(prompt).toContain('Mindset')
     expect(prompt).toContain(ADAPTIVE_CHAT_RULES_HEADING)
-    expect(prompt).toMatch(/40–90 words/)
+    expect(prompt).toContain(BEHAVIORAL_CHAT_ENVELOPE_HEADING)
+    expect(prompt).toMatch(/Default length:/)
     expect(prompt).toMatch(/natural conversation/i)
     expect(prompt).toMatch(/Anti-method/i)
     expect(prompt).toMatch(/Anti-coach/i)
@@ -216,6 +220,35 @@ describe('getChatCompletionMaxTokens', () => {
     delete process.env[paths.envAiChatMaxTokens]
     expect(getChatCompletionMaxTokens()).toBe(paths.chatCompletionMaxTokens)
     expect(getChatCompletionMaxTokens({ elicitation: true })).toBe(paths.chatElicitationMaxTokens)
+    if (prev !== undefined) process.env[paths.envAiChatMaxTokens] = prev
+  })
+})
+
+describe('resolvePersonaChatMaxTokens (behavioral policy)', () => {
+  it('uses compiled budgets and keeps greeting short', () => {
+    const prev = process.env[paths.envAiChatMaxTokens]
+    delete process.env[paths.envAiChatMaxTokens]
+    const impatient = compileBehavioralPolicy({
+      persona: {
+        ...clonePersona('persona-alex-morgan'),
+        journeyBehavior: {
+          dimensionOverrides: { timePressure: 0.95, detailOrientation: 0.2 },
+        },
+      },
+    })
+    const patient = compileBehavioralPolicy({
+      persona: {
+        ...clonePersona('persona-alex-morgan'),
+        id: 'persona-patient-tokens',
+        journeyBehavior: {
+          dimensionOverrides: { timePressure: 0.15, detailOrientation: 0.9 },
+        },
+      },
+    })
+    expect(resolvePersonaChatMaxTokens(impatient)).toBeLessThan(
+      resolvePersonaChatMaxTokens(patient),
+    )
+    expect(resolvePersonaChatMaxTokens(impatient, { greeting: true })).toBeLessThanOrEqual(120)
     if (prev !== undefined) process.env[paths.envAiChatMaxTokens] = prev
   })
 })

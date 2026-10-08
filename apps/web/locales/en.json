@@ -731,7 +731,21 @@
     "personaFit": "Persona fit",
     "scorecard": "Inspection scorecard",
     "topFindings": "Top findings",
-    "personaPolicy": "Persona policy"
+    "personaPolicy": "Persona policy",
+    "whyThisReply": "Why this reply",
+    "rationaleDrivers": "Policy drivers",
+    "rationaleStressHits": "Soft spots hit",
+    "rationaleFrustration": "Frustration {n}%",
+    "rationaleFatigue": "Fatigue {n}%",
+    "rationaleStanceProceed": "Proceed",
+    "rationaleStanceHesitate": "Hesitate",
+    "rationaleStanceCurt": "Curt",
+    "rationaleLane": {
+      "impatient": "Impatient lane",
+      "skeptical": "Skeptical lane",
+      "warm": "Warm lane",
+      "balanced": "Balanced lane"
+    }
   },
   "personaEdit": {
     "visuals": "Visuals",

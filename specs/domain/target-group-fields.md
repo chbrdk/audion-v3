@@ -22,6 +22,19 @@
 - Inherits summary
 - `linkedPersonas[]` — `{ id, name, role, status, avatarUrl }`
 
+## Behavioral priors (Phase 5 — shipped)
+
+Target groups bias linked personas and segment-only chats. Contract: `TargetGroupBehavioralPriors`. Compile: `specs/domain/behavioral-controller.md` · `lib/behavior/tg-priors.ts`.
+
+| Field | Notes |
+|-------|--------|
+| `blendWeight` | 0..1 — how hard TG pulls **default** persona knobs (default **0.25**) |
+| `dimensions` | Partial canonical behavioral knobs |
+| `segmentCues` | Keywords; also auto-derived from `segment`+`description` |
+| `sharedStressTriggers` / `sharedAvoidances` | Merged into qualitative envelope |
+
+**Persistence:** `target_groups.behavioral_priors` jsonb (`ensureBehavioralPriorsSchema`). Write via `TargetGroupWritePayload.behavioralPriors`. When explicit dimensions absent, `resolveTargetGroupPriors` averages linked persona policies.
+
 ## Write payload (`TargetGroupWritePayload`)
 
 | Field | Notes |

@@ -264,6 +264,107 @@ describe('audion chat panel', () => {
     expect(container.querySelector('.chat-turn-assistant')).toBeTruthy()
   })
 
+  it('shows Why this reply strip above assistant answers with rationale', () => {
+    const { container } = render(
+      <AudionChatPanel
+        personas={personas}
+        personaId="persona-alex-morgan"
+        initialConversation={{
+          id: 'conv-rationale',
+          personaId: 'persona-alex-morgan',
+          personaName: 'Alex Morgan',
+          title: 'Brief',
+          updatedAt: '2026-07-29T00:00:00.000Z',
+          preview: 'Lead with the decision.',
+          projectId: null,
+          messages: [
+            {
+              id: 'm1',
+              role: 'user',
+              content: 'What should I lead with?',
+              createdAt: '2026-07-29T00:00:00.000Z',
+              status: 'complete',
+            },
+            {
+              id: 'm2',
+              role: 'assistant',
+              content: 'Lead with the decision at stake.',
+              createdAt: '2026-07-29T00:01:00.000Z',
+              status: 'complete',
+              replyRationale: {
+                policyId: 'pol-test',
+                lane: 'impatient',
+                stance: 'hesitate',
+                frustrationLoad: 0.6,
+                fatigue: 0.1,
+                turnIndex: 2,
+                drivers: [
+                  {
+                    key: 'timePressure',
+                    label: 'Time',
+                    value: 0.9,
+                    direction: 'up',
+                    source: 'override',
+                  },
+                ],
+                summary: 'Impatient lane · hesitate · time↑',
+              },
+            },
+          ],
+        }}
+      />,
+    )
+    expect(screen.getByRole('button', { name: /Why this reply/i })).toBeInTheDocument()
+    expect(container.querySelector('.audion-chat-reply-rationale')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Why this reply/i }))
+    expect(screen.getByText(/Impatient lane · hesitate/i)).toBeInTheDocument()
+    expect(screen.getByText(/Time/)).toBeInTheDocument()
+  })
+
+  it('hides Why this reply in guest embed mode', () => {
+    render(
+      <AudionChatPanel
+        personas={personas}
+        personaId="persona-alex-morgan"
+        guestBudget={{
+          sessionId: 'guest-1',
+          remainingTurns: 3,
+          maxTurns: 5,
+          maxChars: 500,
+        }}
+        initialConversation={{
+          id: 'conv-guest',
+          personaId: 'persona-alex-morgan',
+          personaName: 'Alex Morgan',
+          title: 'Brief',
+          updatedAt: '2026-07-29T00:00:00.000Z',
+          preview: 'Hi',
+          projectId: null,
+          messages: [
+            {
+              id: 'm2',
+              role: 'assistant',
+              content: 'Hi there.',
+              createdAt: '2026-07-29T00:01:00.000Z',
+              status: 'complete',
+              replyRationale: {
+                policyId: 'pol-test',
+                lane: 'balanced',
+                stance: 'proceed',
+                frustrationLoad: 0.1,
+                fatigue: 0,
+                turnIndex: 1,
+                drivers: [],
+                summary: 'Balanced lane · proceed',
+              },
+            },
+          ],
+        }}
+      />,
+    )
+    expect(screen.queryByRole('button', { name: /Why this reply/i })).toBeNull()
+  })
+
   it('renders step follow-up bubbles with quiet meta + docks inspect outside turns', async () => {
     Element.prototype.scrollIntoView = vi.fn()
     Element.prototype.scrollTo = vi.fn() as never

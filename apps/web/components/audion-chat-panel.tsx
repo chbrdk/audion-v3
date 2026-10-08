@@ -35,6 +35,7 @@ import { paths } from '../lib/paths'
 import { isChatDocumentFilename, CHAT_DOCUMENT_UPLOAD_ACCEPT } from '../lib/chat/document-formats'
 import { useT } from '../lib/user-prefs'
 import { ChatInspectResultMeta } from './chat-inspect-result-meta'
+import { ChatReplyRationaleStrip } from './chat-reply-rationale'
 import { IconPlus, IconSend } from './nav-icons'
 import { ScanInCheckionCta } from './scan-in-checkion-cta'
 import { UxJourneyLivePoll } from './ux-journey-live-poll'
@@ -130,8 +131,22 @@ function inspectDockSplitIndex(messages: ChatMessage[]): number {
   return idx >= 0 ? idx : messages.length
 }
 
-function ChatTurnArticle({ turn }: { turn: ChatMessage }) {
+function ChatTurnArticle({
+  turn,
+  showRationale,
+}: {
+  turn: ChatMessage
+  /** Guest embed hides behavioral transparency. */
+  showRationale?: boolean
+}) {
   const t = useT()
+  const rationale =
+    showRationale &&
+    turn.role === 'assistant' &&
+    turn.status === 'complete' &&
+    turn.replyRationale
+      ? turn.replyRationale
+      : null
   return (
     <article
       className={turn.role === 'user' ? 'chat-turn chat-turn-user' : 'chat-turn chat-turn-assistant'}
@@ -141,13 +156,16 @@ function ChatTurnArticle({ turn }: { turn: ChatMessage }) {
       </span>
       {turn.role === 'assistant' ? (
         turn.content ? (
-          // No `.reveal` — enter motion on status/id changes looked like a mid-answer reset.
-          // Plain while streaming so parseChatBlocks does not reflow lists/headings each delta.
-          <ChatAnswer
-            answer={turn.content}
-            animate={false}
-            streaming={turn.status === 'streaming'}
-          />
+          <>
+            {rationale ? <ChatReplyRationaleStrip rationale={rationale} /> : null}
+            {/* No `.reveal` — enter motion on status/id changes looked like a mid-answer reset.
+                Plain while streaming so parseChatBlocks does not reflow lists/headings each delta. */}
+            <ChatAnswer
+              answer={turn.content}
+              animate={false}
+              streaming={turn.status === 'streaming'}
+            />
+          </>
         ) : (
           <ChatWritingIndicator label={t('chat.writing')} />
         )
@@ -329,6 +347,9 @@ export function AudionChatPanel({
                 content: event.text ?? t.content,
                 status: 'complete',
                 createdAt: new Date().toISOString(),
+                ...(event.replyRationale
+                  ? { replyRationale: event.replyRationale }
+                  : {}),
               }
             : t,
         ),
@@ -690,7 +711,11 @@ export function AudionChatPanel({
           </EmptyState>
         ) : null}
         {turnsBeforeDock.map((turn) => (
-          <ChatTurnArticle key={turn.id} turn={turn} />
+          <ChatTurnArticle
+            key={turn.id}
+            turn={turn}
+            showRationale={!guestBudget}
+          />
         ))}
 
         {pendingTool ? (
@@ -801,7 +826,11 @@ export function AudionChatPanel({
         ) : null}
 
         {turnsAfterDock.map((turn) => (
-          <ChatTurnArticle key={turn.id} turn={turn} />
+          <ChatTurnArticle
+            key={turn.id}
+            turn={turn}
+            showRationale={!guestBudget}
+          />
         ))}
 
         {busy ? <LoadingText>{t('chat.streaming')}</LoadingText> : null}

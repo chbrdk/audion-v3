@@ -121,7 +121,21 @@ Persona mode only. Composer DOCX pick → `POST /api/chat/documents/upload` → 
 
 ## Persona system prompt (adaptive)
 
-Each native chat turn resolves a **deterministic adaptive system prompt** from the full `PersonaDetail` (traits, communication style, goals, frustrations, journey behaviour, sections, capped knowledge). Magazine fields are the SSOT for personality — not Skills, not RAG-on-traits.
+Each native chat turn resolves a **deterministic adaptive system prompt** from the full `PersonaDetail` (traits, communication style, goals, frustrations, journey behaviour, sections, capped knowledge). Magazine fields are the SSOT for personality — not Skills, not RAG-on-traits. **Behavioral controller:** prompt includes a compiled `## Behavioral envelope` and policy-driven default length / few-shot lane / `max_completion_tokens` (`specs/domain/behavioral-controller.md` Phase 2). **Phase 3+3b:** each turn updates a per-conversation session (frustration/fatigue/stance), appends `## Live session state`, persists `behavioralSession` in the messages jsonb envelope, and mirrors affect for video; token cap may shrink (`lib/behavior/chat-session.ts`).
+
+### Reply rationale (transparency)
+
+Persona mode (not guest `embed=1`): each **completed** assistant turn may show a compact **Why this reply** strip **above** the answer (`ChatCollapsible` compact). It surfaces the compiled behavioral drivers that shaped the turn — not an LLM self-explanation.
+
+| Field | Meaning |
+|-------|---------|
+| Voice lane | impatient / skeptical / warm / balanced (from policy + traits) |
+| Stance | proceed / hesitate / abandon-curt from session FSM |
+| Frustration / fatigue | live session loads after the user turn that triggered this reply |
+| Drivers | up to 4 extreme knobs with magazine/TG citation source |
+| Stress hits | soft-spot phrases from the user turn that raised stress (optional) |
+
+Payload: `ChatReplyRationale` on `ChatMessage.replyRationale` and echoed on stream `done.replyRationale`. Builder: `lib/behavior/reply-rationale.ts`. Spec: `behavioral-controller.md` § Explainable UI.
 
 | Layer | Role |
 |-------|------|

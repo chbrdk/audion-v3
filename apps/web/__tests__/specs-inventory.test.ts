@@ -9,6 +9,11 @@ const requiredSpecs = [
   'specs/domain/home-magazine.md',
   'specs/domain/persona-workspace.md',
   'specs/domain/persona-fields.md',
+  'specs/domain/behavioral-controller.md',
+  'knowledge/behavioral-controller.md',
+  'knowledge/human-behavior-fidelity-options-2026-10.md',
+  'specs/domain/behavioral-gold-scoreboard.md',
+  'specs/api/behavioral-scoreboard.md',
   'specs/domain/entity-url-slugs.md',
   'specs/domain/target-group-workspace.md',
   'specs/domain/target-group-fields.md',
@@ -63,6 +68,8 @@ describe('specs inventory', () => {
     expect(paths.routes.journeyDetail('j1')).toBe('/journeys/j1')
     expect(paths.routes.apiJourneys).toBe('/api/journeys')
     expect(paths.routes.studies).toBe('/studies')
+    expect(paths.routes.studiesBehavioral).toBe('/studies/behavioral')
+    expect(paths.routes.apiBehavioralScoreboard).toBe('/api/behavioral/scoreboard')
     expect(paths.routes.studyDetail('s1')).toBe('/studies/s1')
     expect(paths.routes.apiStudies).toBe('/api/studies')
     expect(paths.routes.chat).toBe('/chat')

@@ -4,6 +4,7 @@
  * - Without: in-memory fixtures (local/dev/tests)
  */
 import type {
+  BehavioralSessionState,
   ChatConversationDetail,
   ChatConversationInspect,
   ChatConversationList,
@@ -62,7 +63,7 @@ export function resetChatStore(): void {
 }
 
 function toSummary(c: StoredConversation): ChatConversationSummary {
-  const { messages: _m, inspect: _i, ...summary } = c
+  const { messages: _m, inspect: _i, behavioralSession: _b, ...summary } = c
   return summary
 }
 
@@ -139,6 +140,7 @@ function memoryChatBeginUserTurn(
       preview: content.slice(0, 80),
       messages: [userMsg],
       inspect: null,
+      behavioralSession: null,
     }
     conversations = [conversation, ...conversations]
   } else {
@@ -158,6 +160,7 @@ function memoryChatBeginUserTurn(
 function memoryChatAppendAssistant(
   conversationId: string,
   content: string,
+  replyRationale?: ChatMessage['replyRationale'],
 ): { conversationId: string; messageId: string } {
   const conversation = conversations.find((c) => c.id === conversationId)
   const assistantId = `m-asst-${Date.now().toString(36)}`
@@ -170,6 +173,7 @@ function memoryChatAppendAssistant(
     content,
     createdAt: new Date().toISOString(),
     status: 'complete',
+    ...(replyRationale ? { replyRationale } : {}),
   }
   const next = {
     ...conversation,
@@ -190,6 +194,20 @@ function memoryChatSetInspect(
   const next: StoredConversation = {
     ...conversation,
     inspect,
+    updatedAt: new Date().toISOString(),
+  }
+  conversations = conversations.map((c) => (c.id === conversationId ? next : c))
+}
+
+function memoryChatSetBehavioralSession(
+  conversationId: string,
+  behavioralSession: BehavioralSessionState | null,
+): void {
+  const conversation = conversations.find((c) => c.id === conversationId)
+  if (!conversation) return
+  const next: StoredConversation = {
+    ...conversation,
+    behavioralSession,
     updatedAt: new Date().toISOString(),
   }
   conversations = conversations.map((c) => (c.id === conversationId ? next : c))
@@ -232,12 +250,13 @@ export async function storeChatBeginUserTurn(
 export async function storeChatAppendAssistant(
   conversationId: string,
   content: string,
+  replyRationale?: ChatMessage['replyRationale'],
 ): Promise<{ conversationId: string; messageId: string }> {
   if (isProjectsDatabaseConfigured()) {
     const db = await dbApi()
-    return db.dbChatAppendAssistant(conversationId, content)
+    return db.dbChatAppendAssistant(conversationId, content, replyRationale)
   }
-  return memoryChatAppendAssistant(conversationId, content)
+  return memoryChatAppendAssistant(conversationId, content, replyRationale)
 }
 
 export async function storeChatSetInspect(
@@ -250,6 +269,18 @@ export async function storeChatSetInspect(
     return
   }
   memoryChatSetInspect(conversationId, inspect)
+}
+
+export async function storeChatSetBehavioralSession(
+  conversationId: string,
+  behavioralSession: BehavioralSessionState | null,
+): Promise<void> {
+  if (isProjectsDatabaseConfigured()) {
+    const db = await dbApi()
+    await db.dbChatSetBehavioralSession(conversationId, behavioralSession)
+    return
+  }
+  memoryChatSetBehavioralSession(conversationId, behavioralSession)
 }
 
 /** Fake NDJSON stream for stub AI runtime. */

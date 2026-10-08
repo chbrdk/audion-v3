@@ -8,6 +8,8 @@
 | Home magazine | `specs/domain/home-magazine.md` |
 | Persona workspace | `specs/domain/persona-workspace.md` |
 | Persona fields | `specs/domain/persona-fields.md` |
+| Behavioral controller (cross-surface) | `specs/domain/behavioral-controller.md` · `knowledge/behavioral-controller.md` |
+| Behavioral gold scoreboard | `specs/domain/behavioral-gold-scoreboard.md` · `specs/api/behavioral-scoreboard.md` |
 | Target group workspace | `specs/domain/target-group-workspace.md` |
 | Target group fields | `specs/domain/target-group-fields.md` |
 | Journey workspace | `specs/domain/journey-workspace.md` |

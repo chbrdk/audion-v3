@@ -9,6 +9,7 @@
  */
 
 import type { PersonaDetail } from '@audion-v3/contracts'
+import { compilePolicyForPersona } from '../behavior/resolve-persona-policy'
 import { isProjectsDatabaseConfigured } from '../db/config'
 import { buildAdaptivePersonaChatSystemPrompt } from '../chat/adaptive-persona-chat-prompt'
 import { storePersonaDetail, storePersonaList } from './persona-store'
@@ -157,9 +158,11 @@ export async function resolvePersonaSystemPrompt(
     return 'You are a helpful audience research assistant speaking as a persona.'
   }
   const custom = await storeGetPersonaPromptRecord(personaId)
+  const policy = await compilePolicyForPersona(persona)
   return buildAdaptivePersonaChatSystemPrompt(persona, {
     customVoice: custom?.systemPrompt,
     locale: opts?.locale,
     message: opts?.message,
+    policy,
   })
 }

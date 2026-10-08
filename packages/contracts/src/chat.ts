@@ -28,6 +28,30 @@ export type ChatMessageDocument = {
   charCount: number
 }
 
+/** Compact “why this reply” stamp from the behavioral controller (not LLM narration). */
+export type ChatReplyRationaleDriver = {
+  key: string
+  label: string
+  value: number
+  direction: 'up' | 'down' | 'mid'
+  source: import('./behavioral-policy').BehavioralKnobSource
+  ref?: string
+}
+
+export type ChatReplyRationale = {
+  policyId: string
+  lane: 'impatient' | 'skeptical' | 'warm' | 'balanced'
+  stance: import('./behavioral-policy').BehavioralStance
+  frustrationLoad: number
+  fatigue: number
+  turnIndex: number
+  drivers: ChatReplyRationaleDriver[]
+  /** Soft-spot phrases from the user turn that raised stress. */
+  stressHits?: string[]
+  /** One-line summary for the collapsed trigger. */
+  summary: string
+}
+
 export type ChatMessage = {
   id: string
   role: ChatMessageRole
@@ -40,12 +64,19 @@ export type ChatMessage = {
   documents?: ChatMessageDocument[]
   /** User requested A/B compare on this turn (exactly two images). */
   abCompare?: boolean
+  /** Assistant-turn behavioral transparency (persona mode). */
+  replyRationale?: ChatReplyRationale | null
 }
 
 export type ChatConversationDetail = ChatConversationSummary & {
   messages: ChatMessage[]
   /** Latest completed website inspect for this conversation (session restore). */
   inspect?: ChatConversationInspect | null
+  /**
+   * Cross-turn behavioral FSM (frustration/fatigue/stance).
+   * Persisted in the messages jsonb envelope. Spec: behavioral-controller.md Phase 3b.
+   */
+  behavioralSession?: import('./behavioral-policy').BehavioralSessionState | null
 }
 
 /** Persisted inspect dock snapshot (steps + convert meta). */
@@ -315,6 +346,8 @@ export type ChatStreamDoneEvent = {
   text?: string
   /** Project RAG sources used for this turn (optional). */
   sources?: KnowledgeRagSource[]
+  /** Behavioral transparency for this assistant turn (persona mode). */
+  replyRationale?: ChatReplyRationale | null
 }
 export type ChatStreamErrorEvent = { type: 'error'; message: string }
 export type ChatStreamEvent =

@@ -89,6 +89,10 @@ export const targetGroups = pgTable('target_groups', {
     .$type<TargetGroupLinkedPersona[]>()
     .notNull()
     .default([]),
+  /** Soft behavioral bias for linked personas / segment chat. */
+  behavioralPriors: jsonb('behavioral_priors').$type<
+    import('@audion-v3/contracts').TargetGroupBehavioralPriors | null
+  >(),
   personaCount: integer('persona_count').notNull().default(0),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

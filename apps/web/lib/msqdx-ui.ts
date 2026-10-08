@@ -17,6 +17,8 @@ export type {
 } from '../../../../msqdx-ui/packages/ui/src/components/CollectionHubCard'
 export { Chip } from '../../../../msqdx-ui/packages/ui/src/components/Chip'
 export type { ChipProps, ChipSize } from '../../../../msqdx-ui/packages/ui/src/components/Chip'
+export { ChatCollapsible } from '../../../../msqdx-ui/packages/ui/src/components/ChatCollapsible'
+export type { ChatCollapsibleProps } from '../../../../msqdx-ui/packages/ui/src/components/ChatCollapsible'
 export { EmptyState, LoadingText } from '../../../../msqdx-ui/packages/ui/src/components/LoadingText'
 export { HubIndexCard } from '../../../../msqdx-ui/packages/ui/src/components/HubIndexCard'
 export type { HubIndexCardProps } from '../../../../msqdx-ui/packages/ui/src/components/HubIndexCard'

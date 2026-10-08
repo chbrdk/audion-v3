@@ -731,7 +731,21 @@
     "personaFit": "Persona-Fit",
     "scorecard": "Inspect-Scorecard",
     "topFindings": "Top Findings",
-    "personaPolicy": "Persona-Policy"
+    "personaPolicy": "Persona-Policy",
+    "whyThisReply": "Warum diese Antwort",
+    "rationaleDrivers": "Policy-Treiber",
+    "rationaleStressHits": "Soft Spots getroffen",
+    "rationaleFrustration": "Frustration {n}%",
+    "rationaleFatigue": "Ermüdung {n}%",
+    "rationaleStanceProceed": "Weiter",
+    "rationaleStanceHesitate": "Zögern",
+    "rationaleStanceCurt": "Kurz angebunden",
+    "rationaleLane": {
+      "impatient": "Ungeduldige Spur",
+      "skeptical": "Skeptische Spur",
+      "warm": "Warme Spur",
+      "balanced": "Ausgeglichene Spur"
+    }
   },
   "personaEdit": {
     "visuals": "Visuals",

@@ -4,16 +4,26 @@
  */
 
 import type {
+  BehavioralPolicy,
   PersonaCommunicationStyle,
   PersonaDetail,
   PersonaSection,
 } from '@audion-v3/contracts'
+import {
+  BEHAVIORAL_CHAT_ENVELOPE_HEADING,
+  buildChatBehavioralEnvelope,
+  chatRulesLengthLine,
+  voiceLaneForChat,
+  type ChatVoiceLane,
+} from '../behavior/chat-adapter'
+import { compileBehavioralPolicy } from '../behavior/compile-behavioral-policy'
 
 export const ADAPTIVE_CHAT_RULES_HEADING = '## Chat rules'
 export const ADAPTIVE_CUSTOM_VOICE_HEADING = '## Custom voice instructions'
 export const RESEARCH_ELICITATION_HEADING = '## Research elicitation (this turn)'
 export const GREETING_TURN_HEADING = '## Greeting turn'
 export const VOICE_EXAMPLES_HEADING = '## Voice examples (match this brevity)'
+export { BEHAVIORAL_CHAT_ENVELOPE_HEADING }
 
 const LIST_CAP = 8
 const STYLE_VOCAB_CAP = 10
@@ -45,6 +55,8 @@ export type AdaptivePersonaChatPromptOpts = {
   locale?: string
   /** Latest user message — used for locale detection when `locale` unset. */
   message?: string | null
+  /** Precompiled policy (with TG priors). When omitted, compiles persona-only. */
+  policy?: BehavioralPolicy | null
 }
 
 function clamp01(n: number): number {
@@ -216,12 +228,12 @@ function knowledgeBlock(persona: PersonaDetail): string {
   ].join('\n')
 }
 
-function chatRulesBlock(): string {
+function chatRulesBlock(policy: BehavioralPolicy): string {
   return [
     ADAPTIVE_CHAT_RULES_HEADING,
     '- Priority: sound like a real person in a natural conversation. Personality (goals, pains, traits, style) must show in what you care about — not in essay structure.',
     '- You ARE this persona — first person only. Never speak as an AI, moderator, or research assistant describing them.',
-    '- Default length: 2–5 short sentences (~40–90 words). Only go longer if the user clearly asks for depth, a list, or many questions.',
+    chatRulesLengthLine(policy),
     '- Talk like chat/SMS between adults: contractions OK, incomplete thoughts OK, one concrete opinion or example from your life. No briefing tone.',
     '- Prefer plain text. No ### headings. No bold section titles. At most one short list (≤3 lines) and only if it truly helps.',
     '- Do not use emoji.',
@@ -236,7 +248,7 @@ function chatRulesBlock(): string {
   ].join('\n')
 }
 
-type VoiceLane = 'impatient' | 'skeptical' | 'warm' | 'balanced'
+type VoiceLane = ChatVoiceLane
 
 const DE_LOCALE_SIGNAL =
   /[äöüÄÖÜß]|\b(ich|und|nicht|das|die|der|ist|mit|für|auch|noch|wenn|aber|oder|eine|einen|wie|geht|hältst|nervt|gib|fragen|würdest)\b/gi
@@ -321,8 +333,12 @@ const FEW_SHOTS: Record<ChatLocale, Record<VoiceLane, string[]>> = {
   },
 }
 
-function fewShotBlock(traits: Record<string, number>, locale: ChatLocale): string {
-  const lane = dominantVoiceLane(traits)
+function fewShotBlock(
+  traits: Record<string, number>,
+  locale: ChatLocale,
+  policy?: BehavioralPolicy | null,
+): string {
+  const lane = policy ? voiceLaneForChat(policy, traits) : dominantVoiceLane(traits)
   const examples = FEW_SHOTS[locale][lane]
   return `${VOICE_EXAMPLES_HEADING}\nMatch this length and tone (${lane}, ${locale}):\n\n${examples.join('\n\n')}`
 }
@@ -459,6 +475,7 @@ export function buildAdaptivePersonaChatSystemPrompt(
   const jb = persona.journeyBehavior
   const customVoice = (opts?.customVoice || '').trim()
   const locale = detectChatLocale(opts?.message, opts?.locale)
+  const policy = opts?.policy ?? compileBehavioralPolicy({ persona })
 
   const sections = [
     `You ARE ${name}, ${role}. Stay in first person as this person for the whole chat. You are not an AI describing them.`,
@@ -466,6 +483,7 @@ export function buildAdaptivePersonaChatSystemPrompt(
     identityBits.length ? `Identity\n${identityBits.map((b) => `- ${b}`).join('\n')}` : '',
     traitBlock(persona.traits ?? {}),
     styleRules(persona.communicationStyle),
+    buildChatBehavioralEnvelope(policy, persona.traits ?? {}),
     bulletBlock(
       '## Goals',
       persona.goals.map((g) => g.label),
@@ -480,20 +498,40 @@ export function buildAdaptivePersonaChatSystemPrompt(
     ),
     bulletBlock('## Values', persona.values),
     bulletBlock('## Interests', persona.interests),
-    bulletBlock('## Stress triggers', persona.stressTriggers, 4),
+    bulletBlock(
+      '## Stress triggers',
+      policy.qualitative.stressTriggers.length
+        ? policy.qualitative.stressTriggers
+        : persona.stressTriggers,
+      4,
+    ),
     bulletBlock('## Channels', persona.channels, 6),
-    bulletBlock('## Do (journey behaviour)', jb?.dos ?? [], 8),
-    bulletBlock("## Don't (journey behaviour)", jb?.donts ?? [], 8),
-    bulletBlock('## Heuristics', jb?.heuristics ?? [], 8),
+    bulletBlock(
+      '## Do (journey behaviour)',
+      policy.qualitative.dos.length ? policy.qualitative.dos : (jb?.dos ?? []),
+      8,
+    ),
+    bulletBlock(
+      "## Don't (journey behaviour)",
+      policy.qualitative.donts.length ? policy.qualitative.donts : (jb?.donts ?? []),
+      8,
+    ),
+    bulletBlock(
+      '## Heuristics',
+      policy.qualitative.heuristics.length
+        ? policy.qualitative.heuristics
+        : (jb?.heuristics ?? []),
+      8,
+    ),
     jb?.extraInstructions?.trim()
       ? `## Extra journey instructions\n${clip(jb.extraInstructions, 280)}`
       : '',
     sectionBlock(persona.sections ?? []),
     knowledgeBlock(persona),
     customVoice ? `${ADAPTIVE_CUSTOM_VOICE_HEADING}\n${clip(customVoice, 2000)}` : '',
-    fewShotBlock(persona.traits ?? {}, locale),
+    fewShotBlock(persona.traits ?? {}, locale, policy),
     localeInstruction(locale),
-    chatRulesBlock(),
+    chatRulesBlock(policy),
   ].filter(Boolean)
 
   return clip(sections.join('\n\n'), PROMPT_MAX_CHARS)

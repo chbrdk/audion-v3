@@ -202,6 +202,7 @@
 - Deploy URLs (Coolify staging): `knowledge/deploy-urls.md`
 - V2 ↔ V3 feature parity audit + smoke checklist: `knowledge/v2-v3-feature-parity.md`
 - AI workflows Wave 2 (live proxy + stubs): `knowledge/ai-workflows.md` · `apps/web/lib/ai-workflows.ts` · `ai-workflows-live.ts` · `persona-api-proxy.ts`
+- Behavioral controller (traits → browse/chat/video policy): `specs/domain/behavioral-controller.md` · `knowledge/behavioral-controller.md` · `apps/web/lib/behavior/` (`compile-behavioral-policy`, `chat-adapter`, `chat-session`, `browse-adapter`, `tg-priors`, `video-session`, `resolve-persona-policy`, `gold-scoreboard`, `gold-store`) · UI `paths.routes.studiesBehavioral` · API `paths.routes.apiBehavioralScoreboard` · fidelity options `knowledge/human-behavior-fidelity-options-2026-10.md`
 - Persona enrich + moodboard (2026 agent notes): `knowledge/persona-enrich-moodboard-2026.md`
   - Next: `paths.routes.apiAiEnrichPersona` · `apiAiGenerateMoodboard`
   - Upstream: `POST /personas/{id}/enrich` · `POST /api/persona-admin/{id}/moodboards`

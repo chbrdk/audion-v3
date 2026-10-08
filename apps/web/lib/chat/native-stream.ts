@@ -3,9 +3,23 @@
  */
 
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
-import type { ChatSendPayload, ChatStreamEvent } from '@audion-v3/contracts'
-import { createChatCompletionClient, getChatCompletionMaxTokens, toAiNativeError } from '../ai/client'
+import type {
+  ChatReplyRationale,
+  ChatSendPayload,
+  ChatStreamEvent,
+} from '@audion-v3/contracts'
+import { createChatCompletionClient, toAiNativeError } from '../ai/client'
 import { withOpenAiChatTemperature } from '../ai/openai-sampling'
+import {
+  applyChatTurnBehavioralTick,
+  buildChatLiveSessionEnvelope,
+  loadOrInitChatBehavioralSession,
+  persistChatBehavioralSession,
+  resolveChatMaxTokensWithSession,
+} from '../behavior/chat-session'
+import { buildChatReplyRationale } from '../behavior/reply-rationale'
+import { compilePolicyForPersona } from '../behavior/resolve-persona-policy'
+import { storePersonaDetail } from '../fixtures/persona-store'
 import {
   storeChatAppendAssistant,
   storeChatBeginUserTurn,
@@ -48,9 +62,13 @@ async function systemPromptForPersona(
   personaId: string,
   message: string,
   abCompare: boolean,
+  liveSessionEnvelope?: string | null,
 ): Promise<string> {
   let base = await resolvePersonaSystemPrompt(personaId, { message })
   base = withTurnEnvelopes(base, message)
+  if (liveSessionEnvelope?.trim()) {
+    base = `${base}\n\n${liveSessionEnvelope.trim()}`
+  }
   if (abCompare) {
     base = `${base}\n\n${abCompareSystemInstruction()}`
   }
@@ -86,10 +104,16 @@ async function buildOpenAiMessages(
   modelMessage: string,
   images: { id: string; dataUrl: string }[],
   abCompare: boolean,
+  liveSessionEnvelope?: string | null,
 ): Promise<ChatCompletionMessageParam[]> {
   const system: ChatCompletionMessageParam = {
     role: 'system',
-    content: await systemPromptForPersona(personaId, rawMessage, abCompare),
+    content: await systemPromptForPersona(
+      personaId,
+      rawMessage,
+      abCompare,
+      liveSessionEnvelope,
+    ),
   }
   const detail = await storeChatConversationDetail(conversationId)
   const recent = (detail?.messages ?? [])
@@ -221,6 +245,39 @@ export async function* nativeChatStreamEvents(
   try {
     const elicitation = isResearchElicitationMessage(message)
     const greeting = isGreetingMessage(message)
+    const chatPolicy = await compilePolicyForPersona(payload.personaId)
+    let liveEnvelope: string | null = null
+    let replyRationale: ChatReplyRationale | null = null
+    let maxTokens = resolveChatMaxTokensWithSession(chatPolicy, null, {
+      greeting,
+      elicitation,
+    })
+    if (chatPolicy) {
+      const prior = await loadOrInitChatBehavioralSession(
+        turn.conversationId,
+        chatPolicy,
+        payload.personaId,
+      )
+      const session = applyChatTurnBehavioralTick(chatPolicy, prior, message)
+      await persistChatBehavioralSession(
+        turn.conversationId,
+        session,
+        payload.personaId,
+        chatPolicy,
+      )
+      liveEnvelope = buildChatLiveSessionEnvelope(chatPolicy, session)
+      maxTokens = resolveChatMaxTokensWithSession(chatPolicy, session, {
+        greeting,
+        elicitation,
+      })
+      const persona = await storePersonaDetail(payload.personaId)
+      replyRationale = buildChatReplyRationale({
+        policy: chatPolicy,
+        session,
+        traits: persona?.traits ?? {},
+        userMessage: message,
+      })
+    }
     const resolved = await resolvePersonaChatModel(message, {
       userId,
       hasImages: images.length > 0,
@@ -239,11 +296,10 @@ export async function* nativeChatStreamEvents(
         modelMessage,
         images,
         abCompare,
+        liveEnvelope,
       ),
       ...withOpenAiChatTemperature(preferredTemp, model),
-      max_completion_tokens: greeting
-        ? Math.min(120, getChatCompletionMaxTokens())
-        : getChatCompletionMaxTokens({ elicitation }),
+      max_completion_tokens: maxTokens,
     })
 
     let full = ''
@@ -282,13 +338,18 @@ export async function* nativeChatStreamEvents(
     )
     if (proposal) yield proposal
 
-    const done = await storeChatAppendAssistant(turn.conversationId, full || '…')
+    const done = await storeChatAppendAssistant(
+      turn.conversationId,
+      full || '…',
+      replyRationale,
+    )
     yield {
       type: 'done',
       conversationId: done.conversationId,
       messageId: done.messageId,
       text: full || '…',
       ...(ragSources.length ? { sources: ragSources } : {}),
+      ...(replyRationale ? { replyRationale } : {}),
     }
   } catch (error) {
     const err = toAiNativeError(error, 'Chat stream failed')

@@ -17,7 +17,11 @@ describe('chat messages column', () => {
         status: 'complete' as const,
       },
     ]
-    expect(parseChatMessagesColumn(messages)).toEqual({ messages, inspect: null })
+    expect(parseChatMessagesColumn(messages)).toEqual({
+      messages,
+      inspect: null,
+      behavioralSession: null,
+    })
   })
 
   it('round-trips messages + inspect envelope', () => {
@@ -43,11 +47,24 @@ describe('chat messages column', () => {
         source: 'chat_inspect',
       },
     })
-    const column = serializeChatMessagesColumn(messages, inspect)
+    const behavioralSession = {
+      surface: 'chat' as const,
+      frustrationLoad: 0.4,
+      clarity: 2,
+      fatigue: 0.1,
+      tryBudgetRemaining: 3,
+      lookBeforeActSatisfied: true,
+      stance: 'hesitate' as const,
+      turnIndex: 2,
+      episodic: [],
+      policyId: 'abc123',
+    }
+    const column = serializeChatMessagesColumn(messages, inspect, behavioralSession)
     const parsed = parseChatMessagesColumn(column)
     expect(parsed.messages).toEqual(messages)
     expect(parsed.inspect?.jobId).toBe('job-1')
     expect(parsed.inspect?.steps[0]?.reasoning).toContain('**home**')
+    expect(parsed.behavioralSession?.stance).toBe('hesitate')
     expect(toolCompleteFromInspect(parsed.inspect!).type).toBe('tool_complete')
   })
 })

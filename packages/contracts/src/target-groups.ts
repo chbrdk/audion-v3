@@ -35,6 +35,11 @@ export type TargetGroupDetail = TargetGroupSummary & {
   knowledgeEntries: import('./knowledge-entries').KnowledgeEntry[]
   /** Uploaded sources (V2 `/target-groups/{id}/documents`) — list metadata. */
   documents: import('./knowledge-entries').DocumentSource[]
+  /**
+   * Optional soft bias for linked personas / segment chat.
+   * Spec: behavioral-controller.md · target-group-fields.md
+   */
+  behavioralPriors?: import('./behavioral-policy').TargetGroupBehavioralPriors | null
 }
 
 /** Create / PATCH body */
@@ -47,4 +52,5 @@ export type TargetGroupWritePayload = {
   linkedPersonaIds?: string[]
   knowledgeEntries?: import('./knowledge-entries').KnowledgeEntry[]
   documents?: import('./knowledge-entries').DocumentSource[]
+  behavioralPriors?: import('./behavioral-policy').TargetGroupBehavioralPriors | null
 }

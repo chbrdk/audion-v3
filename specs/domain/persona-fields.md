@@ -47,6 +47,8 @@
 | `extraInstructions` | free text |
 | `heuristics` | editable soft rules; merged with runtime-derived heuristics |
 
+**Cross-surface fidelity:** Magazine traits + these overrides compile into `BehavioralPolicy` via `specs/domain/behavioral-controller.md` (browse / chat / video share one policy). Do not invent a second trait→behavior mapping per surface.
+
 ## Write payload (`PersonaWritePayload`)
 
 Used by create / PATCH dialogs and `/api/personas*`:

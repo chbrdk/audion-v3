@@ -6,8 +6,10 @@ import type {
   TargetGroupStatus,
   TargetGroupWritePayload,
 } from '@audion-v3/contracts'
+import { normalizeBehavioralPriors } from '../behavior/tg-priors'
 import { allocateUniqueSlug, ensureEntitySlug, slugifyName } from '../entity-slug'
 import { getDb } from './client'
+import { ensureBehavioralPriorsSchema } from './ensure-behavioral-priors-schema'
 import { ensureEntitySlugSchema } from './ensure-entity-slug-schema'
 import { dbPersonaSummariesByIds } from './personas'
 import { targetGroups, type TargetGroupRow } from './schema'
@@ -32,12 +34,24 @@ function rowToDetail(row: TargetGroupRow): TargetGroupDetail {
     linkedPersonas,
     knowledgeEntries: row.knowledgeEntries ?? [],
     documents: row.documents ?? [],
+    behavioralPriors: normalizeBehavioralPriors(row.behavioralPriors) ?? null,
   })
 }
 
 function toSummary(detail: TargetGroupDetail) {
-  const { linkedPersonas: _lp, knowledgeEntries: _ke, documents: _docs, ...summary } = detail
+  const {
+    linkedPersonas: _lp,
+    knowledgeEntries: _ke,
+    documents: _docs,
+    behavioralPriors: _bp,
+    ...summary
+  } = detail
   return summary
+}
+
+async function ensureTgSchema(): Promise<void> {
+  await ensureEntitySlugSchema()
+  await ensureBehavioralPriorsSchema()
 }
 
 async function resolveLinked(
@@ -49,7 +63,7 @@ async function resolveLinked(
 }
 
 async function takenTgSlugs(excludeId?: string): Promise<string[]> {
-  await ensureEntitySlugSchema()
+  await ensureTgSchema()
   const db = getDb()
   const rows = await db.select({ id: targetGroups.id, slug: targetGroups.slug }).from(targetGroups)
   return rows
@@ -59,7 +73,7 @@ async function takenTgSlugs(excludeId?: string): Promise<string[]> {
 }
 
 export async function dbTargetGroupList(): Promise<TargetGroupList> {
-  await ensureEntitySlugSchema()
+  await ensureTgSchema()
   const db = getDb()
   const rows = await db.select().from(targetGroups).orderBy(desc(targetGroups.updatedAt))
   const items = rows.map((row) => toSummary(rowToDetail(row)))
@@ -67,7 +81,7 @@ export async function dbTargetGroupList(): Promise<TargetGroupList> {
 }
 
 export async function dbTargetGroupDetail(ref: string): Promise<TargetGroupDetail | null> {
-  await ensureEntitySlugSchema()
+  await ensureTgSchema()
   const db = getDb()
   const byId = await db.select().from(targetGroups).where(eq(targetGroups.id, ref)).limit(1)
   if (byId[0]) return rowToDetail(byId[0])
@@ -76,7 +90,7 @@ export async function dbTargetGroupDetail(ref: string): Promise<TargetGroupDetai
 }
 
 export async function dbTargetGroupForPersona(personaId: string): Promise<TargetGroupDetail | null> {
-  await ensureEntitySlugSchema()
+  await ensureTgSchema()
   const db = getDb()
   const rows = await db.select().from(targetGroups)
   const found = rows.find((row) => {
@@ -100,13 +114,17 @@ export async function dbCountTargetGroupsByProjectId(projectId: string): Promise
 export async function dbCreateTargetGroup(
   payload: TargetGroupWritePayload,
 ): Promise<TargetGroupDetail> {
-  await ensureEntitySlugSchema()
+  await ensureTgSchema()
   const id = `tg-${slugifyName(payload.name)}-${Date.now().toString(36)}`
   const projectId = payload.projectId ?? null
   const slug = allocateUniqueSlug(payload.name, await takenTgSlugs())
   const linkedPersonas = await resolveLinked(payload.linkedPersonaIds, [])
   const linkedPersonaIds = linkedPersonas.map((p) => p.id)
   const now = new Date()
+  const behavioralPriors =
+    payload.behavioralPriors !== undefined
+      ? normalizeBehavioralPriors(payload.behavioralPriors)
+      : null
   const detail: TargetGroupDetail = ensureEntitySlug({
     id,
     slug,
@@ -120,6 +138,7 @@ export async function dbCreateTargetGroup(
     linkedPersonas,
     knowledgeEntries: payload.knowledgeEntries ?? [],
     documents: payload.documents ?? [],
+    behavioralPriors,
   })
   const db = getDb()
   await db.insert(targetGroups).values({
@@ -135,6 +154,7 @@ export async function dbCreateTargetGroup(
     personaCount: linkedPersonas.length,
     knowledgeEntries: detail.knowledgeEntries,
     documents: detail.documents,
+    behavioralPriors: detail.behavioralPriors ?? null,
     updatedAt: now,
     createdAt: now,
   })
@@ -145,7 +165,7 @@ export async function dbPatchTargetGroup(
   ref: string,
   payload: Partial<TargetGroupWritePayload>,
 ): Promise<TargetGroupDetail | null> {
-  await ensureEntitySlugSchema()
+  await ensureTgSchema()
   const current = await dbTargetGroupDetail(ref)
   if (!current) return null
   const linkedPersonas = await resolveLinked(
@@ -161,6 +181,10 @@ export async function dbPatchTargetGroup(
     nameChanged || !current.slug?.trim()
       ? allocateUniqueSlug(nextName, await takenTgSlugs(current.id), current.slug)
       : current.slug
+  const behavioralPriors =
+    payload.behavioralPriors !== undefined
+      ? normalizeBehavioralPriors(payload.behavioralPriors)
+      : current.behavioralPriors ?? null
   const next: TargetGroupDetail = ensureEntitySlug({
     ...current,
     slug,
@@ -176,6 +200,7 @@ export async function dbPatchTargetGroup(
         ? payload.knowledgeEntries
         : current.knowledgeEntries ?? [],
     documents: payload.documents !== undefined ? payload.documents : current.documents ?? [],
+    behavioralPriors,
     updatedAt: new Date().toISOString(),
   })
   const db = getDb()
@@ -193,6 +218,7 @@ export async function dbPatchTargetGroup(
       personaCount: linkedPersonas.length,
       knowledgeEntries: next.knowledgeEntries,
       documents: next.documents,
+      behavioralPriors: next.behavioralPriors ?? null,
       updatedAt: new Date(),
     })
     .where(eq(targetGroups.id, current.id))

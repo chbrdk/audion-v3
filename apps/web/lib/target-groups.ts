@@ -104,6 +104,12 @@ export function normalizeTargetGroupDetail(raw: unknown): TargetGroupDetail | nu
     documents: Array.isArray(item.documents)
       ? (item.documents as TargetGroupDetail['documents'])
       : [],
+    behavioralPriors:
+      item.behavioralPriors && typeof item.behavioralPriors === 'object'
+        ? (item.behavioralPriors as TargetGroupDetail['behavioralPriors'])
+        : item.behavioral_priors && typeof item.behavioral_priors === 'object'
+          ? (item.behavioral_priors as TargetGroupDetail['behavioralPriors'])
+          : null,
   }
 }
 

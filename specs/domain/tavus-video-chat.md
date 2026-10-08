@@ -50,7 +50,7 @@ Never return a stub conversation URL.
 
 When `tavusReplicaId` is set **and** `TAVUS_API_KEY` is present:
 
-1. Build a spoken `system_prompt` from magazine identity (name, role, bio, goals, frustrations, communication style, journey dos/donts) plus an explicit speak-German / speak-English rule from `tavusLanguage` — not traits/tiles/knowledge dumps. Cap `paths.tavusPalSystemPromptMaxChars`.
+1. Build a spoken `system_prompt` from magazine identity (name, role, bio, goals, frustrations, communication style, journey dos/donts) plus an explicit speak-German / speak-English rule from `tavusLanguage` — not traits/tiles/knowledge dumps. Cap `paths.tavusPalSystemPromptMaxChars`. **Phase 4+:** prefer compiled `BehavioralPolicy` qualitative + communication knobs (`specs/domain/behavioral-controller.md`) over ad-hoc trait dumps.
 2. If `tavusPersonaId` is set: `PATCH {TAVUS_API_BASE}/v2/pals/{id}?target=live` (`system_prompt`, `pal_name`, `default_face_id`).
 3. Else (or PATCH 404): `POST {TAVUS_API_BASE}/v2/pals` with `pipeline_mode: full` and `default_face_id`.
 4. Write `pal_id` back onto the Audion persona.

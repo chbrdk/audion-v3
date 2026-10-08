@@ -58,7 +58,13 @@ async function resolveLinked(
 function memoryTargetGroupList(): TargetGroupList {
   const items = groups.map((g) => {
     const detail = withCounts(g)
-    const { linkedPersonas: _lp, knowledgeEntries: _ke, documents: _docs, ...summary } = detail
+    const {
+      linkedPersonas: _lp,
+      knowledgeEntries: _ke,
+      documents: _docs,
+      behavioralPriors: _bp,
+      ...summary
+    } = detail
     return summary
   })
   return { items, total: items.length, page: 1, pageSize: 50 }
@@ -100,6 +106,7 @@ async function memoryCreateTargetGroup(payload: TargetGroupWritePayload): Promis
     linkedPersonas,
     knowledgeEntries: payload.knowledgeEntries ?? [],
     documents: payload.documents ?? [],
+    behavioralPriors: payload.behavioralPriors ?? null,
   })
   groups = [created, ...groups]
   return created
@@ -136,6 +143,10 @@ async function memoryPatchTargetGroup(
         ? payload.knowledgeEntries
         : current.knowledgeEntries ?? [],
     documents: payload.documents !== undefined ? payload.documents : current.documents ?? [],
+    behavioralPriors:
+      payload.behavioralPriors !== undefined
+        ? payload.behavioralPriors
+        : current.behavioralPriors ?? null,
     updatedAt: new Date().toISOString(),
   })
   groups = [...groups.slice(0, index), next, ...groups.slice(index + 1)]

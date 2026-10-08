@@ -909,6 +909,41 @@ main { min-height: 100vh; }
   line-height: 1;
 }
 
+/* Reply rationale — compact transparency above assistant answers */
+.audion-chat-reply-rationale {
+  margin: 0 0 var(--space-2);
+}
+
+.audion-chat-reply-rationale-summary {
+  margin: 0 0 var(--space-2);
+  font-size: var(--type-sm);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.audion-chat-reply-rationale-meta,
+.audion-chat-reply-rationale-drivers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+}
+
+.audion-chat-reply-rationale-src {
+  margin-left: 0.35em;
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+.audion-chat-reply-rationale-hits {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 /* Quiet numbered lists — dense enough for long entries */
 .audion-magazine-list {
   list-style: none;

@@ -1,42 +1,48 @@
 /**
- * Conversation messages column: legacy ChatMessage[] or { messages, inspect }.
+ * Conversation messages column: legacy ChatMessage[] or { messages, inspect, behavioralSession }.
  */
 
 import type {
+  BehavioralSessionState,
   ChatConversationInspect,
   ChatMessage,
   ChatToolCompleteEvent,
   ChatUxJourneyStep,
 } from '@audion-v3/contracts'
+import { normalizeBehavioralSessionState } from '../behavior/normalize-session-state'
 
 export type ChatMessagesColumn =
   | ChatMessage[]
   | {
       messages: ChatMessage[]
       inspect?: ChatConversationInspect | null
+      behavioralSession?: BehavioralSessionState | null
     }
 
 export function parseChatMessagesColumn(raw: unknown): {
   messages: ChatMessage[]
   inspect: ChatConversationInspect | null
+  behavioralSession: BehavioralSessionState | null
 } {
   if (Array.isArray(raw)) {
-    return { messages: raw as ChatMessage[], inspect: null }
+    return { messages: raw as ChatMessage[], inspect: null, behavioralSession: null }
   }
   if (raw && typeof raw === 'object') {
     const rec = raw as Record<string, unknown>
     const messages = Array.isArray(rec.messages) ? (rec.messages as ChatMessage[]) : []
     const inspect = normalizeInspect(rec.inspect)
-    return { messages, inspect }
+    const behavioralSession = normalizeBehavioralSessionState(rec.behavioralSession)
+    return { messages, inspect, behavioralSession }
   }
-  return { messages: [], inspect: null }
+  return { messages: [], inspect: null, behavioralSession: null }
 }
 
 export function serializeChatMessagesColumn(
   messages: ChatMessage[],
   inspect: ChatConversationInspect | null,
+  behavioralSession: BehavioralSessionState | null = null,
 ): ChatMessagesColumn {
-  return { messages, inspect }
+  return { messages, inspect, behavioralSession }
 }
 
 export function inspectFromToolComplete(input: {

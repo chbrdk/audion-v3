@@ -18,7 +18,11 @@ import {
   resolveTavusLanguage,
   tavusConversationLanguageName,
 } from '../tavus/language'
-import { tavusSessionConversationalContext } from '../tavus/prompt'
+import {
+  prepareVideoCallBehavioralContext,
+  saveVideoBehavioralSession,
+  videoSessionKey,
+} from '../behavior/video-session'
 import { syncPersonaTavusPal } from '../tavus/sync'
 import { resolveVideoCallProvider } from './resolve-provider'
 
@@ -123,13 +127,21 @@ async function createTavusSession(
   }
   const language = resolveTavusLanguage(working)
   try {
+    const behavioral = await prepareVideoCallBehavioralContext(working)
     const session = await createTavusConversation({
       replicaId,
       palId,
       conversationName: tavusConversationName(working.name),
-      conversationalContext: tavusSessionConversationalContext(working.name, language),
+      conversationalContext: behavioral.conversationalContext,
       language: tavusConversationLanguageName(language),
     })
+    if (behavioral.policy && behavioral.session && session.conversationId) {
+      saveVideoBehavioralSession(
+        videoSessionKey(working.id, session.conversationId),
+        behavioral.session,
+        working.id,
+      )
+    }
     return {
       stubbed: false,
       provider: 'tavus',

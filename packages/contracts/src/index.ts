@@ -1,4 +1,5 @@
 export * from './personas'
+export * from './behavioral-policy'
 export * from './target-groups'
 export * from './journeys'
 export * from './chat'
