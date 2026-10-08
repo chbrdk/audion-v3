@@ -944,6 +944,30 @@ main { min-height: 100vh; }
   line-height: 1.4;
 }
 
+.audion-tg-priors-band {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.audion-behavioral-obs-list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.audion-behavioral-obs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--line);
+}
+
 /* Quiet numbered lists — dense enough for long entries */
 .audion-magazine-list {
   list-style: none;

@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
-import type { BehavioralGoldObservation, BehavioralSurface } from '@audion-v3/contracts'
+import type {
+  BehavioralGoldLabel,
+  BehavioralGoldObservation,
+  BehavioralSurface,
+} from '@audion-v3/contracts'
 import { BEHAVIORAL_SCHEMA_VERSION } from '@audion-v3/contracts'
 import { auth } from '../../../../auth'
 import {
@@ -7,12 +11,14 @@ import {
   listBehavioralGoldObservations,
   listBehavioralPolicyScoreboards,
   recordBehavioralGoldObservation,
+  relabelBehavioralGoldObservation,
 } from '../../../../lib/behavior/gold-store'
 import { paths } from '../../../../lib/paths'
 
 export const runtime = 'nodejs'
 
 const SURFACES: BehavioralSurface[] = ['browse', 'chat', 'video']
+const LABELS: BehavioralGoldLabel[] = ['synthetic', 'human_gold']
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
@@ -23,7 +29,10 @@ export async function GET(request: Request) {
       observations: listBehavioralGoldObservations(policyId),
     })
   }
-  return NextResponse.json({ scoreboards: listBehavioralPolicyScoreboards() })
+  return NextResponse.json({
+    scoreboards: listBehavioralPolicyScoreboards(),
+    observations: listBehavioralGoldObservations().slice(0, 40),
+  })
 }
 
 export async function POST(request: Request) {
@@ -81,4 +90,33 @@ export async function POST(request: Request) {
     { observation, path: paths.routes.apiBehavioralScoreboard },
     { status: 201 },
   )
+}
+
+export async function PATCH(request: Request) {
+  const session = await auth()
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  let body: Record<string, unknown>
+  try {
+    body = (await request.json()) as Record<string, unknown>
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+  const id = typeof body.id === 'string' ? body.id.trim() : ''
+  const label = LABELS.includes(body.label as BehavioralGoldLabel)
+    ? (body.label as BehavioralGoldLabel)
+    : null
+  if (!id || !label) {
+    return NextResponse.json({ error: 'id and label are required' }, { status: 400 })
+  }
+  const observation = relabelBehavioralGoldObservation(id, label)
+  if (!observation) {
+    return NextResponse.json({ error: 'Observation not found' }, { status: 404 })
+  }
+  return NextResponse.json({
+    observation,
+    scoreboard: getBehavioralPolicyScoreboard(observation.policyId),
+    path: paths.routes.apiBehavioralScoreboard,
+  })
 }

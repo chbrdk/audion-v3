@@ -35,6 +35,18 @@ Target groups bias linked personas and segment-only chats. Contract: `TargetGrou
 
 **Persistence:** `target_groups.behavioral_priors` jsonb (`ensureBehavioralPriorsSchema`). Write via `TargetGroupWritePayload.behavioralPriors`. When explicit dimensions absent, `resolveTargetGroupPriors` averages linked persona policies.
 
+### Editor UI
+
+`TargetGroupEditDialog` exposes a **Behavioral priors** band (optional):
+
+| Control | Maps to |
+|---------|---------|
+| Blend weight Meter | `blendWeight` (default 0.25 when any prior set) |
+| Dim Meters (time / trust / warmth / detail / stress) | `dimensions.*` — only emit when operator moved from unset |
+| Segment cues / shared stress / avoidances TagInputs | string lists |
+
+Empty band → `behavioralPriors: null` on save (clears explicit priors; derive-from-linked still applies). Helper: `lib/behavior/tg-priors-form.ts`.
+
 ## Write payload (`TargetGroupWritePayload`)
 
 | Field | Notes |

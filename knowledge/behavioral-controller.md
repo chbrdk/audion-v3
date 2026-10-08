@@ -32,10 +32,15 @@ Persona traits, journey knobs, chat voice rules, and Tavus PAL prompts were inte
 | **TG priors** | `tg-priors.ts` + `target_groups.behavioral_priors` jsonb | **5 done** |
 | **Gold scoreboard** | `gold-scoreboard.ts` · `gold-store.ts` · `/studies/behavioral` · `GET/POST /api/behavioral/scoreboard` | **6 done** |
 | **Reply rationale** | `reply-rationale.ts` · `chat-reply-rationale.tsx` above assistant answers | **7 done** |
+| **TG priors editor** | `TargetGroupEditDialog` band · `tg-priors-form.ts` | **8a done** |
+| **Gold mark UI** | `/studies/behavioral` expand + PATCH relabel | **8b done** |
 
 ## Transparency (chat)
 
 Collapsed **Why this reply** strip on completed persona-chat assistant turns. Data = compiled drivers + live stance (not model self-report). Guest embed hides it. Magazine edits (traits / journey dims) remain the control surface; this strip only **explains**.
+
+**TG:** Edit dialog → Behavioral priors (blend + dim meters + cues/stress/avoid). Empty clears explicit priors.  
+**Gold:** Studies → Behavioral gold → expand policy → Mark as human gold (PATCH).
 
 ## Session FSM
 

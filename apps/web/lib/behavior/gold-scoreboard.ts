@@ -48,7 +48,9 @@ export function observationFromSession(input: {
   const surface = input.surface ?? input.state.surface
   const recordedAt = (input.now ?? (() => new Date))().toISOString()
   return {
-    id: `bg-${input.policy.policyId.slice(0, 8)}-${Date.now().toString(36)}`,
+    id: `bg-${input.policy.policyId.slice(0, 8)}-t${input.state.turnIndex}-${(
+      input.conversationId ?? 'x'
+    ).slice(0, 10)}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
     policyId: input.policy.policyId,
     schemaVersion: input.policy.schemaVersion || BEHAVIORAL_SCHEMA_VERSION,
     surface,

@@ -1,14 +1,21 @@
 import { Alert } from '@msqdx/ui'
 import { AppShell } from '../../../components/app-shell'
 import { BehavioralScoreboardPanel } from '../../../components/behavioral-scoreboard-panel'
-import { listBehavioralPolicyScoreboards } from '../../../lib/behavior/gold-store'
+import {
+  listBehavioralGoldObservations,
+  listBehavioralPolicyScoreboards,
+} from '../../../lib/behavior/gold-store'
 
 export default function BehavioralGoldPage() {
   try {
     const scoreboards = listBehavioralPolicyScoreboards()
+    const observations = listBehavioralGoldObservations().slice(0, 40)
     return (
       <AppShell>
-        <BehavioralScoreboardPanel scoreboards={scoreboards} />
+        <BehavioralScoreboardPanel
+          scoreboards={scoreboards}
+          initialObservations={observations}
+        />
       </AppShell>
     )
   } catch (error) {

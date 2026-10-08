@@ -7,11 +7,27 @@ import type {
   TargetGroupStatus,
   TargetGroupWritePayload,
 } from '@audion-v3/contracts'
-import { Button, Field, Input, Panel, Text, Textarea } from '@msqdx/ui'
+import { Button, Field, Input, Meter, MeterList, Panel, Text, Textarea } from '@msqdx/ui'
 import { Dialog, Select, TagInput } from '../lib/msqdx-ui-client'
+import {
+  buildBehavioralPriorsPayload,
+  emptyTgPriorsForm,
+  TG_PRIOR_DIM_KEYS,
+  tgPriorsFormFromStored,
+  type TgPriorDimKey,
+  type TgPriorsFormState,
+} from '../lib/behavior/tg-priors-form'
 import { paths } from '../lib/paths'
 import { useT } from '../lib/user-prefs'
 import { IconEdit } from './nav-icons'
+
+const PRIOR_DIM_LABEL_KEYS: Record<TgPriorDimKey, string> = {
+  timePressure: 'dialogs.tgPriorTime',
+  trustSkepticism: 'dialogs.tgPriorTrust',
+  warmth: 'dialogs.tgPriorWarmth',
+  detailOrientation: 'dialogs.tgPriorDetail',
+  stressSensitivity: 'dialogs.tgPriorStressDim',
+}
 
 type ProjectOption = { id: string; name: string }
 
@@ -42,6 +58,7 @@ export function TargetGroupEditDialog({
   const t = useT()
   const router = useRouter()
   const [form, setForm] = useState<TargetGroupWritePayload>(emptyPayload(defaultProjectId))
+  const [priorsForm, setPriorsForm] = useState<TgPriorsFormState>(emptyTgPriorsForm)
   const [nameError, setNameError] = useState<string | null>(null)
   const [projectError, setProjectError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -63,6 +80,7 @@ export function TargetGroupEditDialog({
     if (!open) return
     if (mode === 'create' || !targetGroup) {
       setForm(emptyPayload(defaultProjectId))
+      setPriorsForm(emptyTgPriorsForm())
     } else {
       setForm({
         name: targetGroup.name,
@@ -71,7 +89,9 @@ export function TargetGroupEditDialog({
         status: targetGroup.status,
         projectId: targetGroup.projectId,
         linkedPersonaIds: targetGroup.linkedPersonas.map((p) => p.id),
+        behavioralPriors: targetGroup.behavioralPriors ?? null,
       })
+      setPriorsForm(tgPriorsFormFromStored(targetGroup.behavioralPriors))
     }
     setNameError(null)
     setProjectError(null)
@@ -114,6 +134,7 @@ export function TargetGroupEditDialog({
         segment: form.segment.trim() || 'Segment',
         description: form.description || null,
         projectId: form.projectId!.trim(),
+        behavioralPriors: buildBehavioralPriorsPayload(priorsForm),
       }
       const url =
         mode === 'create'
@@ -266,6 +287,103 @@ export function TargetGroupEditDialog({
             placeholder="persona-alex-morgan"
           />
         </Field>
+
+        <div className="audion-edit-field audion-tg-priors-band" data-testid="tg-behavioral-priors">
+          <Text role="title" as="h3" className="audion-edit-section-title">
+            {t('dialogs.tgPriorsTitle')}
+          </Text>
+          <p className="audion-edit-lede">{t('dialogs.tgPriorsLede')}</p>
+
+          <MeterList aria-label={t('dialogs.tgPriorsTitle')}>
+            <Meter
+              label={t('dialogs.tgPriorBlend')}
+              value={Math.round((priorsForm.blendWeight ?? 0.25) * 100)}
+              max={100}
+              onChange={(next) =>
+                setPriorsForm((f) => ({
+                  ...f,
+                  blendWeight: Math.min(1, Math.max(0, next / 100)),
+                }))
+              }
+            />
+            {TG_PRIOR_DIM_KEYS.map((key) => {
+              const raw = priorsForm.dimensions[key]
+              const value = typeof raw === 'number' ? raw : 0.5
+              return (
+                <Meter
+                  key={key}
+                  label={t(PRIOR_DIM_LABEL_KEYS[key])}
+                  value={Math.round(value * 100)}
+                  max={100}
+                  onChange={(next) =>
+                    setPriorsForm((f) => ({
+                      ...f,
+                      dimensions: {
+                        ...f.dimensions,
+                        [key]: Math.min(1, Math.max(0, next / 100)),
+                      },
+                    }))
+                  }
+                />
+              )
+            })}
+          </MeterList>
+
+          <Field
+            label={t('dialogs.tgPriorCues')}
+            hint={t('dialogs.tgPriorCuesHint')}
+            size="md"
+            htmlFor="tg-prior-cues"
+            className="audion-edit-field"
+          >
+            <TagInput
+              id="tg-prior-cues"
+              size="md"
+              value={priorsForm.segmentCues}
+              onChange={(segmentCues) => setPriorsForm((f) => ({ ...f, segmentCues }))}
+              placeholder={t('dialogs.tgPriorCuesPh')}
+            />
+          </Field>
+          <Field
+            label={t('dialogs.tgPriorStressTriggers')}
+            size="md"
+            htmlFor="tg-prior-stress"
+            className="audion-edit-field"
+          >
+            <TagInput
+              id="tg-prior-stress"
+              size="md"
+              value={priorsForm.sharedStressTriggers}
+              onChange={(sharedStressTriggers) =>
+                setPriorsForm((f) => ({ ...f, sharedStressTriggers }))
+              }
+              placeholder={t('dialogs.tgPriorStressTriggersPh')}
+            />
+          </Field>
+          <Field
+            label={t('dialogs.tgPriorAvoid')}
+            size="md"
+            htmlFor="tg-prior-avoid"
+            className="audion-edit-field"
+          >
+            <TagInput
+              id="tg-prior-avoid"
+              size="md"
+              value={priorsForm.sharedAvoidances}
+              onChange={(sharedAvoidances) => setPriorsForm((f) => ({ ...f, sharedAvoidances }))}
+              placeholder={t('dialogs.tgPriorAvoidPh')}
+            />
+          </Field>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPriorsForm(emptyTgPriorsForm())}
+          >
+            {t('dialogs.tgPriorsClear')}
+          </Button>
+        </div>
 
         {saveError ? <p className="audion-edit-error" role="alert">{saveError}</p> : null}
       </div>

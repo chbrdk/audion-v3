@@ -48,17 +48,20 @@ Browse: prefer attaching `closerToHuman` from `persona-lab-correlate` / findabil
 
 | Method | Path | Body / query |
 |--------|------|----------------|
-| `GET` | `/api/behavioral/scoreboard` | `?policyId=` optional; omit → list top policies |
+| `GET` | `/api/behavioral/scoreboard` | `?policyId=` optional; omit → list top policies (+ recent observations for UI) |
 | `POST` | `/api/behavioral/scoreboard` | observation upsert (auth) |
+| `PATCH` | `/api/behavioral/scoreboard` | `{ id, label }` relabel existing observation (auth) — used to promote synthetic → `human_gold` |
 
 ## UI
 
-`/studies/behavioral` — magazine list of policy scoreboards (closer badge, n, means). No second project model.
+`/studies/behavioral` — magazine list of policy scoreboards (closer badge, n, means). Expand a policy to list recent observations; **Mark as human gold** (auth) PATCH-relabels without inventing metrics. No second project model.
 
 ## Acceptance
 
 1. Recording from chat persist + video prepare is automatic (`synthetic`).
 2. POST can mark `human_gold` for paired sessions.
-3. Aggregate enforces n≥3 for `closer=true`.
-4. Unit tests for band checks + store + API smoke.
-5. Specs inventory includes this file.
+3. PATCH relabels an existing observation to `human_gold` / `synthetic`.
+4. Studies UI can promote synthetic rows without leaving the scoreboard.
+5. Aggregate enforces n≥3 for `closer=true`.
+6. Unit tests for band checks + store + API smoke.
+7. Specs inventory includes this file.

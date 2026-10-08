@@ -8,6 +8,7 @@ import {
   listBehavioralGoldObservations,
   listBehavioralPolicyScoreboards,
   recordBehavioralGoldObservation,
+  relabelBehavioralGoldObservation,
   resetBehavioralGoldStore,
 } from '../lib/behavior/gold-store'
 import {
@@ -86,4 +87,21 @@ describe('behavioral gold scoreboard', () => {
     expect(paths.routes.studiesBehavioral).toBe('/studies/behavioral')
     expect(paths.routes.apiBehavioralScoreboard).toBe('/api/behavioral/scoreboard')
   })
+
+  it('relabels synthetic observations to human_gold in place', () => {
+    const policy = samplePolicy()
+    const state = initBehavioralSessionState(policy, 'chat')
+    const obs = observationFromSession({
+      policy,
+      state,
+      personaId: policy.personaId,
+    })
+    expect(obs.label).toBe('synthetic')
+    recordBehavioralGoldObservation(obs)
+    const next = relabelBehavioralGoldObservation(obs.id, 'human_gold')
+    expect(next?.label).toBe('human_gold')
+    expect(listBehavioralGoldObservations(policy.policyId)[0]?.label).toBe('human_gold')
+    expect(relabelBehavioralGoldObservation('missing', 'human_gold')).toBeNull()
+  })
 })
+
