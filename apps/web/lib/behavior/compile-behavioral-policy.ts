@@ -84,7 +84,7 @@ const LEXICON = {
 
 function traitKnob(
   traits: Record<string, number>,
-  patterns: RegExp[],
+  patterns: readonly RegExp[],
   fallback: number,
 ): KnobBuild {
   const hits: Array<{ key: string; score: number }> = []

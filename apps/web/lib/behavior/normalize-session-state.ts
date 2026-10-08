@@ -1,4 +1,8 @@
-import type { BehavioralSessionState, BehavioralStance } from '@audion-v3/contracts'
+import type {
+  BehavioralEpisodicEntry,
+  BehavioralSessionState,
+  BehavioralStance,
+} from '@audion-v3/contracts'
 
 const STANCES: BehavioralStance[] = ['proceed', 'hesitate', 'abandon']
 
@@ -23,17 +27,20 @@ export function normalizeBehavioralSessionState(
   const policyId = typeof rec.policyId === 'string' ? rec.policyId : null
   if (!surface || !stance || !policyId) return null
 
-  const episodic = Array.isArray(rec.episodic)
+  const episodic: BehavioralEpisodicEntry[] = Array.isArray(rec.episodic)
     ? rec.episodic
         .filter((e): e is Record<string, unknown> => !!e && typeof e === 'object')
-        .map((e) => ({
-          kind:
+        .map((e): BehavioralEpisodicEntry => {
+          const kind: BehavioralEpisodicEntry['kind'] =
             e.kind === 'try' || e.kind === 'notice' || e.kind === 'topic' || e.kind === 'repair'
               ? e.kind
-              : ('try' as const),
-          key: typeof e.key === 'string' ? e.key : '',
-          at: typeof e.at === 'number' && Number.isFinite(e.at) ? e.at : 0,
-        }))
+              : 'try'
+          return {
+            kind,
+            key: typeof e.key === 'string' ? e.key : '',
+            at: typeof e.at === 'number' && Number.isFinite(e.at) ? e.at : 0,
+          }
+        })
         .filter((e) => e.key)
     : []
 

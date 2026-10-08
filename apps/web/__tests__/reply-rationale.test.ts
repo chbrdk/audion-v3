@@ -13,6 +13,7 @@ import {
 function basePersona(overrides: Partial<PersonaDetail> = {}): PersonaDetail {
   return {
     id: 'persona-rationale-test',
+    slug: 'persona-rationale-test',
     name: 'Rationale Test',
     role: 'Buyer',
     status: 'ready',
@@ -38,7 +39,7 @@ function basePersona(overrides: Partial<PersonaDetail> = {}): PersonaDetail {
     socialMediaUsage: [],
     communicationStyle: null,
     goals: [{ label: 'Ship fast', priority: 1 }],
-    frustrations: [{ label: 'Cookie walls', priority: 1 }],
+    frustrations: [{ label: 'Cookie walls', evidenceCount: 1 }],
     channels: [],
     sections: [],
     visuals: null,
