@@ -38,6 +38,8 @@ export type ChatReplyRationaleDriver = {
   ref?: string
 }
 
+export type ChatDynamicsMode = 'engage' | 'repair' | 'curt' | 'non_answer'
+
 export type ChatReplyRationale = {
   policyId: string
   lane: 'impatient' | 'skeptical' | 'warm' | 'balanced'
@@ -48,6 +50,10 @@ export type ChatReplyRationale = {
   drivers: ChatReplyRationaleDriver[]
   /** Soft-spot phrases from the user turn that raised stress. */
   stressHits?: string[]
+  /** Dialogue dynamics mode for this turn (Phase 9). */
+  dynamicsMode?: ChatDynamicsMode
+  /** Client typing pause applied before first visible tokens. */
+  replyDelayMs?: number
   /** One-line summary for the collapsed trigger. */
   summary: string
 }
@@ -334,6 +340,16 @@ export type ChatToolDecisionPayload = {
 export type ChatStreamDeltaEvent = { type: 'delta'; text: string }
 import type { KnowledgeRagSource } from './knowledge-rag'
 
+/** Emitted before deltas — client applies typing latency / dynamics cues. */
+export type ChatStreamBehaviorEvent = {
+  type: 'behavior'
+  replyDelayMs: number
+  dynamics: {
+    mode: ChatDynamicsMode
+    summary: string
+  }
+}
+
 export type ChatStreamDoneEvent = {
   type: 'done'
   conversationId: string
@@ -352,6 +368,7 @@ export type ChatStreamDoneEvent = {
 export type ChatStreamErrorEvent = { type: 'error'; message: string }
 export type ChatStreamEvent =
   | ChatStreamDeltaEvent
+  | ChatStreamBehaviorEvent
   | ChatStreamDoneEvent
   | ChatStreamErrorEvent
   | ChatToolProposedEvent

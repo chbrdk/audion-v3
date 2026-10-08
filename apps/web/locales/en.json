@@ -767,6 +767,13 @@
     "rationaleStanceProceed": "Proceed",
     "rationaleStanceHesitate": "Hesitate",
     "rationaleStanceCurt": "Curt",
+    "rationaleDelay": "Pause {n}ms",
+    "rationaleDynamics": {
+      "engage": "Engage",
+      "repair": "Repair ask",
+      "curt": "Curt reply",
+      "non_answer": "Non-answer"
+    },
     "rationaleLane": {
       "impatient": "Impatient lane",
       "skeptical": "Skeptical lane",

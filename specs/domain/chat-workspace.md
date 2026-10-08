@@ -137,6 +137,25 @@ Persona mode (not guest `embed=1`): each **completed** assistant turn may show a
 
 Payload: `ChatReplyRationale` on `ChatMessage.replyRationale` and echoed on stream `done.replyRationale`. Builder: `lib/behavior/reply-rationale.ts`. Spec: `behavioral-controller.md` § Explainable UI.
 
+### Dialogue dynamics (Phase 9)
+
+Persona mode only. After the session tick, the stream emits a `behavior` event **before** deltas:
+
+| Field | Meaning |
+|-------|---------|
+| `replyDelayMs` | Client holds the writing indicator / buffers deltas (latency jitter from timePressure + frustration + fatigue + stance) |
+| `dynamics.mode` | `engage` \| `repair` \| `curt` \| `non_answer` — also injected into `## Live session state` |
+| `dynamics.summary` | Short operator line; folded into reply-rationale summary |
+
+Rules (deterministic):
+
+- **repair** — low clarity or repairWillingness + confused user phrasing → ask one short clarifying question; do not dump answers.
+- **curt** — stance `abandon` → short honest friction; no interview.
+- **non_answer** — abandon + high timePressure → one shrug / deflect line, then stop.
+- **engage** — default proceed.
+
+Builder: `lib/behavior/chat-dynamics.ts`. Client: `audion-chat-panel` buffers deltas until delay elapses.
+
 | Layer | Role |
 |-------|------|
 | Identity / embodiment | First-person “you ARE this persona” |

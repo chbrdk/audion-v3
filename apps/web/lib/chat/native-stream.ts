@@ -4,6 +4,7 @@
 
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import type {
+  ChatDynamicsMode,
   ChatReplyRationale,
   ChatSendPayload,
   ChatStreamEvent,
@@ -17,6 +18,10 @@ import {
   persistChatBehavioralSession,
   resolveChatMaxTokensWithSession,
 } from '../behavior/chat-session'
+import {
+  buildChatDynamicsPlan,
+  withChatDynamicsEnvelope,
+} from '../behavior/chat-dynamics'
 import { buildChatReplyRationale } from '../behavior/reply-rationale'
 import { compilePolicyForPersona } from '../behavior/resolve-persona-policy'
 import { storePersonaDetail } from '../fixtures/persona-store'
@@ -248,6 +253,10 @@ export async function* nativeChatStreamEvents(
     const chatPolicy = await compilePolicyForPersona(payload.personaId)
     let liveEnvelope: string | null = null
     let replyRationale: ChatReplyRationale | null = null
+    let dynamicsBehavior: {
+      replyDelayMs: number
+      dynamics: { mode: ChatDynamicsMode; summary: string }
+    } | null = null
     let maxTokens = resolveChatMaxTokensWithSession(chatPolicy, null, {
       greeting,
       elicitation,
@@ -265,18 +274,38 @@ export async function* nativeChatStreamEvents(
         payload.personaId,
         chatPolicy,
       )
-      liveEnvelope = buildChatLiveSessionEnvelope(chatPolicy, session)
+      const dynamics = buildChatDynamicsPlan(chatPolicy, session, message)
+      liveEnvelope = withChatDynamicsEnvelope(
+        buildChatLiveSessionEnvelope(chatPolicy, session),
+        dynamics,
+      )
       maxTokens = resolveChatMaxTokensWithSession(chatPolicy, session, {
         greeting,
         elicitation,
       })
+      // Curt / non-answer modes shrink token budget further.
+      if (dynamics.mode === 'non_answer') {
+        maxTokens = Math.min(maxTokens, 60)
+      } else if (dynamics.mode === 'curt' || dynamics.mode === 'repair') {
+        maxTokens = Math.min(maxTokens, 140)
+      }
       const persona = await storePersonaDetail(payload.personaId)
       replyRationale = buildChatReplyRationale({
         policy: chatPolicy,
         session,
         traits: persona?.traits ?? {},
         userMessage: message,
+        dynamicsMode: dynamics.mode,
+        replyDelayMs: dynamics.replyDelayMs,
+        dynamicsSummary: dynamics.summary,
       })
+      dynamicsBehavior = {
+        replyDelayMs: dynamics.replyDelayMs,
+        dynamics: { mode: dynamics.mode, summary: dynamics.summary },
+      }
+    }
+    if (dynamicsBehavior) {
+      yield { type: 'behavior', ...dynamicsBehavior }
     }
     const resolved = await resolvePersonaChatModel(message, {
       userId,

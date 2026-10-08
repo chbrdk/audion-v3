@@ -54,6 +54,20 @@ export function ChatReplyRationaleStrip({
             {stanceLabel(rationale.stance, t)}
           </Chip>
         </li>
+        {rationale.dynamicsMode && rationale.dynamicsMode !== 'engage' ? (
+          <li>
+            <Chip static size="sm" className="audion-chat-inspect-chip is-count">
+              {t(`chatExtra.rationaleDynamics.${rationale.dynamicsMode}`)}
+            </Chip>
+          </li>
+        ) : null}
+        {typeof rationale.replyDelayMs === 'number' && rationale.replyDelayMs > 0 ? (
+          <li>
+            <Chip static size="sm" className="audion-chat-inspect-chip is-count">
+              {t('chatExtra.rationaleDelay', { n: rationale.replyDelayMs })}
+            </Chip>
+          </li>
+        ) : null}
         <li>
           <Chip static size="sm" className="audion-chat-inspect-chip is-count">
             {t('chatExtra.rationaleFrustration', { n: pct(rationale.frustrationLoad) })}

@@ -122,6 +122,9 @@ export type BuildChatReplyRationaleInput = {
   traits?: Record<string, number>
   /** User message that triggered this assistant turn. */
   userMessage?: string
+  dynamicsMode?: ChatReplyRationale['dynamicsMode']
+  replyDelayMs?: number
+  dynamicsSummary?: string
 }
 
 /** Pure builder — same inputs → same rationale. */
@@ -132,6 +135,10 @@ export function buildChatReplyRationale(
   const lane = voiceLaneForChat(policy, traits)
   const drivers = pickDrivers(policy)
   const stressHits = listChatStressHits(policy, userMessage)
+  let summary = formatSummary(lane, session, drivers, stressHits)
+  if (input.dynamicsSummary?.trim()) {
+    summary = `${summary} · ${input.dynamicsSummary.trim()}`
+  }
   return {
     policyId: policy.policyId,
     lane,
@@ -141,7 +148,9 @@ export function buildChatReplyRationale(
     turnIndex: session.turnIndex,
     drivers,
     ...(stressHits.length ? { stressHits } : {}),
-    summary: formatSummary(lane, session, drivers, stressHits),
+    ...(input.dynamicsMode ? { dynamicsMode: input.dynamicsMode } : {}),
+    ...(typeof input.replyDelayMs === 'number' ? { replyDelayMs: input.replyDelayMs } : {}),
+    summary,
   }
 }
 

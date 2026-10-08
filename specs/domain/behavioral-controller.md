@@ -263,6 +263,8 @@ Correlate against human gold (`ux-lab-archetypes.md` scoreboard in knowledge doc
 | **4+** | Video conversational context from mirrored chat affect — **done** (`lib/behavior/video-session.ts`) |
 | **6** | Human-gold scoreboard keyed by `policyId` — **done** (`behavioral-gold-scoreboard.md` · `/studies/behavioral`) |
 | **7** | Chat reply-rationale strip (Why this reply) — **done** (`reply-rationale.ts` · `chat-reply-rationale.tsx`) |
+| **8** | TG priors editor + Studies gold mark UI — **done** |
+| **9** | Chat dialogue dynamics (latency + repair / curt / non-answer) — **done** (`chat-dynamics.ts`) |
 
 ## Acceptance (Phase 1)
 

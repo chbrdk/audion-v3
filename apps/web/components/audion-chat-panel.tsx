@@ -240,6 +240,9 @@ export function AudionChatPanel({
   const docInputRef = useRef<HTMLInputElement>(null)
   const personaIdRef = useRef(personaId)
   const turnsRef = useRef(turns)
+  const dynamicsDelayUntilRef = useRef(0)
+  const dynamicsDeltaBufferRef = useRef('')
+  const dynamicsFlushTimerRef = useRef<number | null>(null)
   turnsRef.current = turns
   const allowAttachments = !guestBudget
   const hasPendingAttach = pendingAttachments.length > 0 || pendingDocuments.length > 0
@@ -327,16 +330,55 @@ export function AudionChatPanel({
     }
   }
 
+  function appendStreamingDelta(streamingId: string, text: string) {
+    setTurns((prev) =>
+      prev.map((t) =>
+        t.id === streamingId
+          ? { ...t, content: `${t.content}${text}`, status: 'streaming' }
+          : t,
+      ),
+    )
+  }
+
+  function flushDynamicsBuffer(streamingId: string) {
+    if (dynamicsFlushTimerRef.current != null) {
+      window.clearTimeout(dynamicsFlushTimerRef.current)
+      dynamicsFlushTimerRef.current = null
+    }
+    const buffered = dynamicsDeltaBufferRef.current
+    dynamicsDeltaBufferRef.current = ''
+    dynamicsDelayUntilRef.current = 0
+    if (buffered) appendStreamingDelta(streamingId, buffered)
+  }
+
   function handleStreamEvent(streamingId: string, event: ChatStreamEvent) {
+    if (event.type === 'behavior') {
+      const delay = Math.max(0, Math.min(2600, Math.round(event.replyDelayMs || 0)))
+      dynamicsDelayUntilRef.current = Date.now() + delay
+      dynamicsDeltaBufferRef.current = ''
+      if (dynamicsFlushTimerRef.current != null) {
+        window.clearTimeout(dynamicsFlushTimerRef.current)
+        dynamicsFlushTimerRef.current = null
+      }
+      if (delay > 0) {
+        dynamicsFlushTimerRef.current = window.setTimeout(() => {
+          flushDynamicsBuffer(streamingId)
+        }, delay)
+      }
+      return
+    }
     if (event.type === 'delta') {
-      setTurns((prev) =>
-        prev.map((t) =>
-          t.id === streamingId
-            ? { ...t, content: `${t.content}${event.text}`, status: 'streaming' }
-            : t,
-        ),
-      )
+      const until = dynamicsDelayUntilRef.current
+      if (until > Date.now()) {
+        dynamicsDeltaBufferRef.current += event.text
+        return
+      }
+      if (dynamicsDeltaBufferRef.current) {
+        flushDynamicsBuffer(streamingId)
+      }
+      appendStreamingDelta(streamingId, event.text)
     } else if (event.type === 'done') {
+      flushDynamicsBuffer(streamingId)
       setConversationId(event.conversationId)
       setTurns((prev) =>
         prev.map((t) =>
@@ -356,6 +398,7 @@ export function AudionChatPanel({
       )
       syncUrl({ conversationId: event.conversationId })
     } else if (event.type === 'error') {
+      flushDynamicsBuffer(streamingId)
       setErr(event.message)
       setTurns((prev) =>
         prev.map((t) =>
@@ -565,6 +608,12 @@ export function AudionChatPanel({
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
+    dynamicsDelayUntilRef.current = 0
+    dynamicsDeltaBufferRef.current = ''
+    if (dynamicsFlushTimerRef.current != null) {
+      window.clearTimeout(dynamicsFlushTimerRef.current)
+      dynamicsFlushTimerRef.current = null
+    }
 
     try {
       await postChatStream(

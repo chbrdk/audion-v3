@@ -767,6 +767,13 @@
     "rationaleStanceProceed": "Weiter",
     "rationaleStanceHesitate": "Zögern",
     "rationaleStanceCurt": "Kurz angebunden",
+    "rationaleDelay": "Pause {n}ms",
+    "rationaleDynamics": {
+      "engage": "Engagiert",
+      "repair": "Nachfragen",
+      "curt": "Kurz",
+      "non_answer": "Ausweichen"
+    },
     "rationaleLane": {
       "impatient": "Ungeduldige Spur",
       "skeptical": "Skeptische Spur",

@@ -34,6 +34,7 @@ Persona traits, journey knobs, chat voice rules, and Tavus PAL prompts were inte
 | **Reply rationale** | `reply-rationale.ts` · `chat-reply-rationale.tsx` above assistant answers | **7 done** |
 | **TG priors editor** | `TargetGroupEditDialog` band · `tg-priors-form.ts` | **8a done** |
 | **Gold mark UI** | `/studies/behavioral` expand + PATCH relabel | **8b done** |
+| **Chat dynamics** | `chat-dynamics.ts` · stream `behavior` + live envelope modes | **9 done** |
 
 ## Transparency (chat)
 
